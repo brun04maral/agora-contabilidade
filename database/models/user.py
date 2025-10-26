@@ -3,10 +3,8 @@ User model for authentication
 """
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
-from sqlalchemy.ext.declarative import declarative_base
 import bcrypt
-
-Base = declarative_base()
+from database.models.base import Base
 
 
 class User(Base):

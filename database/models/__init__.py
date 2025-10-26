@@ -1,6 +1,31 @@
 """
-Database models package
-"""
-from .user import User
+Modelos de base de dados da Agora Media Contabilidade
 
-__all__ = ['User']
+Importa todos os modelos para facilitar o uso
+"""
+from database.models.base import Base
+from database.models.user import User
+from database.models.cliente import Cliente
+from database.models.fornecedor import Fornecedor, EstatutoFornecedor
+from database.models.projeto import Projeto, TipoProjeto, EstadoProjeto
+from database.models.despesa import Despesa, TipoDespesa, EstadoDespesa
+from database.models.boletim import Boletim, Socio, EstadoBoletim
+from database.models.equipamento import Equipamento
+
+__all__ = [
+    'Base',
+    'User',
+    'Cliente',
+    'Fornecedor',
+    'EstatutoFornecedor',
+    'Projeto',
+    'TipoProjeto',
+    'EstadoProjeto',
+    'Despesa',
+    'TipoDespesa',
+    'EstadoDespesa',
+    'Boletim',
+    'Socio',
+    'EstadoBoletim',
+    'Equipamento',
+]
