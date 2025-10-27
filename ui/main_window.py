@@ -92,16 +92,9 @@ class MainWindow(ctk.CTkFrame):
 
     def show_dashboard(self):
         """Show dashboard screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.dashboard import DashboardScreen
+        screen = DashboardScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="📊 Dashboard\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_saldos(self):
