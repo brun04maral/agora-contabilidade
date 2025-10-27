@@ -277,8 +277,9 @@ class DashboardScreen(ctk.CTkFrame):
         despesas_pagas = self.db_session.query(func.count(Despesa.id)).filter(
             Despesa.estado == EstadoDespesa.PAGO
         ).scalar() or 0
+        # Despesas pendentes = ATIVO + VENCIDO (tudo que não foi pago)
         despesas_pendentes = self.db_session.query(func.count(Despesa.id)).filter(
-            Despesa.estado == EstadoDespesa.PENDENTE
+            (Despesa.estado == EstadoDespesa.ATIVO) | (Despesa.estado == EstadoDespesa.VENCIDO)
         ).scalar() or 0
 
         self.total_despesas_card.value_label.configure(text=str(total_despesas))
