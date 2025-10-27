@@ -132,56 +132,21 @@ class App(ctk.CTk):
         Args:
             user_data: User information dictionary
         """
+        # Import here to avoid circular imports
+        from ui.main_window import MainWindow
+
         # Clear main container
         for widget in self.main_container.winfo_children():
             widget.destroy()
 
-        # Create main app interface
-        main_frame = ctk.CTkFrame(self.main_container)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # Welcome message
-        welcome_label = ctk.CTkLabel(
-            main_frame,
-            text=f"Bem-vindo, {user_data.get('name', 'Utilizador')}!",
-            font=ctk.CTkFont(size=24, weight="bold")
+        # Create main window with sidebar and content area
+        main_window = MainWindow(
+            self.main_container,
+            db_session=self.db_session,
+            user_data=user_data,
+            on_logout=self.logout
         )
-        welcome_label.pack(pady=(50, 10))
-
-        # User info
-        role_label = ctk.CTkLabel(
-            main_frame,
-            text=f"Função: {user_data.get('role', 'N/A')}",
-            font=ctk.CTkFont(size=14)
-        )
-        role_label.pack(pady=5)
-
-        email_label = ctk.CTkLabel(
-            main_frame,
-            text=f"Email: {user_data.get('email', 'N/A')}",
-            font=ctk.CTkFont(size=14)
-        )
-        email_label.pack(pady=5)
-
-        # Development message
-        dev_label = ctk.CTkLabel(
-            main_frame,
-            text="\nSistema em Desenvolvimento\nFuncionalidades principais serão adicionadas em breve",
-            font=ctk.CTkFont(size=16),
-            text_color="gray"
-        )
-        dev_label.pack(pady=30)
-
-        # Logout button
-        logout_button = ctk.CTkButton(
-            main_frame,
-            text="Sair",
-            command=self.logout,
-            width=200,
-            height=40,
-            font=ctk.CTkFont(size=14)
-        )
-        logout_button.pack(pady=20)
+        main_window.pack(fill="both", expand=True)
 
     def logout(self):
         """Handle user logout"""
