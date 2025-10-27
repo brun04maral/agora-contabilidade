@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Lógica de cálculo de Saldos Pessoais - MÓDULO CORE DO SISTEMA
 

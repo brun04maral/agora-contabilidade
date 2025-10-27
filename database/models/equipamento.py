@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Modelo Equipamento - Inventário de equipamento da empresa
 """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Sidebar component - Menu de navegação lateral
 """

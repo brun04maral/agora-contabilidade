@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Modelo Despesa - Despesas da empresa e despesas pessoais dos sócios
 """

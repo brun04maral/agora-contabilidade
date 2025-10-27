@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Script de setup completo da base de dados
 Cria todas as tabelas e dados de teste
