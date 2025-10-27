@@ -30,6 +30,9 @@ class MainWindow(ctk.CTkFrame):
         self.user_data = user_data
         self.on_logout = on_logout
 
+        # Initialize current screen (needed before create_widgets)
+        self.current_screen = None
+
         # Configure
         self.configure(fg_color="transparent")
 
@@ -53,9 +56,6 @@ class MainWindow(ctk.CTkFrame):
         self.content_frame.grid(row=0, column=1, sticky="nsew")
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
-
-        # Current screen
-        self.current_screen = None
 
     def on_menu_select(self, menu_id: str):
         """
