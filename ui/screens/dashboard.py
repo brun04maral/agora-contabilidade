@@ -252,8 +252,8 @@ class DashboardScreen(ctk.CTkFrame):
         saldo_bruno = self.calculator.calcular_saldo_bruno()
         saldo_rafael = self.calculator.calcular_saldo_rafael()
 
-        self.bruno_card.value_label.configure(text=f"€ {saldo_bruno['saldo_final']:,.2f}".replace(",", " ").replace(".", ",").replace(" ", "."))
-        self.rafael_card.value_label.configure(text=f"€ {saldo_rafael['saldo_final']:,.2f}".replace(",", " ").replace(".", ",").replace(" ", "."))
+        self.bruno_card.value_label.configure(text=f"€ {saldo_bruno['saldo_total']:,.2f}".replace(",", " ").replace(".", ",").replace(" ", "."))
+        self.rafael_card.value_label.configure(text=f"€ {saldo_rafael['saldo_total']:,.2f}".replace(",", " ").replace(".", ",").replace(" ", "."))
 
         # === PROJETOS ===
         total_projetos = self.db_session.query(func.count(Projeto.id)).scalar() or 0
