@@ -119,16 +119,9 @@ class MainWindow(ctk.CTkFrame):
 
     def show_despesas(self):
         """Show despesas screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.despesas import DespesasScreen
+        screen = DespesasScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="💸 Despesas\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_boletins(self):
