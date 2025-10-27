@@ -47,15 +47,15 @@ class MainWindow(ctk.CTkFrame):
     def create_widgets(self):
         """Create main window widgets"""
 
-        # Sidebar
-        self.sidebar = Sidebar(self, on_menu_select=self.on_menu_select, width=260)
-        self.sidebar.grid(row=0, column=0, sticky="nsew")
-
-        # Content area
+        # Content area (create BEFORE sidebar, as sidebar needs it during init)
         self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.content_frame.grid(row=0, column=1, sticky="nsew")
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
+
+        # Sidebar (created after content_frame so it can use it)
+        self.sidebar = Sidebar(self, on_menu_select=self.on_menu_select, width=260)
+        self.sidebar.grid(row=0, column=0, sticky="nsew")
 
     def on_menu_select(self, menu_id: str):
         """
