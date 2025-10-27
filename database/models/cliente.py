@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Modelo Cliente - Base de dados de clientes da Agora Media
 """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Tela de Saldos Pessoais - CORE DO SISTEMA
 """

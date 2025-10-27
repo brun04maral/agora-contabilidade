@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Modelo Boletim - Boletins de ajudas de custo emitidos aos sócios
 """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Agora Media - Sistema de Contabilidade
 Ponto de entrada principal da aplicação

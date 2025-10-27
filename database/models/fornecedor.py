@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Modelo Fornecedor - Base de dados de fornecedores/credores
 """

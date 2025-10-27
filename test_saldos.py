@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Script de teste para a lógica de Saldos Pessoais
 """

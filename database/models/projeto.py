@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Modelo Projeto - Projetos da Agora Media e projetos pessoais dos sócios
 """
