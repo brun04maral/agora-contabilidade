@@ -126,16 +126,9 @@ class MainWindow(ctk.CTkFrame):
 
     def show_boletins(self):
         """Show boletins screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.boletins import BoletinsScreen
+        screen = BoletinsScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="📄 Boletins\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_clientes(self):
