@@ -133,16 +133,9 @@ class MainWindow(ctk.CTkFrame):
 
     def show_clientes(self):
         """Show clientes screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.clientes import ClientesScreen
+        screen = ClientesScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="👥 Clientes\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_fornecedores(self):
