@@ -194,7 +194,12 @@ class DataImporter:
 
                 # Parse datas
                 data_inicio = self.parse_date(projeto_data.get('data_inicio'))
+                data_fim = self.parse_date(projeto_data.get('data_fim'))
                 data_faturacao = self.parse_date(projeto_data.get('data_faturacao'))
+                data_vencimento = self.parse_date(projeto_data.get('data_vencimento'))
+
+                # Nota: data_recebimento não existe no modelo Projeto
+                # Se fornecida, usar como data_faturacao se estado=RECEBIDO
                 data_recebimento = self.parse_date(projeto_data.get('data_recebimento'))
 
                 # Parse estado
@@ -204,14 +209,19 @@ class DataImporter:
                 except:
                     estado = EstadoProjeto.NAO_FATURADO
 
+                # Se projeto RECEBIDO e tem data_recebimento mas não tem data_faturacao
+                if estado == EstadoProjeto.RECEBIDO and data_recebimento and not data_faturacao:
+                    data_faturacao = data_recebimento
+
                 success, projeto, msg = self.projetos_manager.criar(
                     tipo=tipo,
                     cliente_id=cliente_id,
                     descricao=projeto_data.get('descricao', ''),
                     valor_sem_iva=projeto_data.get('valor_sem_iva', 0),
                     data_inicio=data_inicio,
+                    data_fim=data_fim,
                     data_faturacao=data_faturacao,
-                    data_recebimento=data_recebimento,
+                    data_vencimento=data_vencimento,
                     premio_bruno=projeto_data.get('premio_bruno', 0),
                     premio_rafael=projeto_data.get('premio_rafael', 0),
                     estado=estado,
@@ -430,11 +440,49 @@ def main():
         print("\n❌ Importação cancelada.")
         sys.exit(0)
 
+    # Ask if should clear existing data
+    print("\n🗑️  Limpar TODOS os dados existentes antes de importar?")
+    print("   ⚠️  Isto vai APAGAR:")
+    print("      • Todos os clientes")
+    print("      • Todos os fornecedores")
+    print("      • Todos os projetos")
+    print("      • Todas as despesas")
+    print("      • Todos os boletins")
+    print("   ✅ Isto NÃO vai apagar:")
+    print("      • Utilizadores (Bruno e Rafael)")
+
+    clear_response = input("\nLimpar tudo? (sim/não): ").strip().lower()
+    clear_all = clear_response in ['sim', 's', 'yes', 'y']
+
     # Setup database
     database_url = os.getenv("DATABASE_URL", "sqlite:///./agora_media.db")
     engine = create_engine(database_url)
     Session = sessionmaker(bind=engine)
     session = Session()
+
+    # Clear existing data if requested
+    if clear_all:
+        print("\n🗑️  A limpar dados existentes...")
+        try:
+            # Delete in reverse order (to respect foreign keys)
+            deleted_boletins = session.query(Boletim).delete()
+            deleted_despesas = session.query(Despesa).delete()
+            deleted_projetos = session.query(Projeto).delete()
+            deleted_fornecedores = session.query(Fornecedor).delete()
+            deleted_clientes = session.query(Cliente).delete()
+
+            session.commit()
+
+            print(f"   ✅ Apagados:")
+            print(f"      • {deleted_boletins} boletim(ns)")
+            print(f"      • {deleted_despesas} despesa(s)")
+            print(f"      • {deleted_projetos} projeto(s)")
+            print(f"      • {deleted_fornecedores} fornecedor(es)")
+            print(f"      • {deleted_clientes} cliente(s)")
+        except Exception as e:
+            print(f"   ❌ Erro ao limpar dados: {e}")
+            session.rollback()
+            sys.exit(1)
 
     # Import data
     importer = DataImporter(session)

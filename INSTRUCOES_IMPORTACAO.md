@@ -34,9 +34,10 @@ Tenho uma app Python com os seguintes modelos de dados:
    - cliente_nome (para fazer match)
    - descricao
    - valor_sem_iva
-   - data_inicio, data_faturacao, data_recebimento
+   - data_inicio, data_fim, data_faturacao, data_vencimento
    - premio_bruno, premio_rafael (para projetos EMPRESA)
    - estado: "NAO_FATURADO", "FATURADO" ou "RECEBIDO"
+   - nota: Se tens "data_recebimento" no Excel, usa como data_faturacao para projetos RECEBIDOS
 
 4. DESPESAS:
    - tipo: "FIXA_MENSAL", "PESSOAL_BRUNO", "PESSOAL_RAFAEL", "EQUIPAMENTO" ou "PROJETO"
@@ -100,8 +101,9 @@ TAREFA:
       "descricao": "Descrição do Projeto",
       "valor_sem_iva": 5000.00,
       "data_inicio": "2024-01-15",
-      "data_faturacao": "2024-02-01",
-      "data_recebimento": "2024-03-01",
+      "data_fim": "2024-02-28",
+      "data_faturacao": "2024-03-01",
+      "data_vencimento": "2024-03-30",
       "premio_bruno": 0,
       "premio_rafael": 0,
       "estado": "RECEBIDO",
