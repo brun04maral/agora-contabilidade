@@ -125,6 +125,7 @@ class FornecedoresManager:
         nif: str = None,
         iban: str = None,
         morada: str = None,
+        pais: str = None,
         contacto: str = None,
         email: str = None,
         nota: str = None
@@ -142,6 +143,7 @@ class FornecedoresManager:
             nif: NIF/Tax ID
             iban: IBAN
             morada: Morada completa
+            pais: País (para cálculo de IVA)
             contacto: Contacto telefónico
             email: Email address
             nota: Notas adicionais
@@ -175,6 +177,7 @@ class FornecedoresManager:
                 nif=nif.strip() if nif else None,
                 iban=iban.strip() if iban else None,
                 morada=morada.strip() if morada else None,
+                pais=pais.strip() if pais else 'Portugal',
                 contacto=contacto.strip() if contacto else None,
                 email=email.strip() if email else None,
                 nota=nota.strip() if nota else None
