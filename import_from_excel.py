@@ -71,10 +71,14 @@ class ExcelImporter:
             'fornecedores': {'total': 0, 'sucesso': 0, 'erro': 0},
             'projetos': {'total': 0, 'sucesso': 0, 'erro': 0},
             'despesas': {'total': 0, 'sucesso': 0, 'erro': 0},
+            'boletins': {'total': 0, 'sucesso': 0, 'erro': 0},
             'despesas_fixas_pagas': 0,
             'ordenados': 0,
             'premios': {'bruno': Decimal('0'), 'rafael': Decimal('0')},
         }
+
+        # Armazenar prémios para adicionar aos projetos depois
+        self.premios_por_projeto = {}
 
         # Data de hoje para marcar fixas como PAGO
         self.hoje = date(2025, 10, 29)
@@ -390,7 +394,7 @@ class ExcelImporter:
         print(f"\n✅ Projetos: {self.stats['projetos']['sucesso']}/{self.stats['projetos']['total']}")
 
     def importar_despesas(self):
-        """Importa despesas - LÓGICA CORRIGIDA"""
+        """Importa despesas - LÓGICA CORRIGIDA (sem prémios e boletins)"""
         print("\n" + "=" * 80)
         print("📋 IMPORTANDO DESPESAS")
         print("=" * 80)
@@ -400,7 +404,9 @@ class ExcelImporter:
         # Filtrar linhas de dados
         df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#D', na=False)]
 
-        print(f"Total de despesas: {len(df_dados)}")
+        print(f"Total de registos DESPESAS: {len(df_dados)}")
+        print("(Prémios e Boletins serão processados separadamente)")
+        print()
 
         for idx, row in df_dados.iterrows():
             numero = self.safe_str(row.iloc[0])
@@ -411,6 +417,32 @@ class ExcelImporter:
             if not descricao:
                 continue
 
+            # ✅ CORREÇÃO 1: Verificar se é Prémio - NÃO criar como despesa
+            if tipo_str and ('prém' in str(tipo_str).lower() or 'premio' in str(tipo_str).lower()):
+                # Armazenar prémio para processar depois
+                projeto_numero = self.safe_str(row.iloc[5])
+                valor = self.safe_decimal(row.iloc[16]) if len(row) > 16 else self.safe_decimal(row.iloc[9])  # Col 16 = TOTAL c/IVA
+
+                if projeto_numero and valor:
+                    if projeto_numero not in self.premios_por_projeto:
+                        self.premios_por_projeto[projeto_numero] = {'bruno': Decimal('0'), 'rafael': Decimal('0')}
+
+                    if 'bruno' in str(credor_nome).lower():
+                        self.premios_por_projeto[projeto_numero]['bruno'] += valor
+                        self.stats['premios']['bruno'] += valor
+                    elif 'rafael' in str(credor_nome).lower():
+                        self.premios_por_projeto[projeto_numero]['rafael'] += valor
+                        self.stats['premios']['rafael'] += valor
+
+                    print(f"  🏆 {numero}: Prémio armazenado para {projeto_numero}")
+                continue  # NÃO criar despesa
+
+            # ✅ CORREÇÃO 2: Verificar se é Boletim (", Pessoal") - NÃO criar como despesa
+            if tipo_str and ', pessoal' in str(tipo_str).lower():
+                # Será processado em importar_boletins()
+                continue
+
+            # Processar despesas normais
             self.stats['despesas']['total'] += 1
 
             # Data
@@ -430,41 +462,36 @@ class ExcelImporter:
 
             projeto_numero = self.safe_str(row.iloc[5])
             periodicidade = self.safe_str(row.iloc[8])
+
+            # ✅ CORREÇÃO 3: Usar coluna 16 (TOTAL c/IVA) para valores
+            valor_com_iva = self.safe_decimal(row.iloc[16]) if len(row) > 16 else None
             valor_sem_iva = self.safe_decimal(row.iloc[9])
-            valor_com_iva = self.safe_decimal(row.iloc[12])
+
+            # Se não tem valor_com_iva, usar coluna 12
+            if not valor_com_iva and len(row) > 12:
+                valor_com_iva = self.safe_decimal(row.iloc[12])
+
             nota = self.safe_str(row.iloc[22]) if len(row) > 22 else None
 
-            # LÓGICA CORRIGIDA para determinar tipo
+            # Determinar tipo
             tipo = None
-            eh_premio = False
             eh_ordenado = False
 
-            # 1. Verificar se é Prémio
-            if tipo_str and ('prém' in str(tipo_str).lower() or 'premio' in str(tipo_str).lower()):
-                eh_premio = True
-                # Prémios são despesas pessoais - determinar de quem pelo credor
-                if 'bruno' in str(credor_nome).lower():
-                    tipo = TipoDespesa.PESSOAL_BRUNO
-                elif 'rafael' in str(credor_nome).lower():
-                    tipo = TipoDespesa.PESSOAL_RAFAEL
-                else:
-                    tipo = TipoDespesa.PROJETO
-
-            # 2. Verificar se é Ordenado
-            elif tipo_str and 'ordenado' in str(tipo_str).lower():
+            # 1. Verificar se é Ordenado
+            if tipo_str and 'ordenado' in str(tipo_str).lower():
                 eh_ordenado = True
                 tipo = TipoDespesa.FIXA_MENSAL
                 self.stats['ordenados'] += 1
 
-            # 3. Verificar se é Fixa Mensal (periodicidade "Mensal")
+            # 2. Verificar se é Fixa Mensal (periodicidade "Mensal")
             elif periodicidade and 'mensal' in str(periodicidade).lower():
                 tipo = TipoDespesa.FIXA_MENSAL
 
-            # 4. Verificar se é Equipamento
+            # 3. Verificar se é Equipamento
             elif tipo_str and 'equipamento' in str(tipo_str).lower():
                 tipo = TipoDespesa.EQUIPAMENTO
 
-            # 5. Default: PROJETO
+            # 4. Default: PROJETO
             else:
                 tipo = TipoDespesa.PROJETO
 
@@ -503,15 +530,7 @@ class ExcelImporter:
 
                 if success:
                     self.stats['despesas']['sucesso'] += 1
-
-                    # Acumular prémios
-                    if eh_premio and valor_sem_iva:
-                        if tipo == TipoDespesa.PESSOAL_BRUNO:
-                            self.stats['premios']['bruno'] += valor_sem_iva
-                        elif tipo == TipoDespesa.PESSOAL_RAFAEL:
-                            self.stats['premios']['rafael'] += valor_sem_iva
-
-                    tipo_icon = "🔧" if tipo == TipoDespesa.FIXA_MENSAL else ("🏆" if eh_premio else ("💰" if eh_ordenado else "💸"))
+                    tipo_icon = "🔧" if tipo == TipoDespesa.FIXA_MENSAL else ("💰" if eh_ordenado else "💸")
                     print(f"  ✅ {numero}: {tipo_icon} {descricao[:42]}")
                 else:
                     self.stats['despesas']['erro'] += 1
@@ -524,8 +543,145 @@ class ExcelImporter:
         print(f"\n✅ Despesas: {self.stats['despesas']['sucesso']}/{self.stats['despesas']['total']}")
         print(f"   🔧 Despesas fixas marcadas PAGO: {self.stats['despesas_fixas_pagas']}")
         print(f"   💰 Ordenados: {self.stats['ordenados']}")
-        print(f"   🏆 Prémios Bruno: €{float(self.stats['premios']['bruno']):,.2f}")
-        print(f"   🏆 Prémios Rafael: €{float(self.stats['premios']['rafael']):,.2f}")
+
+    def processar_premios(self):
+        """Adiciona prémios aos campos premio_bruno/premio_rafael dos projetos"""
+        print("\n" + "=" * 80)
+        print("🏆 PROCESSANDO PRÉMIOS")
+        print("=" * 80)
+
+        if not self.premios_por_projeto:
+            print("Nenhum prémio encontrado.")
+            return
+
+        print(f"Total de projetos com prémios: {len(self.premios_por_projeto)}")
+        print()
+
+        for projeto_numero, premios in self.premios_por_projeto.items():
+            if projeto_numero not in self.projetos_map:
+                print(f"  ⚠️  {projeto_numero}: Projeto não encontrado")
+                continue
+
+            projeto = self.projetos_map[projeto_numero]
+
+            # Atualizar prémios
+            if premios['bruno'] > 0:
+                projeto.premio_bruno = premios['bruno']
+            if premios['rafael'] > 0:
+                projeto.premio_rafael = premios['rafael']
+
+            # Salvar no banco
+            try:
+                self.session.add(projeto)
+                self.session.commit()
+
+                bruno_str = f"Bruno: €{float(premios['bruno']):,.2f}" if premios['bruno'] > 0 else ""
+                rafael_str = f"Rafael: €{float(premios['rafael']):,.2f}" if premios['rafael'] > 0 else ""
+                premios_str = " | ".join(filter(None, [bruno_str, rafael_str]))
+
+                print(f"  ✅ {projeto_numero}: {premios_str}")
+
+            except Exception as e:
+                self.session.rollback()
+                print(f"  ❌ {projeto_numero}: Erro ao atualizar - {e}")
+
+        print(f"\n✅ Prémios processados!")
+        print(f"   🏆 Total Bruno: €{float(self.stats['premios']['bruno']):,.2f}")
+        print(f"   🏆 Total Rafael: €{float(self.stats['premios']['rafael']):,.2f}")
+
+    def importar_boletins(self):
+        """Importa boletins como entidades Boletim (estado=PENDENTE, excluir outubro)"""
+        print("\n" + "=" * 80)
+        print("📄 IMPORTANDO BOLETINS")
+        print("=" * 80)
+
+        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=5)
+
+        # Filtrar linhas de dados
+        df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#D', na=False)]
+
+        # Filtrar boletins: tipo contém ", Pessoal"
+        boletins_df = df_dados[df_dados.iloc[:, 6].astype(str).str.contains(', Pessoal', case=False, na=False)]
+
+        print(f"Total de boletins (com outubro): {len(boletins_df)}")
+
+        # Excluir outubro 2025 (col 7 contém "OUT2025")
+        boletins_df = boletins_df[~boletins_df.iloc[:, 7].astype(str).str.contains('OUT2025', case=False, na=False)]
+
+        print(f"Total de boletins (sem outubro): {len(boletins_df)}")
+        print()
+
+        for idx, row in boletins_df.iterrows():
+            numero = self.safe_str(row.iloc[0])
+            credor_nome = self.safe_str(row.iloc[4])
+            descricao = self.safe_str(row.iloc[7])
+
+            if not credor_nome:
+                continue
+
+            self.stats['boletins']['total'] += 1
+
+            # Determinar sócio
+            socio = None
+            if 'bruno' in str(credor_nome).lower():
+                socio = Socio.BRUNO
+            elif 'rafael' in str(credor_nome).lower():
+                socio = Socio.RAFAEL
+            else:
+                print(f"  ⚠️  {numero}: Não foi possível determinar sócio de '{credor_nome}'")
+                continue
+
+            # Data de emissão
+            ano = self.safe_int(row.iloc[1])
+            mes = self.safe_int(row.iloc[2])
+            dia = self.safe_int(row.iloc[3])
+
+            data_emissao = None
+            if ano and mes and dia:
+                try:
+                    data_emissao = date(ano, mes, dia)
+                except:
+                    pass
+
+            if not data_emissao and len(row) > 19:
+                data_emissao = self.parse_date(row.iloc[19])
+
+            # ✅ USAR COLUNA 16 (TOTAL c/IVA)
+            valor = self.safe_decimal(row.iloc[16]) if len(row) > 16 else self.safe_decimal(row.iloc[9])
+
+            if not valor:
+                print(f"  ⚠️  {numero}: Sem valor")
+                continue
+
+            try:
+                success, boletim, msg = self.boletins_manager.emitir(
+                    socio=socio,
+                    data_emissao=data_emissao,
+                    valor=valor,
+                    descricao=descricao
+                    # emitir() já cria com estado=PENDENTE por padrão
+                )
+
+                if success:
+                    self.stats['boletins']['sucesso'] += 1
+                    socio_icon = "👤B" if socio == Socio.BRUNO else "👤R"
+                    print(f"  ✅ {numero}: {socio_icon} €{float(valor):,.2f} - {descricao[:40]}")
+                else:
+                    self.stats['boletins']['erro'] += 1
+                    print(f"  ❌ {numero}: {msg}")
+
+            except Exception as e:
+                self.stats['boletins']['erro'] += 1
+                print(f"  ❌ {numero}: Erro - {e}")
+
+        print(f"\n✅ Boletins: {self.stats['boletins']['sucesso']}/{self.stats['boletins']['total']}")
+
+        # Calcular totais por sócio
+        total_bruno = sum(b.valor for b in self.session.query(Boletim).filter_by(socio=Socio.BRUNO).all())
+        total_rafael = sum(b.valor for b in self.session.query(Boletim).filter_by(socio=Socio.RAFAEL).all())
+
+        print(f"   👤 Total Bruno: €{float(total_bruno):,.2f}")
+        print(f"   👤 Total Rafael: €{float(total_rafael):,.2f}")
 
     def executar(self, limpar_tudo=False):
         """Executa importação completa"""
@@ -562,10 +718,21 @@ class ExcelImporter:
 
         # Importar
         try:
+            # 1. Entidades base
             self.importar_clientes()
             self.importar_fornecedores()
+
+            # 2. Projetos (com prémios = 0 inicialmente)
             self.importar_projetos()
+
+            # 3. Despesas (SEM prémios e boletins)
             self.importar_despesas()
+
+            # 4. Processar prémios (adicionar aos campos dos projetos)
+            self.processar_premios()
+
+            # 5. Importar boletins separadamente
+            self.importar_boletins()
 
             # Resumo
             print("\n" + "=" * 80)
@@ -574,19 +741,21 @@ class ExcelImporter:
             print(f"✅ Clientes: {self.stats['clientes']['sucesso']}/{self.stats['clientes']['total']}")
             print(f"✅ Fornecedores: {self.stats['fornecedores']['sucesso']}/{self.stats['fornecedores']['total']}")
             print(f"✅ Projetos: {self.stats['projetos']['sucesso']}/{self.stats['projetos']['total']}")
-            print(f"✅ Despesas: {self.stats['despesas']['sucesso']}/{self.stats['despesas']['total']}")
+            print(f"✅ Despesas: {self.stats['despesas']['sucesso']}/{self.stats['despesas']['total']} (sem prémios e boletins)")
+            print(f"✅ Boletins: {self.stats['boletins']['sucesso']}/{self.stats['boletins']['total']} (sem outubro)")
             print()
             print(f"💰 Ordenados: {self.stats['ordenados']}")
-            print(f"🏆 Prémios Bruno: €{float(self.stats['premios']['bruno']):,.2f}")
-            print(f"🏆 Prémios Rafael: €{float(self.stats['premios']['rafael']):,.2f}")
+            print(f"🏆 Prémios Bruno: €{float(self.stats['premios']['bruno']):,.2f} (adicionados aos projetos)")
+            print(f"🏆 Prémios Rafael: €{float(self.stats['premios']['rafael']):,.2f} (adicionados aos projetos)")
             print()
             print("=" * 80)
-            print("✅ IMPORTAÇÃO CONCLUÍDA!")
+            print("✅ IMPORTAÇÃO CONCLUÍDA COM LÓGICA CORRETA!")
             print("=" * 80)
             print()
             print("Próximo passo:")
             print("  → Abrir a app: python3 main.py")
             print("  → Verificar dashboard 'Saldos Pessoais'")
+            print("  → Valores agora devem estar corretos!")
             print()
 
             return True
