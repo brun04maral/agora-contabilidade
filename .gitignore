@@ -181,3 +181,5 @@ cython_debug/
 .cursorindexingignore
 agora_media.db
 agora_media.db
+agora_media.db
+*.db
