@@ -317,7 +317,7 @@ class ExcelImporter:
         print("📋 IMPORTANDO PROJETOS")
         print("=" * 80)
 
-        df = pd.read_excel(self.xl, sheet_name='PROJETOS', header=3)
+        df = pd.read_excel(self.xl, sheet_name='PROJETOS', header=2)
 
         # Filtrar linhas de dados
         df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#P', na=False)]
@@ -413,7 +413,7 @@ class ExcelImporter:
         print("📋 IMPORTANDO DESPESAS")
         print("=" * 80)
 
-        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=5)
+        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=4)
 
         # Filtrar linhas de dados
         df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#D', na=False)]
@@ -615,7 +615,7 @@ class ExcelImporter:
         print("📄 IMPORTANDO BOLETINS")
         print("=" * 80)
 
-        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=5)
+        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=4)
 
         # Filtrar linhas de dados
         df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#D', na=False)]
