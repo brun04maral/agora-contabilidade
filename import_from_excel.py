@@ -20,38 +20,43 @@ import os
 from datetime import datetime, date
 from decimal import Decimal
 import pandas as pd
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
-# Adicionar diretório raiz ao path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Load environment
+load_dotenv()
 
-from database.connection import DatabaseConnection
+# Import models
 from database.models import (
+    Cliente, Fornecedor, Projeto, Despesa, Boletim,
     TipoProjeto, EstadoProjeto,
     TipoDespesa, EstadoDespesa,
     EstatutoFornecedor, Socio, EstadoBoletim
 )
-from managers.clientes_manager import ClientesManager
-from managers.fornecedores_manager import FornecedoresManager
-from managers.projetos_manager import ProjetosManager
-from managers.despesas_manager import DespesasManager
-from managers.boletins_manager import BoletinsManager
+
+# Import managers
+from logic.clientes import ClientesManager
+from logic.fornecedores import FornecedoresManager
+from logic.projetos import ProjetosManager
+from logic.despesas import DespesasManager
+from logic.boletins import BoletinsManager
 
 
 class ExcelImporter:
     """Importador direto do Excel"""
 
-    def __init__(self, excel_path='CONTABILIDADE_FINAL.xlsx'):
+    def __init__(self, session, excel_path='CONTABILIDADE_FINAL.xlsx'):
         self.excel_path = excel_path
         self.xl = None
-        self.db = DatabaseConnection()
-        self.session = self.db.get_session()
+        self.session = session
 
         # Managers
-        self.clientes_manager = ClientesManager(self.db)
-        self.fornecedores_manager = FornecedoresManager(self.db)
-        self.projetos_manager = ProjetosManager(self.db)
-        self.despesas_manager = DespesasManager(self.db)
-        self.boletins_manager = BoletinsManager(self.db)
+        self.clientes_manager = ClientesManager(session)
+        self.fornecedores_manager = FornecedoresManager(session)
+        self.projetos_manager = ProjetosManager(session)
+        self.despesas_manager = DespesasManager(session)
+        self.boletins_manager = BoletinsManager(session)
 
         # Mapeamentos para fazer lookup
         self.clientes_map = {}  # nome -> objeto Cliente
@@ -551,7 +556,6 @@ class ExcelImporter:
         # Limpar dados se solicitado
         if limpar_tudo:
             print("\n⚠️  A LIMPAR TODOS OS DADOS...")
-            from database.models import Cliente, Fornecedor, Projeto, Despesa, Boletim
 
             try:
                 self.session.query(Boletim).delete()
@@ -622,8 +626,14 @@ def main():
 
     print()
 
+    # Setup database
+    database_url = os.getenv("DATABASE_URL", "sqlite:///./agora_media.db")
+    engine = create_engine(database_url)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
     # Executar importação
-    importer = ExcelImporter()
+    importer = ExcelImporter(session)
     success = importer.executar(limpar_tudo=limpar)
 
     if not success:
