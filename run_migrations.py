@@ -23,23 +23,25 @@ def run_migrations():
     engine = create_engine(database_url)
 
     # Import migrations
-    from database.migrations import (
-        add_pais_to_fornecedor
-    )
+    import importlib
 
     migrations = [
-        ('003_add_pais_to_fornecedor', add_pais_to_fornecedor),
+        '003_add_pais_to_fornecedor',
     ]
 
     with engine.connect() as connection:
-        for name, migration_module in migrations:
-            print(f"Executando: {name}")
+        for migration_name in migrations:
+            print(f"Executando: {migration_name}")
             try:
-                migration_module.upgrade(connection)
+                # Importar módulo dinamicamente
+                module = importlib.import_module(f'database.migrations.{migration_name}')
+
+                # Executar upgrade
+                module.upgrade(connection)
                 connection.commit()
-                print(f"  ✅ {name} completado")
+                print(f"  ✅ {migration_name} completado")
             except Exception as e:
-                print(f"  ⚠️  {name} - {e}")
+                print(f"  ⚠️  {migration_name} - {e}")
                 # Pode ser que a coluna já exista
                 if 'duplicate column' in str(e).lower() or 'already exists' in str(e).lower():
                     print(f"     (coluna já existe, continuando...)")
