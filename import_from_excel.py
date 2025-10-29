@@ -48,7 +48,7 @@ from logic.boletins import BoletinsManager
 class ExcelImporter:
     """Importador direto do Excel - LÓGICA CORRIGIDA"""
 
-    def __init__(self, session, excel_path='CONTABILIDADE_FINAL.xlsx'):
+    def __init__(self, session, excel_path='CONTABILIDADE_FINAL_20251029.xlsx'):
         self.excel_path = excel_path
         self.xl = None
         self.session = session
@@ -491,11 +491,16 @@ class ExcelImporter:
             tipo = None
             eh_ordenado = False
 
-            # 1. Verificar se é Ordenado
-            if tipo_str and 'ordenado' in str(tipo_str).lower():
+            # 1. Verificar se é Ordenado ou Sub. Alimentação PESSOAL (pelo credor)
+            if tipo_str and ('ordenado' in str(tipo_str).lower() or 'sub. alimentação' in str(tipo_str).lower() or 'alimentação' in str(tipo_str).lower()):
                 eh_ordenado = True
-                tipo = TipoDespesa.FIXA_MENSAL
-                self.stats['ordenados'] += 1
+                # Verificar credor para determinar de quem é
+                if 'bruno' in str(credor_nome).lower():
+                    tipo = TipoDespesa.PESSOAL_BRUNO
+                elif 'rafael' in str(credor_nome).lower():
+                    tipo = TipoDespesa.PESSOAL_RAFAEL
+                else:
+                    tipo = TipoDespesa.FIXA_MENSAL
 
             # 2. Verificar se é Fixa Mensal (periodicidade "Mensal")
             elif periodicidade and 'mensal' in str(periodicidade).lower():
@@ -509,14 +514,15 @@ class ExcelImporter:
             else:
                 tipo = TipoDespesa.PROJETO
 
-            # Estado: Fixas mensais vencidas → PAGO
+            # Estado: Fixas mensais e despesas pessoais vencidas → PAGO
             estado = EstadoDespesa.ATIVO
             data_pagamento = None
 
-            if tipo == TipoDespesa.FIXA_MENSAL and data_vencimento and data_vencimento <= self.hoje:
+            if tipo in [TipoDespesa.FIXA_MENSAL, TipoDespesa.PESSOAL_BRUNO, TipoDespesa.PESSOAL_RAFAEL] and data_vencimento and data_vencimento <= self.hoje:
                 estado = EstadoDespesa.PAGO
                 data_pagamento = data_vencimento
-                self.stats['despesas_fixas_pagas'] += 1
+                if tipo == TipoDespesa.FIXA_MENSAL:
+                    self.stats['despesas_fixas_pagas'] += 1
 
             # Credor/Fornecedor ID
             credor_id = None
