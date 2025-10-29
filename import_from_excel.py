@@ -166,15 +166,18 @@ class ExcelImporter:
         # Se não é "Pessoal", é da empresa
         return TipoProjeto.EMPRESA
 
-    def mapear_estado_projeto(self, data_recebimento, data_faturacao):
+    def mapear_estado_projeto(self, data_recebimento, data_faturacao, data_vencimento):
         """
         Mapeia estado do projeto - LÓGICA CORRETA
 
         - Se tem data_recebimento → RECEBIDO
+        - Senão, se data_vencimento <= hoje → RECEBIDO (vencido = pago)
         - Senão, se tem data_faturacao → FATURADO
         - Senão → NAO_FATURADO
         """
         if data_recebimento:
+            return EstadoProjeto.RECEBIDO
+        elif data_vencimento and data_vencimento <= self.hoje:
             return EstadoProjeto.RECEBIDO
         elif data_faturacao:
             return EstadoProjeto.FATURADO
@@ -346,7 +349,7 @@ class ExcelImporter:
 
             # Mapear tipo e estado
             tipo = self.mapear_tipo_projeto(estado_str, owner_str)
-            estado = self.mapear_estado_projeto(data_recebimento, data_faturacao)
+            estado = self.mapear_estado_projeto(data_recebimento, data_faturacao, data_vencimento)
 
             # Se RECEBIDO e tem data_recebimento mas não tem data_faturacao, usar recebimento
             if estado == EstadoProjeto.RECEBIDO and data_recebimento and not data_faturacao:
@@ -378,16 +381,27 @@ class ExcelImporter:
                 )
 
                 if success:
-                    self.stats['projetos']['sucesso'] += 1
-                    self.projetos_map[numero] = projeto
-                    tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else ("👤B" if tipo == TipoProjeto.PESSOAL_BRUNO else "👤R")
-                    estado_icon = "✅" if estado == EstadoProjeto.RECEBIDO else ("📄" if estado == EstadoProjeto.FATURADO else "⏳")
-                    print(f"  {estado_icon} {numero}: {tipo_icon} {descricao[:45]}")
+                    try:
+                        # Manter número do Excel
+                        projeto.numero = numero
+                        self.session.add(projeto)
+                        self.session.commit()
+
+                        self.stats['projetos']['sucesso'] += 1
+                        self.projetos_map[numero] = projeto
+                        tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else ("👤B" if tipo == TipoProjeto.PESSOAL_BRUNO else "👤R")
+                        estado_icon = "✅" if estado == EstadoProjeto.RECEBIDO else ("📄" if estado == EstadoProjeto.FATURADO else "⏳")
+                        print(f"  {estado_icon} {numero}: {tipo_icon} {descricao[:45]}")
+                    except Exception as e:
+                        self.session.rollback()
+                        self.stats['projetos']['erro'] += 1
+                        print(f"  ⚠️  {numero}: DUPLICADO - {descricao[:40]}")
                 else:
                     self.stats['projetos']['erro'] += 1
                     print(f"  ❌ {numero}: {descricao[:45]} - {msg}")
 
             except Exception as e:
+                self.session.rollback()
                 self.stats['projetos']['erro'] += 1
                 print(f"  ❌ {numero}: {descricao[:45]} - Erro: {e}")
 
