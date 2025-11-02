@@ -278,8 +278,7 @@ class DashboardMelhorado(ctk.CTkFrame):
                 card,
                 text=subtitle,
                 font=ctk.CTkFont(size=11),
-                text_color="white",
-                opacity=0.8
+                text_color=("gray90", "gray70")  # Cor mais suave para simular opacidade
             )
             subtitle_label.pack(pady=(0, 15))
 
