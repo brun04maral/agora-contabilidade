@@ -559,7 +559,7 @@ class ExcelImporter:
 
                 if success:
                     self.stats['despesas']['sucesso'] += 1
-                    tipo_icon = "🔧" if tipo == TipoDespesa.FIXA_MENSAL else ("💰" if eh_ordenado else "💸")
+                    tipo_icon = "🔧" if tipo == TipoDespesa.FIXA_MENSAL else "💸"
                     print(f"  ✅ {numero}: {tipo_icon} {descricao[:42]}")
                 else:
                     self.stats['despesas']['erro'] += 1
@@ -619,7 +619,7 @@ class ExcelImporter:
         print(f"   🏆 Total Rafael: €{float(self.stats['premios']['rafael']):,.2f}")
 
     def importar_boletins(self):
-        """Importa boletins como entidades Boletim (estado=PENDENTE, excluir outubro)"""
+        """Importa boletins como entidades Boletim (PAGO se vencido, PENDENTE caso contrário)"""
         print("\n" + "=" * 80)
         print("📄 IMPORTANDO BOLETINS")
         print("=" * 80)
@@ -642,6 +642,9 @@ class ExcelImporter:
         print(f"Total de boletins (sem outubro): {len(boletins_df)}")
         print()
 
+        boletins_pagos = 0
+        boletins_pendentes = 0
+
         for idx, row in boletins_df.iterrows():
             numero = self.safe_str(row.iloc[0])
             credor_nome = self.safe_str(row.iloc[4])
@@ -662,7 +665,7 @@ class ExcelImporter:
                 print(f"  ⚠️  {numero}: Não foi possível determinar sócio de '{credor_nome}'")
                 continue
 
-            # Data de emissão
+            # Data de emissão (usar ANO/MÊS/DIA)
             ano = self.safe_int(row.iloc[1])
             mes = self.safe_int(row.iloc[2])
             dia = self.safe_int(row.iloc[3])
@@ -677,6 +680,12 @@ class ExcelImporter:
             if not data_emissao and len(row) > 19:
                 data_emissao = self.parse_date(row.iloc[19])
 
+            # ✅ Data de vencimento: APENAS da coluna 19 (não construir de ANO/MÊS/DIA)
+            # Isto porque a fórmula CAIXA usa coluna T (=19) explicitamente
+            data_vencimento = None
+            if len(row) > 19:
+                data_vencimento = self.parse_date(row.iloc[19])
+
             # ✅ USAR COLUNA 16 (TOTAL c/IVA)
             valor = self.safe_decimal(row.iloc[16]) if len(row) > 16 else self.safe_decimal(row.iloc[9])
 
@@ -690,13 +699,21 @@ class ExcelImporter:
                     data_emissao=data_emissao,
                     valor=valor,
                     descricao=descricao
-                    # emitir() já cria com estado=PENDENTE por padrão
                 )
 
                 if success:
+                    # ✅ Se vencido, marcar como PAGO
+                    if data_vencimento and data_vencimento <= self.hoje:
+                        self.boletins_manager.marcar_como_pago(boletim.id, data_vencimento)
+                        boletins_pagos += 1
+                        estado_icon = "💰"
+                    else:
+                        boletins_pendentes += 1
+                        estado_icon = "⏳"
+
                     self.stats['boletins']['sucesso'] += 1
                     socio_icon = "👤B" if socio == Socio.BRUNO else "👤R"
-                    print(f"  ✅ {numero}: {socio_icon} €{float(valor):,.2f} - {descricao[:40]}")
+                    print(f"  ✅ {numero}: {socio_icon} {estado_icon} €{float(valor):,.2f} - {descricao[:40]}")
                 else:
                     self.stats['boletins']['erro'] += 1
                     print(f"  ❌ {numero}: {msg}")
@@ -706,6 +723,8 @@ class ExcelImporter:
                 print(f"  ❌ {numero}: Erro - {e}")
 
         print(f"\n✅ Boletins: {self.stats['boletins']['sucesso']}/{self.stats['boletins']['total']}")
+        print(f"   💰 PAGOS: {boletins_pagos}")
+        print(f"   ⏳ PENDENTES: {boletins_pendentes}")
 
         # Calcular totais por sócio
         total_bruno = sum(b.valor for b in self.session.query(Boletim).filter_by(socio=Socio.BRUNO).all())
