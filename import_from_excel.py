@@ -558,9 +558,19 @@ class ExcelImporter:
                 )
 
                 if success:
-                    self.stats['despesas']['sucesso'] += 1
-                    tipo_icon = "🔧" if tipo == TipoDespesa.FIXA_MENSAL else "💸"
-                    print(f"  ✅ {numero}: {tipo_icon} {descricao[:42]}")
+                    try:
+                        # Manter número do Excel
+                        despesa.numero = numero
+                        self.session.add(despesa)
+                        self.session.commit()
+
+                        self.stats['despesas']['sucesso'] += 1
+                        tipo_icon = "🔧" if tipo == TipoDespesa.FIXA_MENSAL else "💸"
+                        print(f"  ✅ {numero}: {tipo_icon} {descricao[:42]}")
+                    except Exception as e:
+                        self.session.rollback()
+                        self.stats['despesas']['erro'] += 1
+                        print(f"  ❌ {numero}: Erro ao atualizar número - {e}")
                 else:
                     self.stats['despesas']['erro'] += 1
                     print(f"  ❌ {numero}: {descricao[:42]} - {msg}")
