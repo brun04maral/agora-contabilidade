@@ -92,16 +92,9 @@ class MainWindow(ctk.CTkFrame):
 
     def show_dashboard(self):
         """Show dashboard screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.dashboard_melhorado import DashboardMelhorado
+        screen = DashboardMelhorado(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="📊 Dashboard\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_saldos(self):
@@ -112,72 +105,37 @@ class MainWindow(ctk.CTkFrame):
 
     def show_projetos(self):
         """Show projetos screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.projetos import ProjetosScreen
+        screen = ProjetosScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="📁 Projetos\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_despesas(self):
         """Show despesas screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.despesas import DespesasScreen
+        screen = DespesasScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="💸 Despesas\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_boletins(self):
         """Show boletins screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.boletins import BoletinsScreen
+        screen = BoletinsScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="📄 Boletins\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_clientes(self):
         """Show clientes screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.clientes import ClientesScreen
+        screen = ClientesScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="👥 Clientes\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_fornecedores(self):
         """Show fornecedores screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        from ui.screens.fornecedores import FornecedoresScreen
+        screen = FornecedoresScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="🏢 Fornecedores\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_settings(self):

@@ -68,12 +68,17 @@ class App(ctk.CTk):
 
             # Verify token is still valid
             if self.auth_manager:
-                valid, updated_user_data = self.auth_manager.verify_token(token)
+                try:
+                    valid, updated_user_data = self.auth_manager.verify_token(token)
 
-                if valid:
-                    # Session is valid, show main app
-                    self.show_main_app(updated_user_data or user_data)
-                    return
+                    if valid:
+                        # Session is valid, show main app
+                        self.show_main_app(updated_user_data or user_data)
+                        return
+                except Exception as e:
+                    print(f"Token verification error: {e}")
+                    # Clear invalid session
+                    self.session_manager.clear_session()
 
         # No valid session, show login screen
         self.show_login_screen()

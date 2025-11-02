@@ -33,6 +33,7 @@ class Fornecedor(Base):
     nif = Column(String(20), nullable=True)
     iban = Column(String(50), nullable=True)
     morada = Column(Text, nullable=True)
+    pais = Column(String(100), nullable=True, default='Portugal')  # País para cálculo de IVA
     contacto = Column(String(50), nullable=True)
     email = Column(String(255), nullable=True)
     nota = Column(Text, nullable=True)
@@ -59,6 +60,7 @@ class Fornecedor(Base):
             'nif': self.nif,
             'iban': self.iban,
             'morada': self.morada,
+            'pais': self.pais,
             'contacto': self.contacto,
             'email': self.email,
             'nota': self.nota,
