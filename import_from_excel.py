@@ -808,6 +808,12 @@ class ExcelImporter:
             print(f"🏆 Prémios Bruno: €{float(self.stats['premios']['bruno']):,.2f} (adicionados aos projetos)")
             print(f"🏆 Prémios Rafael: €{float(self.stats['premios']['rafael']):,.2f} (adicionados aos projetos)")
             print()
+
+            # CRÍTICO: Fazer commit final de todos os dados!
+            print("💾 A gravar todos os dados na base de dados...")
+            self.session.commit()
+            print("   ✅ Dados gravados com sucesso!")
+
             print("=" * 80)
             print("✅ IMPORTAÇÃO CONCLUÍDA COM LÓGICA CORRETA!")
             print("=" * 80)
@@ -824,6 +830,9 @@ class ExcelImporter:
             print(f"\n❌ Erro durante importação: {e}")
             import traceback
             traceback.print_exc()
+            print("\n⚠️  A fazer rollback...")
+            self.session.rollback()
+            print("   ✅ Rollback concluído. Nenhuma alteração foi gravada.")
             return False
 
 
