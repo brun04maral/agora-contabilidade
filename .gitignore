@@ -183,3 +183,4 @@ agora_media.db
 agora_media.db
 agora_media.db
 *.db
+*.backup*
