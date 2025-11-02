@@ -451,8 +451,9 @@ class ExcelImporter:
                     print(f"  🏆 {numero}: Prémio armazenado para {projeto_numero}")
                 continue  # NÃO criar despesa
 
-            # ✅ CORREÇÃO 2: Verificar se é Boletim (", Pessoal") - NÃO criar como despesa
-            if tipo_str and ', pessoal' in str(tipo_str).lower():
+            # ✅ CORREÇÃO 2: Verificar se é Boletim (tipos específicos) - NÃO criar como despesa
+            # Boletins: "Deslocação, Pessoal", "Per Diem PT, Pessoal", "Per Diem FORA, Pessoal"
+            if tipo_str and any(x in str(tipo_str).lower() for x in ['deslocação, pessoal', 'per diem pt, pessoal', 'per diem fora, pessoal']):
                 # Será processado em importar_boletins()
                 continue
 
@@ -487,24 +488,32 @@ class ExcelImporter:
 
             nota = self.safe_str(row.iloc[22]) if len(row) > 22 else None
 
+            # Coluna U (índice 20) = OUT (indica quem paga despesas pessoais)
+            out_col = self.safe_str(row.iloc[20]) if len(row) > 20 else None
+
             # Determinar tipo
             tipo = None
-            eh_ordenado = False
 
-            # 1. Verificar se é Ordenado ou Sub. Alimentação PESSOAL (pelo credor)
-            if tipo_str and ('ordenado' in str(tipo_str).lower() or 'sub. alimentação' in str(tipo_str).lower() or 'alimentação' in str(tipo_str).lower()):
-                eh_ordenado = True
-                # Verificar credor para determinar de quem é
-                if 'bruno' in str(credor_nome).lower():
+            # ✅ CORREÇÃO: Ordem correta baseada nas fórmulas CAIXA
+            # 1. Periodicidade "Mensal" → FIXA_MENSAL (incluindo ordenados!)
+            if periodicidade and 'mensal' in str(periodicidade).lower():
+                tipo = TipoDespesa.FIXA_MENSAL
+
+            # 2. TIPO contém "Pessoal" → PESSOAL_* (baseado em coluna OUT)
+            elif tipo_str and 'pessoal' in str(tipo_str).lower():
+                # Verificar coluna OUT para determinar de quem é
+                if out_col and 'bruno' in str(out_col).lower():
                     tipo = TipoDespesa.PESSOAL_BRUNO
-                elif 'rafael' in str(credor_nome).lower():
+                elif out_col and 'rafael' in str(out_col).lower():
                     tipo = TipoDespesa.PESSOAL_RAFAEL
                 else:
-                    tipo = TipoDespesa.FIXA_MENSAL
-
-            # 2. Verificar se é Fixa Mensal (periodicidade "Mensal")
-            elif periodicidade and 'mensal' in str(periodicidade).lower():
-                tipo = TipoDespesa.FIXA_MENSAL
+                    # Se não tem OUT definido, tentar credor
+                    if 'bruno' in str(credor_nome).lower():
+                        tipo = TipoDespesa.PESSOAL_BRUNO
+                    elif 'rafael' in str(credor_nome).lower():
+                        tipo = TipoDespesa.PESSOAL_RAFAEL
+                    else:
+                        tipo = TipoDespesa.PROJETO
 
             # 3. Verificar se é Equipamento
             elif tipo_str and 'equipamento' in str(tipo_str).lower():
@@ -620,8 +629,10 @@ class ExcelImporter:
         # Filtrar linhas de dados
         df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#D', na=False)]
 
-        # Filtrar boletins: tipo contém ", Pessoal"
-        boletins_df = df_dados[df_dados.iloc[:, 6].astype(str).str.contains(', Pessoal', case=False, na=False)]
+        # Filtrar boletins: tipos específicos apenas
+        # "Deslocação, Pessoal", "Per Diem PT, Pessoal", "Per Diem FORA, Pessoal"
+        boletins_mask = df_dados.iloc[:, 6].astype(str).str.lower().str.contains('deslocação, pessoal|per diem pt, pessoal|per diem fora, pessoal', na=False)
+        boletins_df = df_dados[boletins_mask]
 
         print(f"Total de boletins (com outubro): {len(boletins_df)}")
 
