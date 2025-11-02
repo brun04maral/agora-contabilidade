@@ -200,7 +200,7 @@ class SaldosCalculator:
 
         # 1. Despesas fixas mensais (divididas por 2)
         query_despesas_fixas = self.db_session.query(
-            func.sum(Despesa.valor_sem_iva)
+            func.sum(Despesa.valor_com_iva)
         ).filter(
             Despesa.tipo == TipoDespesa.FIXA_MENSAL,
             Despesa.estado == EstadoDespesa.PAGO
@@ -218,11 +218,12 @@ class SaldosCalculator:
         despesas_fixas_total = query_despesas_fixas.scalar() or Decimal("0.00")
         despesas_fixas = despesas_fixas_total / Decimal("2.00")  # Divide por 2
 
-        # 2. Boletins emitidos (conta independentemente do estado)
+        # 2. Boletins PAGOS (apenas os que já foram pagos)
         query_boletins = self.db_session.query(
             func.sum(Boletim.valor)
         ).filter(
-            Boletim.socio == socio
+            Boletim.socio == socio,
+            Boletim.estado == EstadoBoletim.PAGO
         )
 
         if data_inicio:
@@ -238,7 +239,7 @@ class SaldosCalculator:
 
         # 3. Despesas pessoais excecionais
         query_despesas_pessoais = self.db_session.query(
-            func.sum(Despesa.valor_sem_iva)
+            func.sum(Despesa.valor_com_iva)
         ).filter(
             Despesa.tipo == tipo_despesa,
             Despesa.estado == EstadoDespesa.PAGO
@@ -377,9 +378,10 @@ class SaldosCalculator:
             Despesa.estado == EstadoDespesa.PAGO
         ).all()
 
-        # Boletins
+        # Boletins (apenas PAGOS)
         boletins = self.db_session.query(Boletim).filter(
-            Boletim.socio == socio
+            Boletim.socio == socio,
+            Boletim.estado == EstadoBoletim.PAGO
         ).all()
 
         return {
