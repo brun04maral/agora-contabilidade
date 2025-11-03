@@ -270,103 +270,107 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
         # Scrollable container
         scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=20, pady=20)
+        scroll.pack(fill="both", expand=True, padx=25, pady=25)
 
         # Tipo
-        ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
+        ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
         self.tipo_var = ctk.StringVar(value="Empresa")
         tipo_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        tipo_frame.pack(fill="x", pady=(0, 10))
+        tipo_frame.pack(fill="x", pady=(0, 18))
 
         ctk.CTkRadioButton(tipo_frame, text="Empresa", variable=self.tipo_var, value="EMPRESA").pack(side="left", padx=(0, 20))
         ctk.CTkRadioButton(tipo_frame, text="Pessoal Bruno", variable=self.tipo_var, value="PESSOAL_BRUNO").pack(side="left", padx=(0, 20))
         ctk.CTkRadioButton(tipo_frame, text="Pessoal Rafael", variable=self.tipo_var, value="PESSOAL_RAFAEL").pack(side="left")
 
         # Cliente
-        ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
+        ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
         clientes = self.manager.obter_clientes()
         cliente_options = ["(Nenhum)"] + [f"{c.numero} - {c.nome}" for c in clientes]
-        self.cliente_dropdown = ctk.CTkOptionMenu(scroll, values=cliente_options, width=400)
-        self.cliente_dropdown.pack(anchor="w", pady=(0, 10))
+        self.cliente_dropdown = ctk.CTkOptionMenu(scroll, values=cliente_options, width=400, height=35)
+        self.cliente_dropdown.pack(anchor="w", pady=(0, 18))
         self.clientes_map = {f"{c.numero} - {c.nome}": c.id for c in clientes}
 
         # Descrição
-        ctk.CTkLabel(scroll, text="Descrição *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.descricao_entry = ctk.CTkTextbox(scroll, height=80)
-        self.descricao_entry.pack(fill="x", pady=(0, 10))
+        ctk.CTkLabel(scroll, text="Descrição *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
+        self.descricao_entry = ctk.CTkTextbox(scroll, height=90)
+        self.descricao_entry.pack(fill="x", pady=(0, 18))
 
         # Valor
-        ctk.CTkLabel(scroll, text="Valor sem IVA *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.valor_entry = ctk.CTkEntry(scroll, placeholder_text="0.00")
-        self.valor_entry.pack(fill="x", pady=(0, 10))
+        ctk.CTkLabel(scroll, text="Valor sem IVA *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
+        self.valor_entry = ctk.CTkEntry(scroll, placeholder_text="0.00", height=35)
+        self.valor_entry.pack(fill="x", pady=(0, 18))
 
         # Datas
         datas_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        datas_frame.pack(fill="x", pady=(10, 10))
+        datas_frame.pack(fill="x", pady=(5, 18))
         datas_frame.grid_columnconfigure((0, 1), weight=1)
 
         # Data início
-        ctk.CTkLabel(datas_frame, text="Data Início", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 10))
-        self.data_inicio_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD")
-        self.data_inicio_entry.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(5, 10))
+        ctk.CTkLabel(datas_frame, text="Data Início", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 12))
+        self.data_inicio_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
+        self.data_inicio_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
 
         # Data fim
-        ctk.CTkLabel(datas_frame, text="Data Fim", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=1, sticky="w")
-        self.data_fim_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD")
-        self.data_fim_entry.grid(row=1, column=1, sticky="ew", pady=(5, 10))
+        ctk.CTkLabel(datas_frame, text="Data Fim", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=1, sticky="w")
+        self.data_fim_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
+        self.data_fim_entry.grid(row=1, column=1, sticky="ew", pady=(8, 12))
 
         # Data faturação
-        ctk.CTkLabel(datas_frame, text="Data Faturação", font=ctk.CTkFont(size=13, weight="bold")).grid(row=2, column=0, sticky="w", padx=(0, 10))
-        self.data_faturacao_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD")
-        self.data_faturacao_entry.grid(row=3, column=0, sticky="ew", padx=(0, 10), pady=(5, 10))
+        ctk.CTkLabel(datas_frame, text="Data Faturação", font=ctk.CTkFont(size=14, weight="bold")).grid(row=2, column=0, sticky="w", padx=(0, 12))
+        self.data_faturacao_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
+        self.data_faturacao_entry.grid(row=3, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
 
         # Data vencimento
-        ctk.CTkLabel(datas_frame, text="Data Vencimento", font=ctk.CTkFont(size=13, weight="bold")).grid(row=2, column=1, sticky="w")
-        self.data_vencimento_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD")
-        self.data_vencimento_entry.grid(row=3, column=1, sticky="ew", pady=(5, 10))
+        ctk.CTkLabel(datas_frame, text="Data Vencimento", font=ctk.CTkFont(size=14, weight="bold")).grid(row=2, column=1, sticky="w")
+        self.data_vencimento_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
+        self.data_vencimento_entry.grid(row=3, column=1, sticky="ew", pady=(8, 12))
 
         # Estado
-        ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Não Faturado", "Faturado", "Recebido"])
-        self.estado_dropdown.pack(anchor="w", pady=(0, 10))
+        ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
+        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Não Faturado", "Faturado", "Recebido"], height=35)
+        self.estado_dropdown.pack(anchor="w", pady=(0, 18))
 
         # Prémios (só para projetos EMPRESA)
         premios_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        premios_frame.pack(fill="x", pady=(10, 10))
+        premios_frame.pack(fill="x", pady=(5, 18))
         premios_frame.grid_columnconfigure((0, 1), weight=1)
 
-        ctk.CTkLabel(premios_frame, text="Prémio Bruno (€)", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 10))
-        self.premio_bruno_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00")
-        self.premio_bruno_entry.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(5, 10))
+        ctk.CTkLabel(premios_frame, text="Prémio Bruno (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 12))
+        self.premio_bruno_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=35)
+        self.premio_bruno_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
 
-        ctk.CTkLabel(premios_frame, text="Prémio Rafael (€)", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=1, sticky="w")
-        self.premio_rafael_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00")
-        self.premio_rafael_entry.grid(row=1, column=1, sticky="ew", pady=(5, 10))
+        ctk.CTkLabel(premios_frame, text="Prémio Rafael (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=1, sticky="w")
+        self.premio_rafael_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=35)
+        self.premio_rafael_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
 
         # Nota
-        ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.nota_entry = ctk.CTkTextbox(scroll, height=60)
+        ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
+        self.nota_entry = ctk.CTkTextbox(scroll, height=70)
         self.nota_entry.pack(fill="x", pady=(0, 10))
 
         # Buttons
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=20, pady=(0, 20))
+        btn_frame.pack(fill="x", padx=25, pady=(0, 25))
 
         cancel_btn = ctk.CTkButton(
             btn_frame,
             text="Cancelar",
             command=self.destroy,
-            width=120,
-            fg_color="gray",
-            hover_color="darkgray"
+            width=130,
+            height=40,
+            font=ctk.CTkFont(size=14),
+            fg_color=("#757575", "#616161"),
+            hover_color=("#616161", "#424242")
         )
         cancel_btn.pack(side="right", padx=5)
 
         save_btn = ctk.CTkButton(
             btn_frame,
-            text="Guardar",
+            text="💾 Guardar",
             command=self.guardar,
-            width=120,
+            width=150,
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold"),
             fg_color=("#4CAF50", "#388E3C"),
             hover_color=("#66BB6A", "#2E7D32")
         )

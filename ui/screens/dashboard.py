@@ -74,12 +74,12 @@ class DashboardScreen(ctk.CTkFrame):
         saldos_title = ctk.CTkLabel(
             scroll_frame,
             text="💰 Saldos Pessoais",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=22, weight="bold")
         )
-        saldos_title.pack(anchor="w", pady=(10, 10))
+        saldos_title.pack(anchor="w", pady=(15, 15))
 
         saldos_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        saldos_container.pack(fill="x", pady=(0, 30))
+        saldos_container.pack(fill="x", pady=(0, 35))
 
         # Bruno card
         self.bruno_card = self.create_saldo_card(saldos_container, "Bruno Amaral", "#4CAF50")
@@ -93,12 +93,12 @@ class DashboardScreen(ctk.CTkFrame):
         projetos_title = ctk.CTkLabel(
             scroll_frame,
             text="🎬 Projetos",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=22, weight="bold")
         )
-        projetos_title.pack(anchor="w", pady=(10, 10))
+        projetos_title.pack(anchor="w", pady=(15, 15))
 
         projetos_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        projetos_container.pack(fill="x", pady=(0, 30))
+        projetos_container.pack(fill="x", pady=(0, 35))
 
         # Stats cards
         self.total_projetos_card = self.create_stat_card(projetos_container, "Total", "0", "#9C27B0")
@@ -117,12 +117,12 @@ class DashboardScreen(ctk.CTkFrame):
         despesas_title = ctk.CTkLabel(
             scroll_frame,
             text="💸 Despesas",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=22, weight="bold")
         )
-        despesas_title.pack(anchor="w", pady=(10, 10))
+        despesas_title.pack(anchor="w", pady=(15, 15))
 
         despesas_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        despesas_container.pack(fill="x", pady=(0, 30))
+        despesas_container.pack(fill="x", pady=(0, 35))
 
         self.total_despesas_card = self.create_stat_card(despesas_container, "Total", "0", "#795548")
         self.total_despesas_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
@@ -137,12 +137,12 @@ class DashboardScreen(ctk.CTkFrame):
         boletins_title = ctk.CTkLabel(
             scroll_frame,
             text="📄 Boletins",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=22, weight="bold")
         )
-        boletins_title.pack(anchor="w", pady=(10, 10))
+        boletins_title.pack(anchor="w", pady=(15, 15))
 
         boletins_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        boletins_container.pack(fill="x", pady=(0, 30))
+        boletins_container.pack(fill="x", pady=(0, 35))
 
         self.total_boletins_card = self.create_stat_card(boletins_container, "Total", "0", "#607D8B")
         self.total_boletins_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
@@ -157,12 +157,12 @@ class DashboardScreen(ctk.CTkFrame):
         outros_title = ctk.CTkLabel(
             scroll_frame,
             text="📇 Clientes & Fornecedores",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=22, weight="bold")
         )
-        outros_title.pack(anchor="w", pady=(10, 10))
+        outros_title.pack(anchor="w", pady=(15, 15))
 
         outros_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        outros_container.pack(fill="x", pady=(0, 30))
+        outros_container.pack(fill="x", pady=(0, 35))
 
         self.total_clientes_card = self.create_stat_card(outros_container, "Clientes", "0", "#3F51B5")
         self.total_clientes_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
@@ -182,25 +182,31 @@ class DashboardScreen(ctk.CTkFrame):
         Returns:
             Card frame
         """
-        card = ctk.CTkFrame(parent, fg_color=color, corner_radius=10)
+        card = ctk.CTkFrame(
+            parent,
+            fg_color=color,
+            corner_radius=15,
+            border_width=2,
+            border_color=("#e0e0e0", "#3a3a3a")
+        )
 
         # Nome
         name_label = ctk.CTkLabel(
             card,
             text=nome,
-            font=ctk.CTkFont(size=18, weight="bold"),
+            font=ctk.CTkFont(size=19, weight="bold"),
             text_color="white"
         )
-        name_label.pack(pady=(20, 10))
+        name_label.pack(pady=(25, 10))
 
         # Valor
         value_label = ctk.CTkLabel(
             card,
             text="€ 0,00",
-            font=ctk.CTkFont(size=32, weight="bold"),
+            font=ctk.CTkFont(size=36, weight="bold"),
             text_color="white"
         )
-        value_label.pack(pady=(0, 20))
+        value_label.pack(pady=(5, 25))
 
         # Store reference to update later
         card.value_label = value_label
@@ -220,7 +226,13 @@ class DashboardScreen(ctk.CTkFrame):
         Returns:
             Card frame
         """
-        card = ctk.CTkFrame(parent, fg_color=color, corner_radius=10)
+        card = ctk.CTkFrame(
+            parent,
+            fg_color=color,
+            corner_radius=12,
+            border_width=2,
+            border_color=("#e0e0e0", "#3a3a3a")
+        )
 
         # Title
         title_label = ctk.CTkLabel(
@@ -229,16 +241,16 @@ class DashboardScreen(ctk.CTkFrame):
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color="white"
         )
-        title_label.pack(pady=(15, 5))
+        title_label.pack(pady=(18, 8))
 
         # Value
         value_label = ctk.CTkLabel(
             card,
             text=value,
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(size=32, weight="bold"),
             text_color="white"
         )
-        value_label.pack(pady=(0, 15))
+        value_label.pack(pady=(0, 18))
 
         # Store reference to update later
         card.value_label = value_label

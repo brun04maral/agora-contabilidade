@@ -43,8 +43,12 @@ class DataTable(ctk.CTkScrollableFrame):
 
     def create_header(self):
         """Create table header"""
-        header_frame = ctk.CTkFrame(self, fg_color=("#E0E0E0", "#2a2a2a"))
-        header_frame.pack(fill="x", padx=5, pady=(5, 0))
+        header_frame = ctk.CTkFrame(
+            self,
+            fg_color=("#efd578", "#d4bb5e"),
+            corner_radius=8
+        )
+        header_frame.pack(fill="x", padx=5, pady=(5, 10))
 
         # Configure columns
         total_width = sum(col.get('width', 100) for col in self.columns)
@@ -56,11 +60,12 @@ class DataTable(ctk.CTkScrollableFrame):
             label = ctk.CTkLabel(
                 header_frame,
                 text=col['label'],
-                font=ctk.CTkFont(size=12, weight="bold"),
+                font=ctk.CTkFont(size=13, weight="bold"),
                 width=col.get('width', 100),
-                anchor="w"
+                anchor="w",
+                text_color=("#1a1a1a", "#1a1a1a")
             )
-            label.grid(row=0, column=col_index, padx=10, pady=10, sticky="w")
+            label.grid(row=0, column=col_index, padx=10, pady=12, sticky="w")
             col_index += 1
 
         # Actions column
@@ -68,11 +73,12 @@ class DataTable(ctk.CTkScrollableFrame):
             label = ctk.CTkLabel(
                 header_frame,
                 text="Ações",
-                font=ctk.CTkFont(size=12, weight="bold"),
+                font=ctk.CTkFont(size=13, weight="bold"),
                 width=120,
-                anchor="center"
+                anchor="center",
+                text_color=("#1a1a1a", "#1a1a1a")
             )
-            label.grid(row=0, column=col_index, padx=10, pady=10)
+            label.grid(row=0, column=col_index, padx=10, pady=12)
 
     def set_data(self, data: List[Dict]):
         """
@@ -86,23 +92,30 @@ class DataTable(ctk.CTkScrollableFrame):
             row.destroy()
         self.rows = []
 
-        # Create new rows
-        for item in data:
-            self.add_row(item)
+        # Create new rows with alternating colors
+        for index, item in enumerate(data):
+            self.add_row(item, index)
 
-    def add_row(self, data: Dict):
+    def add_row(self, data: Dict, index: int = 0):
         """
         Add a single row
 
         Args:
             data: Row data dictionary
+            index: Row index for alternating colors
         """
+        # Alternating row colors for better readability
+        if index % 2 == 0:
+            bg_color = ("#f8f8f8", "#252525")
+        else:
+            bg_color = ("#ffffff", "#1e1e1e")
+
         row_frame = ctk.CTkFrame(
             self,
-            fg_color=("white", "#1e1e1e"),
-            corner_radius=5
+            fg_color=bg_color,
+            corner_radius=6
         )
-        row_frame.pack(fill="x", padx=5, pady=2)
+        row_frame.pack(fill="x", padx=5, pady=3)
 
         col_index = 0
         for col in self.columns:
