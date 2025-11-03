@@ -4,6 +4,8 @@ Sidebar component - Menu de navegação lateral
 """
 import customtkinter as ctk
 from typing import Callable, Optional
+from PIL import Image
+import os
 
 
 class Sidebar(ctk.CTkFrame):
@@ -39,34 +41,23 @@ class Sidebar(ctk.CTkFrame):
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
         logo_frame.pack(fill="x", padx=20, pady=(30, 40))
 
-        # Logo circle with "a"
-        logo_label = ctk.CTkLabel(
-            logo_frame,
-            text="a",
-            font=ctk.CTkFont(size=36, weight="bold"),
-            width=60,
-            height=60,
-            corner_radius=30,
-            fg_color=("#efd578", "#d4bb5e"),
-            text_color=("black", "black")
-        )
-        logo_label.pack(pady=(0, 15))
+        # Load logo image
+        logo_path = os.path.join(os.path.dirname(__file__), "..", "..", "media", "a + agora media production@0.5x.png")
+        if os.path.exists(logo_path):
+            logo_image = Image.open(logo_path)
+            logo_ctk = ctk.CTkImage(
+                light_image=logo_image,
+                dark_image=logo_image,
+                size=(100, 60)  # Adjust size as needed
+            )
+            logo_label = ctk.CTkLabel(
+                logo_frame,
+                image=logo_ctk,
+                text=""
+            )
+            logo_label.pack(pady=(0, 10))
 
-        title_label = ctk.CTkLabel(
-            logo_frame,
-            text="Agora Media",
-            font=ctk.CTkFont(size=18, weight="bold")
-        )
-        title_label.pack()
-
-        subtitle_label = ctk.CTkLabel(
-            logo_frame,
-            text="Production",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=("#efd578", "#d4bb5e")
-        )
-        subtitle_label.pack(pady=(0, 5))
-
+        # Subtitle
         version_label = ctk.CTkLabel(
             logo_frame,
             text="Contabilidade",

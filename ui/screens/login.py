@@ -4,6 +4,8 @@ Login screen UI using CustomTkinter
 """
 import customtkinter as ctk
 from typing import Callable, Optional
+from PIL import Image
+import os
 
 
 class LoginScreen(ctk.CTkFrame):
@@ -41,12 +43,28 @@ class LoginScreen(ctk.CTkFrame):
         login_container.grid_columnconfigure(0, weight=1)
 
         # Logo/Title
-        title_label = ctk.CTkLabel(
-            login_container,
-            text="Agora Media Production",
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        title_label.grid(row=0, column=0, pady=(100, 10), padx=20)
+        logo_path = os.path.join(os.path.dirname(__file__), "..", "..", "media", "AGORA media production@0.5x.png")
+        if os.path.exists(logo_path):
+            logo_image = Image.open(logo_path)
+            logo_ctk = ctk.CTkImage(
+                light_image=logo_image,
+                dark_image=logo_image,
+                size=(313, 80)  # Adjust size as needed
+            )
+            title_label = ctk.CTkLabel(
+                login_container,
+                image=logo_ctk,
+                text=""
+            )
+            title_label.grid(row=0, column=0, pady=(100, 20), padx=20)
+        else:
+            # Fallback to text if image not found
+            title_label = ctk.CTkLabel(
+                login_container,
+                text="AGORA\nMedia Production",
+                font=ctk.CTkFont(size=24, weight="bold")
+            )
+            title_label.grid(row=0, column=0, pady=(100, 10), padx=20)
 
         subtitle_label = ctk.CTkLabel(
             login_container,
