@@ -94,8 +94,8 @@ class MainWindow(ctk.CTkFrame):
 
     def show_dashboard(self):
         """Show dashboard screen"""
-        from ui.screens.dashboard_melhorado import DashboardMelhorado
-        screen = DashboardMelhorado(self.content_frame, self.db_session)
+        from ui.screens.dashboard import DashboardScreen
+        screen = DashboardScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
