@@ -899,17 +899,61 @@ class RelatoriosScreen(ctk.CTkFrame):
                 text_color="gray"
             ).pack(pady=10)
 
+    def _gerar_nome_ficheiro(self, extensao):
+        """Generate dynamic filename based on report type and filters"""
+        if not self.current_report_data:
+            return f"relatorio_{date.today().strftime('%Y%m%d')}.{extensao}"
+
+        tipo = self.current_report_data.get('tipo', 'relatorio')
+        data_str = date.today().strftime('%Y%m%d')
+
+        # Build filename components
+        parts = []
+
+        # Report type
+        if tipo == 'saldos_pessoais':
+            parts.append('Saldos')
+            # Add socio filter
+            socio_str = self.socio_filter.get()
+            if socio_str == "Bruno":
+                parts.append('Bruno')
+            elif socio_str == "Rafael":
+                parts.append('Rafael')
+            else:
+                parts.append('Ambos')
+        elif tipo == 'financeiro_mensal':
+            parts.append('FinanceiroMensal')
+        elif tipo == 'projetos':
+            parts.append('Projetos')
+            # Add tipo projeto filter
+            filtro = self.current_report_data.get('filtros', {}).get('tipo', 'Todos')
+            if filtro != 'Todos':
+                filtro_clean = filtro.replace(' ', '')
+                parts.append(filtro_clean)
+        else:
+            parts.append('Relatorio')
+
+        # Add date
+        parts.append(data_str)
+
+        # Build final filename
+        filename = '_'.join(parts) + '.' + extensao
+        return filename
+
     def exportar_pdf(self):
         """Export report to PDF"""
         if not self.current_report_data:
             messagebox.showwarning("Aviso", "Gere o preview do relatório primeiro!")
             return
 
+        # Generate dynamic filename
+        default_filename = self._gerar_nome_ficheiro('pdf')
+
         # Ask for save location
         filename = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
-            initialfile=f"relatorio_saldos_{date.today().strftime('%Y%m%d')}.pdf"
+            initialfile=default_filename
         )
 
         if filename:
@@ -925,11 +969,14 @@ class RelatoriosScreen(ctk.CTkFrame):
             messagebox.showwarning("Aviso", "Gere o preview do relatório primeiro!")
             return
 
+        # Generate dynamic filename
+        default_filename = self._gerar_nome_ficheiro('xlsx')
+
         # Ask for save location
         filename = filedialog.asksaveasfilename(
             defaultextension=".xlsx",
             filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
-            initialfile=f"relatorio_saldos_{date.today().strftime('%Y%m%d')}.xlsx"
+            initialfile=default_filename
         )
 
         if filename:

@@ -741,6 +741,117 @@ class RelatoriosManager:
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
             ]))
             elements.append(outs_table)
+            elements.append(Spacer(1, 0.5*cm))
+
+            # Helper para criar estilos de tabela detalhada
+            def create_detail_table_style():
+                return TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#424242')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                    ('TOPPADDING', (0, 0), (-1, -1), 6),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F5F5')]),
+                ])
+
+            # Detailed section heading style
+            detail_heading_style = ParagraphStyle(
+                'DetailHeading',
+                parent=styles['Heading3'],
+                fontSize=12,
+                textColor=colors.HexColor('#1976D2'),
+                spaceAfter=5,
+                spaceBefore=10
+            )
+
+            # Add detailed lists
+            elements.append(Paragraph(f"Detalhes - {socio_data['nome']}", heading_style))
+            elements.append(Spacer(1, 0.3*cm))
+
+            # Projetos Pessoais
+            if socio_data.get('projetos_pessoais_list'):
+                elements.append(Paragraph(f"💼 Projetos Pessoais ({len(socio_data['projetos_pessoais_list'])} items)", detail_heading_style))
+                proj_data = [['Nº', 'Cliente', 'Valor', 'Data']]
+                for proj in socio_data['projetos_pessoais_list']:
+                    proj_data.append([
+                        proj['numero'],
+                        proj['cliente'][:30],
+                        proj['valor_fmt'],
+                        proj['data']
+                    ])
+                proj_table = Table(proj_data, colWidths=[2*cm, 6*cm, 3*cm, 3*cm])
+                proj_table.setStyle(create_detail_table_style())
+                elements.append(proj_table)
+                elements.append(Spacer(1, 0.3*cm))
+
+            # Prémios
+            if socio_data.get('premios_list'):
+                elements.append(Paragraph(f"🏆 Prémios ({len(socio_data['premios_list'])} items)", detail_heading_style))
+                premio_data = [['Nº', 'Cliente', 'Prémio', 'Tipo']]
+                for premio in socio_data['premios_list']:
+                    premio_data.append([
+                        premio['numero'],
+                        premio['cliente'][:30],
+                        premio['premio_fmt'],
+                        premio['tipo']
+                    ])
+                premio_table = Table(premio_data, colWidths=[2*cm, 6*cm, 3*cm, 3*cm])
+                premio_table.setStyle(create_detail_table_style())
+                elements.append(premio_table)
+                elements.append(Spacer(1, 0.3*cm))
+
+            # Despesas Fixas (showing all, not just first 10)
+            if socio_data.get('despesas_fixas_list'):
+                elements.append(Paragraph(f"🏢 Despesas Fixas - 50% ({len(socio_data['despesas_fixas_list'])} items)", detail_heading_style))
+                desp_data = [['Nº', 'Fornecedor', 'Valor 50%', 'Data']]
+                for desp in socio_data['despesas_fixas_list']:
+                    desp_data.append([
+                        desp['numero'],
+                        desp['fornecedor'][:30],
+                        desp['valor_50_fmt'],
+                        desp['data']
+                    ])
+                desp_table = Table(desp_data, colWidths=[2*cm, 6*cm, 3*cm, 3*cm])
+                desp_table.setStyle(create_detail_table_style())
+                elements.append(desp_table)
+                elements.append(Spacer(1, 0.3*cm))
+
+            # Boletins
+            if socio_data.get('boletins_list'):
+                elements.append(Paragraph(f"📄 Boletins Pagos ({len(socio_data['boletins_list'])} items)", detail_heading_style))
+                bol_data = [['Nº', 'Descrição', 'Valor', 'Data Pag.']]
+                for bol in socio_data['boletins_list']:
+                    bol_data.append([
+                        bol['numero'],
+                        bol['descricao'][:35],
+                        bol['valor_fmt'],
+                        bol['data_pagamento']
+                    ])
+                bol_table = Table(bol_data, colWidths=[2*cm, 6*cm, 3*cm, 3*cm])
+                bol_table.setStyle(create_detail_table_style())
+                elements.append(bol_table)
+                elements.append(Spacer(1, 0.3*cm))
+
+            # Despesas Pessoais
+            if socio_data.get('despesas_pessoais_list'):
+                elements.append(Paragraph(f"💳 Despesas Pessoais ({len(socio_data['despesas_pessoais_list'])} items)", detail_heading_style))
+                desp_pes_data = [['Nº', 'Fornecedor', 'Valor', 'Data']]
+                for desp in socio_data['despesas_pessoais_list']:
+                    desp_pes_data.append([
+                        desp['numero'],
+                        desp['fornecedor'][:30],
+                        desp['valor_fmt'],
+                        desp['data']
+                    ])
+                desp_pes_table = Table(desp_pes_data, colWidths=[2*cm, 6*cm, 3*cm, 3*cm])
+                desp_pes_table.setStyle(create_detail_table_style())
+                elements.append(desp_pes_table)
+                elements.append(Spacer(1, 0.3*cm))
+
             elements.append(Spacer(1, 1*cm))
 
         # Build PDF
@@ -975,7 +1086,155 @@ class RelatoriosManager:
             ws[f'B{row}'].alignment = Alignment(horizontal='right')
             ws[f'A{row}'].fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
             ws[f'B{row}'].fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
-            row += 3
+            row += 2
+
+            # Detailed Lists
+            # First, adjust column widths for details
+            ws.column_dimensions['A'].width = 12
+            ws.column_dimensions['B'].width = 35
+            ws.column_dimensions['C'].width = 15
+            ws.column_dimensions['D'].width = 15
+
+            # Detailed section title
+            ws.merge_cells(f'A{row}:D{row}')
+            cell = ws[f'A{row}']
+            cell.value = f"Detalhes - {socio_data['nome']}"
+            cell.font = Font(size=13, bold=True, color="1976D2")
+            cell.alignment = Alignment(horizontal='center')
+            cell.fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
+            row += 2
+
+            # Helper to create detail headers
+            def create_detail_header(row_num, title, cols='A:D'):
+                ws.merge_cells(f'{cols[0]}{row_num}:{cols[-1]}{row_num}')
+                cell = ws[f'{cols[0]}{row_num}']
+                cell.value = title
+                cell.font = Font(size=11, bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="424242", end_color="424242", fill_type="solid")
+                cell.alignment = Alignment(horizontal='left')
+                return row_num + 1
+
+            # Projetos Pessoais
+            if socio_data.get('projetos_pessoais_list'):
+                row = create_detail_header(row, f"💼 Projetos Pessoais ({len(socio_data['projetos_pessoais_list'])} items)")
+
+                # Column headers
+                ws[f'A{row}'].value = 'Nº'
+                ws[f'B{row}'].value = 'Cliente'
+                ws[f'C{row}'].value = 'Valor'
+                ws[f'D{row}'].value = 'Data'
+                for col in ['A', 'B', 'C', 'D']:
+                    ws[f'{col}{row}'].font = Font(bold=True)
+                    ws[f'{col}{row}'].fill = PatternFill(start_color="BDBDBD", end_color="BDBDBD", fill_type="solid")
+                row += 1
+
+                # Data rows
+                for proj in socio_data['projetos_pessoais_list']:
+                    ws[f'A{row}'].value = proj['numero']
+                    ws[f'B{row}'].value = proj['cliente']
+                    ws[f'C{row}'].value = proj['valor_fmt']
+                    ws[f'C{row}'].alignment = Alignment(horizontal='right')
+                    ws[f'D{row}'].value = proj['data']
+                    row += 1
+                row += 1
+
+            # Prémios
+            if socio_data.get('premios_list'):
+                row = create_detail_header(row, f"🏆 Prémios ({len(socio_data['premios_list'])} items)")
+
+                # Column headers
+                ws[f'A{row}'].value = 'Nº'
+                ws[f'B{row}'].value = 'Cliente'
+                ws[f'C{row}'].value = 'Prémio'
+                ws[f'D{row}'].value = 'Tipo'
+                for col in ['A', 'B', 'C', 'D']:
+                    ws[f'{col}{row}'].font = Font(bold=True)
+                    ws[f'{col}{row}'].fill = PatternFill(start_color="BDBDBD", end_color="BDBDBD", fill_type="solid")
+                row += 1
+
+                # Data rows
+                for premio in socio_data['premios_list']:
+                    ws[f'A{row}'].value = premio['numero']
+                    ws[f'B{row}'].value = premio['cliente']
+                    ws[f'C{row}'].value = premio['premio_fmt']
+                    ws[f'C{row}'].alignment = Alignment(horizontal='right')
+                    ws[f'D{row}'].value = premio['tipo']
+                    row += 1
+                row += 1
+
+            # Despesas Fixas
+            if socio_data.get('despesas_fixas_list'):
+                row = create_detail_header(row, f"🏢 Despesas Fixas - 50% ({len(socio_data['despesas_fixas_list'])} items)")
+
+                # Column headers
+                ws[f'A{row}'].value = 'Nº'
+                ws[f'B{row}'].value = 'Fornecedor'
+                ws[f'C{row}'].value = 'Valor 50%'
+                ws[f'D{row}'].value = 'Data'
+                for col in ['A', 'B', 'C', 'D']:
+                    ws[f'{col}{row}'].font = Font(bold=True)
+                    ws[f'{col}{row}'].fill = PatternFill(start_color="BDBDBD", end_color="BDBDBD", fill_type="solid")
+                row += 1
+
+                # Data rows
+                for desp in socio_data['despesas_fixas_list']:
+                    ws[f'A{row}'].value = desp['numero']
+                    ws[f'B{row}'].value = desp['fornecedor']
+                    ws[f'C{row}'].value = desp['valor_50_fmt']
+                    ws[f'C{row}'].alignment = Alignment(horizontal='right')
+                    ws[f'D{row}'].value = desp['data']
+                    row += 1
+                row += 1
+
+            # Boletins
+            if socio_data.get('boletins_list'):
+                row = create_detail_header(row, f"📄 Boletins Pagos ({len(socio_data['boletins_list'])} items)")
+
+                # Column headers
+                ws[f'A{row}'].value = 'Nº'
+                ws[f'B{row}'].value = 'Descrição'
+                ws[f'C{row}'].value = 'Valor'
+                ws[f'D{row}'].value = 'Data Pag.'
+                for col in ['A', 'B', 'C', 'D']:
+                    ws[f'{col}{row}'].font = Font(bold=True)
+                    ws[f'{col}{row}'].fill = PatternFill(start_color="BDBDBD", end_color="BDBDBD", fill_type="solid")
+                row += 1
+
+                # Data rows
+                for bol in socio_data['boletins_list']:
+                    ws[f'A{row}'].value = bol['numero']
+                    ws[f'B{row}'].value = bol['descricao']
+                    ws[f'C{row}'].value = bol['valor_fmt']
+                    ws[f'C{row}'].alignment = Alignment(horizontal='right')
+                    ws[f'D{row}'].value = bol['data_pagamento']
+                    row += 1
+                row += 1
+
+            # Despesas Pessoais
+            if socio_data.get('despesas_pessoais_list'):
+                row = create_detail_header(row, f"💳 Despesas Pessoais ({len(socio_data['despesas_pessoais_list'])} items)")
+
+                # Column headers
+                ws[f'A{row}'].value = 'Nº'
+                ws[f'B{row}'].value = 'Fornecedor'
+                ws[f'C{row}'].value = 'Valor'
+                ws[f'D{row}'].value = 'Data'
+                for col in ['A', 'B', 'C', 'D']:
+                    ws[f'{col}{row}'].font = Font(bold=True)
+                    ws[f'{col}{row}'].fill = PatternFill(start_color="BDBDBD", end_color="BDBDBD", fill_type="solid")
+                row += 1
+
+                # Data rows
+                for desp in socio_data['despesas_pessoais_list']:
+                    ws[f'A{row}'].value = desp['numero']
+                    ws[f'B{row}'].value = desp['fornecedor']
+                    ws[f'C{row}'].value = desp['valor_fmt']
+                    ws[f'C{row}'].alignment = Alignment(horizontal='right')
+                    ws[f'D{row}'].value = desp['data']
+                    row += 1
+                row += 1
+
+            row += 2
 
         # Save
         wb.save(filename)
