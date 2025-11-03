@@ -148,6 +148,33 @@ class RelatoriosScreen(ctk.CTkFrame):
         )
         self.socio_filter.pack(fill="x")
 
+        # Tipo de Projeto (para relatório de saldos)
+        self.tipo_projeto_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        self.tipo_projeto_frame.pack(fill="x", padx=20, pady=(10, 20))
+
+        ctk.CTkLabel(
+            self.tipo_projeto_frame,
+            text="Filtrar Projetos",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.tipo_projeto_var = ctk.StringVar(value="todos")
+        tipo_projeto_options = [
+            ("Todos", "todos"),
+            ("Apenas Empresa", "empresa"),
+            ("Apenas Pessoais Bruno", "bruno"),
+            ("Apenas Pessoais Rafael", "rafael")
+        ]
+
+        for label, value in tipo_projeto_options:
+            radio = ctk.CTkRadioButton(
+                self.tipo_projeto_frame,
+                text=label,
+                variable=self.tipo_projeto_var,
+                value=value
+            )
+            radio.pack(anchor="w", pady=2)
+
         # Buttons
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(20, 20), side="bottom")
@@ -212,11 +239,13 @@ class RelatoriosScreen(ctk.CTkFrame):
 
     def on_tipo_changed(self, value):
         """Handle report type change"""
-        # Show/hide socio filter based on report type
+        # Show/hide socio and tipo_projeto filters based on report type
         if value == "Saldos Pessoais":
             self.socio_frame.pack(fill="x", padx=20, pady=(10, 20))
+            self.tipo_projeto_frame.pack(fill="x", padx=20, pady=(10, 20))
         else:
             self.socio_frame.pack_forget()
+            self.tipo_projeto_frame.pack_forget()
 
     def on_periodo_changed(self):
         """Handle period change"""
@@ -339,7 +368,7 @@ class RelatoriosScreen(ctk.CTkFrame):
             self.render_socio_card(self.preview_scroll, socio_data)
 
     def render_socio_card(self, parent, socio_data):
-        """Render a single socio card"""
+        """Render a single socio card with detailed lists"""
 
         # Card container
         card = ctk.CTkFrame(parent, fg_color=socio_data['cor'], corner_radius=10)
@@ -367,13 +396,13 @@ class RelatoriosScreen(ctk.CTkFrame):
         separator = ctk.CTkFrame(card, height=1, fg_color="white")
         separator.pack(fill="x", padx=30, pady=10)
 
-        # Breakdown
+        # Breakdown with totals
         breakdown_frame = ctk.CTkFrame(card, fg_color="transparent")
-        breakdown_frame.pack(pady=(0, 20), padx=40, fill="x")
+        breakdown_frame.pack(pady=(0, 10), padx=40, fill="x")
 
-        # INs
+        # INs Summary
         ins_frame = ctk.CTkFrame(breakdown_frame, fg_color="transparent")
-        ins_frame.pack(fill="x", pady=(0, 15))
+        ins_frame.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(
             ins_frame,
@@ -397,7 +426,7 @@ class RelatoriosScreen(ctk.CTkFrame):
             text_color="white"
         ).pack(anchor="w", pady=(5, 0))
 
-        # OUTs
+        # OUTs Summary
         outs_frame = ctk.CTkFrame(breakdown_frame, fg_color="transparent")
         outs_frame.pack(fill="x")
 
@@ -422,6 +451,128 @@ class RelatoriosScreen(ctk.CTkFrame):
             font=ctk.CTkFont(size=13, weight="bold"),
             text_color="white"
         ).pack(anchor="w", pady=(5, 0))
+
+        # Detailed Lists Container (outside colored card, in white/dark background)
+        details_container = ctk.CTkFrame(parent, fg_color=("white", "#2B2B2B"), corner_radius=10)
+        details_container.pack(fill="x", pady=(0, 30), padx=20)
+
+        # Title
+        ctk.CTkLabel(
+            details_container,
+            text=f"📋 Detalhes - {socio_data['nome']}",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(15, 10))
+
+        # Projetos Pessoais List
+        if socio_data.get('projetos_pessoais_list'):
+            self._render_detail_section(
+                details_container,
+                "💼 Projetos Pessoais",
+                socio_data['projetos_pessoais_list'],
+                ['Nº', 'Cliente', 'Valor', 'Data'],
+                lambda p: [p['numero'], p['cliente'][:25], p['valor_fmt'], p['data']]
+            )
+
+        # Prémios List
+        if socio_data.get('premios_list'):
+            self._render_detail_section(
+                details_container,
+                "🏆 Prémios",
+                socio_data['premios_list'],
+                ['Nº Projeto', 'Cliente', 'Prémio', 'Tipo'],
+                lambda p: [p['numero'], p['cliente'][:25], p['premio_fmt'], p['tipo']]
+            )
+
+        # Despesas Fixas List
+        if socio_data.get('despesas_fixas_list'):
+            self._render_detail_section(
+                details_container,
+                "🏢 Despesas Fixas (50% cada sócio)",
+                socio_data['despesas_fixas_list'][:10],  # Show first 10
+                ['Nº', 'Fornecedor', 'Valor 50%', 'Data'],
+                lambda d: [d['numero'], d['fornecedor'][:25], d['valor_50_fmt'], d['data']],
+                show_more=len(socio_data['despesas_fixas_list']) > 10,
+                total_count=len(socio_data['despesas_fixas_list'])
+            )
+
+        # Boletins List
+        if socio_data.get('boletins_list'):
+            self._render_detail_section(
+                details_container,
+                "📄 Boletins Pagos",
+                socio_data['boletins_list'],
+                ['Nº', 'Descrição', 'Valor', 'Data Pag.'],
+                lambda b: [b['numero'], b['descricao'][:30], b['valor_fmt'], b['data_pagamento']]
+            )
+
+        # Despesas Pessoais List
+        if socio_data.get('despesas_pessoais_list'):
+            self._render_detail_section(
+                details_container,
+                "💳 Despesas Pessoais",
+                socio_data['despesas_pessoais_list'],
+                ['Nº', 'Fornecedor', 'Valor', 'Data'],
+                lambda d: [d['numero'], d['fornecedor'][:25], d['valor_fmt'], d['data']]
+            )
+
+    def _render_detail_section(self, parent, title, items, headers, row_formatter, show_more=False, total_count=0):
+        """Render a detailed list section"""
+
+        section = ctk.CTkFrame(parent, fg_color="transparent")
+        section.pack(fill="x", padx=20, pady=(0, 15))
+
+        # Section title
+        title_label = ctk.CTkLabel(
+            section,
+            text=f"{title} ({len(items)} items)",
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        title_label.pack(anchor="w", pady=(0, 5))
+
+        # Table frame
+        table_frame = ctk.CTkFrame(section, fg_color=("#E0E0E0", "#1E1E1E"), corner_radius=5)
+        table_frame.pack(fill="x")
+
+        # Headers
+        header_row = ctk.CTkFrame(table_frame, fg_color=("#BDBDBD", "#424242"))
+        header_row.pack(fill="x", padx=2, pady=(2, 0))
+
+        for header in headers:
+            ctk.CTkLabel(
+                header_row,
+                text=header,
+                font=ctk.CTkFont(size=10, weight="bold"),
+                anchor="w",
+                width=120
+            ).pack(side="left", padx=5, pady=5)
+
+        # Data rows (limit to show)
+        for idx, item in enumerate(items):
+            row_color = ("#FFFFFF", "#2B2B2B") if idx % 2 == 0 else ("#F5F5F5", "#1E1E1E")
+            row_frame = ctk.CTkFrame(table_frame, fg_color=row_color)
+            row_frame.pack(fill="x", padx=2, pady=1)
+
+            row_data = row_formatter(item)
+            for value in row_data:
+                ctk.CTkLabel(
+                    row_frame,
+                    text=str(value),
+                    font=ctk.CTkFont(size=9),
+                    anchor="w",
+                    width=120
+                ).pack(side="left", padx=5, pady=3)
+
+        # Show more indicator
+        if show_more:
+            more_frame = ctk.CTkFrame(table_frame, fg_color=("#E0E0E0", "#1E1E1E"))
+            more_frame.pack(fill="x", padx=2, pady=2)
+
+            ctk.CTkLabel(
+                more_frame,
+                text=f"... e mais {total_count - len(items)} items (ver exportação completa)",
+                font=ctk.CTkFont(size=9, slant="italic"),
+                text_color="gray"
+            ).pack(pady=5)
 
     def render_financeiro_preview(self, data):
         """Render financeiro mensal report preview"""
