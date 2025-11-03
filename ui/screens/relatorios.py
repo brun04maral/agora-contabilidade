@@ -306,10 +306,14 @@ class RelatoriosScreen(ctk.CTkFrame):
                 elif socio_str == "Rafael":
                     socio = Socio.RAFAEL
 
+                # Get filter tipo de projeto
+                filtro_tipo = self.tipo_projeto_var.get()
+
                 self.current_report_data = self.manager.gerar_relatorio_saldos(
                     socio=socio,
                     data_inicio=data_inicio,
-                    data_fim=data_fim
+                    data_fim=data_fim,
+                    filtro_tipo_projeto=filtro_tipo
                 )
                 self.render_saldos_preview(self.current_report_data)
 

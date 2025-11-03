@@ -37,7 +37,8 @@ class RelatoriosManager:
         self,
         socio: Optional[Socio] = None,
         data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None
+        data_fim: Optional[date] = None,
+        filtro_tipo_projeto: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Gera relatório de saldos pessoais
@@ -46,6 +47,7 @@ class RelatoriosManager:
             socio: Socio específico ou None para ambos
             data_inicio: Data de início do período (opcional)
             data_fim: Data de fim do período (opcional)
+            filtro_tipo_projeto: Filtro de tipo ("todos", "empresa", "bruno", "rafael")
 
         Returns:
             Dicionário com dados do relatório
@@ -54,18 +56,18 @@ class RelatoriosManager:
         # Calcular saldos e buscar detalhes
         if socio == Socio.BRUNO:
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
-            detalhes_bruno = self._get_detalhes_saldo_bruno()
+            detalhes_bruno = self._get_detalhes_saldo_bruno(filtro_tipo_projeto)
             socios_data = [self._format_socio_data_detalhado("Bruno Amaral", saldo_bruno, detalhes_bruno, "#4CAF50")]
         elif socio == Socio.RAFAEL:
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
-            detalhes_rafael = self._get_detalhes_saldo_rafael()
+            detalhes_rafael = self._get_detalhes_saldo_rafael(filtro_tipo_projeto)
             socios_data = [self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#2196F3")]
         else:
             # Ambos
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
-            detalhes_bruno = self._get_detalhes_saldo_bruno()
+            detalhes_bruno = self._get_detalhes_saldo_bruno(filtro_tipo_projeto)
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
-            detalhes_rafael = self._get_detalhes_saldo_rafael()
+            detalhes_rafael = self._get_detalhes_saldo_rafael(filtro_tipo_projeto)
             socios_data = [
                 self._format_socio_data_detalhado("Bruno Amaral", saldo_bruno, detalhes_bruno, "#4CAF50"),
                 self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#2196F3")
@@ -358,19 +360,29 @@ class RelatoriosManager:
         }
         return mapping.get(estado, str(estado))
 
-    def _get_detalhes_saldo_bruno(self) -> Dict[str, Any]:
-        """Get detailed breakdown for Bruno's saldo"""
+    def _get_detalhes_saldo_bruno(self, filtro_tipo: Optional[str] = None) -> Dict[str, Any]:
+        """Get detailed breakdown for Bruno's saldo with optional filter"""
 
-        # Projetos pessoais recebidos
-        projetos_pessoais = self.db_session.query(Projeto).filter(
-            Projeto.tipo == TipoProjeto.PESSOAL_BRUNO,
-            Projeto.estado == EstadoProjeto.RECEBIDO
-        ).all()
+        # Projetos pessoais recebidos (aplicar filtro)
+        if filtro_tipo == "empresa":
+            projetos_pessoais = []  # Não mostrar pessoais se filtro é empresa
+        elif filtro_tipo == "rafael":
+            projetos_pessoais = []  # Não mostrar Bruno se filtro é Rafael
+        else:
+            # "todos" ou "bruno" - mostrar projetos pessoais Bruno
+            projetos_pessoais = self.db_session.query(Projeto).filter(
+                Projeto.tipo == TipoProjeto.PESSOAL_BRUNO,
+                Projeto.estado == EstadoProjeto.RECEBIDO
+            ).all()
 
-        # Prémios (projetos empresa onde Bruno tem prémio)
-        projetos_premios = self.db_session.query(Projeto).filter(
-            Projeto.premio_bruno > 0
-        ).all()
+        # Prémios (projetos empresa onde Bruno tem prémio) - aplicar filtro
+        if filtro_tipo in ["bruno", "rafael"]:
+            projetos_premios = []  # Não mostrar prémios se filtro é só pessoais
+        else:
+            # "todos" ou "empresa" - mostrar prémios
+            projetos_premios = self.db_session.query(Projeto).filter(
+                Projeto.premio_bruno > 0
+            ).all()
 
         # Despesas fixas pagas
         despesas_fixas = self.db_session.query(Despesa).filter(
@@ -398,19 +410,29 @@ class RelatoriosManager:
             'despesas_pessoais': despesas_pessoais
         }
 
-    def _get_detalhes_saldo_rafael(self) -> Dict[str, Any]:
-        """Get detailed breakdown for Rafael's saldo"""
+    def _get_detalhes_saldo_rafael(self, filtro_tipo: Optional[str] = None) -> Dict[str, Any]:
+        """Get detailed breakdown for Rafael's saldo with optional filter"""
 
-        # Projetos pessoais recebidos
-        projetos_pessoais = self.db_session.query(Projeto).filter(
-            Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL,
-            Projeto.estado == EstadoProjeto.RECEBIDO
-        ).all()
+        # Projetos pessoais recebidos (aplicar filtro)
+        if filtro_tipo == "empresa":
+            projetos_pessoais = []  # Não mostrar pessoais se filtro é empresa
+        elif filtro_tipo == "bruno":
+            projetos_pessoais = []  # Não mostrar Rafael se filtro é Bruno
+        else:
+            # "todos" ou "rafael" - mostrar projetos pessoais Rafael
+            projetos_pessoais = self.db_session.query(Projeto).filter(
+                Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL,
+                Projeto.estado == EstadoProjeto.RECEBIDO
+            ).all()
 
-        # Prémios (projetos empresa onde Rafael tem prémio)
-        projetos_premios = self.db_session.query(Projeto).filter(
-            Projeto.premio_rafael > 0
-        ).all()
+        # Prémios (projetos empresa onde Rafael tem prémio) - aplicar filtro
+        if filtro_tipo in ["bruno", "rafael"]:
+            projetos_premios = []  # Não mostrar prémios se filtro é só pessoais
+        else:
+            # "todos" ou "empresa" - mostrar prémios
+            projetos_premios = self.db_session.query(Projeto).filter(
+                Projeto.premio_rafael > 0
+            ).all()
 
         # Despesas fixas pagas
         despesas_fixas = self.db_session.query(Despesa).filter(
