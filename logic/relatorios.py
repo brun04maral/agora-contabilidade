@@ -198,6 +198,158 @@ class RelatoriosManager:
         ]
         return meses[mes - 1]
 
+    def gerar_relatorio_projetos(
+        self,
+        tipo: Optional['TipoProjeto'] = None,
+        estado: Optional['EstadoProjeto'] = None,
+        data_inicio: Optional[date] = None,
+        data_fim: Optional[date] = None
+    ) -> Dict[str, Any]:
+        """
+        Gera relatório de projetos
+
+        Args:
+            tipo: Filtrar por tipo de projeto (opcional)
+            estado: Filtrar por estado (opcional)
+            data_inicio: Data de início do período (opcional)
+            data_fim: Data de fim do período (opcional)
+
+        Returns:
+            Dicionário com dados do relatório
+        """
+        from database.models import TipoProjeto, EstadoProjeto
+
+        # Base query
+        query = self.db_session.query(Projeto)
+
+        # Apply filters
+        if tipo:
+            query = query.filter(Projeto.tipo == tipo)
+        if estado:
+            query = query.filter(Projeto.estado == estado)
+        if data_inicio:
+            query = query.filter(Projeto.data_inicio >= data_inicio)
+        if data_fim:
+            query = query.filter(Projeto.data_inicio <= data_fim)
+
+        projetos = query.all()
+
+        # Calculate statistics
+        stats_por_tipo = {
+            TipoProjeto.EMPRESA: {'count': 0, 'valor': Decimal('0'), 'premios': Decimal('0')},
+            TipoProjeto.PESSOAL_BRUNO: {'count': 0, 'valor': Decimal('0'), 'premios': Decimal('0')},
+            TipoProjeto.PESSOAL_RAFAEL: {'count': 0, 'valor': Decimal('0'), 'premios': Decimal('0')}
+        }
+
+        stats_por_estado = {
+            EstadoProjeto.NAO_FATURADO: {'count': 0, 'valor': Decimal('0')},
+            EstadoProjeto.FATURADO: {'count': 0, 'valor': Decimal('0')},
+            EstadoProjeto.RECEBIDO: {'count': 0, 'valor': Decimal('0')}
+        }
+
+        total_valor = Decimal('0')
+        total_premios_bruno = Decimal('0')
+        total_premios_rafael = Decimal('0')
+
+        projetos_formatados = []
+
+        for projeto in projetos:
+            # Stats por tipo
+            stats_por_tipo[projeto.tipo]['count'] += 1
+            stats_por_tipo[projeto.tipo]['valor'] += projeto.valor_sem_iva
+            if projeto.tipo == TipoProjeto.EMPRESA:
+                stats_por_tipo[projeto.tipo]['premios'] += (projeto.premio_bruno + projeto.premio_rafael)
+
+            # Stats por estado
+            stats_por_estado[projeto.estado]['count'] += 1
+            stats_por_estado[projeto.estado]['valor'] += projeto.valor_sem_iva
+
+            # Totals
+            total_valor += projeto.valor_sem_iva
+            total_premios_bruno += projeto.premio_bruno
+            total_premios_rafael += projeto.premio_rafael
+
+            # Format project for table
+            projetos_formatados.append({
+                'numero': projeto.numero,
+                'tipo': self._get_tipo_label(projeto.tipo),
+                'cliente': projeto.cliente.nome if projeto.cliente else '-',
+                'descricao': projeto.descricao[:40] + '...' if len(projeto.descricao) > 40 else projeto.descricao,
+                'valor': float(projeto.valor_sem_iva),
+                'valor_fmt': self._format_currency(float(projeto.valor_sem_iva)),
+                'estado': self._get_estado_label(projeto.estado),
+                'premio_bruno': float(projeto.premio_bruno) if projeto.premio_bruno else 0,
+                'premio_bruno_fmt': self._format_currency(float(projeto.premio_bruno)) if projeto.premio_bruno else '-',
+                'premio_rafael': float(projeto.premio_rafael) if projeto.premio_rafael else 0,
+                'premio_rafael_fmt': self._format_currency(float(projeto.premio_rafael)) if projeto.premio_rafael else '-',
+            })
+
+        # Format statistics
+        stats_tipo_fmt = []
+        for tipo_proj, stats in stats_por_tipo.items():
+            stats_tipo_fmt.append({
+                'tipo': self._get_tipo_label(tipo_proj),
+                'count': stats['count'],
+                'valor': float(stats['valor']),
+                'valor_fmt': self._format_currency(float(stats['valor'])),
+                'premios': float(stats['premios']),
+                'premios_fmt': self._format_currency(float(stats['premios'])) if stats['premios'] > 0 else '-'
+            })
+
+        stats_estado_fmt = []
+        for estado_proj, stats in stats_por_estado.items():
+            stats_estado_fmt.append({
+                'estado': self._get_estado_label(estado_proj),
+                'count': stats['count'],
+                'valor': float(stats['valor']),
+                'valor_fmt': self._format_currency(float(stats['valor']))
+            })
+
+        periodo_str = self._format_periodo(data_inicio, data_fim)
+
+        return {
+            'tipo': 'projetos',
+            'titulo': 'Relatório de Projetos',
+            'periodo': periodo_str,
+            'data_geracao': datetime.now().strftime('%d/%m/%Y %H:%M'),
+            'data_inicio': data_inicio,
+            'data_fim': data_fim,
+            'filtros': {
+                'tipo': self._get_tipo_label(tipo) if tipo else 'Todos',
+                'estado': self._get_estado_label(estado) if estado else 'Todos'
+            },
+            'total_projetos': len(projetos),
+            'total_valor': float(total_valor),
+            'total_valor_fmt': self._format_currency(float(total_valor)),
+            'total_premios_bruno': float(total_premios_bruno),
+            'total_premios_bruno_fmt': self._format_currency(float(total_premios_bruno)),
+            'total_premios_rafael': float(total_premios_rafael),
+            'total_premios_rafael_fmt': self._format_currency(float(total_premios_rafael)),
+            'stats_por_tipo': stats_tipo_fmt,
+            'stats_por_estado': stats_estado_fmt,
+            'projetos': projetos_formatados
+        }
+
+    def _get_tipo_label(self, tipo: 'TipoProjeto') -> str:
+        """Get tipo label in Portuguese"""
+        from database.models import TipoProjeto
+        mapping = {
+            TipoProjeto.EMPRESA: "Empresa",
+            TipoProjeto.PESSOAL_BRUNO: "Pessoal Bruno",
+            TipoProjeto.PESSOAL_RAFAEL: "Pessoal Rafael"
+        }
+        return mapping.get(tipo, str(tipo))
+
+    def _get_estado_label(self, estado: 'EstadoProjeto') -> str:
+        """Get estado label in Portuguese"""
+        from database.models import EstadoProjeto
+        mapping = {
+            EstadoProjeto.NAO_FATURADO: "Não Faturado",
+            EstadoProjeto.FATURADO: "Faturado",
+            EstadoProjeto.RECEBIDO: "Recebido"
+        }
+        return mapping.get(estado, str(estado))
+
     def _format_socio_data(self, nome: str, saldo_data: dict, cor: str) -> Dict[str, Any]:
         """Format socio data for report"""
 
@@ -253,6 +405,8 @@ class RelatoriosManager:
             self._exportar_pdf_saldos(report_data, filename)
         elif tipo == 'financeiro_mensal':
             self._exportar_pdf_financeiro(report_data, filename)
+        elif tipo == 'projetos':
+            self._exportar_pdf_projetos(report_data, filename)
         else:
             raise ValueError(f"Tipo de relatório não suportado: {tipo}")
 
@@ -496,6 +650,8 @@ class RelatoriosManager:
             self._exportar_excel_saldos(report_data, filename)
         elif tipo == 'financeiro_mensal':
             self._exportar_excel_financeiro(report_data, filename)
+        elif tipo == 'projetos':
+            self._exportar_excel_projetos(report_data, filename)
         else:
             raise ValueError(f"Tipo de relatório não suportado: {tipo}")
 
@@ -702,5 +858,182 @@ class RelatoriosManager:
 
         for col in ['A', 'B', 'C', 'D']:
             ws[f'{col}{row}'].fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
+
+        wb.save(filename)
+
+    def _exportar_pdf_projetos(self, report_data: Dict[str, Any], filename: str):
+        """Export Projetos report to PDF"""
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.lib import colors
+        from reportlab.lib.units import cm
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER
+
+        doc = SimpleDocTemplate(filename, pagesize=landscape(A4))
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # Styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#2196F3'),
+            alignment=TA_CENTER,
+            spaceAfter=12
+        )
+
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.grey,
+            alignment=TA_CENTER,
+            spaceAfter=20
+        )
+
+        # Title and metadata
+        elements.append(Paragraph(report_data['titulo'], title_style))
+        if report_data['periodo']:
+            elements.append(Paragraph(report_data['periodo'], subtitle_style))
+        elements.append(Paragraph(f"Gerado em: {report_data['data_geracao']}", subtitle_style))
+        elements.append(Spacer(1, 0.3*cm))
+
+        # Summary stats
+        summary_data = [[
+            f"Total: {report_data['total_projetos']} projetos",
+            f"Valor Total: {report_data['total_valor_fmt']}",
+            f"Prémios Bruno: {report_data['total_premios_bruno_fmt']}",
+            f"Prémios Rafael: {report_data['total_premios_rafael_fmt']}"
+        ]]
+
+        summary_table = Table(summary_data, colWidths=[5*cm, 5*cm, 5*cm, 5*cm])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#E3F2FD')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#1976D2')),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.5*cm))
+
+        # Projects table
+        table_data = [['Nº', 'Tipo', 'Cliente', 'Valor', 'Estado']]
+
+        for proj in report_data['projetos'][:20]:  # Limit to first 20
+            table_data.append([
+                proj['numero'],
+                proj['tipo'],
+                proj['cliente'][:20],
+                proj['valor_fmt'],
+                proj['estado']
+            ])
+
+        if len(report_data['projetos']) > 20:
+            table_data.append(['...', '...', f"(+{len(report_data['projetos'])-20} projetos)", '...', '...'])
+
+        table = Table(table_data, colWidths=[2.5*cm, 3.5*cm, 6*cm, 3*cm, 3*cm])
+
+        table.setStyle(TableStyle([
+            # Header
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9C27B0')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('TOPPADDING', (0, 0), (-1, 0), 12),
+            # Data rows
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F5F5')]),
+        ]))
+        elements.append(table)
+
+        doc.build(elements)
+
+    def _exportar_excel_projetos(self, report_data: Dict[str, Any], filename: str):
+        """Export Projetos report to Excel"""
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Projetos"
+
+        # Column widths
+        ws.column_dimensions['A'].width = 12
+        ws.column_dimensions['B'].width = 18
+        ws.column_dimensions['C'].width = 25
+        ws.column_dimensions['D'].width = 40
+        ws.column_dimensions['E'].width = 15
+        ws.column_dimensions['F'].width = 18
+
+        row = 1
+
+        # Title
+        ws.merge_cells(f'A{row}:F{row}')
+        cell = ws[f'A{row}']
+        cell.value = report_data['titulo']
+        cell.font = Font(size=18, bold=True, color="2196F3")
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        row += 1
+
+        # Period
+        if report_data['periodo']:
+            ws.merge_cells(f'A{row}:F{row}')
+            cell = ws[f'A{row}']
+            cell.value = report_data['periodo']
+            cell.font = Font(size=11, color="666666")
+            cell.alignment = Alignment(horizontal='center')
+            row += 1
+
+        # Generation date
+        ws.merge_cells(f'A{row}:F{row}')
+        cell = ws[f'A{row}']
+        cell.value = f"Gerado em: {report_data['data_geracao']}"
+        cell.font = Font(size=10, color="999999")
+        cell.alignment = Alignment(horizontal='center')
+        row += 2
+
+        # Summary
+        ws.merge_cells(f'A{row}:F{row}')
+        cell = ws[f'A{row}']
+        cell.value = f"Total: {report_data['total_projetos']} projetos | Valor: {report_data['total_valor_fmt']} | Prémios: Bruno {report_data['total_premios_bruno_fmt']} | Rafael {report_data['total_premios_rafael_fmt']}"
+        cell.font = Font(size=11, bold=True)
+        cell.fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
+        cell.alignment = Alignment(horizontal='center')
+        row += 2
+
+        # Header
+        headers = ['Nº', 'Tipo', 'Cliente', 'Descrição', 'Valor', 'Estado']
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=row, column=col_idx)
+            cell.value = header
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="9C27B0", end_color="9C27B0", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        row += 1
+
+        # Data rows
+        for proj in report_data['projetos']:
+            ws[f'A{row}'].value = proj['numero']
+            ws[f'B{row}'].value = proj['tipo']
+            ws[f'C{row}'].value = proj['cliente']
+            ws[f'D{row}'].value = proj['descricao']
+            ws[f'E{row}'].value = proj['valor_fmt']
+            ws[f'E{row}'].alignment = Alignment(horizontal='right')
+            ws[f'F{row}'].value = proj['estado']
+
+            # Alternate row colors
+            if row % 2 == 0:
+                for col in ['A', 'B', 'C', 'D', 'E', 'F']:
+                    ws[f'{col}{row}'].fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid")
+
+            row += 1
 
         wb.save(filename)

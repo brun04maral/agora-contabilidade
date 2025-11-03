@@ -292,7 +292,12 @@ class RelatoriosScreen(ctk.CTkFrame):
                 self.render_financeiro_preview(self.current_report_data)
 
             elif tipo == "Projetos":
-                messagebox.showinfo("Em breve", "Relatório de Projetos em desenvolvimento")
+                self.current_report_data = self.manager.gerar_relatorio_projetos(
+                    data_inicio=data_inicio,
+                    data_fim=data_fim
+                )
+                self.render_projetos_preview(self.current_report_data)
+
             elif tipo == "Despesas":
                 messagebox.showinfo("Em breve", "Relatório de Despesas em desenvolvimento")
 
@@ -552,6 +557,139 @@ class RelatoriosScreen(ctk.CTkFrame):
             anchor="e",
             text_color=totais['cor_resultado']
         ).pack(side="left", padx=10, pady=12)
+
+    def render_projetos_preview(self, data):
+        """Render projetos report preview"""
+
+        # Header
+        header = ctk.CTkLabel(
+            self.preview_scroll,
+            text=data['titulo'],
+            font=ctk.CTkFont(size=22, weight="bold")
+        )
+        header.pack(pady=(10, 5))
+
+        # Período
+        if data['periodo']:
+            periodo_label = ctk.CTkLabel(
+                self.preview_scroll,
+                text=data['periodo'],
+                font=ctk.CTkFont(size=12),
+                text_color="gray"
+            )
+            periodo_label.pack(pady=(0, 10))
+
+        # Data geração
+        data_label = ctk.CTkLabel(
+            self.preview_scroll,
+            text=f"Gerado em: {data['data_geracao']}",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        )
+        data_label.pack(pady=(0, 20))
+
+        # Summary stats
+        summary_frame = ctk.CTkFrame(self.preview_scroll, fg_color=("#E3F2FD", "#1565C0"), corner_radius=10)
+        summary_frame.pack(fill="x", pady=(0, 20))
+
+        summary_text = f"📊 {data['total_projetos']} Projetos  |  💰 Valor Total: {data['total_valor_fmt']}  |  🏆 Prémios: Bruno {data['total_premios_bruno_fmt']} | Rafael {data['total_premios_rafael_fmt']}"
+
+        ctk.CTkLabel(
+            summary_frame,
+            text=summary_text,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=("#1976D2", "white")
+        ).pack(pady=15, padx=20)
+
+        # Projects table (limit to first 15 for preview)
+        table_frame = ctk.CTkFrame(self.preview_scroll, fg_color=("#E0E0E0", "#2B2B2B"), corner_radius=10)
+        table_frame.pack(fill="x", pady=(0, 20))
+
+        # Table header
+        header_row = ctk.CTkFrame(table_frame, fg_color=("#9C27B0", "#7B1FA2"))
+        header_row.pack(fill="x", padx=5, pady=(5, 0))
+
+        headers = [
+            ("Nº", 100),
+            ("Tipo", 140),
+            ("Cliente", 180),
+            ("Valor", 110),
+            ("Estado", 130)
+        ]
+
+        for header_text, width in headers:
+            ctk.CTkLabel(
+                header_row,
+                text=header_text,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                width=width,
+                text_color="white"
+            ).pack(side="left", padx=8, pady=10)
+
+        # Data rows (show first 15)
+        projetos_to_show = data['projetos'][:15]
+
+        for idx, proj in enumerate(projetos_to_show):
+            row_color = ("#FFFFFF", "#1E1E1E") if idx % 2 == 0 else ("#F5F5F5", "#2B2B2B")
+            row_frame = ctk.CTkFrame(table_frame, fg_color=row_color)
+            row_frame.pack(fill="x", padx=5, pady=1)
+
+            # Número
+            ctk.CTkLabel(
+                row_frame,
+                text=proj['numero'],
+                font=ctk.CTkFont(size=11),
+                width=100,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Tipo
+            ctk.CTkLabel(
+                row_frame,
+                text=proj['tipo'],
+                font=ctk.CTkFont(size=11),
+                width=140,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Cliente
+            ctk.CTkLabel(
+                row_frame,
+                text=proj['cliente'][:22] + '...' if len(proj['cliente']) > 22 else proj['cliente'],
+                font=ctk.CTkFont(size=11),
+                width=180,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Valor
+            ctk.CTkLabel(
+                row_frame,
+                text=proj['valor_fmt'],
+                font=ctk.CTkFont(size=11),
+                width=110,
+                anchor="e"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Estado
+            ctk.CTkLabel(
+                row_frame,
+                text=proj['estado'],
+                font=ctk.CTkFont(size=11),
+                width=130,
+                anchor="center"
+            ).pack(side="left", padx=8, pady=6)
+
+        # Show count if more projects
+        if len(data['projetos']) > 15:
+            more_frame = ctk.CTkFrame(table_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+            more_frame.pack(fill="x", padx=5, pady=(0, 5))
+
+            ctk.CTkLabel(
+                more_frame,
+                text=f"... e mais {len(data['projetos']) - 15} projetos (ver exportação completa)",
+                font=ctk.CTkFont(size=11, slant="italic"),
+                text_color="gray"
+            ).pack(pady=10)
 
     def exportar_pdf(self):
         """Export report to PDF"""
