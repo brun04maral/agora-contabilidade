@@ -4,13 +4,17 @@ Lógica de geração de relatórios
 """
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, or_
 from datetime import date, datetime
 from decimal import Decimal
 from collections import defaultdict
 from dateutil.relativedelta import relativedelta
 
-from database.models import Socio, Projeto, EstadoProjeto, Despesa, EstadoDespesa
+from database.models import (
+    Socio, Projeto, EstadoProjeto, TipoProjeto,
+    Despesa, EstadoDespesa, TipoDespesa,
+    Boletim, EstadoBoletim
+)
 from logic.saldos import SaldosCalculator
 
 
@@ -47,20 +51,24 @@ class RelatoriosManager:
             Dicionário com dados do relatório
         """
 
-        # Calcular saldos
+        # Calcular saldos e buscar detalhes
         if socio == Socio.BRUNO:
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
-            socios_data = [self._format_socio_data("Bruno Amaral", saldo_bruno, "#4CAF50")]
+            detalhes_bruno = self._get_detalhes_saldo_bruno()
+            socios_data = [self._format_socio_data_detalhado("Bruno Amaral", saldo_bruno, detalhes_bruno, "#4CAF50")]
         elif socio == Socio.RAFAEL:
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
-            socios_data = [self._format_socio_data("Rafael Reigota", saldo_rafael, "#2196F3")]
+            detalhes_rafael = self._get_detalhes_saldo_rafael()
+            socios_data = [self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#2196F3")]
         else:
             # Ambos
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
+            detalhes_bruno = self._get_detalhes_saldo_bruno()
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
+            detalhes_rafael = self._get_detalhes_saldo_rafael()
             socios_data = [
-                self._format_socio_data("Bruno Amaral", saldo_bruno, "#4CAF50"),
-                self._format_socio_data("Rafael Reigota", saldo_rafael, "#2196F3")
+                self._format_socio_data_detalhado("Bruno Amaral", saldo_bruno, detalhes_bruno, "#4CAF50"),
+                self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#2196F3")
             ]
 
         # Build report data
@@ -349,6 +357,183 @@ class RelatoriosManager:
             EstadoProjeto.RECEBIDO: "Recebido"
         }
         return mapping.get(estado, str(estado))
+
+    def _get_detalhes_saldo_bruno(self) -> Dict[str, Any]:
+        """Get detailed breakdown for Bruno's saldo"""
+
+        # Projetos pessoais recebidos
+        projetos_pessoais = self.db_session.query(Projeto).filter(
+            Projeto.tipo == TipoProjeto.PESSOAL_BRUNO,
+            Projeto.estado == EstadoProjeto.RECEBIDO
+        ).all()
+
+        # Prémios (projetos empresa onde Bruno tem prémio)
+        projetos_premios = self.db_session.query(Projeto).filter(
+            Projeto.premio_bruno > 0
+        ).all()
+
+        # Despesas fixas pagas
+        despesas_fixas = self.db_session.query(Despesa).filter(
+            Despesa.tipo == TipoDespesa.FIXA_MENSAL,
+            Despesa.estado == EstadoDespesa.PAGO
+        ).all()
+
+        # Boletins pagos
+        boletins = self.db_session.query(Boletim).filter(
+            Boletim.socio == Socio.BRUNO,
+            Boletim.estado == EstadoBoletim.PAGO
+        ).all()
+
+        # Despesas pessoais pagas
+        despesas_pessoais = self.db_session.query(Despesa).filter(
+            Despesa.tipo == TipoDespesa.PESSOAL_BRUNO,
+            Despesa.estado == EstadoDespesa.PAGO
+        ).all()
+
+        return {
+            'projetos_pessoais': projetos_pessoais,
+            'projetos_premios': projetos_premios,
+            'despesas_fixas': despesas_fixas,
+            'boletins': boletins,
+            'despesas_pessoais': despesas_pessoais
+        }
+
+    def _get_detalhes_saldo_rafael(self) -> Dict[str, Any]:
+        """Get detailed breakdown for Rafael's saldo"""
+
+        # Projetos pessoais recebidos
+        projetos_pessoais = self.db_session.query(Projeto).filter(
+            Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL,
+            Projeto.estado == EstadoProjeto.RECEBIDO
+        ).all()
+
+        # Prémios (projetos empresa onde Rafael tem prémio)
+        projetos_premios = self.db_session.query(Projeto).filter(
+            Projeto.premio_rafael > 0
+        ).all()
+
+        # Despesas fixas pagas
+        despesas_fixas = self.db_session.query(Despesa).filter(
+            Despesa.tipo == TipoDespesa.FIXA_MENSAL,
+            Despesa.estado == EstadoDespesa.PAGO
+        ).all()
+
+        # Boletins pagos
+        boletins = self.db_session.query(Boletim).filter(
+            Boletim.socio == Socio.RAFAEL,
+            Boletim.estado == EstadoBoletim.PAGO
+        ).all()
+
+        # Despesas pessoais pagas
+        despesas_pessoais = self.db_session.query(Despesa).filter(
+            Despesa.tipo == TipoDespesa.PESSOAL_RAFAEL,
+            Despesa.estado == EstadoDespesa.PAGO
+        ).all()
+
+        return {
+            'projetos_pessoais': projetos_pessoais,
+            'projetos_premios': projetos_premios,
+            'despesas_fixas': despesas_fixas,
+            'boletins': boletins,
+            'despesas_pessoais': despesas_pessoais
+        }
+
+    def _format_socio_data_detalhado(self, nome: str, saldo_data: dict, detalhes: dict, cor: str) -> Dict[str, Any]:
+        """Format socio data with detailed breakdowns"""
+
+        ins = saldo_data['ins']
+        outs = saldo_data['outs']
+
+        # Format projetos pessoais list
+        projetos_pessoais_list = []
+        for proj in detalhes['projetos_pessoais']:
+            projetos_pessoais_list.append({
+                'numero': proj.numero,
+                'cliente': proj.cliente.nome if proj.cliente else '-',
+                'descricao': proj.descricao[:50] + '...' if len(proj.descricao) > 50 else proj.descricao,
+                'valor': float(proj.valor_sem_iva),
+                'valor_fmt': self._format_currency(float(proj.valor_sem_iva)),
+                'data': proj.data_faturacao.strftime('%d/%m/%Y') if proj.data_faturacao else '-'
+            })
+
+        # Format prémios list
+        premios_list = []
+        for proj in detalhes['projetos_premios']:
+            premio_bruno = proj.premio_bruno if 'Bruno' in nome else proj.premio_rafael
+            if premio_bruno > 0:
+                premios_list.append({
+                    'numero': proj.numero,
+                    'cliente': proj.cliente.nome if proj.cliente else '-',
+                    'descricao': proj.descricao[:50] + '...' if len(proj.descricao) > 50 else proj.descricao,
+                    'premio': float(premio_bruno),
+                    'premio_fmt': self._format_currency(float(premio_bruno)),
+                    'tipo': 'Cachet' if premio_bruno == proj.valor_sem_iva * Decimal('0.15') else 'Comissão'
+                })
+
+        # Format despesas fixas list
+        despesas_fixas_list = []
+        for desp in detalhes['despesas_fixas']:
+            valor_metade = desp.valor_sem_iva / 2
+            despesas_fixas_list.append({
+                'numero': desp.numero,
+                'fornecedor': desp.credor.nome if desp.credor else '-',
+                'descricao': desp.descricao[:50] + '...' if len(desp.descricao) > 50 else desp.descricao,
+                'valor_total': float(desp.valor_sem_iva),
+                'valor_total_fmt': self._format_currency(float(desp.valor_sem_iva)),
+                'valor_50': float(valor_metade),
+                'valor_50_fmt': self._format_currency(float(valor_metade)),
+                'data': desp.data_pagamento.strftime('%d/%m/%Y') if desp.data_pagamento else '-'
+            })
+
+        # Format boletins list
+        boletins_list = []
+        for bol in detalhes['boletins']:
+            boletins_list.append({
+                'numero': bol.numero,
+                'descricao': bol.descricao[:50] + '...' if len(bol.descricao) > 50 else bol.descricao,
+                'valor': float(bol.valor),
+                'valor_fmt': self._format_currency(float(bol.valor)),
+                'data_emissao': bol.data_emissao.strftime('%d/%m/%Y') if bol.data_emissao else '-',
+                'data_pagamento': bol.data_pagamento.strftime('%d/%m/%Y') if bol.data_pagamento else '-'
+            })
+
+        # Format despesas pessoais list
+        despesas_pessoais_list = []
+        for desp in detalhes['despesas_pessoais']:
+            despesas_pessoais_list.append({
+                'numero': desp.numero,
+                'fornecedor': desp.credor.nome if desp.credor else '-',
+                'descricao': desp.descricao[:50] + '...' if len(desp.descricao) > 50 else desp.descricao,
+                'valor': float(desp.valor_sem_iva),
+                'valor_fmt': self._format_currency(float(desp.valor_sem_iva)),
+                'data': desp.data_pagamento.strftime('%d/%m/%Y') if desp.data_pagamento else '-'
+            })
+
+        return {
+            'nome': nome,
+            'saldo': self._format_currency(saldo_data['saldo_total']),
+            'saldo_valor': saldo_data['saldo_total'],
+            'cor': cor,
+            'ins': [
+                {'label': 'Projetos Pessoais', 'valor': self._format_currency(ins['projetos_pessoais'])},
+                {'label': 'Prémios', 'valor': self._format_currency(ins['premios'])}
+            ],
+            'total_ins': self._format_currency(ins['total']),
+            'total_ins_valor': ins['total'],
+            'outs': [
+                {'label': 'Despesas Fixas (50%)', 'valor': self._format_currency(outs['despesas_fixas'])},
+                {'label': 'Boletins Pagos', 'valor': self._format_currency(outs['boletins'])},
+                {'label': 'Despesas Pessoais', 'valor': self._format_currency(outs['despesas_pessoais'])}
+            ],
+            'total_outs': self._format_currency(outs['total']),
+            'total_outs_valor': outs['total'],
+            # Detailed lists
+            'projetos_pessoais_list': projetos_pessoais_list,
+            'premios_list': premios_list,
+            'despesas_fixas_list': despesas_fixas_list,
+            'boletins_list': boletins_list,
+            'despesas_pessoais_list': despesas_pessoais_list
+        }
 
     def _format_socio_data(self, nome: str, saldo_data: dict, cor: str) -> Dict[str, Any]:
         """Format socio data for report"""
