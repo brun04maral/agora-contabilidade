@@ -157,21 +157,18 @@ class SaldosCalculator:
 
         projetos_pessoais = query_projetos_pessoais.scalar() or Decimal("0.00")
 
-        # 2. Prémios de projetos da empresa (apenas RECEBIDOS)
+        # 2. Prémios de projetos da empresa (TODOS, independentemente do estado!)
+        # ✅ CORREÇÃO: Prémios contam no saldo mesmo antes do projeto ser recebido (saldo virtual)
         if socio == Socio.BRUNO:
             query_premios = self.db_session.query(
                 func.sum(Projeto.premio_bruno)
             ).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
                 Projeto.premio_bruno > 0
             )
         else:
             query_premios = self.db_session.query(
                 func.sum(Projeto.premio_rafael)
             ).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
                 Projeto.premio_rafael > 0
             )
 
@@ -199,8 +196,9 @@ class SaldosCalculator:
         # === CALCULAR OUTs (Saídas) ===
 
         # 1. Despesas fixas mensais (divididas por 2)
+        # ✅ CORREÇÃO: Usar valor_sem_iva (coluna P do Excel)
         query_despesas_fixas = self.db_session.query(
-            func.sum(Despesa.valor_com_iva)
+            func.sum(Despesa.valor_sem_iva)
         ).filter(
             Despesa.tipo == TipoDespesa.FIXA_MENSAL,
             Despesa.estado == EstadoDespesa.PAGO
@@ -238,8 +236,9 @@ class SaldosCalculator:
         boletins = query_boletins.scalar() or Decimal("0.00")
 
         # 3. Despesas pessoais excecionais
+        # ✅ CORREÇÃO: Usar valor_sem_iva (coluna P do Excel)
         query_despesas_pessoais = self.db_session.query(
-            func.sum(Despesa.valor_com_iva)
+            func.sum(Despesa.valor_sem_iva)
         ).filter(
             Despesa.tipo == tipo_despesa,
             Despesa.estado == EstadoDespesa.PAGO
@@ -352,17 +351,14 @@ class SaldosCalculator:
             Projeto.estado == EstadoProjeto.RECEBIDO
         ).all()
 
-        # Projetos com prémios
+        # Projetos com prémios (TODOS, não só recebidos!)
+        # ✅ CORREÇÃO: Prémios contam no saldo independentemente do estado
         if socio == Socio.BRUNO:
             projetos_premios = self.db_session.query(Projeto).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
                 Projeto.premio_bruno > 0
             ).all()
         else:
             projetos_premios = self.db_session.query(Projeto).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
                 Projeto.premio_rafael > 0
             ).all()
 
