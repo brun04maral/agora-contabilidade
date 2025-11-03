@@ -285,7 +285,12 @@ class RelatoriosScreen(ctk.CTkFrame):
                 self.render_saldos_preview(self.current_report_data)
 
             elif tipo == "Financeiro Mensal":
-                messagebox.showinfo("Em breve", "Relatório Financeiro Mensal em desenvolvimento")
+                self.current_report_data = self.manager.gerar_relatorio_financeiro_mensal(
+                    data_inicio=data_inicio,
+                    data_fim=data_fim
+                )
+                self.render_financeiro_preview(self.current_report_data)
+
             elif tipo == "Projetos":
                 messagebox.showinfo("Em breve", "Relatório de Projetos em desenvolvimento")
             elif tipo == "Despesas":
@@ -412,6 +417,141 @@ class RelatoriosScreen(ctk.CTkFrame):
             font=ctk.CTkFont(size=13, weight="bold"),
             text_color="white"
         ).pack(anchor="w", pady=(5, 0))
+
+    def render_financeiro_preview(self, data):
+        """Render financeiro mensal report preview"""
+
+        # Header
+        header = ctk.CTkLabel(
+            self.preview_scroll,
+            text=data['titulo'],
+            font=ctk.CTkFont(size=22, weight="bold")
+        )
+        header.pack(pady=(10, 5))
+
+        # Período
+        if data['periodo']:
+            periodo_label = ctk.CTkLabel(
+                self.preview_scroll,
+                text=data['periodo'],
+                font=ctk.CTkFont(size=12),
+                text_color="gray"
+            )
+            periodo_label.pack(pady=(0, 20))
+
+        # Data geração
+        data_label = ctk.CTkLabel(
+            self.preview_scroll,
+            text=f"Gerado em: {data['data_geracao']}",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        )
+        data_label.pack(pady=(0, 20))
+
+        # Monthly table
+        table_frame = ctk.CTkFrame(self.preview_scroll, fg_color=("#E0E0E0", "#2B2B2B"), corner_radius=10)
+        table_frame.pack(fill="x", pady=(0, 20))
+
+        # Table header
+        header_row = ctk.CTkFrame(table_frame, fg_color=("#2196F3", "#1565C0"))
+        header_row.pack(fill="x", padx=5, pady=(5, 0))
+
+        headers = [
+            ("Mês", 180),
+            ("Faturação", 120),
+            ("Despesas", 120),
+            ("Resultado", 120)
+        ]
+
+        for header_text, width in headers:
+            ctk.CTkLabel(
+                header_row,
+                text=header_text,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                width=width,
+                text_color="white"
+            ).pack(side="left", padx=10, pady=10)
+
+        # Data rows
+        for idx, mes in enumerate(data['meses']):
+            row_color = ("#FFFFFF", "#1E1E1E") if idx % 2 == 0 else ("#F5F5F5", "#2B2B2B")
+            row_frame = ctk.CTkFrame(table_frame, fg_color=row_color)
+            row_frame.pack(fill="x", padx=5, pady=1)
+
+            # Mês
+            ctk.CTkLabel(
+                row_frame,
+                text=f"{mes['mes_nome']} {mes['ano']}",
+                font=ctk.CTkFont(size=12),
+                width=180,
+                anchor="w"
+            ).pack(side="left", padx=10, pady=8)
+
+            # Faturação
+            ctk.CTkLabel(
+                row_frame,
+                text=mes['faturacao_fmt'],
+                font=ctk.CTkFont(size=12),
+                width=120,
+                anchor="e"
+            ).pack(side="left", padx=10, pady=8)
+
+            # Despesas
+            ctk.CTkLabel(
+                row_frame,
+                text=mes['despesas_fmt'],
+                font=ctk.CTkFont(size=12),
+                width=120,
+                anchor="e"
+            ).pack(side="left", padx=10, pady=8)
+
+            # Resultado
+            ctk.CTkLabel(
+                row_frame,
+                text=mes['resultado_fmt'],
+                font=ctk.CTkFont(size=12, weight="bold"),
+                width=120,
+                anchor="e",
+                text_color=mes['cor_resultado']
+            ).pack(side="left", padx=10, pady=8)
+
+        # Totals row
+        totais = data['totais']
+        totals_row = ctk.CTkFrame(table_frame, fg_color=("#E3F2FD", "#1565C0"))
+        totals_row.pack(fill="x", padx=5, pady=(0, 5))
+
+        ctk.CTkLabel(
+            totals_row,
+            text="TOTAL",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            width=180,
+            anchor="w"
+        ).pack(side="left", padx=10, pady=12)
+
+        ctk.CTkLabel(
+            totals_row,
+            text=totais['faturacao_fmt'],
+            font=ctk.CTkFont(size=13, weight="bold"),
+            width=120,
+            anchor="e"
+        ).pack(side="left", padx=10, pady=12)
+
+        ctk.CTkLabel(
+            totals_row,
+            text=totais['despesas_fmt'],
+            font=ctk.CTkFont(size=13, weight="bold"),
+            width=120,
+            anchor="e"
+        ).pack(side="left", padx=10, pady=12)
+
+        ctk.CTkLabel(
+            totals_row,
+            text=totais['resultado_fmt'],
+            font=ctk.CTkFont(size=14, weight="bold"),
+            width=120,
+            anchor="e",
+            text_color=totais['cor_resultado']
+        ).pack(side="left", padx=10, pady=12)
 
     def exportar_pdf(self):
         """Export report to PDF"""
