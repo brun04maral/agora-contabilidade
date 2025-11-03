@@ -47,8 +47,8 @@ class Sidebar(ctk.CTkFrame):
             width=60,
             height=60,
             corner_radius=30,
-            fg_color=("#2196F3", "#1565C0"),
-            text_color="white"
+            fg_color=("#efd578", "#d4bb5e"),
+            text_color=("black", "black")
         )
         logo_label.pack(pady=(0, 15))
 
@@ -63,7 +63,7 @@ class Sidebar(ctk.CTkFrame):
             logo_frame,
             text="Production",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=("#2196F3", "#64B5F6")
+            text_color=("#efd578", "#d4bb5e")
         )
         subtitle_label.pack(pady=(0, 5))
 

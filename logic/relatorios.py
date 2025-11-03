@@ -61,7 +61,7 @@ class RelatoriosManager:
         elif socio == Socio.RAFAEL:
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
             detalhes_rafael = self._get_detalhes_saldo_rafael(filtro_tipo_projeto)
-            socios_data = [self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#2196F3")]
+            socios_data = [self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#efd578")]
         else:
             # Ambos
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
@@ -70,7 +70,7 @@ class RelatoriosManager:
             detalhes_rafael = self._get_detalhes_saldo_rafael(filtro_tipo_projeto)
             socios_data = [
                 self._format_socio_data_detalhado("Bruno Amaral", saldo_bruno, detalhes_bruno, "#4CAF50"),
-                self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#2196F3")
+                self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#efd578")
             ]
 
         # Build report data
@@ -636,7 +636,7 @@ class RelatoriosManager:
             'Logo',
             parent=styles['Normal'],
             fontSize=32,
-            textColor=colors.HexColor('#2196F3'),
+            textColor=colors.HexColor('#efd578'),
             fontName='Helvetica-Bold',
             alignment=TA_LEFT,
             leading=32
@@ -655,7 +655,7 @@ class RelatoriosManager:
             'CompanySubtitle',
             parent=styles['Normal'],
             fontSize=12,
-            textColor=colors.HexColor('#2196F3'),
+            textColor=colors.HexColor('#efd578'),
             fontName='Helvetica-Bold',
             alignment=TA_LEFT,
             leading=14
@@ -664,8 +664,8 @@ class RelatoriosManager:
         # Header table with logo and company name
         header_data = [[
             [
-                Paragraph('<font name="Helvetica-Bold" size="32" color="#2196F3">a</font>', logo_style),
-                Paragraph('Agora Media<br/><font size="12" color="#2196F3">Production</font>', company_style)
+                Paragraph('<font name="Helvetica-Bold" size="32" color="#efd578">a</font>', logo_style),
+                Paragraph('Agora Media<br/><font size="12" color="#efd578">Production</font>', company_style)
             ]
         ]]
 
@@ -685,7 +685,7 @@ class RelatoriosManager:
         # Separator line
         line_table = Table([['']], colWidths=[18*cm], rowHeights=[0.1*cm])
         line_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#2196F3')),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#efd578')),
             ('TOPPADDING', (0, 0), (-1, -1), 0),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
@@ -716,7 +716,7 @@ class RelatoriosManager:
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=24,
-            textColor=colors.HexColor('#2196F3'),
+            textColor=colors.HexColor('#efd578'),
             alignment=TA_CENTER,
             spaceAfter=12
         )
@@ -954,7 +954,7 @@ class RelatoriosManager:
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=24,
-            textColor=colors.HexColor('#2196F3'),
+            textColor=colors.HexColor('#efd578'),
             alignment=TA_CENTER,
             spaceAfter=12
         )
@@ -1000,7 +1000,7 @@ class RelatoriosManager:
         # Base style
         table_style = [
             # Header
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2196F3')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#efd578')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -1431,7 +1431,7 @@ class RelatoriosManager:
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=24,
-            textColor=colors.HexColor('#2196F3'),
+            textColor=colors.HexColor('#efd578'),
             alignment=TA_CENTER,
             spaceAfter=12
         )

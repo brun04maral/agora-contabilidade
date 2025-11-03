@@ -120,7 +120,7 @@ class LoginScreen(ctk.CTkFrame):
         # Footer
         footer_label = ctk.CTkLabel(
             login_container,
-            text="© 2024 Agora Media Production",
+            text="© 2025 Agora Media Production",
             font=ctk.CTkFont(size=10),
             text_color="gray"
         )
