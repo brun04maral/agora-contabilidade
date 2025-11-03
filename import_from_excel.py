@@ -413,7 +413,7 @@ class ExcelImporter:
         print("📋 IMPORTANDO DESPESAS")
         print("=" * 80)
 
-        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=4)
+        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=5)  # ✅ CORRIGIDO: header na linha 6 (índice 5)
 
         # Filtrar linhas de dados
         df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#D', na=False)]
@@ -435,7 +435,7 @@ class ExcelImporter:
             if tipo_str and ('prém' in str(tipo_str).lower() or 'premio' in str(tipo_str).lower()):
                 # Armazenar prémio para processar depois
                 projeto_numero = self.safe_str(row.iloc[5])
-                valor = self.safe_decimal(row.iloc[16]) if len(row) > 16 else self.safe_decimal(row.iloc[9])  # Col 16 = TOTAL c/IVA
+                valor = self.safe_decimal(row.iloc[15])  # ✅ CORRIGIDO: Col P (15) = valor s/IVA
 
                 if projeto_numero and valor:
                     if projeto_numero not in self.premios_por_projeto:
@@ -478,13 +478,9 @@ class ExcelImporter:
             projeto_numero = self.safe_str(row.iloc[5])
             periodicidade = self.safe_str(row.iloc[8])
 
-            # ✅ CORREÇÃO 3: Usar coluna 16 (TOTAL c/IVA) para valores
-            valor_com_iva = self.safe_decimal(row.iloc[16]) if len(row) > 16 else None
-            valor_sem_iva = self.safe_decimal(row.iloc[9])
-
-            # Se não tem valor_com_iva, usar coluna 12
-            if not valor_com_iva and len(row) > 12:
-                valor_com_iva = self.safe_decimal(row.iloc[12])
+            # ✅ CORRIGIDO: Usar coluna P (15) para valor s/IVA, coluna Q (16) para valor c/IVA
+            valor_sem_iva = self.safe_decimal(row.iloc[15])  # Col P (15) = TOTAL s/IVA
+            valor_com_iva = self.safe_decimal(row.iloc[16]) if len(row) > 16 else None  # Col Q (16) = TOTAL c/IVA
 
             nota = self.safe_str(row.iloc[22]) if len(row) > 22 else None
 
@@ -634,7 +630,7 @@ class ExcelImporter:
         print("📄 IMPORTANDO BOLETINS")
         print("=" * 80)
 
-        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=4)
+        df = pd.read_excel(self.xl, sheet_name='DESPESAS', header=5)  # ✅ CORRIGIDO: header na linha 6 (índice 5)
 
         # Filtrar linhas de dados
         df_dados = df[df.iloc[:, 0].astype(str).str.startswith('#D', na=False)]
@@ -696,8 +692,8 @@ class ExcelImporter:
             if len(row) > 19:
                 data_vencimento = self.parse_date(row.iloc[19])
 
-            # ✅ USAR COLUNA 16 (TOTAL c/IVA)
-            valor = self.safe_decimal(row.iloc[16]) if len(row) > 16 else self.safe_decimal(row.iloc[9])
+            # ✅ CORRIGIDO: Usar coluna P (15) para valor s/IVA
+            valor = self.safe_decimal(row.iloc[15])  # Col P (15) = TOTAL s/IVA
 
             if not valor:
                 print(f"  ⚠️  {numero}: Sem valor")
