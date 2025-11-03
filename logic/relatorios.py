@@ -1391,10 +1391,10 @@ class RelatoriosManager:
         elements.append(summary_table)
         elements.append(Spacer(1, 0.5*cm))
 
-        # Projects table
+        # Projects table - show ALL projects
         table_data = [['Nº', 'Tipo', 'Cliente', 'Valor', 'Estado']]
 
-        for proj in report_data['projetos'][:20]:  # Limit to first 20
+        for proj in report_data['projetos']:  # Show all projects
             table_data.append([
                 proj['numero'],
                 proj['tipo'],
@@ -1402,9 +1402,6 @@ class RelatoriosManager:
                 proj['valor_fmt'],
                 proj['estado']
             ])
-
-        if len(report_data['projetos']) > 20:
-            table_data.append(['...', '...', f"(+{len(report_data['projetos'])-20} projetos)", '...', '...'])
 
         table = Table(table_data, colWidths=[2.5*cm, 3.5*cm, 6*cm, 3*cm, 3*cm])
 

@@ -202,6 +202,10 @@ class RelatoriosScreen(ctk.CTkFrame):
             )
             radio.pack(anchor="w", pady=2)
 
+        # Initially hide filters that shouldn't be visible (default is Saldos Pessoais)
+        self.tipo_projeto_frame.pack_forget()
+        self.estado_projeto_frame.pack_forget()
+
         # Buttons
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(20, 20), side="bottom")
