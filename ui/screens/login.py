@@ -43,7 +43,7 @@ class LoginScreen(ctk.CTkFrame):
         # Logo/Title
         title_label = ctk.CTkLabel(
             login_container,
-            text="Agora Media Contabilidade",
+            text="Agora Media Production",
             font=ctk.CTkFont(size=24, weight="bold")
         )
         title_label.grid(row=0, column=0, pady=(100, 10), padx=20)
@@ -120,7 +120,7 @@ class LoginScreen(ctk.CTkFrame):
         # Footer
         footer_label = ctk.CTkLabel(
             login_container,
-            text="© 2024 Agora Media",
+            text="© 2024 Agora Media Production",
             font=ctk.CTkFont(size=10),
             text_color="gray"
         )

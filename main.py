@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Agora Media - Sistema de Contabilidade
+Agora Media Production - Sistema de Contabilidade
 Ponto de entrada principal da aplicação
 """
 
@@ -25,7 +25,7 @@ class App(ctk.CTk):
         super().__init__()
 
         # Configurar janela
-        self.title(os.getenv("APP_NAME", "Agora Media Contabilidade"))
+        self.title(os.getenv("APP_NAME", "Agora Media Production"))
         self.geometry("1200x800")
 
         # Inicializar gerenciadores

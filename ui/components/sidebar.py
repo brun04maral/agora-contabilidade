@@ -39,20 +39,41 @@ class Sidebar(ctk.CTkFrame):
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
         logo_frame.pack(fill="x", padx=20, pady=(30, 40))
 
+        # Logo circle with "a"
+        logo_label = ctk.CTkLabel(
+            logo_frame,
+            text="a",
+            font=ctk.CTkFont(size=36, weight="bold"),
+            width=60,
+            height=60,
+            corner_radius=30,
+            fg_color=("#2196F3", "#1565C0"),
+            text_color="white"
+        )
+        logo_label.pack(pady=(0, 15))
+
         title_label = ctk.CTkLabel(
             logo_frame,
             text="Agora Media",
-            font=ctk.CTkFont(size=20, weight="bold")
+            font=ctk.CTkFont(size=18, weight="bold")
         )
         title_label.pack()
 
         subtitle_label = ctk.CTkLabel(
             logo_frame,
+            text="Production",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=("#2196F3", "#64B5F6")
+        )
+        subtitle_label.pack(pady=(0, 5))
+
+        version_label = ctk.CTkLabel(
+            logo_frame,
             text="Contabilidade",
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(size=10),
             text_color="gray"
         )
-        subtitle_label.pack()
+        version_label.pack()
 
         # Menu items
         menu_items = [
