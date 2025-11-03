@@ -161,9 +161,9 @@ class RelatoriosScreen(ctk.CTkFrame):
         self.tipo_projeto_var = ctk.StringVar(value="todos")
         tipo_projeto_options = [
             ("Todos", "todos"),
-            ("Apenas Empresa", "empresa"),
-            ("Apenas Pessoais Bruno", "bruno"),
-            ("Apenas Pessoais Rafael", "rafael")
+            ("Empresa", "empresa"),
+            ("Pessoais Bruno", "bruno"),
+            ("Pessoais Rafael", "rafael")
         ]
 
         for label, value in tipo_projeto_options:
@@ -760,7 +760,12 @@ class RelatoriosScreen(ctk.CTkFrame):
         summary_frame = ctk.CTkFrame(self.preview_scroll, fg_color=("#E3F2FD", "#1565C0"), corner_radius=10)
         summary_frame.pack(fill="x", pady=(0, 20))
 
-        summary_text = f"📊 {data['total_projetos']} Projetos  |  💰 Valor Total: {data['total_valor_fmt']}  |  🏆 Prémios: Bruno {data['total_premios_bruno_fmt']} | Rafael {data['total_premios_rafael_fmt']}"
+        # Build summary text based on whether to show premios
+        mostrar_premios = data.get('mostrar_premios', False)
+        if mostrar_premios:
+            summary_text = f"📊 {data['total_projetos']} Projetos  |  💰 Valor Total: {data['total_valor_fmt']}  |  🏆 Prémios: Bruno {data['total_premios_bruno_fmt']} | Rafael {data['total_premios_rafael_fmt']}"
+        else:
+            summary_text = f"📊 {data['total_projetos']} Projetos  |  💰 Valor Total: {data['total_valor_fmt']}"
 
         ctk.CTkLabel(
             summary_frame,
@@ -777,13 +782,27 @@ class RelatoriosScreen(ctk.CTkFrame):
         header_row = ctk.CTkFrame(table_frame, fg_color=("#9C27B0", "#7B1FA2"))
         header_row.pack(fill="x", padx=5, pady=(5, 0))
 
-        headers = [
-            ("Nº", 100),
-            ("Tipo", 140),
-            ("Cliente", 180),
-            ("Valor", 110),
-            ("Estado", 130)
-        ]
+        # Define headers based on whether to show premios
+        mostrar_premios = data.get('mostrar_premios', False)
+
+        if mostrar_premios:
+            headers = [
+                ("Nº", 80),
+                ("Tipo", 120),
+                ("Cliente", 140),
+                ("Valor", 90),
+                ("Prémio B", 90),
+                ("Prémio R", 90),
+                ("Estado", 110)
+            ]
+        else:
+            headers = [
+                ("Nº", 100),
+                ("Tipo", 140),
+                ("Cliente", 180),
+                ("Valor", 110),
+                ("Estado", 130)
+            ]
 
         for header_text, width in headers:
             ctk.CTkLabel(
@@ -807,7 +826,7 @@ class RelatoriosScreen(ctk.CTkFrame):
                 row_frame,
                 text=proj['numero'],
                 font=ctk.CTkFont(size=11),
-                width=100,
+                width=80 if mostrar_premios else 100,
                 anchor="w"
             ).pack(side="left", padx=8, pady=6)
 
@@ -816,16 +835,17 @@ class RelatoriosScreen(ctk.CTkFrame):
                 row_frame,
                 text=proj['tipo'],
                 font=ctk.CTkFont(size=11),
-                width=140,
+                width=120 if mostrar_premios else 140,
                 anchor="w"
             ).pack(side="left", padx=8, pady=6)
 
             # Cliente
+            cliente_len = 17 if mostrar_premios else 22
             ctk.CTkLabel(
                 row_frame,
-                text=proj['cliente'][:22] + '...' if len(proj['cliente']) > 22 else proj['cliente'],
+                text=proj['cliente'][:cliente_len] + '...' if len(proj['cliente']) > cliente_len else proj['cliente'],
                 font=ctk.CTkFont(size=11),
-                width=180,
+                width=140 if mostrar_premios else 180,
                 anchor="w"
             ).pack(side="left", padx=8, pady=6)
 
@@ -834,16 +854,36 @@ class RelatoriosScreen(ctk.CTkFrame):
                 row_frame,
                 text=proj['valor_fmt'],
                 font=ctk.CTkFont(size=11),
-                width=110,
+                width=90 if mostrar_premios else 110,
                 anchor="e"
             ).pack(side="left", padx=8, pady=6)
+
+            # Prémios (apenas se mostrar_premios)
+            if mostrar_premios:
+                # Prémio Bruno
+                ctk.CTkLabel(
+                    row_frame,
+                    text=proj['premio_bruno_fmt'],
+                    font=ctk.CTkFont(size=11),
+                    width=90,
+                    anchor="e"
+                ).pack(side="left", padx=8, pady=6)
+
+                # Prémio Rafael
+                ctk.CTkLabel(
+                    row_frame,
+                    text=proj['premio_rafael_fmt'],
+                    font=ctk.CTkFont(size=11),
+                    width=90,
+                    anchor="e"
+                ).pack(side="left", padx=8, pady=6)
 
             # Estado
             ctk.CTkLabel(
                 row_frame,
                 text=proj['estado'],
                 font=ctk.CTkFont(size=11),
-                width=130,
+                width=110 if mostrar_premios else 130,
                 anchor="center"
             ).pack(side="left", padx=8, pady=6)
 

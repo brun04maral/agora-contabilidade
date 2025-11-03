@@ -317,6 +317,9 @@ class RelatoriosManager:
 
         periodo_str = self._format_periodo(data_inicio, data_fim)
 
+        # Determinar se deve mostrar prémios (só para Todos ou Empresa)
+        mostrar_premios = tipo is None or tipo == TipoProjeto.EMPRESA
+
         return {
             'tipo': 'projetos',
             'titulo': 'Relatório de Projetos',
@@ -328,6 +331,7 @@ class RelatoriosManager:
                 'tipo': self._get_tipo_label(tipo) if tipo else 'Todos',
                 'estado': self._get_estado_label(estado) if estado else 'Todos'
             },
+            'mostrar_premios': mostrar_premios,
             'total_projetos': len(projetos),
             'total_valor': float(total_valor),
             'total_valor_fmt': self._format_currency(float(total_valor)),
