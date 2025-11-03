@@ -175,6 +175,33 @@ class RelatoriosScreen(ctk.CTkFrame):
             )
             radio.pack(anchor="w", pady=2)
 
+        # Estado de Projeto (para relatório de projetos)
+        self.estado_projeto_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        self.estado_projeto_frame.pack(fill="x", padx=20, pady=(10, 20))
+
+        ctk.CTkLabel(
+            self.estado_projeto_frame,
+            text="Filtrar Estado",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.estado_projeto_var = ctk.StringVar(value="todos")
+        estado_projeto_options = [
+            ("Todos", "todos"),
+            ("Não Faturado", "nao_faturado"),
+            ("Faturado", "faturado"),
+            ("Recebido", "recebido")
+        ]
+
+        for label, value in estado_projeto_options:
+            radio = ctk.CTkRadioButton(
+                self.estado_projeto_frame,
+                text=label,
+                variable=self.estado_projeto_var,
+                value=value
+            )
+            radio.pack(anchor="w", pady=2)
+
         # Buttons
         btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(20, 20), side="bottom")
@@ -243,13 +270,16 @@ class RelatoriosScreen(ctk.CTkFrame):
         if value == "Saldos Pessoais":
             self.socio_frame.pack(fill="x", padx=20, pady=(10, 20))
             self.tipo_projeto_frame.pack_forget()
-        # Show/hide tipo_projeto filter for Projetos
+            self.estado_projeto_frame.pack_forget()
+        # Show/hide tipo_projeto and estado_projeto filters for Projetos
         elif value == "Projetos":
             self.socio_frame.pack_forget()
             self.tipo_projeto_frame.pack(fill="x", padx=20, pady=(10, 20))
+            self.estado_projeto_frame.pack(fill="x", padx=20, pady=(10, 20))
         else:
             self.socio_frame.pack_forget()
             self.tipo_projeto_frame.pack_forget()
+            self.estado_projeto_frame.pack_forget()
 
     def on_periodo_changed(self):
         """Handle period change"""
@@ -326,7 +356,7 @@ class RelatoriosScreen(ctk.CTkFrame):
 
             elif tipo == "Projetos":
                 # Map filter to TipoProjeto enum
-                from database.models import TipoProjeto
+                from database.models import TipoProjeto, EstadoProjeto
                 filtro_tipo_str = self.tipo_projeto_var.get()
                 tipo_projeto = None
                 if filtro_tipo_str == "empresa":
@@ -337,8 +367,20 @@ class RelatoriosScreen(ctk.CTkFrame):
                     tipo_projeto = TipoProjeto.PESSOAL_RAFAEL
                 # "todos" maps to None (no filter)
 
+                # Map filter to EstadoProjeto enum
+                filtro_estado_str = self.estado_projeto_var.get()
+                estado_projeto = None
+                if filtro_estado_str == "nao_faturado":
+                    estado_projeto = EstadoProjeto.NAO_FATURADO
+                elif filtro_estado_str == "faturado":
+                    estado_projeto = EstadoProjeto.FATURADO
+                elif filtro_estado_str == "recebido":
+                    estado_projeto = EstadoProjeto.RECEBIDO
+                # "todos" maps to None (no filter)
+
                 self.current_report_data = self.manager.gerar_relatorio_projetos(
                     tipo=tipo_projeto,
+                    estado=estado_projeto,
                     data_inicio=data_inicio,
                     data_fim=data_fim
                 )
@@ -926,9 +968,14 @@ class RelatoriosScreen(ctk.CTkFrame):
         elif tipo == 'projetos':
             parts.append('Projetos')
             # Add tipo projeto filter
-            filtro = self.current_report_data.get('filtros', {}).get('tipo', 'Todos')
-            if filtro != 'Todos':
-                filtro_clean = filtro.replace(' ', '')
+            filtro_tipo = self.current_report_data.get('filtros', {}).get('tipo', 'Todos')
+            if filtro_tipo != 'Todos':
+                filtro_clean = filtro_tipo.replace(' ', '')
+                parts.append(filtro_clean)
+            # Add estado projeto filter
+            filtro_estado = self.current_report_data.get('filtros', {}).get('estado', 'Todos')
+            if filtro_estado != 'Todos':
+                filtro_clean = filtro_estado.replace(' ', '')
                 parts.append(filtro_clean)
         else:
             parts.append('Relatorio')
