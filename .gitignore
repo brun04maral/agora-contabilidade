@@ -185,3 +185,4 @@ agora_media.db
 *.db
 *.backup*
 *.db
+.DS_Store
