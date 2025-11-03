@@ -621,6 +621,79 @@ class RelatoriosManager:
         else:
             raise ValueError(f"Tipo de relatório não suportado: {tipo}")
 
+    def _criar_header_pdf(self, styles):
+        """Create PDF header with logo and company name"""
+        from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib import colors
+        from reportlab.lib.units import cm
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+        from reportlab.lib.styles import ParagraphStyle
+
+        elements = []
+
+        # Logo style (simulated with text)
+        logo_style = ParagraphStyle(
+            'Logo',
+            parent=styles['Normal'],
+            fontSize=32,
+            textColor=colors.HexColor('#2196F3'),
+            fontName='Helvetica-Bold',
+            alignment=TA_LEFT,
+            leading=32
+        )
+
+        company_style = ParagraphStyle(
+            'Company',
+            parent=styles['Normal'],
+            fontSize=18,
+            fontName='Helvetica-Bold',
+            alignment=TA_LEFT,
+            leading=22
+        )
+
+        subtitle_style = ParagraphStyle(
+            'CompanySubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#2196F3'),
+            fontName='Helvetica-Bold',
+            alignment=TA_LEFT,
+            leading=14
+        )
+
+        # Header table with logo and company name
+        header_data = [[
+            [
+                Paragraph('<font name="Helvetica-Bold" size="32" color="#2196F3">a</font>', logo_style),
+                Paragraph('Agora Media<br/><font size="12" color="#2196F3">Production</font>', company_style)
+            ]
+        ]]
+
+        header_table = Table(header_data, colWidths=[18*cm])
+        header_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ]))
+
+        elements.append(header_table)
+        elements.append(Spacer(1, 0.3*cm))
+
+        # Separator line
+        line_table = Table([['']], colWidths=[18*cm], rowHeights=[0.1*cm])
+        line_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#2196F3')),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(line_table)
+        elements.append(Spacer(1, 0.5*cm))
+
+        return elements
+
     def _exportar_pdf_saldos(self, report_data: Dict[str, Any], filename: str):
         """Export Saldos report to PDF"""
         from reportlab.lib.pagesizes import A4
@@ -634,6 +707,9 @@ class RelatoriosManager:
         doc = SimpleDocTemplate(filename, pagesize=A4)
         elements = []
         styles = getSampleStyleSheet()
+
+        # Add header with logo
+        elements.extend(self._criar_header_pdf(styles))
 
         # Custom styles
         title_style = ParagraphStyle(
@@ -869,6 +945,9 @@ class RelatoriosManager:
         doc = SimpleDocTemplate(filename, pagesize=A4)
         elements = []
         styles = getSampleStyleSheet()
+
+        # Add header with logo
+        elements.extend(self._criar_header_pdf(styles))
 
         # Styles
         title_style = ParagraphStyle(
@@ -1343,6 +1422,9 @@ class RelatoriosManager:
         doc = SimpleDocTemplate(filename, pagesize=landscape(A4))
         elements = []
         styles = getSampleStyleSheet()
+
+        # Add header with logo (landscape width)
+        elements.extend(self._criar_header_pdf(styles))
 
         # Styles
         title_style = ParagraphStyle(
