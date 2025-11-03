@@ -239,9 +239,13 @@ class RelatoriosScreen(ctk.CTkFrame):
 
     def on_tipo_changed(self, value):
         """Handle report type change"""
-        # Show/hide socio and tipo_projeto filters based on report type
+        # Show/hide socio filter for Saldos Pessoais
         if value == "Saldos Pessoais":
             self.socio_frame.pack(fill="x", padx=20, pady=(10, 20))
+            self.tipo_projeto_frame.pack_forget()
+        # Show/hide tipo_projeto filter for Projetos
+        elif value == "Projetos":
+            self.socio_frame.pack_forget()
             self.tipo_projeto_frame.pack(fill="x", padx=20, pady=(10, 20))
         else:
             self.socio_frame.pack_forget()
@@ -306,14 +310,10 @@ class RelatoriosScreen(ctk.CTkFrame):
                 elif socio_str == "Rafael":
                     socio = Socio.RAFAEL
 
-                # Get filter tipo de projeto
-                filtro_tipo = self.tipo_projeto_var.get()
-
                 self.current_report_data = self.manager.gerar_relatorio_saldos(
                     socio=socio,
                     data_inicio=data_inicio,
-                    data_fim=data_fim,
-                    filtro_tipo_projeto=filtro_tipo
+                    data_fim=data_fim
                 )
                 self.render_saldos_preview(self.current_report_data)
 
@@ -325,7 +325,20 @@ class RelatoriosScreen(ctk.CTkFrame):
                 self.render_financeiro_preview(self.current_report_data)
 
             elif tipo == "Projetos":
+                # Map filter to TipoProjeto enum
+                from database.models import TipoProjeto
+                filtro_tipo_str = self.tipo_projeto_var.get()
+                tipo_projeto = None
+                if filtro_tipo_str == "empresa":
+                    tipo_projeto = TipoProjeto.EMPRESA
+                elif filtro_tipo_str == "bruno":
+                    tipo_projeto = TipoProjeto.PESSOAL_BRUNO
+                elif filtro_tipo_str == "rafael":
+                    tipo_projeto = TipoProjeto.PESSOAL_RAFAEL
+                # "todos" maps to None (no filter)
+
                 self.current_report_data = self.manager.gerar_relatorio_projetos(
+                    tipo=tipo_projeto,
                     data_inicio=data_inicio,
                     data_fim=data_fim
                 )
