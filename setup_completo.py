@@ -47,7 +47,6 @@ print("\n[3/3] Criando utilizador admin...")
 Session = sessionmaker(bind=engine)
 session = Session()
 
-from database.models import UserRole
 import bcrypt
 
 # Check if user already exists
@@ -65,7 +64,7 @@ else:
         email="admin@agoramedia.pt",
         password_hash=password_hash,
         name="Administrador",
-        role=UserRole.ADMIN,
+        role="admin",  # Role as string
         is_active=True
     )
 
