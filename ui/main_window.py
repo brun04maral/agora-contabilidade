@@ -81,6 +81,8 @@ class MainWindow(ctk.CTkFrame):
             self.show_despesas()
         elif menu_id == "boletins":
             self.show_boletins()
+        elif menu_id == "relatorios":
+            self.show_relatorios()
         elif menu_id == "clientes":
             self.show_clientes()
         elif menu_id == "fornecedores":
@@ -121,6 +123,13 @@ class MainWindow(ctk.CTkFrame):
         """Show boletins screen"""
         from ui.screens.boletins import BoletinsScreen
         screen = BoletinsScreen(self.content_frame, self.db_session)
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_relatorios(self):
+        """Show relatorios screen"""
+        from ui.screens.relatorios import RelatoriosScreen
+        screen = RelatoriosScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
