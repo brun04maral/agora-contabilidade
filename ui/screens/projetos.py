@@ -19,19 +19,21 @@ class ProjetosScreen(ctk.CTkFrame):
     Tela de gestão de Projetos (CRUD completo)
     """
 
-    def __init__(self, parent, db_session: Session, **kwargs):
+    def __init__(self, parent, db_session: Session, filtro_estado=None, **kwargs):
         """
         Initialize projetos screen
 
         Args:
             parent: Parent widget
             db_session: SQLAlchemy database session
+            filtro_estado: Optional initial estado filter
         """
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
         self.manager = ProjetosManager(db_session)
         self.projeto_editando = None
+        self.filtro_inicial_estado = filtro_estado
 
         # Configure
         self.configure(fg_color="transparent")
@@ -39,8 +41,13 @@ class ProjetosScreen(ctk.CTkFrame):
         # Create widgets
         self.create_widgets()
 
-        # Load data
-        self.carregar_projetos()
+        # Apply initial filter if provided
+        if self.filtro_inicial_estado:
+            self.estado_filter.set(self.filtro_inicial_estado)
+            self.aplicar_filtros()
+        else:
+            # Load data
+            self.carregar_projetos()
 
     def create_widgets(self):
         """Create screen widgets"""

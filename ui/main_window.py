@@ -95,7 +95,7 @@ class MainWindow(ctk.CTkFrame):
     def show_dashboard(self):
         """Show dashboard screen"""
         from ui.screens.dashboard import DashboardScreen
-        screen = DashboardScreen(self.content_frame, self.db_session)
+        screen = DashboardScreen(self.content_frame, self.db_session, self)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
@@ -105,10 +105,15 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_projetos(self):
-        """Show projetos screen"""
+    def show_projetos(self, filtro_estado=None):
+        """
+        Show projetos screen
+
+        Args:
+            filtro_estado: Optional estado filter ("Todos", "Recebido", "Faturado", "Não Faturado")
+        """
         from ui.screens.projetos import ProjetosScreen
-        screen = ProjetosScreen(self.content_frame, self.db_session)
+        screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 

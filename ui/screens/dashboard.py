@@ -19,18 +19,20 @@ class DashboardScreen(ctk.CTkFrame):
     Dashboard com indicadores principais do sistema
     """
 
-    def __init__(self, parent, db_session: Session, **kwargs):
+    def __init__(self, parent, db_session: Session, main_window=None, **kwargs):
         """
         Initialize dashboard screen
 
         Args:
             parent: Parent widget
             db_session: SQLAlchemy database session
+            main_window: Reference to MainWindow for navigation
         """
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
         self.calculator = SaldosCalculator(db_session)
+        self.main_window = main_window
 
         # Configure
         self.configure(fg_color="transparent")
@@ -101,16 +103,28 @@ class DashboardScreen(ctk.CTkFrame):
         projetos_container.pack(fill="x", pady=(0, 35))
 
         # Stats cards
-        self.total_projetos_card = self.create_stat_card(projetos_container, "Total", "0", "#9C27B0")
+        self.total_projetos_card = self.create_stat_card(
+            projetos_container, "Total", "0", "#9C27B0",
+            on_click=lambda: self.navigate_to_projetos("Todos")
+        )
         self.total_projetos_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-        self.projetos_recebidos_card = self.create_stat_card(projetos_container, "Recebidos", "0", "#4CAF50")
+        self.projetos_recebidos_card = self.create_stat_card(
+            projetos_container, "Recebidos", "0", "#4CAF50",
+            on_click=lambda: self.navigate_to_projetos("Recebido")
+        )
         self.projetos_recebidos_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
-        self.projetos_faturados_card = self.create_stat_card(projetos_container, "Faturados", "0", "#FF9800")
+        self.projetos_faturados_card = self.create_stat_card(
+            projetos_container, "Faturados", "0", "#FF9800",
+            on_click=lambda: self.navigate_to_projetos("Faturado")
+        )
         self.projetos_faturados_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
-        self.projetos_nao_faturados_card = self.create_stat_card(projetos_container, "Não Faturados", "0", "#F44336")
+        self.projetos_nao_faturados_card = self.create_stat_card(
+            projetos_container, "Não Faturados", "0", "#F44336",
+            on_click=lambda: self.navigate_to_projetos("Não Faturado")
+        )
         self.projetos_nao_faturados_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === DESPESAS ===
@@ -213,7 +227,7 @@ class DashboardScreen(ctk.CTkFrame):
 
         return card
 
-    def create_stat_card(self, parent, title: str, value: str, color: str) -> ctk.CTkFrame:
+    def create_stat_card(self, parent, title: str, value: str, color: str, on_click=None) -> ctk.CTkFrame:
         """
         Create statistics card
 
@@ -222,6 +236,7 @@ class DashboardScreen(ctk.CTkFrame):
             title: Card title
             value: Card value
             color: Card color
+            on_click: Optional callback when card is clicked
 
         Returns:
             Card frame
@@ -255,7 +270,45 @@ class DashboardScreen(ctk.CTkFrame):
         # Store reference to update later
         card.value_label = value_label
 
+        # Make clickable if callback provided
+        if on_click:
+            card.configure(cursor="hand2")
+
+            # Bind click events to card and all children
+            def handle_click(event):
+                on_click()
+
+            card.bind("<Button-1>", handle_click)
+            title_label.bind("<Button-1>", handle_click)
+            value_label.bind("<Button-1>", handle_click)
+
+            # Add hover effects
+            original_border = card.cget("border_color")
+
+            def on_enter(event):
+                card.configure(border_color=("#ffffff", "#ffffff"), border_width=3)
+
+            def on_leave(event):
+                card.configure(border_color=original_border, border_width=2)
+
+            card.bind("<Enter>", on_enter)
+            card.bind("<Leave>", on_leave)
+            title_label.bind("<Enter>", on_enter)
+            title_label.bind("<Leave>", on_leave)
+            value_label.bind("<Enter>", on_enter)
+            value_label.bind("<Leave>", on_leave)
+
         return card
+
+    def navigate_to_projetos(self, estado):
+        """
+        Navigate to projetos screen with filter
+
+        Args:
+            estado: Estado filter to apply
+        """
+        if self.main_window:
+            self.main_window.show_projetos(filtro_estado=estado)
 
     def carregar_dados(self):
         """Load and display all dashboard data"""
