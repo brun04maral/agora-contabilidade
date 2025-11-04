@@ -17,6 +17,7 @@ class DataTable(ctk.CTkScrollableFrame):
         columns: List[Dict],  # [{'key': 'nome', 'label': 'Nome', 'width': 200}]
         on_edit: Optional[Callable] = None,
         on_delete: Optional[Callable] = None,
+        on_view: Optional[Callable] = None,
         **kwargs
     ):
         """
@@ -27,12 +28,14 @@ class DataTable(ctk.CTkScrollableFrame):
             columns: List of column definitions
             on_edit: Callback for edit action (receives row data)
             on_delete: Callback for delete action (receives row data)
+            on_view: Callback for view action (receives row data)
         """
         super().__init__(parent, **kwargs)
 
         self.columns = columns
         self.on_edit = on_edit
         self.on_delete = on_delete
+        self.on_view = on_view
         self.rows = []
 
         # Configure
@@ -69,12 +72,14 @@ class DataTable(ctk.CTkScrollableFrame):
             col_index += 1
 
         # Actions column
-        if self.on_edit or self.on_delete:
+        if self.on_view or self.on_edit or self.on_delete:
+            # Wider if we have view button
+            width = 180 if self.on_view else 120
             label = ctk.CTkLabel(
                 header_frame,
                 text="Ações",
                 font=ctk.CTkFont(size=13, weight="bold"),
-                width=120,
+                width=width,
                 anchor="center",
                 text_color=("#1a1a1a", "#1a1a1a")
             )
@@ -136,9 +141,22 @@ class DataTable(ctk.CTkScrollableFrame):
             col_index += 1
 
         # Actions buttons
-        if self.on_edit or self.on_delete:
+        if self.on_view or self.on_edit or self.on_delete:
             actions_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
             actions_frame.grid(row=0, column=col_index, padx=10, pady=5)
+
+            if self.on_view:
+                view_btn = ctk.CTkButton(
+                    actions_frame,
+                    text="👁️",
+                    command=lambda d=data: self.on_view(d),
+                    width=50,
+                    height=30,
+                    font=ctk.CTkFont(size=14),
+                    fg_color=("#2196F3", "#1565C0"),
+                    hover_color=("#1976D2", "#0D47A1")
+                )
+                view_btn.pack(side="left", padx=2)
 
             if self.on_edit:
                 edit_btn = ctk.CTkButton(

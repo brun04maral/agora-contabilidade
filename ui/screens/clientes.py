@@ -15,18 +15,20 @@ class ClientesScreen(ctk.CTkFrame):
     Tela de gestão de Clientes
     """
 
-    def __init__(self, parent, db_session: Session, **kwargs):
+    def __init__(self, parent, db_session: Session, main_window=None, **kwargs):
         """
         Initialize clientes screen
 
         Args:
             parent: Parent widget
             db_session: SQLAlchemy database session
+            main_window: Reference to MainWindow for navigation
         """
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
         self.manager = ClientesManager(db_session)
+        self.main_window = main_window
 
         # Configure
         self.configure(fg_color="transparent")
@@ -153,6 +155,7 @@ class ClientesScreen(ctk.CTkFrame):
         self.table = DataTable(
             table_container,
             columns=columns,
+            on_view=self.ver_projetos_cliente if self.main_window else None,
             on_edit=self.editar_cliente,
             on_delete=self.apagar_cliente
         )
@@ -209,6 +212,27 @@ class ClientesScreen(ctk.CTkFrame):
         """Clear search"""
         self.search_entry.delete(0, "end")
         self.carregar_clientes()
+
+    def ver_projetos_cliente(self, row_data: Dict):
+        """
+        Navigate to projetos screen filtered by this cliente
+
+        Args:
+            row_data: Row data containing cliente info
+        """
+        # Check if cliente has projects
+        projetos_count = int(row_data.get("projetos_count", "0"))
+        if projetos_count == 0:
+            return  # No projects to show
+
+        # Get cliente numero for filtering
+        cliente_numero = row_data.get("numero")
+
+        # Navigate to projetos with cliente filter
+        # Note: We need to add cliente filtering support to ProjetosScreen
+        if self.main_window:
+            # For now, just navigate to projetos - we'll need to add cliente filter support
+            self.main_window.show_projetos()
 
     def adicionar_cliente(self):
         """Show dialog to add new cliente"""

@@ -175,7 +175,7 @@ class MainWindow(ctk.CTkFrame):
     def show_clientes(self):
         """Show clientes screen"""
         from ui.screens.clientes import ClientesScreen
-        screen = ClientesScreen(self.content_frame, self.db_session)
+        screen = ClientesScreen(self.content_frame, self.db_session, self)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
