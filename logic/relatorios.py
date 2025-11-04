@@ -623,61 +623,69 @@ class RelatoriosManager:
 
     def _criar_header_pdf(self, styles):
         """Create PDF header with logo and company name"""
-        from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
+        from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, Image
         from reportlab.lib import colors
         from reportlab.lib.units import cm
         from reportlab.lib.enums import TA_CENTER, TA_LEFT
         from reportlab.lib.styles import ParagraphStyle
+        import os
 
         elements = []
 
-        # Logo style (simulated with text)
-        logo_style = ParagraphStyle(
-            'Logo',
-            parent=styles['Normal'],
-            fontSize=32,
-            textColor=colors.HexColor('#efd578'),
-            fontName='Helvetica-Bold',
-            alignment=TA_LEFT,
-            leading=32
-        )
+        # Try to use PNG logo, fallback to text if not found
+        logo_path = os.path.join(os.path.dirname(__file__), "..", "media", "AGORA media production@0.5x.png")
 
-        company_style = ParagraphStyle(
-            'Company',
-            parent=styles['Normal'],
-            fontSize=18,
-            fontName='Helvetica-Bold',
-            alignment=TA_LEFT,
-            leading=22
-        )
+        if os.path.exists(logo_path):
+            # Use PNG logo
+            logo_img = Image(logo_path, width=8*cm, height=2*cm, kind='proportional')
 
-        subtitle_style = ParagraphStyle(
-            'CompanySubtitle',
-            parent=styles['Normal'],
-            fontSize=12,
-            textColor=colors.HexColor('#efd578'),
-            fontName='Helvetica-Bold',
-            alignment=TA_LEFT,
-            leading=14
-        )
+            header_data = [[logo_img]]
+            header_table = Table(header_data, colWidths=[18*cm])
+            header_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ]))
+        else:
+            # Fallback to text logo
+            logo_style = ParagraphStyle(
+                'Logo',
+                parent=styles['Normal'],
+                fontSize=32,
+                textColor=colors.HexColor('#efd578'),
+                fontName='Helvetica-Bold',
+                alignment=TA_LEFT,
+                leading=32
+            )
 
-        # Header table with logo and company name
-        header_data = [[
-            [
-                Paragraph('<font name="Helvetica-Bold" size="32" color="#efd578">a</font>', logo_style),
-                Paragraph('Agora Media<br/><font size="12" color="#efd578">Production</font>', company_style)
-            ]
-        ]]
+            company_style = ParagraphStyle(
+                'Company',
+                parent=styles['Normal'],
+                fontSize=18,
+                fontName='Helvetica-Bold',
+                alignment=TA_LEFT,
+                leading=22
+            )
 
-        header_table = Table(header_data, colWidths=[18*cm])
-        header_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ]))
+            header_data = [[
+                [
+                    Paragraph('<font name="Helvetica-Bold" size="32" color="#efd578">a</font>', logo_style),
+                    Paragraph('AGORA<br/><font size="12" color="#efd578">Media Production</font>', company_style)
+                ]
+            ]]
+
+            header_table = Table(header_data, colWidths=[18*cm])
+            header_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ]))
 
         elements.append(header_table)
         elements.append(Spacer(1, 0.3*cm))
@@ -1474,18 +1482,20 @@ class RelatoriosManager:
         elements.append(Spacer(1, 0.5*cm))
 
         # Projects table - show ALL projects
-        table_data = [['Nº', 'Tipo', 'Cliente', 'Valor', 'Estado']]
+        table_data = [['Nº', 'Tipo', 'Cliente', 'Valor', 'Prémio B', 'Prémio R', 'Estado']]
 
         for proj in report_data['projetos']:  # Show all projects
             table_data.append([
                 proj['numero'],
                 proj['tipo'],
-                proj['cliente'][:20],
+                proj['cliente'][:15],
                 proj['valor_fmt'],
+                proj.get('premio_bruno_fmt', '€0,00'),
+                proj.get('premio_rafael_fmt', '€0,00'),
                 proj['estado']
             ])
 
-        table = Table(table_data, colWidths=[2.5*cm, 3.5*cm, 6*cm, 3*cm, 3*cm])
+        table = Table(table_data, colWidths=[2*cm, 2.5*cm, 4.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm])
 
         table.setStyle(TableStyle([
             # Header
@@ -1520,12 +1530,14 @@ class RelatoriosManager:
         ws.column_dimensions['C'].width = 25
         ws.column_dimensions['D'].width = 40
         ws.column_dimensions['E'].width = 15
-        ws.column_dimensions['F'].width = 18
+        ws.column_dimensions['F'].width = 15
+        ws.column_dimensions['G'].width = 15
+        ws.column_dimensions['H'].width = 18
 
         row = 1
 
         # Title
-        ws.merge_cells(f'A{row}:F{row}')
+        ws.merge_cells(f'A{row}:H{row}')
         cell = ws[f'A{row}']
         cell.value = report_data['titulo']
         cell.font = Font(size=18, bold=True, color="2196F3")
@@ -1534,7 +1546,7 @@ class RelatoriosManager:
 
         # Period
         if report_data['periodo']:
-            ws.merge_cells(f'A{row}:F{row}')
+            ws.merge_cells(f'A{row}:H{row}')
             cell = ws[f'A{row}']
             cell.value = report_data['periodo']
             cell.font = Font(size=11, color="666666")
@@ -1542,7 +1554,7 @@ class RelatoriosManager:
             row += 1
 
         # Generation date
-        ws.merge_cells(f'A{row}:F{row}')
+        ws.merge_cells(f'A{row}:H{row}')
         cell = ws[f'A{row}']
         cell.value = f"Gerado em: {report_data['data_geracao']}"
         cell.font = Font(size=10, color="999999")
@@ -1550,7 +1562,7 @@ class RelatoriosManager:
         row += 2
 
         # Summary
-        ws.merge_cells(f'A{row}:F{row}')
+        ws.merge_cells(f'A{row}:H{row}')
         cell = ws[f'A{row}']
         cell.value = f"Total: {report_data['total_projetos']} projetos | Valor: {report_data['total_valor_fmt']} | Prémios: Bruno {report_data['total_premios_bruno_fmt']} | Rafael {report_data['total_premios_rafael_fmt']}"
         cell.font = Font(size=11, bold=True)
@@ -1559,7 +1571,7 @@ class RelatoriosManager:
         row += 2
 
         # Header
-        headers = ['Nº', 'Tipo', 'Cliente', 'Descrição', 'Valor', 'Estado']
+        headers = ['Nº', 'Tipo', 'Cliente', 'Descrição', 'Valor', 'Prémio Bruno', 'Prémio Rafael', 'Estado']
         for col_idx, header in enumerate(headers, start=1):
             cell = ws.cell(row=row, column=col_idx)
             cell.value = header
@@ -1576,11 +1588,15 @@ class RelatoriosManager:
             ws[f'D{row}'].value = proj['descricao']
             ws[f'E{row}'].value = proj['valor_fmt']
             ws[f'E{row}'].alignment = Alignment(horizontal='right')
-            ws[f'F{row}'].value = proj['estado']
+            ws[f'F{row}'].value = proj.get('premio_bruno_fmt', '€0,00')
+            ws[f'F{row}'].alignment = Alignment(horizontal='right')
+            ws[f'G{row}'].value = proj.get('premio_rafael_fmt', '€0,00')
+            ws[f'G{row}'].alignment = Alignment(horizontal='right')
+            ws[f'H{row}'].value = proj['estado']
 
             # Alternate row colors
             if row % 2 == 0:
-                for col in ['A', 'B', 'C', 'D', 'E', 'F']:
+                for col in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                     ws[f'{col}{row}'].fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid")
 
             row += 1
