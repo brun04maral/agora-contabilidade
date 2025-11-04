@@ -138,9 +138,9 @@ class Sidebar(ctk.CTkFrame):
         btn.pack(fill="x", padx=10, pady=2)
         return btn
 
-    def select_menu(self, menu_id: str):
+    def update_selection(self, menu_id: str):
         """
-        Select a menu item
+        Update visual selection without triggering callback
 
         Args:
             menu_id: Menu identifier
@@ -159,6 +159,16 @@ class Sidebar(ctk.CTkFrame):
                 )
 
         self.current_menu = menu_id
+
+    def select_menu(self, menu_id: str):
+        """
+        Select a menu item
+
+        Args:
+            menu_id: Menu identifier
+        """
+        # Update visual selection
+        self.update_selection(menu_id)
 
         # Call callback
         if self.on_menu_select:

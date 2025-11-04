@@ -112,6 +112,14 @@ class MainWindow(ctk.CTkFrame):
         Args:
             filtro_estado: Optional estado filter ("Todos", "Recebido", "Faturado", "Não Faturado")
         """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("projetos")
+
         from ui.screens.projetos import ProjetosScreen
         screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
         screen.grid(row=0, column=0, sticky="nsew")
