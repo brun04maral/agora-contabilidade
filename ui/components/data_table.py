@@ -3,12 +3,13 @@
 Componente de Tabela reutilizável para listagens
 """
 import customtkinter as ctk
+import tkinter as tk
 from typing import List, Dict, Callable, Optional
 
 
-class DataTable(ctk.CTkScrollableFrame):
+class DataTable(ctk.CTkFrame):
     """
-    Tabela de dados reutilizável com suporte a ações
+    Tabela de dados reutilizável com suporte a ações e scroll horizontal/vertical
     """
 
     def __init__(
@@ -18,6 +19,7 @@ class DataTable(ctk.CTkScrollableFrame):
         on_edit: Optional[Callable] = None,
         on_delete: Optional[Callable] = None,
         on_view: Optional[Callable] = None,
+        height: int = 400,
         **kwargs
     ):
         """
@@ -29,6 +31,7 @@ class DataTable(ctk.CTkScrollableFrame):
             on_edit: Callback for edit action (receives row data)
             on_delete: Callback for delete action (receives row data)
             on_view: Callback for view action (receives row data)
+            height: Table height in pixels
         """
         super().__init__(parent, **kwargs)
 
@@ -37,17 +40,58 @@ class DataTable(ctk.CTkScrollableFrame):
         self.on_delete = on_delete
         self.on_view = on_view
         self.rows = []
+        self.table_height = height
 
         # Configure
         self.configure(fg_color="transparent")
 
+        # Create scrollable container
+        self.create_container()
+
         # Create header
         self.create_header()
+
+    def create_container(self):
+        """Create scrollable container with horizontal and vertical scrollbars"""
+        # Canvas for scrolling
+        self.canvas = tk.Canvas(
+            self,
+            bg=self._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"]),
+            highlightthickness=0,
+            height=self.table_height
+        )
+
+        # Scrollable frame inside canvas
+        self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
+        self.scrollable_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        # Vertical scrollbar
+        self.v_scrollbar = ctk.CTkScrollbar(self, orientation="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.v_scrollbar.set)
+
+        # Horizontal scrollbar
+        self.h_scrollbar = ctk.CTkScrollbar(self, orientation="horizontal", command=self.canvas.xview)
+        self.canvas.configure(xscrollcommand=self.h_scrollbar.set)
+
+        # Pack scrollbars and canvas
+        self.v_scrollbar.pack(side="right", fill="y")
+        self.h_scrollbar.pack(side="bottom", fill="x")
+        self.canvas.pack(side="left", fill="both", expand=True)
+
+        # Configure scroll region when frame changes
+        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+
+        # Mouse wheel scrolling
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
+    def _on_mousewheel(self, event):
+        """Handle mouse wheel scrolling"""
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
     def create_header(self):
         """Create table header"""
         header_frame = ctk.CTkFrame(
-            self,
+            self.scrollable_frame,
             fg_color=("#efd578", "#d4bb5e"),
             corner_radius=8
         )
@@ -116,7 +160,7 @@ class DataTable(ctk.CTkScrollableFrame):
             bg_color = ("#ffffff", "#1e1e1e")
 
         row_frame = ctk.CTkFrame(
-            self,
+            self.scrollable_frame,
             fg_color=bg_color,
             corner_radius=6
         )
