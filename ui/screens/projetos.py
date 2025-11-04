@@ -19,7 +19,7 @@ class ProjetosScreen(ctk.CTkFrame):
     Tela de gestão de Projetos (CRUD completo)
     """
 
-    def __init__(self, parent, db_session: Session, filtro_estado=None, **kwargs):
+    def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_cliente_id=None, **kwargs):
         """
         Initialize projetos screen
 
@@ -27,6 +27,7 @@ class ProjetosScreen(ctk.CTkFrame):
             parent: Parent widget
             db_session: SQLAlchemy database session
             filtro_estado: Optional initial estado filter
+            filtro_cliente_id: Optional initial cliente filter (cliente ID)
         """
         super().__init__(parent, **kwargs)
 
@@ -34,6 +35,7 @@ class ProjetosScreen(ctk.CTkFrame):
         self.manager = ProjetosManager(db_session)
         self.projeto_editando = None
         self.filtro_inicial_estado = filtro_estado
+        self.filtro_cliente_id = filtro_cliente_id
 
         # Configure
         self.configure(fg_color="transparent")
@@ -42,8 +44,9 @@ class ProjetosScreen(ctk.CTkFrame):
         self.create_widgets()
 
         # Apply initial filter if provided
-        if self.filtro_inicial_estado:
-            self.estado_filter.set(self.filtro_inicial_estado)
+        if self.filtro_inicial_estado or self.filtro_cliente_id:
+            if self.filtro_inicial_estado:
+                self.estado_filter.set(self.filtro_inicial_estado)
             self.aplicar_filtros()
         else:
             # Load data
@@ -187,6 +190,10 @@ class ProjetosScreen(ctk.CTkFrame):
 
         # Get all projects
         projetos = self.manager.listar_todos()
+
+        # Filter by cliente if set
+        if self.filtro_cliente_id:
+            projetos = [p for p in projetos if p.cliente_id == self.filtro_cliente_id]
 
         # Filter by tipo
         if tipo != "Todos":

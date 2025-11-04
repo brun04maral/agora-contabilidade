@@ -79,14 +79,30 @@ class DataTable(ctk.CTkFrame):
         self.canvas.pack(side="left", fill="both", expand=True)
 
         # Configure scroll region when frame changes
-        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        def update_scrollregion(event=None):
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            # Also update canvas window width to match frame width
+            canvas_width = self.scrollable_frame.winfo_reqwidth()
+            self.canvas.itemconfig(self.scrollable_window, width=canvas_width)
 
-        # Mouse wheel scrolling
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.scrollable_frame.bind("<Configure>", update_scrollregion)
 
-    def _on_mousewheel(self, event):
-        """Handle mouse wheel scrolling"""
-        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        # Mouse wheel scrolling - bind to canvas and frame
+        def _on_mousewheel(event):
+            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+        self.canvas.bind("<MouseWheel>", _on_mousewheel)
+        self.scrollable_frame.bind("<MouseWheel>", _on_mousewheel)
+
+        # Bind entering/leaving to enable/disable scroll
+        def _bound_to_mousewheel(event):
+            self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbound_to_mousewheel(event):
+            self.canvas.unbind_all("<MouseWheel>")
+
+        self.canvas.bind('<Enter>', _bound_to_mousewheel)
+        self.canvas.bind('<Leave>', _unbound_to_mousewheel)
 
     def create_header(self):
         """Create table header"""

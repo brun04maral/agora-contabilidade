@@ -225,14 +225,12 @@ class ClientesScreen(ctk.CTkFrame):
         if projetos_count == 0:
             return  # No projects to show
 
-        # Get cliente numero for filtering
-        cliente_numero = row_data.get("numero")
+        # Get cliente ID for filtering
+        cliente_id = row_data.get("id")
 
         # Navigate to projetos with cliente filter
-        # Note: We need to add cliente filtering support to ProjetosScreen
-        if self.main_window:
-            # For now, just navigate to projetos - we'll need to add cliente filter support
-            self.main_window.show_projetos()
+        if self.main_window and cliente_id:
+            self.main_window.show_projetos(filtro_cliente_id=cliente_id)
 
     def adicionar_cliente(self):
         """Show dialog to add new cliente"""
