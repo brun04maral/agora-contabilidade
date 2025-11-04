@@ -81,28 +81,22 @@ class DataTable(ctk.CTkFrame):
         # Configure scroll region when frame changes
         def update_scrollregion(event=None):
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-            # Also update canvas window width to match frame width
-            canvas_width = self.scrollable_frame.winfo_reqwidth()
-            self.canvas.itemconfig(self.scrollable_window, width=canvas_width)
 
         self.scrollable_frame.bind("<Configure>", update_scrollregion)
 
-        # Mouse wheel scrolling - bind to canvas and frame
+        # Mouse wheel scrolling - bind directly to canvas
         def _on_mousewheel(event):
-            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            try:
+                self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            except:
+                pass
 
-        self.canvas.bind("<MouseWheel>", _on_mousewheel)
-        self.scrollable_frame.bind("<MouseWheel>", _on_mousewheel)
+        # Bind mousewheel only to this specific canvas
+        self.canvas.bind("<MouseWheel>", _on_mousewheel, "+")
 
-        # Bind entering/leaving to enable/disable scroll
-        def _bound_to_mousewheel(event):
-            self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
-        def _unbound_to_mousewheel(event):
-            self.canvas.unbind_all("<MouseWheel>")
-
-        self.canvas.bind('<Enter>', _bound_to_mousewheel)
-        self.canvas.bind('<Leave>', _unbound_to_mousewheel)
+        # For Linux support
+        self.canvas.bind("<Button-4>", lambda e: self.canvas.yview_scroll(-1, "units"), "+")
+        self.canvas.bind("<Button-5>", lambda e: self.canvas.yview_scroll(1, "units"), "+")
 
     def create_header(self):
         """Create table header"""

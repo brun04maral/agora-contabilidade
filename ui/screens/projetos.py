@@ -147,10 +147,15 @@ class ProjetosScreen(ctk.CTkFrame):
         self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
     def carregar_projetos(self):
-        """Load and display projects"""
-        projetos = self.manager.listar_todos()
-        data = [self.projeto_to_dict(p) for p in projetos]
-        self.table.set_data(data)
+        """Load and display projects (respecting active filters)"""
+        # If we have active filters, apply them instead of loading all
+        if self.filtro_cliente_id or self.tipo_filter.get() != "Todos" or self.estado_filter.get() != "Todos":
+            self.aplicar_filtros()
+        else:
+            # No filters active, load all
+            projetos = self.manager.listar_todos()
+            data = [self.projeto_to_dict(p) for p in projetos]
+            self.table.set_data(data)
 
     def projeto_to_dict(self, projeto) -> dict:
         """Convert project to dict for table"""
