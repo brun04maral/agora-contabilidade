@@ -3,7 +3,7 @@
 Tela de Clientes - Gestão de clientes da Agora Media
 """
 import customtkinter as ctk
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict
 from sqlalchemy.orm import Session
 from logic.clientes import ClientesManager
 from ui.components.data_table import DataTable
