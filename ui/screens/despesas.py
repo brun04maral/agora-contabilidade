@@ -19,15 +19,22 @@ class DespesasScreen(ctk.CTkFrame):
     Tela de gestão de Despesas (CRUD completo)
     """
 
-    def __init__(self, parent, db_session: Session, **kwargs):
+    def __init__(self, parent, db_session: Session, filtro_estado=None, **kwargs):
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
         self.manager = DespesasManager(db_session)
+        self.filtro_inicial_estado = filtro_estado
 
         self.configure(fg_color="transparent")
         self.create_widgets()
-        self.carregar_despesas()
+
+        # Apply initial filter if provided
+        if self.filtro_inicial_estado:
+            self.estado_filter.set(self.filtro_inicial_estado)
+            self.aplicar_filtros()
+        else:
+            self.carregar_despesas()
 
     def create_widgets(self):
         """Create screen widgets"""

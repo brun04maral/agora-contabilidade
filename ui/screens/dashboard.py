@@ -138,13 +138,22 @@ class DashboardScreen(ctk.CTkFrame):
         despesas_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         despesas_container.pack(fill="x", pady=(0, 35))
 
-        self.total_despesas_card = self.create_stat_card(despesas_container, "Total", "0", "#795548")
+        self.total_despesas_card = self.create_stat_card(
+            despesas_container, "Total", "0", "#795548",
+            on_click=lambda: self.navigate_to_despesas("Todos")
+        )
         self.total_despesas_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-        self.despesas_pagas_card = self.create_stat_card(despesas_container, "Pagas", "0", "#4CAF50")
+        self.despesas_pagas_card = self.create_stat_card(
+            despesas_container, "Pagas", "0", "#4CAF50",
+            on_click=lambda: self.navigate_to_despesas("Pago")
+        )
         self.despesas_pagas_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
-        self.despesas_pendentes_card = self.create_stat_card(despesas_container, "Pendentes", "0", "#FF9800")
+        self.despesas_pendentes_card = self.create_stat_card(
+            despesas_container, "Pendentes", "0", "#FF9800",
+            on_click=lambda: self.navigate_to_despesas("Ativo")
+        )
         self.despesas_pendentes_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === BOLETINS ===
@@ -158,13 +167,22 @@ class DashboardScreen(ctk.CTkFrame):
         boletins_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         boletins_container.pack(fill="x", pady=(0, 35))
 
-        self.total_boletins_card = self.create_stat_card(boletins_container, "Total", "0", "#607D8B")
+        self.total_boletins_card = self.create_stat_card(
+            boletins_container, "Total", "0", "#607D8B",
+            on_click=lambda: self.navigate_to_boletins("Todos")
+        )
         self.total_boletins_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-        self.boletins_pagos_card = self.create_stat_card(boletins_container, "Pagos", "0", "#4CAF50")
+        self.boletins_pagos_card = self.create_stat_card(
+            boletins_container, "Pagos", "0", "#4CAF50",
+            on_click=lambda: self.navigate_to_boletins("Pago")
+        )
         self.boletins_pagos_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
-        self.boletins_pendentes_card = self.create_stat_card(boletins_container, "Pendentes", "0", "#FF9800")
+        self.boletins_pendentes_card = self.create_stat_card(
+            boletins_container, "Pendentes", "0", "#FF9800",
+            on_click=lambda: self.navigate_to_boletins("Pendente")
+        )
         self.boletins_pendentes_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === CLIENTES & FORNECEDORES ===
@@ -309,6 +327,26 @@ class DashboardScreen(ctk.CTkFrame):
         """
         if self.main_window:
             self.main_window.show_projetos(filtro_estado=estado)
+
+    def navigate_to_despesas(self, estado):
+        """
+        Navigate to despesas screen with filter
+
+        Args:
+            estado: Estado filter to apply
+        """
+        if self.main_window:
+            self.main_window.show_despesas(filtro_estado=estado)
+
+    def navigate_to_boletins(self, estado):
+        """
+        Navigate to boletins screen with filter
+
+        Args:
+            estado: Estado filter to apply
+        """
+        if self.main_window:
+            self.main_window.show_boletins(filtro_estado=estado)
 
     def carregar_dados(self):
         """Load and display all dashboard data"""

@@ -125,17 +125,43 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_despesas(self):
-        """Show despesas screen"""
+    def show_despesas(self, filtro_estado=None):
+        """
+        Show despesas screen
+
+        Args:
+            filtro_estado: Optional estado filter ("Todos", "Ativo", "Vencido", "Pago")
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("despesas")
+
         from ui.screens.despesas import DespesasScreen
-        screen = DespesasScreen(self.content_frame, self.db_session)
+        screen = DespesasScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_boletins(self):
-        """Show boletins screen"""
+    def show_boletins(self, filtro_estado=None):
+        """
+        Show boletins screen
+
+        Args:
+            filtro_estado: Optional estado filter ("Todos", "Pendente", "Pago")
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("boletins")
+
         from ui.screens.boletins import BoletinsScreen
-        screen = BoletinsScreen(self.content_frame, self.db_session)
+        screen = BoletinsScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
