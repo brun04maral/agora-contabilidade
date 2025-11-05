@@ -80,23 +80,40 @@ class DataTable(ctk.CTkFrame):
 
         # Configure scroll region when frame changes
         def update_scrollregion(event=None):
+            # Update scroll region to encompass all content
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            # Update canvas window size to allow proper horizontal scrolling
+            self.canvas.itemconfig(self.scrollable_window, width=self.scrollable_frame.winfo_reqwidth())
 
         self.scrollable_frame.bind("<Configure>", update_scrollregion)
 
-        # Mouse wheel scrolling - bind directly to canvas
+        # Mouse wheel scrolling
         def _on_mousewheel(event):
-            try:
-                self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-            except:
-                pass
+            # Scroll vertically
+            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            return "break"  # Prevent event propagation
 
-        # Bind mousewheel only to this specific canvas
-        self.canvas.bind("<MouseWheel>", _on_mousewheel, "+")
+        # Bind mousewheel when mouse enters canvas area
+        def _bind_mousewheel(event):
+            self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbind_mousewheel(event):
+            self.canvas.unbind_all("<MouseWheel>")
+
+        self.canvas.bind("<Enter>", _bind_mousewheel)
+        self.canvas.bind("<Leave>", _unbind_mousewheel)
 
         # For Linux support
-        self.canvas.bind("<Button-4>", lambda e: self.canvas.yview_scroll(-1, "units"), "+")
-        self.canvas.bind("<Button-5>", lambda e: self.canvas.yview_scroll(1, "units"), "+")
+        def _on_mousewheel_linux_up(event):
+            self.canvas.yview_scroll(-1, "units")
+            return "break"
+
+        def _on_mousewheel_linux_down(event):
+            self.canvas.yview_scroll(1, "units")
+            return "break"
+
+        self.canvas.bind("<Button-4>", _on_mousewheel_linux_up)
+        self.canvas.bind("<Button-5>", _on_mousewheel_linux_down)
 
     def create_header(self):
         """Create table header"""
