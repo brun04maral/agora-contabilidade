@@ -1,6 +1,7 @@
 # Core
 customtkinter==5.2.0
 Pillow==10.1.0
+CTkTable==1.1
 
 # Database
 sqlalchemy==2.0.23

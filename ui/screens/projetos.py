@@ -11,7 +11,7 @@ import tkinter.messagebox as messagebox
 
 from logic.projetos import ProjetosManager
 from database.models import TipoProjeto, EstadoProjeto
-from ui.components.data_table import DataTable
+from ui.components.data_table_v2 import DataTableV2
 
 
 class ProjetosScreen(ctk.CTkFrame):
@@ -137,7 +137,7 @@ class ProjetosScreen(ctk.CTkFrame):
             {'key': 'estado', 'label': 'Estado', 'width': 120},
         ]
 
-        self.table = DataTable(
+        self.table = DataTableV2(
             self,
             columns=columns,
             on_edit=self.editar_projeto,
