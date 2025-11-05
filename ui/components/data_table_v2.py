@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Componente de Tabela V2 usando CTkTable
-Resolve problemas de scroll horizontal + vertical
+Componente de Tabela V2 com scroll horizontal e vertical
+Resolve problemas de overflow e scroll do DataTable original
 """
 import customtkinter as ctk
-from CTkTable import CTkTable
 from typing import List, Dict, Callable, Optional
 
 
 class DataTableV2(ctk.CTkFrame):
     """
-    Tabela de dados usando CTkTable com scroll nativo
+    Tabela de dados com scroll horizontal + vertical nativo
     API compatível com DataTable original
     """
 
@@ -41,41 +40,96 @@ class DataTableV2(ctk.CTkFrame):
         self.on_edit = on_edit
         self.on_delete = on_delete
         self.on_view = on_view
-        self.data_rows = []  # Store original data
-        self.table_widget = None
+        self.data_rows = []
+        self.row_widgets = []
 
         # Configure
         self.configure(fg_color="transparent")
 
-        # Create container for table + scrollbars
-        self.table_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.table_container.pack(fill="both", expand=True)
-
         # Add actions column if needed
         self.has_actions = bool(on_view or on_edit or on_delete)
 
-        # Initialize with empty table
-        self.create_empty_table()
+        # Create main container
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
-    def create_empty_table(self):
-        """Create empty table with just headers"""
-        # Create header row
-        headers = [col['label'] for col in self.columns]
-        if self.has_actions:
-            headers.append("Ações")
+        # Create canvas for scrolling
+        self.canvas = ctk.CTkCanvas(self, highlightthickness=0)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
 
-        # Create table with just headers
-        values = [headers]
+        # Create scrollbars
+        self.v_scrollbar = ctk.CTkScrollbar(self, orientation="vertical", command=self.canvas.yview)
+        self.v_scrollbar.grid(row=0, column=1, sticky="ns")
 
-        self.table_widget = CTkTable(
-            self.table_container,
-            values=values,
-            header_color=("#efd578", "#d4bb5e"),
-            hover_color=("#B0BEC5", "#4A4A4A"),
-            corner_radius=8,
-            colors=[("#f8f8f8", "#252525"), ("#ffffff", "#1e1e1e")]  # Alternating colors
+        self.h_scrollbar = ctk.CTkScrollbar(self, orientation="horizontal", command=self.canvas.xview)
+        self.h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        # Configure canvas
+        self.canvas.configure(
+            yscrollcommand=self.v_scrollbar.set,
+            xscrollcommand=self.h_scrollbar.set
         )
-        self.table_widget.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Create inner frame for content
+        self.inner_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
+
+        # Bind events
+        self.inner_frame.bind("<Configure>", self._on_frame_configure)
+        self.canvas.bind("<Configure>", self._on_canvas_configure)
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
+        # Create header
+        self.create_header()
+
+    def _on_frame_configure(self, event=None):
+        """Update scroll region when frame changes"""
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _on_canvas_configure(self, event):
+        """Update inner frame width when canvas resizes"""
+        # Make sure the inner frame is at least as wide as the canvas
+        canvas_width = event.width
+        self.canvas.itemconfig(self.canvas_window, width=canvas_width)
+
+    def _on_mousewheel(self, event):
+        """Handle mouse wheel scrolling"""
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def create_header(self):
+        """Create table header"""
+        header_frame = ctk.CTkFrame(
+            self.inner_frame,
+            fg_color=("#efd578", "#d4bb5e"),
+            corner_radius=8
+        )
+        header_frame.pack(fill="x", padx=5, pady=(5, 10))
+
+        col_index = 0
+        for col in self.columns:
+            label = ctk.CTkLabel(
+                header_frame,
+                text=col['label'],
+                font=ctk.CTkFont(size=13, weight="bold"),
+                width=col.get('width', 100),
+                anchor="w",
+                text_color=("#1a1a1a", "#1a1a1a")
+            )
+            label.grid(row=0, column=col_index, padx=10, pady=12, sticky="w")
+            col_index += 1
+
+        # Actions column
+        if self.has_actions:
+            width = 180 if self.on_view else 120
+            label = ctk.CTkLabel(
+                header_frame,
+                text="Ações",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                width=width,
+                anchor="center",
+                text_color=("#1a1a1a", "#1a1a1a")
+            )
+            label.grid(row=0, column=col_index, padx=10, pady=12)
 
     def set_data(self, data: List[Dict]):
         """
@@ -86,92 +140,71 @@ class DataTableV2(ctk.CTkFrame):
         """
         self.data_rows = data
 
-        # Destroy old table
-        if self.table_widget:
-            self.table_widget.destroy()
+        # Clear existing rows
+        for widget in self.row_widgets:
+            widget.destroy()
+        self.row_widgets = []
 
-        # If no data, show empty message
-        if not data:
-            self.create_empty_table()
-            return
+        # Create new rows
+        for index, item in enumerate(data):
+            self.add_row(item, index)
 
-        # Build table values (header + rows)
-        headers = [col['label'] for col in self.columns]
-        if self.has_actions:
-            headers.append("Ações")
+        # Update scroll region
+        self.inner_frame.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-        values = [headers]
+    def add_row(self, data: Dict, index: int = 0):
+        """
+        Add a single row
 
-        # Add data rows
-        for row_index, item in enumerate(data):
-            row = []
+        Args:
+            data: Row data dictionary
+            index: Row index for alternating colors
+        """
+        # Alternating row colors
+        if index % 2 == 0:
+            bg_color = ("#f8f8f8", "#252525")
+        else:
+            bg_color = ("#ffffff", "#1e1e1e")
 
-            # Add data columns
-            for col in self.columns:
-                value = item.get(col['key'], '')
-
-                # Format value if formatter provided
-                if 'formatter' in col:
-                    value = col['formatter'](value)
-
-                row.append(str(value))
-
-            # Placeholder for actions (we'll add buttons separately)
-            if self.has_actions:
-                row.append("")
-
-            values.append(row)
-
-        # Create table
-        self.table_widget = CTkTable(
-            self.table_container,
-            values=values,
-            header_color=("#efd578", "#d4bb5e"),
-            hover_color=("#B0BEC5", "#4A4A4A"),
-            corner_radius=8,
-            colors=[("#f8f8f8", "#252525"), ("#ffffff", "#1e1e1e")]
+        row_frame = ctk.CTkFrame(
+            self.inner_frame,
+            fg_color=bg_color,
+            corner_radius=6
         )
-        self.table_widget.pack(fill="both", expand=True, padx=5, pady=5)
+        row_frame.pack(fill="x", padx=5, pady=3)
 
-        # Add action buttons if needed
-        if self.has_actions:
-            self.add_action_buttons()
+        col_index = 0
+        for col in self.columns:
+            value = data.get(col['key'], '')
 
-    def add_action_buttons(self):
-        """Add action buttons to each row"""
-        # Get the actions column index (last column)
-        actions_col = len(self.columns)
+            # Format value if formatter provided
+            if 'formatter' in col:
+                value = col['formatter'](value)
 
-        # Add buttons for each data row (skip header row 0)
-        for row_index, row_data in enumerate(self.data_rows):
-            # row_index in data_rows, but row_index + 1 in table (because of header)
-            table_row = row_index + 1
-
-            # Create frame for buttons
-            actions_frame = ctk.CTkFrame(
-                self.table_widget.frame,  # Access internal frame
-                fg_color="transparent"
+            label = ctk.CTkLabel(
+                row_frame,
+                text=str(value),
+                font=ctk.CTkFont(size=12),
+                width=col.get('width', 100),
+                anchor="w"
             )
+            label.grid(row=0, column=col_index, padx=10, pady=10, sticky="w")
+            col_index += 1
 
-            # Position frame in the cell
-            # We need to access the internal structure of CTkTable
-            # CTkTable creates labels in a grid, we'll overlay our buttons
-
-            # Get the cell widget and replace with our frame
-            # This is a bit hacky but works with CTkTable 1.1
-            cell_frame = actions_frame
-
-            button_width = 40
-            button_height = 28
+        # Actions buttons
+        if self.has_actions:
+            actions_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
+            actions_frame.grid(row=0, column=col_index, padx=10, pady=5)
 
             if self.on_view:
                 view_btn = ctk.CTkButton(
-                    cell_frame,
+                    actions_frame,
                     text="👁️",
-                    command=lambda d=row_data: self.on_view(d),
-                    width=button_width,
-                    height=button_height,
-                    font=ctk.CTkFont(size=12),
+                    command=lambda d=data: self.on_view(d),
+                    width=50,
+                    height=30,
+                    font=ctk.CTkFont(size=14),
                     fg_color=("#2196F3", "#1565C0"),
                     hover_color=("#1976D2", "#0D47A1")
                 )
@@ -179,42 +212,39 @@ class DataTableV2(ctk.CTkFrame):
 
             if self.on_edit:
                 edit_btn = ctk.CTkButton(
-                    cell_frame,
+                    actions_frame,
                     text="✏️",
-                    command=lambda d=row_data: self.on_edit(d),
-                    width=button_width,
-                    height=button_height,
-                    font=ctk.CTkFont(size=12)
+                    command=lambda d=data: self.on_edit(d),
+                    width=50,
+                    height=30,
+                    font=ctk.CTkFont(size=14)
                 )
                 edit_btn.pack(side="left", padx=2)
 
             if self.on_delete:
                 delete_btn = ctk.CTkButton(
-                    cell_frame,
+                    actions_frame,
                     text="🗑️",
-                    command=lambda d=row_data: self.on_delete(d),
-                    width=button_width,
-                    height=button_height,
-                    font=ctk.CTkFont(size=12),
+                    command=lambda d=data: self.on_delete(d),
+                    width=50,
+                    height=30,
+                    font=ctk.CTkFont(size=14),
                     fg_color=("#F44336", "#C62828"),
                     hover_color=("#E53935", "#B71C1C")
                 )
                 delete_btn.pack(side="left", padx=2)
 
-            # Replace the cell content with our frame
-            # Access the label at position [table_row, actions_col]
-            try:
-                # CTkTable stores cells in a 2D structure
-                old_widget = self.table_widget.frame.grid_slaves(row=table_row, column=actions_col)[0]
-                old_widget.destroy()
-                cell_frame.grid(row=table_row, column=actions_col, padx=5, pady=3)
-            except (IndexError, AttributeError):
-                # Fallback: just grid the frame
-                cell_frame.grid(row=table_row, column=actions_col, padx=5, pady=3, sticky="nsew")
+        self.row_widgets.append(row_frame)
 
     def clear(self):
         """Clear all data"""
         self.data_rows = []
-        if self.table_widget:
-            self.table_widget.destroy()
-        self.create_empty_table()
+        for widget in self.row_widgets:
+            widget.destroy()
+        self.row_widgets = []
+
+    def destroy(self):
+        """Clean up before destroying"""
+        # Unbind mousewheel to avoid memory leaks
+        self.canvas.unbind_all("<MouseWheel>")
+        super().destroy()
