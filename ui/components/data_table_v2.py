@@ -121,9 +121,6 @@ class DataTableV2(ctk.CTkFrame):
         self.grid_rowconfigure(1, weight=1)  # Data row (expandable)
         self.grid_columnconfigure(0, weight=1)
 
-        # Keyboard shortcuts
-        self._setup_keyboard_shortcuts()
-
         # Create header canvas (fixed height, scrolls horizontally with content)
         self.header_canvas = ctk.CTkCanvas(self, highlightthickness=0, height=50, bg="#3a3a3a")
         self.header_canvas.grid(row=0, column=0, sticky="ew")
@@ -166,6 +163,9 @@ class DataTableV2(ctk.CTkFrame):
 
         # Bind scroll events
         self._bind_scroll_events()
+
+        # Setup keyboard shortcuts (after canvas creation)
+        self._setup_keyboard_shortcuts()
 
     def _calculate_min_width(self) -> int:
         """Calculate minimum width needed for all columns"""
