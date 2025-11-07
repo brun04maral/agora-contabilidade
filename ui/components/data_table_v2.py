@@ -409,10 +409,14 @@ class DataTableV2(ctk.CTkFrame):
 
     def _on_frame_configure(self, event=None):
         """Update scroll region when frame changes"""
+        # Force canvas window to stay at (0, 0)
+        self.canvas.coords(self.canvas_window, 0, 0)
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def _on_header_configure(self, event=None):
         """Update header scroll region when header changes"""
+        # Force header canvas window to stay at (0, 0)
+        self.header_canvas.coords(self.header_canvas_window, 0, 0)
         self.header_canvas.configure(scrollregion=self.header_canvas.bbox("all"))
 
     def _on_h_scroll(self, *args):
