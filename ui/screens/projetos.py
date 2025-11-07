@@ -548,7 +548,8 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         estado_map = {
             EstadoProjeto.NAO_FATURADO: "Não Faturado",
             EstadoProjeto.FATURADO: "Faturado",
-            EstadoProjeto.RECEBIDO: "Recebido"
+            EstadoProjeto.RECEBIDO: "Recebido",
+            EstadoProjeto.ANULADO: "Anulado"
         }
         self.estado_dropdown.set(estado_map[p.estado])
 
@@ -604,7 +605,8 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
             estado_map = {
                 "Não Faturado": EstadoProjeto.NAO_FATURADO,
                 "Faturado": EstadoProjeto.FATURADO,
-                "Recebido": EstadoProjeto.RECEBIDO
+                "Recebido": EstadoProjeto.RECEBIDO,
+                "Anulado": EstadoProjeto.ANULADO
             }
             estado = estado_map[self.estado_dropdown.get()]
 
