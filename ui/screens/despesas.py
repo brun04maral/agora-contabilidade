@@ -11,7 +11,7 @@ import tkinter.messagebox as messagebox
 
 from logic.despesas import DespesasManager
 from database.models import TipoDespesa, EstadoDespesa
-from ui.components.data_table import DataTable
+from ui.components.data_table_v2 import DataTableV2
 
 
 class DespesasScreen(ctk.CTkFrame):
@@ -110,23 +110,73 @@ class DespesasScreen(ctk.CTkFrame):
         )
         self.estado_filter.pack(side="left")
 
+        # Selection actions bar (hidden by default)
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+
+        # Clear selection button
+        self.cancel_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Limpar Seleção",
+            command=self.cancelar_selecao,
+            width=150, height=35
+        )
+
+        # Selection count label
+        self.count_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="0 selecionados",
+            font=ctk.CTkFont(size=13)
+        )
+
+        # Mark as paid button
+        self.marcar_pago_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="✅ Marcar como Pago",
+            command=self.marcar_como_pago,
+            width=160, height=35,
+            fg_color=("#4CAF50", "#388E3C"),
+            hover_color=("#66BB6A", "#2E7D32")
+        )
+
+        # Report button
+        self.report_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📊 Criar Relatório",
+            command=self.criar_relatorio,
+            width=160, height=35
+        )
+
+        # Total label
+        self.total_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="Total: €0,00",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+
+        # Hide all selection widgets initially
+        self.cancel_btn.pack_forget()
+        self.count_label.pack_forget()
+        self.marcar_pago_btn.pack_forget()
+        self.report_btn.pack_forget()
+        self.total_label.pack_forget()
+
         # Table
         columns = [
-            {'key': 'numero', 'label': 'Nº', 'width': 100},
-            {'key': 'data', 'label': 'Data', 'width': 100},
-            {'key': 'tipo', 'label': 'Tipo', 'width': 140},
-            {'key': 'credor_nome', 'label': 'Credor', 'width': 160},
-            {'key': 'descricao', 'label': 'Descrição', 'width': 240},
-            {'key': 'valor_com_iva', 'label': 'Valor c/ IVA', 'width': 110,
-             'formatter': lambda v: f"€{v:,.2f}" if v else "€0,00"},
-            {'key': 'estado', 'label': 'Estado', 'width': 100},
+            {'key': 'numero', 'label': 'Nº', 'width': 100, 'sortable': True},
+            {'key': 'data', 'label': 'Data', 'width': 120, 'sortable': True},
+            {'key': 'tipo', 'label': 'Tipo', 'width': 140, 'sortable': False},
+            {'key': 'credor_nome', 'label': 'Credor', 'width': 160, 'sortable': True},
+            {'key': 'descricao', 'label': 'Descrição', 'width': 280, 'sortable': False},
+            {'key': 'valor_com_iva_fmt', 'label': 'Valor c/ IVA', 'width': 120, 'sortable': True},
+            {'key': 'estado', 'label': 'Estado', 'width': 110, 'sortable': True},
         ]
 
-        self.table = DataTable(
+        self.table = DataTableV2(
             self,
             columns=columns,
-            on_edit=self.editar_despesa,
-            on_delete=self.apagar_despesa,
+            on_row_double_click=self.editar_despesa,
+            on_selection_change=self.on_selection_change,
             height=400
         )
         self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
@@ -139,17 +189,31 @@ class DespesasScreen(ctk.CTkFrame):
 
     def despesa_to_dict(self, despesa) -> dict:
         """Convert despesa to dict for table"""
+        # Determine color based on estado
+        color = self.get_estado_color(despesa.estado)
+
         return {
             'id': despesa.id,
             'numero': despesa.numero,
             'data': despesa.data.strftime("%Y-%m-%d") if despesa.data else '-',
             'tipo': self.tipo_to_label(despesa.tipo),
             'credor_nome': despesa.credor.nome if despesa.credor else '-',
-            'descricao': despesa.descricao[:40] + '...' if len(despesa.descricao) > 40 else despesa.descricao,
+            'descricao': despesa.descricao,
             'valor_com_iva': float(despesa.valor_com_iva),
+            'valor_com_iva_fmt': f"€{float(despesa.valor_com_iva):,.2f}",
             'estado': self.estado_to_label(despesa.estado),
+            '_color': color,
             '_despesa': despesa
         }
+
+    def get_estado_color(self, estado: EstadoDespesa) -> str:
+        """Get color for estado"""
+        color_map = {
+            EstadoDespesa.PAGO: "#C8E6C9",      # Verde pastel (pago)
+            EstadoDespesa.ATIVO: "#FFF9C4",     # Amarelo pastel (ativo)
+            EstadoDespesa.VENCIDO: "#FFCDD2"    # Vermelho pastel (vencido/urgente)
+        }
+        return color_map.get(estado, "#E0E0E0")
 
     def tipo_to_label(self, tipo: TipoDespesa) -> str:
         """Convert tipo enum to label"""
@@ -203,36 +267,113 @@ class DespesasScreen(ctk.CTkFrame):
         data = [self.despesa_to_dict(d) for d in despesas]
         self.table.set_data(data)
 
+        # Clear selection when filters change
+        self.table.clear_selection()
+
     def abrir_formulario(self, despesa=None):
         """Open form dialog"""
         FormularioDespesaDialog(self, self.manager, despesa, self.carregar_despesas)
 
     def editar_despesa(self, data: dict):
-        """Edit despesa"""
+        """Edit despesa (triggered by double-click)"""
         despesa = data.get('_despesa')
         if despesa:
             self.abrir_formulario(despesa)
 
-    def apagar_despesa(self, data: dict):
-        """Delete despesa"""
-        despesa = data.get('_despesa')
-        if not despesa:
+    def on_selection_change(self, selected_data: list):
+        """Handle selection change in table"""
+        num_selected = len(selected_data)
+
+        # Hide all widgets first
+        self.cancel_btn.pack_forget()
+        self.count_label.pack_forget()
+        self.marcar_pago_btn.pack_forget()
+        self.report_btn.pack_forget()
+        self.total_label.pack_forget()
+
+        if num_selected > 0:
+            # Show selection bar
+            self.cancel_btn.pack(side="left", padx=5)
+
+            # Show count
+            count_text = f"{num_selected} selecionada" if num_selected == 1 else f"{num_selected} selecionadas"
+            self.count_label.configure(text=count_text)
+            self.count_label.pack(side="left", padx=15)
+
+            # Show "Marcar como Pago" only if there are unpaid despesas
+            has_unpaid = any(
+                item.get('_despesa') and item.get('_despesa').estado != EstadoDespesa.PAGO
+                for item in selected_data
+            )
+            if has_unpaid:
+                self.marcar_pago_btn.pack(side="left", padx=5)
+
+            self.report_btn.pack(side="left", padx=5)
+
+            # Calculate and show total
+            total = sum(item.get('valor_com_iva', 0) for item in selected_data)
+            self.total_label.configure(text=f"Total: €{total:,.2f}")
+            self.total_label.pack(side="left", padx=20)
+
+    def cancelar_selecao(self):
+        """Cancel selection"""
+        self.table.clear_selection()
+
+    def marcar_como_pago(self):
+        """Mark selected despesas as paid"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) == 0:
             return
 
+        # Filter only unpaid despesas
+        unpaid_despesas = [
+            item.get('_despesa') for item in selected_data
+            if item.get('_despesa') and item.get('_despesa').estado != EstadoDespesa.PAGO
+        ]
+
+        if len(unpaid_despesas) == 0:
+            messagebox.showinfo("Info", "Todas as despesas selecionadas já estão pagas.")
+            return
+
+        # Confirm action
         resposta = messagebox.askyesno(
             "Confirmar",
-            f"Tem certeza que deseja apagar a despesa {despesa.numero}?\n\n"
-            f"⚠️ ATENÇÃO: Isto vai afetar os cálculos de Saldos Pessoais!",
-            icon='warning'
+            f"Marcar {len(unpaid_despesas)} despesa(s) como pagas?\n\n"
+            f"Data de pagamento será definida como hoje ({date.today().strftime('%Y-%m-%d')})."
         )
 
         if resposta:
-            sucesso, erro = self.manager.apagar(despesa.id)
-            if sucesso:
-                messagebox.showinfo("Sucesso", "Despesa apagada com sucesso!")
+            hoje = date.today()
+            erros = []
+
+            for despesa in unpaid_despesas:
+                sucesso, erro = self.manager.atualizar(
+                    despesa.id,
+                    estado=EstadoDespesa.PAGO,
+                    data_pagamento=hoje
+                )
+                if not sucesso:
+                    erros.append(f"{despesa.numero}: {erro}")
+
+            if len(erros) == 0:
+                messagebox.showinfo("Sucesso", f"{len(unpaid_despesas)} despesa(s) marcada(s) como paga(s)!")
                 self.carregar_despesas()
+                self.table.clear_selection()
             else:
-                messagebox.showerror("Erro", f"Erro ao apagar despesa: {erro}")
+                messagebox.showerror("Erro", f"Erros ao marcar despesas:\n" + "\n".join(erros))
+                self.carregar_despesas()
+
+    def criar_relatorio(self):
+        """Create report for selected despesas"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) > 0:
+            # TODO: Implement despesas report navigation (when despesas reports are implemented)
+            messagebox.showinfo(
+                "Criar Relatório",
+                f"Funcionalidade em desenvolvimento.\n\n"
+                f"Despesas selecionadas: {len(selected_data)}\n"
+                f"Total: €{sum(item.get('valor_com_iva', 0) for item in selected_data):,.2f}"
+            )
 
 
 class FormularioDespesaDialog(ctk.CTkToplevel):
