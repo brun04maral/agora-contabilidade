@@ -4,6 +4,7 @@ Componente de Tabela V2 com scroll horizontal e vertical
 Resolve problemas de overflow e scroll do DataTable original
 """
 import customtkinter as ctk
+import platform
 from typing import List, Dict, Callable, Optional
 
 
@@ -49,6 +50,9 @@ class DataTableV2(ctk.CTkFrame):
         # Add actions column if needed
         self.has_actions = bool(on_view or on_edit or on_delete)
 
+        # Calculate total width needed for horizontal scroll
+        self.table_width = self._calculate_table_width()
+
         # Create main container
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -70,31 +74,68 @@ class DataTableV2(ctk.CTkFrame):
             xscrollcommand=self.h_scrollbar.set
         )
 
-        # Create inner frame for content
-        self.inner_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
+        # Create inner frame for content with fixed width
+        self.inner_frame = ctk.CTkFrame(self.canvas, fg_color="transparent", width=self.table_width)
         self.canvas_window = self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
 
         # Bind events
         self.inner_frame.bind("<Configure>", self._on_frame_configure)
-        self.canvas.bind("<Configure>", self._on_canvas_configure)
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.bind("<Enter>", self._bind_mouse_scroll)
+        self.bind("<Leave>", self._unbind_mouse_scroll)
 
         # Create header
         self.create_header()
 
+    def _calculate_table_width(self) -> int:
+        """Calculate total width needed for all columns"""
+        total = sum(col.get('width', 100) + 20 for col in self.columns)  # +20 for padding
+        if self.has_actions:
+            total += 180 if self.on_view else 120
+        return total + 10  # +10 for margins
+
+    def _bind_mouse_scroll(self, event):
+        """Bind mouse scroll events when mouse enters widget"""
+        # Detect OS for appropriate scroll binding
+        system = platform.system()
+
+        if system == "Darwin":  # macOS
+            self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_mac)
+        elif system == "Linux":
+            self.canvas.bind_all("<Button-4>", self._on_mousewheel_linux)
+            self.canvas.bind_all("<Button-5>", self._on_mousewheel_linux)
+        else:  # Windows
+            self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_windows)
+
+    def _unbind_mouse_scroll(self, event):
+        """Unbind mouse scroll events when mouse leaves widget"""
+        system = platform.system()
+
+        if system == "Darwin":
+            self.canvas.unbind_all("<MouseWheel>")
+        elif system == "Linux":
+            self.canvas.unbind_all("<Button-4>")
+            self.canvas.unbind_all("<Button-5>")
+        else:
+            self.canvas.unbind_all("<MouseWheel>")
+
+    def _on_mousewheel_mac(self, event):
+        """Handle mouse wheel scrolling on macOS"""
+        self.canvas.yview_scroll(int(-1 * event.delta), "units")
+
+    def _on_mousewheel_windows(self, event):
+        """Handle mouse wheel scrolling on Windows"""
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def _on_mousewheel_linux(self, event):
+        """Handle mouse wheel scrolling on Linux"""
+        if event.num == 4:
+            self.canvas.yview_scroll(-1, "units")
+        elif event.num == 5:
+            self.canvas.yview_scroll(1, "units")
+
     def _on_frame_configure(self, event=None):
         """Update scroll region when frame changes"""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-
-    def _on_canvas_configure(self, event):
-        """Update inner frame width when canvas resizes"""
-        # Make sure the inner frame is at least as wide as the canvas
-        canvas_width = event.width
-        self.canvas.itemconfig(self.canvas_window, width=canvas_width)
-
-    def _on_mousewheel(self, event):
-        """Handle mouse wheel scrolling"""
-        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def create_header(self):
         """Create table header"""
@@ -246,5 +287,5 @@ class DataTableV2(ctk.CTkFrame):
     def destroy(self):
         """Clean up before destroying"""
         # Unbind mousewheel to avoid memory leaks
-        self.canvas.unbind_all("<MouseWheel>")
+        self._unbind_mouse_scroll(None)
         super().destroy()
