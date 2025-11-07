@@ -53,7 +53,7 @@ class ProjetosScreen(ctk.CTkFrame):
                 # Find cliente in list and set filter
                 for cliente in self.clientes_list:
                     if cliente.id == self.filtro_inicial_cliente_id:
-                        self.cliente_filter.set(f"{cliente.numero} - {cliente.nome}")
+                        self.cliente_filter.set(cliente.nome)
                         break
             self.aplicar_filtros()
         else:
@@ -113,7 +113,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
         # Get all clients
         clientes = self.clientes_manager.listar_todos(order_by='nome')
-        cliente_values = ["Todos"] + [f"{c.numero} - {c.nome}" for c in clientes]
+        cliente_values = ["Todos"] + [c.nome for c in clientes]
         self.clientes_list = clientes  # Store for later lookup
 
         self.cliente_filter = ctk.CTkOptionMenu(
@@ -225,10 +225,8 @@ class ProjetosScreen(ctk.CTkFrame):
 
         # Filter by cliente
         if cliente != "Todos":
-            # Extract cliente ID from "numero - nome" format
-            cliente_numero = cliente.split(" - ")[0]
-            # Find cliente in list
-            cliente_obj = next((c for c in self.clientes_list if c.numero == cliente_numero), None)
+            # Find cliente by name
+            cliente_obj = next((c for c in self.clientes_list if c.nome == cliente), None)
             if cliente_obj:
                 projetos = [p for p in projetos if p.cliente_id == cliente_obj.id]
 
