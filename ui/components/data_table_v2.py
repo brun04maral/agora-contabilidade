@@ -63,9 +63,6 @@ class DataTableV2(ctk.CTkFrame):
         self,
         parent,
         columns: List[Dict],  # [{'key': 'nome', 'label': 'Nome', 'width': 200, 'truncate': True}]
-        on_edit: Optional[Callable] = None,
-        on_delete: Optional[Callable] = None,
-        on_view: Optional[Callable] = None,
         height: int = 400,
         **kwargs
     ):
@@ -80,9 +77,7 @@ class DataTableV2(ctk.CTkFrame):
                 - width: Minimum column width in pixels
                 - truncate: If True, truncate text and show tooltip (default: True)
                 - formatter: Optional function to format value
-            on_edit: Callback for edit action (receives row data)
-            on_delete: Callback for delete action (receives row data)
-            on_view: Callback for view action (receives row data)
+                - sortable: If False, column is not sortable (default: True)
             height: Table height in pixels
         """
         super().__init__(parent, **kwargs)
@@ -91,9 +86,6 @@ class DataTableV2(ctk.CTkFrame):
         self.base_columns = columns
         self.columns = columns.copy()  # Will be updated with responsive widths
 
-        self.on_edit = on_edit
-        self.on_delete = on_delete
-        self.on_view = on_view
         self.data_rows = []
         self.original_data_rows = []  # Store original order
         self.row_widgets = []
@@ -107,9 +99,6 @@ class DataTableV2(ctk.CTkFrame):
 
         # Configure
         self.configure(fg_color="transparent")
-
-        # Add actions column if needed
-        self.has_actions = bool(on_view or on_edit or on_delete)
 
         # Calculate minimum width needed
         self.min_table_width = self._calculate_min_width()
@@ -166,15 +155,7 @@ class DataTableV2(ctk.CTkFrame):
         """Calculate minimum width needed for all columns"""
         # Data columns + their paddings (minimal)
         data_width = sum(col.get('width', 100) + 4 for col in self.base_columns)
-
-        actions_width = 0
-        if self.has_actions:
-            # 2 buttons (100px) + spacing (8px) + frame padding (10px) + grid padding (10px) = ~130px minimum
-            # Using 150px to have comfortable margin
-            actions_width = 200 if self.on_view else 150
-            actions_width += 4  # Add padding like other columns (minimal)
-
-        return data_width + actions_width  # No extra outer margins
+        return data_width  # No extra outer margins
 
     def _update_responsive_widths(self, available_width: int):
         """
@@ -183,29 +164,18 @@ class DataTableV2(ctk.CTkFrame):
         Args:
             available_width: Width available in canvas
         """
-        # Use almost all available width (minimal buffer for scrollbar)
-        usable_width = available_width  # No buffer, use all space
-
-        # Calculate actions column width (needs extra space for buttons + padding + spacing)
-        actions_width = 0
-        actions_total_width = 0  # Including all paddings
-        if self.has_actions:
-            # 2 buttons: 50+50=100px, spacing 2*4=8px, padx 5*2=10px = 118px minimum
-            # 3 buttons: 50+50+50=150px, spacing 2*6=12px, padx 5*2=10px = 172px minimum
-            # Add extra buffer for safety
-            actions_width = 200 if self.on_view else 150
-            # Total with grid padding (minimal)
-            actions_total_width = actions_width + 4  # +4 for column padding (minimal)
+        # Use all available width
+        usable_width = available_width
 
         # Calculate total minimum width for data columns (with their paddings)
         min_data_width = sum(col.get('width', 100) for col in self.base_columns)
         # Add padding per column (minimal)
         data_columns_total = min_data_width + (len(self.base_columns) * 4)
 
-        # Total minimum width including everything
-        total_min_width = data_columns_total + actions_total_width
+        # Total minimum width
+        total_min_width = data_columns_total
 
-        # If we have extra space, distribute it proportionally to data columns only
+        # If we have extra space, distribute it proportionally to columns
         if usable_width > total_min_width:
             extra_space = usable_width - total_min_width
 
@@ -220,7 +190,7 @@ class DataTableV2(ctk.CTkFrame):
                 new_col['width'] = base_width + extra_for_col
                 self.columns.append(new_col)
 
-            # Set inner frame width to fill canvas (data columns expanded + fixed actions column)
+            # Set inner frame width to fill canvas
             self.canvas.itemconfig(self.canvas_window, width=usable_width)
             # Hide horizontal scrollbar when not needed
             self.h_scrollbar.grid_remove()
@@ -228,7 +198,7 @@ class DataTableV2(ctk.CTkFrame):
             # Use minimum widths + enable horizontal scroll
             self.columns = [col.copy() for col in self.base_columns]
 
-            # Set inner frame width to minimum (must accommodate all columns + actions + paddings)
+            # Set inner frame width to minimum
             self.canvas.itemconfig(self.canvas_window, width=total_min_width)
             # Show horizontal scrollbar when needed
             self.h_scrollbar.grid(row=2, column=0, sticky="ew")
@@ -411,20 +381,6 @@ class DataTableV2(ctk.CTkFrame):
             self.header_widgets.append(label)
             col_index += 1
 
-        # Actions column (not sortable)
-        if self.has_actions:
-            width = 200 if self.on_view else 150
-            label = ctk.CTkLabel(
-                header_frame,
-                text="Ações",
-                font=ctk.CTkFont(size=13, weight="bold"),
-                width=width,
-                anchor="center",
-                text_color=("#1a1a1a", "#1a1a1a")
-            )
-            label.grid(row=0, column=col_index, padx=5, pady=6)
-            self.header_widgets.append(label)
-
     def _on_header_click(self, column_key: str):
         """Handle column header click for sorting"""
         # Cycle through: None → asc → desc → None
@@ -561,52 +517,6 @@ class DataTableV2(ctk.CTkFrame):
             label.bind("<Leave>", self._on_leave)
 
             col_index += 1
-
-        # Actions buttons
-        if self.has_actions:
-            actions_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-            actions_frame.grid(row=0, column=col_index, padx=5, pady=3)
-
-            # Propagate scroll events from actions frame
-            actions_frame.bind("<Enter>", self._on_enter)
-            actions_frame.bind("<Leave>", self._on_leave)
-
-            if self.on_view:
-                view_btn = ctk.CTkButton(
-                    actions_frame,
-                    text="👁️",
-                    command=lambda d=data: self.on_view(d),
-                    width=50,
-                    height=30,
-                    font=ctk.CTkFont(size=14),
-                    fg_color=("#2196F3", "#1565C0"),
-                    hover_color=("#1976D2", "#0D47A1")
-                )
-                view_btn.pack(side="left", padx=2)
-
-            if self.on_edit:
-                edit_btn = ctk.CTkButton(
-                    actions_frame,
-                    text="✏️",
-                    command=lambda d=data: self.on_edit(d),
-                    width=50,
-                    height=30,
-                    font=ctk.CTkFont(size=14)
-                )
-                edit_btn.pack(side="left", padx=2)
-
-            if self.on_delete:
-                delete_btn = ctk.CTkButton(
-                    actions_frame,
-                    text="🗑️",
-                    command=lambda d=data: self.on_delete(d),
-                    width=50,
-                    height=30,
-                    font=ctk.CTkFont(size=14),
-                    fg_color=("#F44336", "#C62828"),
-                    hover_color=("#E53935", "#B71C1C")
-                )
-                delete_btn.pack(side="left", padx=2)
 
         self.row_widgets.append(row_frame)
 

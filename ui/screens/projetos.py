@@ -140,8 +140,6 @@ class ProjetosScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             self,
             columns=columns,
-            on_edit=self.editar_projeto,
-            on_delete=self.apagar_projeto,
             height=400
         )
         self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
