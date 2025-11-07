@@ -146,10 +146,14 @@ class DataTableV2(ctk.CTkFrame):
 
     def _calculate_min_width(self) -> int:
         """Calculate minimum width needed for all columns"""
-        total = sum(col.get('width', 100) + 10 for col in self.base_columns)  # +10 for padding
+        total = sum(col.get('width', 100) + 10 for col in self.base_columns)  # +10 for padding per column
         if self.has_actions:
-            total += 200 if self.on_view else 140
-        return total + 5  # +5 for margins
+            # Actions column: buttons + spacing + padding
+            # 3 buttons (50px each) + spacing (2px*6) + frame padding (5px*2) + header padding (5px*2) = ~190px
+            # 2 buttons (50px each) + spacing (2px*4) + frame padding (5px*2) + header padding (5px*2) = ~130px
+            actions_width = 190 if self.on_view else 130
+            total += actions_width + 10  # +10 for padding like other columns
+        return total + 10  # +10 for outer margins (was +5, now +10 for safety)
 
     def _update_responsive_widths(self, available_width: int):
         """
@@ -158,13 +162,13 @@ class DataTableV2(ctk.CTkFrame):
         Args:
             available_width: Width available in canvas
         """
-        # Account for scrollbar and padding
-        usable_width = available_width - 10  # Padding
+        # Account for scrollbar and padding (needs to match outer margins + some buffer)
+        usable_width = available_width - 30  # More margin for scrollbar + safety
 
-        # Calculate actions column width
+        # Calculate actions column width (same as in _calculate_min_width)
         actions_width = 0
         if self.has_actions:
-            actions_width = 200 if self.on_view else 140
+            actions_width = 190 if self.on_view else 130
 
         # Calculate total minimum width for data columns
         min_data_width = sum(col.get('width', 100) for col in self.base_columns)
@@ -350,7 +354,7 @@ class DataTableV2(ctk.CTkFrame):
 
         # Actions column
         if self.has_actions:
-            width = 200 if self.on_view else 140
+            width = 190 if self.on_view else 130
             label = ctk.CTkLabel(
                 header_frame,
                 text="Ações",
