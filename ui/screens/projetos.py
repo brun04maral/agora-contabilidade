@@ -100,20 +100,6 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         novo_btn.pack(side="left", padx=5)
 
-        # Edit mode toggle button
-        self.edit_mode_active = False
-        self.edit_btn = ctk.CTkButton(
-            btn_frame,
-            text="✏️ Editar",
-            command=self.toggle_edit_mode,
-            width=120,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#9E9E9E", "#757575")
-        )
-        self.edit_btn.pack(side="left", padx=5)
-
         # Filters
         filters_frame = ctk.CTkFrame(self, fg_color="transparent")
         filters_frame.pack(fill="x", padx=30, pady=(0, 20))
@@ -168,6 +154,41 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         self.estado_filter.pack(side="left")
 
+        # Selection actions bar (hidden by default)
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+
+        # Cancel button
+        self.cancel_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="❌ Cancelar",
+            command=self.cancelar_selecao,
+            width=120,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#757575", "#616161"),
+            hover_color=("#9E9E9E", "#757575")
+        )
+
+        # Report button
+        self.report_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📊 Criar Relatório",
+            command=self.criar_relatorio,
+            width=160,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#9C27B0", "#7B1FA2"),
+            hover_color=("#AB47BC", "#6A1B9A")
+        )
+
+        # Total label
+        self.total_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="Total: €0,00",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+
         # Table
         columns = [
             {'key': 'numero', 'label': 'Nº', 'width': 80},
@@ -183,7 +204,8 @@ class ProjetosScreen(ctk.CTkFrame):
             self,
             columns=columns,
             height=400,
-            on_row_click=self.editar_projeto
+            on_row_double_click=self.editar_projeto,
+            on_selection_change=self.on_selection_change
         )
         self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
@@ -314,23 +336,39 @@ class ProjetosScreen(ctk.CTkFrame):
             else:
                 messagebox.showerror("Erro", f"Erro ao apagar projeto: {erro}")
 
-    def toggle_edit_mode(self):
-        """Toggle edit mode on/off"""
-        self.edit_mode_active = not self.edit_mode_active
+    def on_selection_change(self, selected_data: list):
+        """Handle selection change in table"""
+        num_selected = len(selected_data)
 
-        if self.edit_mode_active:
-            # Enable edit mode
-            self.table.enable_clicks()
-            self.edit_btn.configure(
-                fg_color=("#2196F3", "#1565C0"),
-                hover_color=("#1976D2", "#0D47A1")
-            )
-        else:
-            # Disable edit mode
-            self.table.disable_clicks()
-            self.edit_btn.configure(
-                fg_color=("#757575", "#616161"),
-                hover_color=("#9E9E9E", "#757575")
+        # Hide all buttons first
+        self.cancel_btn.pack_forget()
+        self.report_btn.pack_forget()
+        self.total_label.pack_forget()
+
+        if num_selected > 0:
+            # Show selection bar
+            self.cancel_btn.pack(side="left", padx=5)
+            self.report_btn.pack(side="left", padx=5)
+
+            # Calculate and show total
+            total = sum(item.get('valor_sem_iva', 0) for item in selected_data)
+            self.total_label.configure(text=f"Total: €{total:,.2f}")
+            self.total_label.pack(side="left", padx=20)
+
+    def cancelar_selecao(self):
+        """Cancel selection"""
+        self.table.clear_selection()
+
+    def criar_relatorio(self):
+        """Create report for selected projects"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) > 0:
+            # TODO: Implement report creation
+            messagebox.showinfo(
+                "Criar Relatório",
+                f"Funcionalidade em desenvolvimento.\n\n"
+                f"Projetos selecionados: {len(selected_data)}\n"
+                f"Total: €{sum(item.get('valor_sem_iva', 0) for item in selected_data):,.2f}"
             )
 
 

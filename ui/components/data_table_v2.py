@@ -64,7 +64,8 @@ class DataTableV2(ctk.CTkFrame):
         parent,
         columns: List[Dict],  # [{'key': 'nome', 'label': 'Nome', 'width': 200, 'truncate': True}]
         height: int = 400,
-        on_row_click: Optional[Callable] = None,
+        on_row_double_click: Optional[Callable] = None,
+        on_selection_change: Optional[Callable] = None,
         **kwargs
     ):
         """
@@ -80,7 +81,8 @@ class DataTableV2(ctk.CTkFrame):
                 - formatter: Optional function to format value
                 - sortable: If False, column is not sortable (default: True)
             height: Table height in pixels
-            on_row_click: Optional callback when row is clicked (receives row data)
+            on_row_double_click: Optional callback when row is double-clicked (receives row data)
+            on_selection_change: Optional callback when selection changes (receives list of selected data)
         """
         super().__init__(parent, **kwargs)
 
@@ -95,9 +97,13 @@ class DataTableV2(ctk.CTkFrame):
         self.is_mac = platform.system() == "Darwin"
         self.last_canvas_width = 0
 
-        # Row click callback
-        self.on_row_click = on_row_click
-        self.click_enabled = False  # Controlled externally
+        # Callbacks
+        self.on_row_double_click = on_row_double_click
+        self.on_selection_change = on_selection_change
+
+        # Selection state
+        self.selected_rows = set()  # Set of row indices
+        self.row_data_map = {}  # Map row_frame widget -> (data, index)
 
         # Sorting state
         self.sort_column = None  # Column key being sorted
@@ -485,15 +491,18 @@ class DataTableV2(ctk.CTkFrame):
         )
         row_frame.pack(fill="x", padx=2, pady=1)
 
-        # Store data in row frame
-        row_frame._data = data
+        # Store data and state in row frame
+        row_frame._base_color = bg_color
+        row_frame._index = index
+        self.row_data_map[row_frame] = (data, index)
 
         # Propagate scroll events from row to canvas
         row_frame.bind("<Enter>", self._on_enter)
         row_frame.bind("<Leave>", self._on_leave)
 
-        # Bind click for row (will check if enabled)
-        row_frame.bind("<Button-1>", lambda e, d=data: self._handle_row_click(d))
+        # Bind click for selection and double-click for edit
+        row_frame.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(rf))
+        row_frame.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
 
         col_index = 0
         for col in self.columns:
@@ -532,8 +541,9 @@ class DataTableV2(ctk.CTkFrame):
             label.bind("<Enter>", self._on_enter)
             label.bind("<Leave>", self._on_leave)
 
-            # Bind click for row (will check if enabled)
-            label.bind("<Button-1>", lambda e, d=data: self._handle_row_click(d))
+            # Bind click for selection and double-click for edit
+            label.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(rf))
+            label.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
 
             col_index += 1
 
@@ -542,22 +552,89 @@ class DataTableV2(ctk.CTkFrame):
     def clear(self):
         """Clear all data"""
         self.data_rows = []
+        self.selected_rows.clear()
+        self.row_data_map.clear()
         for widget in self.row_widgets:
             widget.destroy()
         self.row_widgets = []
 
-    def _handle_row_click(self, data: Dict):
-        """Handle row click - only if enabled"""
-        if self.click_enabled and self.on_row_click:
-            self.on_row_click(data)
+    def _on_row_click(self, row_frame):
+        """Handle single click - toggle selection"""
+        index = row_frame._index
 
-    def enable_clicks(self):
-        """Enable row clicks"""
-        self.click_enabled = True
+        # Toggle selection
+        if index in self.selected_rows:
+            self.selected_rows.remove(index)
+        else:
+            self.selected_rows.add(index)
 
-    def disable_clicks(self):
-        """Disable row clicks"""
-        self.click_enabled = False
+        # Update row color
+        self._update_row_color(row_frame, index in self.selected_rows)
+
+        # Notify callback
+        if self.on_selection_change:
+            selected_data = self.get_selected_data()
+            self.on_selection_change(selected_data)
+
+    def _on_row_double_click(self, data: Dict):
+        """Handle double click - open for edit"""
+        if self.on_row_double_click:
+            self.on_row_double_click(data)
+
+    def _update_row_color(self, row_frame, is_selected: bool):
+        """Update row color based on selection state"""
+        if is_selected:
+            # Darken the color slightly to indicate selection
+            base_color = row_frame._base_color
+            if isinstance(base_color, tuple):
+                # Apply a darker overlay
+                light_color = self._darken_color(base_color[0])
+                dark_color = self._darken_color(base_color[1])
+                row_frame.configure(fg_color=(light_color, dark_color))
+            else:
+                row_frame.configure(fg_color=self._darken_color(base_color))
+        else:
+            # Restore base color
+            row_frame.configure(fg_color=row_frame._base_color)
+
+    def _darken_color(self, hex_color: str, factor: float = 0.85) -> str:
+        """Darken a hex color by a factor"""
+        # Remove # if present
+        hex_color = hex_color.lstrip('#')
+
+        # Convert to RGB
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+
+        # Darken
+        r = int(r * factor)
+        g = int(g * factor)
+        b = int(b * factor)
+
+        # Convert back to hex
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def get_selected_data(self) -> List[Dict]:
+        """Get data for all selected rows"""
+        selected_data = []
+        for row_frame in self.row_widgets:
+            if hasattr(row_frame, '_index') and row_frame._index in self.selected_rows:
+                if row_frame in self.row_data_map:
+                    data, _ = self.row_data_map[row_frame]
+                    selected_data.append(data)
+        return selected_data
+
+    def clear_selection(self):
+        """Clear all selected rows"""
+        for row_frame in self.row_widgets:
+            if hasattr(row_frame, '_index') and row_frame._index in self.selected_rows:
+                self._update_row_color(row_frame, False)
+        self.selected_rows.clear()
+
+        # Notify callback
+        if self.on_selection_change:
+            self.on_selection_change([])
 
     def destroy(self):
         """Clean up before destroying"""
