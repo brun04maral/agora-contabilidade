@@ -5,7 +5,52 @@ Resolve problemas de overflow e scroll do DataTable original
 """
 import customtkinter as ctk
 import platform
+import tkinter as tk
 from typing import List, Dict, Callable, Optional
+
+
+class ToolTip:
+    """
+    Tooltip para mostrar conteúdo completo ao passar o mouse
+    """
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event=None):
+        """Show tooltip if text is not empty"""
+        if not self.text or self.text.strip() == "":
+            return
+
+        x, y, _, _ = self.widget.bbox("insert") if hasattr(self.widget, "bbox") else (0, 0, 0, 0)
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 25
+
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+
+        label = tk.Label(
+            tw,
+            text=self.text,
+            justify=tk.LEFT,
+            background="#ffffe0",
+            foreground="#000000",
+            relief=tk.SOLID,
+            borderwidth=1,
+            font=("TkDefaultFont", 10),
+            wraplength=400
+        )
+        label.pack(ipadx=5, ipady=3)
+
+    def hide_tooltip(self, event=None):
+        """Hide tooltip"""
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
 
 
 class DataTableV2(ctk.CTkFrame):
@@ -17,7 +62,7 @@ class DataTableV2(ctk.CTkFrame):
     def __init__(
         self,
         parent,
-        columns: List[Dict],  # [{'key': 'nome', 'label': 'Nome', 'width': 200}]
+        columns: List[Dict],  # [{'key': 'nome', 'label': 'Nome', 'width': 200, 'truncate': True}]
         on_edit: Optional[Callable] = None,
         on_delete: Optional[Callable] = None,
         on_view: Optional[Callable] = None,
@@ -29,7 +74,12 @@ class DataTableV2(ctk.CTkFrame):
 
         Args:
             parent: Parent widget
-            columns: List of column definitions
+            columns: List of column definitions. Each column can have:
+                - key: Data key
+                - label: Column header
+                - width: Column width in pixels
+                - truncate: If True, truncate text and show tooltip (default: True)
+                - formatter: Optional function to format value
             on_edit: Callback for edit action (receives row data)
             on_delete: Callback for delete action (receives row data)
             on_view: Callback for view action (receives row data)
@@ -94,6 +144,30 @@ class DataTableV2(ctk.CTkFrame):
         if self.has_actions:
             total += 180 if self.on_view else 120
         return total + 10  # +10 for margins
+
+    def _truncate_text(self, text: str, max_width: int, font_size: int = 12) -> str:
+        """
+        Truncate text to fit in max_width pixels
+
+        Args:
+            text: Text to truncate
+            max_width: Maximum width in pixels
+            font_size: Font size in points
+
+        Returns:
+            Truncated text with ellipsis if needed
+        """
+        if not text:
+            return ""
+
+        # Rough estimation: each character is ~6-8 pixels for size 12 font
+        char_width = font_size * 0.6
+        max_chars = int((max_width - 20) / char_width)  # -20 for padding
+
+        if len(text) <= max_chars:
+            return text
+
+        return text[:max_chars - 3] + "..."
 
     def _bind_scroll_events(self):
         """Bind scroll events for all platforms"""
@@ -247,19 +321,35 @@ class DataTableV2(ctk.CTkFrame):
         col_index = 0
         for col in self.columns:
             value = data.get(col['key'], '')
+            original_value = str(value)
 
             # Format value if formatter provided
             if 'formatter' in col:
                 value = col['formatter'](value)
+                original_value = str(value)
+
+            # Truncate text if needed
+            truncate = col.get('truncate', True)
+            displayed_value = str(value)
+
+            if truncate:
+                displayed_value = self._truncate_text(
+                    str(value),
+                    col.get('width', 100)
+                )
 
             label = ctk.CTkLabel(
                 row_frame,
-                text=str(value),
+                text=displayed_value,
                 font=ctk.CTkFont(size=12),
                 width=col.get('width', 100),
                 anchor="w"
             )
             label.grid(row=0, column=col_index, padx=10, pady=10, sticky="w")
+
+            # Add tooltip if text was truncated
+            if truncate and displayed_value != original_value:
+                ToolTip(label, original_value)
 
             # Propagate scroll events from labels to canvas
             label.bind("<Enter>", self._on_enter)

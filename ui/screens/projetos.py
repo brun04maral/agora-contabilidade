@@ -164,7 +164,7 @@ class ProjetosScreen(ctk.CTkFrame):
             'numero': projeto.numero,
             'tipo': self.tipo_to_label(projeto.tipo),
             'cliente_nome': projeto.cliente.nome if projeto.cliente else '-',
-            'descricao': projeto.descricao[:50] + '...' if len(projeto.descricao) > 50 else projeto.descricao,
+            'descricao': projeto.descricao,  # DataTableV2 will truncate automatically with tooltip
             'valor_sem_iva': float(projeto.valor_sem_iva),
             'estado': self.estado_to_label(projeto.estado),
             '_projeto': projeto  # Keep reference
