@@ -194,18 +194,18 @@ class DespesasScreen(ctk.CTkFrame):
             'valor_com_iva': float(despesa.valor_com_iva),
             'valor_com_iva_fmt': f"€{float(despesa.valor_com_iva):,.2f}",
             'estado': self.estado_to_label(despesa.estado),
-            '_color': color,
+            '_bg_color': color,
             '_despesa': despesa
         }
 
-    def get_estado_color(self, estado: EstadoDespesa) -> str:
-        """Get color for estado"""
+    def get_estado_color(self, estado: EstadoDespesa) -> tuple:
+        """Get color for estado (returns tuple: light, dark mode)"""
         color_map = {
-            EstadoDespesa.PAGO: "#C8E6C9",      # Verde pastel (pago)
-            EstadoDespesa.ATIVO: "#FFF9C4",     # Amarelo pastel (ativo)
-            EstadoDespesa.VENCIDO: "#FFCDD2"    # Vermelho pastel (vencido/urgente)
+            EstadoDespesa.PAGO: ("#C8E6C9", "#4A6E4A"),        # Verde pastel (pago)
+            EstadoDespesa.ATIVO: ("#FFF9C4", "#8B8B5A"),       # Amarelo pastel (ativo)
+            EstadoDespesa.VENCIDO: ("#FFCDD2", "#8B5A5E")      # Vermelho pastel (vencido/urgente)
         }
-        return color_map.get(estado, "#E0E0E0")
+        return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
 
     def tipo_to_label(self, tipo: TipoDespesa) -> str:
         """Convert tipo enum to label"""
