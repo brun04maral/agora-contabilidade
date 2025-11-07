@@ -342,6 +342,9 @@ class DataTableV2(ctk.CTkFrame):
 
     def _on_enter(self, event):
         """When mouse enters the widget area"""
+        # Give focus to canvas so keyboard shortcuts work
+        self.canvas.focus_set()
+
         # Bind scroll events based on platform
         if self.is_mac:
             # macOS trackpad and mouse
@@ -641,6 +644,9 @@ class DataTableV2(ctk.CTkFrame):
 
     def _on_row_click(self, event, row_frame):
         """Handle single click - toggle selection or range selection with shift"""
+        # Give focus to canvas so keyboard shortcuts work
+        self.canvas.focus_set()
+
         index = row_frame._index
 
         # Check if shift is held
