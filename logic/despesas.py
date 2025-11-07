@@ -83,7 +83,7 @@ class DespesasManager:
         valor_com_iva: Decimal,
         credor_id: Optional[int] = None,
         projeto_id: Optional[int] = None,
-        estado: EstadoDespesa = EstadoDespesa.ATIVO,
+        estado: EstadoDespesa = EstadoDespesa.PENDENTE,
         data_pagamento: Optional[date] = None,
         nota: Optional[str] = None
     ) -> Tuple[bool, Optional[Despesa], Optional[str]]:

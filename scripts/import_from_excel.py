@@ -520,7 +520,7 @@ class ExcelImporter:
                 tipo = TipoDespesa.PROJETO
 
             # Estado: Fixas mensais e despesas pessoais vencidas → PAGO
-            estado = EstadoDespesa.ATIVO
+            estado = EstadoDespesa.PENDENTE
             data_pagamento = None
 
             if tipo in [TipoDespesa.FIXA_MENSAL, TipoDespesa.PESSOAL_BRUNO, TipoDespesa.PESSOAL_RAFAEL] and data_vencimento and data_vencimento <= self.hoje:

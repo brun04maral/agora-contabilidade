@@ -104,7 +104,7 @@ class DespesasScreen(ctk.CTkFrame):
 
         self.estado_filter = ctk.CTkOptionMenu(
             filters_frame,
-            values=["Todos", "Ativo", "Vencido", "Pago"],
+            values=["Todos", "Pendente", "Vencido", "Pago"],
             command=self.aplicar_filtros,
             width=120
         )
@@ -202,7 +202,7 @@ class DespesasScreen(ctk.CTkFrame):
         """Get color for estado (returns tuple: light, dark mode)"""
         color_map = {
             EstadoDespesa.PAGO: ("#C8E6C9", "#4A6E4A"),        # Verde pastel (pago)
-            EstadoDespesa.ATIVO: ("#FFF9C4", "#8B8B5A"),       # Amarelo pastel (ativo)
+            EstadoDespesa.PENDENTE: ("#FFF9C4", "#8B8B5A"),    # Amarelo pastel (pendente)
             EstadoDespesa.VENCIDO: ("#FFCDD2", "#8B5A5E")      # Vermelho pastel (vencido/urgente)
         }
         return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
@@ -221,7 +221,7 @@ class DespesasScreen(ctk.CTkFrame):
     def estado_to_label(self, estado: EstadoDespesa) -> str:
         """Convert estado enum to label"""
         mapping = {
-            EstadoDespesa.ATIVO: "Ativo",
+            EstadoDespesa.PENDENTE: "Pendente",
             EstadoDespesa.VENCIDO: "Vencido",
             EstadoDespesa.PAGO: "Pago"
         }
@@ -249,7 +249,7 @@ class DespesasScreen(ctk.CTkFrame):
         # Filter by estado
         if estado != "Todos":
             estado_map = {
-                "Ativo": EstadoDespesa.ATIVO,
+                "Pendente": EstadoDespesa.PENDENTE,
                 "Vencido": EstadoDespesa.VENCIDO,
                 "Pago": EstadoDespesa.PAGO
             }
@@ -465,7 +465,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
         # Estado
         ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Ativo", "Vencido", "Pago"])
+        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Pendente", "Vencido", "Pago"])
         self.estado_dropdown.pack(anchor="w", pady=(0, 10))
 
         # Data pagamento
@@ -525,7 +525,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         self.valor_com_iva_entry.insert(0, str(d.valor_com_iva))
 
         estado_map = {
-            EstadoDespesa.ATIVO: "Ativo",
+            EstadoDespesa.PENDENTE: "Pendente",
             EstadoDespesa.VENCIDO: "Vencido",
             EstadoDespesa.PAGO: "Pago"
         }
@@ -574,7 +574,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
             valor_com_iva = Decimal(valor_com_iva_str.replace(',', '.'))
 
             estado_map = {
-                "Ativo": EstadoDespesa.ATIVO,
+                "Pendente": EstadoDespesa.PENDENTE,
                 "Vencido": EstadoDespesa.VENCIDO,
                 "Pago": EstadoDespesa.PAGO
             }

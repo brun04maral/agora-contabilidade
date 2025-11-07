@@ -26,7 +26,7 @@ class TipoDespesa(enum.Enum):
 
 class EstadoDespesa(enum.Enum):
     """Enum para estado da despesa"""
-    ATIVO = "ATIVO"
+    PENDENTE = "PENDENTE"
     VENCIDO = "VENCIDO"
     PAGO = "PAGO"
 
@@ -66,7 +66,7 @@ class Despesa(Base):
     valor_com_iva = Column(Numeric(10, 2), nullable=False, default=0)
 
     # Estado
-    estado = Column(SQLEnum(EstadoDespesa), nullable=False, default=EstadoDespesa.ATIVO, index=True)
+    estado = Column(SQLEnum(EstadoDespesa), nullable=False, default=EstadoDespesa.PENDENTE, index=True)
     data_pagamento = Column(Date, nullable=True)
 
     # Metadata

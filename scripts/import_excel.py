@@ -283,7 +283,7 @@ class DataImporter:
                 try:
                     estado = EstadoDespesa[estado_str]
                 except:
-                    estado = EstadoDespesa.ATIVO
+                    estado = EstadoDespesa.PENDENTE
 
                 # Parse data pagamento
                 data_pagamento = self.parse_date(despesa_data.get('data_pagamento'))

@@ -405,7 +405,7 @@ class RelatoriosManager:
         }
 
         stats_por_estado = {
-            EstadoDespesa.ATIVO: {'count': 0, 'valor': Decimal('0')},
+            EstadoDespesa.PENDENTE: {'count': 0, 'valor': Decimal('0')},
             EstadoDespesa.VENCIDO: {'count': 0, 'valor': Decimal('0')},
             EstadoDespesa.PAGO: {'count': 0, 'valor': Decimal('0')}
         }
@@ -500,7 +500,7 @@ class RelatoriosManager:
         """Get estado despesa label in Portuguese"""
         from database.models import EstadoDespesa
         mapping = {
-            EstadoDespesa.ATIVO: "Ativo",
+            EstadoDespesa.PENDENTE: "Pendente",
             EstadoDespesa.VENCIDO: "Vencido",
             EstadoDespesa.PAGO: "Pago"
         }
