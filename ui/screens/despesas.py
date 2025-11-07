@@ -110,9 +110,8 @@ class DespesasScreen(ctk.CTkFrame):
         )
         self.estado_filter.pack(side="left")
 
-        # Selection actions bar (hidden by default)
+        # Selection actions bar (created but NOT packed - will be shown on selection)
         self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
 
         # Clear selection button
         self.cancel_btn = ctk.CTkButton(
@@ -153,13 +152,6 @@ class DespesasScreen(ctk.CTkFrame):
             text="Total: €0,00",
             font=ctk.CTkFont(size=14, weight="bold")
         )
-
-        # Hide all selection widgets initially
-        self.cancel_btn.pack_forget()
-        self.count_label.pack_forget()
-        self.marcar_pago_btn.pack_forget()
-        self.report_btn.pack_forget()
-        self.total_label.pack_forget()
 
         # Table
         columns = [
@@ -284,14 +276,10 @@ class DespesasScreen(ctk.CTkFrame):
         """Handle selection change in table"""
         num_selected = len(selected_data)
 
-        # Hide all widgets first
-        self.cancel_btn.pack_forget()
-        self.count_label.pack_forget()
-        self.marcar_pago_btn.pack_forget()
-        self.report_btn.pack_forget()
-        self.total_label.pack_forget()
-
         if num_selected > 0:
+            # Show selection frame
+            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+
             # Show selection bar
             self.cancel_btn.pack(side="left", padx=5)
 
@@ -314,6 +302,9 @@ class DespesasScreen(ctk.CTkFrame):
             total = sum(item.get('valor_com_iva', 0) for item in selected_data)
             self.total_label.configure(text=f"Total: €{total:,.2f}")
             self.total_label.pack(side="left", padx=20)
+        else:
+            # Hide entire selection frame when nothing is selected
+            self.selection_frame.pack_forget()
 
     def cancelar_selecao(self):
         """Cancel selection"""
