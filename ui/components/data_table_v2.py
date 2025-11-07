@@ -95,10 +95,15 @@ class DataTableV2(ctk.CTkFrame):
         self.on_delete = on_delete
         self.on_view = on_view
         self.data_rows = []
+        self.original_data_rows = []  # Store original order
         self.row_widgets = []
         self.header_widgets = []
         self.is_mac = platform.system() == "Darwin"
         self.last_canvas_width = 0
+
+        # Sorting state
+        self.sort_column = None  # Column key being sorted
+        self.sort_direction = None  # 'asc', 'desc', or None
 
         # Configure
         self.configure(fg_color="transparent")
@@ -346,7 +351,7 @@ class DataTableV2(ctk.CTkFrame):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def create_header(self):
-        """Create table header"""
+        """Create table header with sortable columns"""
         header_frame = ctk.CTkFrame(
             self.inner_frame,
             fg_color=("#efd578", "#d4bb5e"),
@@ -357,21 +362,31 @@ class DataTableV2(ctk.CTkFrame):
 
         col_index = 0
         for col in self.columns:
+            # Get sort indicator
+            sort_indicator = ""
+            if self.sort_column == col['key']:
+                sort_indicator = " ▲" if self.sort_direction == "asc" else " ▼"
+
             label = ctk.CTkLabel(
                 header_frame,
-                text=col['label'],
+                text=col['label'] + sort_indicator,
                 font=ctk.CTkFont(size=13, weight="bold"),
                 width=col.get('width', 100),
                 anchor="w",
-                text_color=("#1a1a1a", "#1a1a1a")
+                text_color=("#1a1a1a", "#1a1a1a"),
+                cursor="hand2"  # Show clickable cursor
             )
             label.grid(row=0, column=col_index, padx=5, pady=6, sticky="w")
+
+            # Make column header clickable for sorting
+            label.bind("<Button-1>", lambda e, key=col['key']: self._on_header_click(key))
+
             self.header_widgets.append(label)
             col_index += 1
 
-        # Actions column
+        # Actions column (not sortable)
         if self.has_actions:
-            width = 200 if self.on_view else 150  # Increased to give more room
+            width = 200 if self.on_view else 150
             label = ctk.CTkLabel(
                 header_frame,
                 text="Ações",
@@ -383,6 +398,51 @@ class DataTableV2(ctk.CTkFrame):
             label.grid(row=0, column=col_index, padx=5, pady=6)
             self.header_widgets.append(label)
 
+    def _on_header_click(self, column_key: str):
+        """Handle column header click for sorting"""
+        # Cycle through: None → asc → desc → None
+        if self.sort_column == column_key:
+            if self.sort_direction == "asc":
+                self.sort_direction = "desc"
+            elif self.sort_direction == "desc":
+                # Reset to original order
+                self.sort_column = None
+                self.sort_direction = None
+        else:
+            # New column, start with ascending
+            self.sort_column = column_key
+            self.sort_direction = "asc"
+
+        # Apply sort
+        self._sort_and_refresh()
+
+    def _sort_and_refresh(self):
+        """Sort data and refresh table"""
+        if self.sort_column is None or self.sort_direction is None:
+            # No sorting, use original order
+            self.data_rows = self.original_data_rows.copy()
+        else:
+            # Sort data
+            reverse = (self.sort_direction == "desc")
+
+            try:
+                # Sort by the column key
+                self.data_rows = sorted(
+                    self.original_data_rows,
+                    key=lambda row: row.get(self.sort_column, ""),
+                    reverse=reverse
+                )
+            except TypeError:
+                # Handle cases where values can't be compared directly (e.g., None vs string)
+                self.data_rows = sorted(
+                    self.original_data_rows,
+                    key=lambda row: str(row.get(self.sort_column, "")),
+                    reverse=reverse
+                )
+
+        # Rebuild table with sorted data
+        self._rebuild_table()
+
     def set_data(self, data: List[Dict]):
         """
         Set table data
@@ -390,7 +450,13 @@ class DataTableV2(ctk.CTkFrame):
         Args:
             data: List of row dictionaries
         """
+        # Store original data order
+        self.original_data_rows = data.copy()
         self.data_rows = data
+
+        # Reset sorting state when new data is loaded
+        self.sort_column = None
+        self.sort_direction = None
 
         # Clear existing rows
         for widget in self.row_widgets:
