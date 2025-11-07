@@ -10,6 +10,7 @@ from decimal import Decimal
 import tkinter.messagebox as messagebox
 
 from logic.projetos import ProjetosManager
+from logic.clientes import ClientesManager
 from database.models import TipoProjeto, EstadoProjeto
 from ui.components.data_table_v2 import DataTableV2
 
@@ -33,9 +34,10 @@ class ProjetosScreen(ctk.CTkFrame):
 
         self.db_session = db_session
         self.manager = ProjetosManager(db_session)
+        self.clientes_manager = ClientesManager(db_session)
         self.projeto_editando = None
         self.filtro_inicial_estado = filtro_estado
-        self.filtro_cliente_id = filtro_cliente_id
+        self.filtro_inicial_cliente_id = filtro_cliente_id
 
         # Configure
         self.configure(fg_color="transparent")
@@ -44,9 +46,15 @@ class ProjetosScreen(ctk.CTkFrame):
         self.create_widgets()
 
         # Apply initial filter if provided
-        if self.filtro_inicial_estado or self.filtro_cliente_id:
+        if self.filtro_inicial_estado or self.filtro_inicial_cliente_id:
             if self.filtro_inicial_estado:
                 self.estado_filter.set(self.filtro_inicial_estado)
+            if self.filtro_inicial_cliente_id:
+                # Find cliente in list and set filter
+                for cliente in self.clientes_list:
+                    if cliente.id == self.filtro_inicial_cliente_id:
+                        self.cliente_filter.set(f"{cliente.numero} - {cliente.nome}")
+                        break
             self.aplicar_filtros()
         else:
             # Load data
@@ -95,6 +103,26 @@ class ProjetosScreen(ctk.CTkFrame):
         # Filters
         filters_frame = ctk.CTkFrame(self, fg_color="transparent")
         filters_frame.pack(fill="x", padx=30, pady=(0, 20))
+
+        # Cliente filter
+        ctk.CTkLabel(
+            filters_frame,
+            text="Cliente:",
+            font=ctk.CTkFont(size=13)
+        ).pack(side="left", padx=(0, 10))
+
+        # Get all clients
+        clientes = self.clientes_manager.listar_todos(order_by='nome')
+        cliente_values = ["Todos"] + [f"{c.numero} - {c.nome}" for c in clientes]
+        self.clientes_list = clientes  # Store for later lookup
+
+        self.cliente_filter = ctk.CTkOptionMenu(
+            filters_frame,
+            values=cliente_values,
+            command=self.aplicar_filtros,
+            width=220
+        )
+        self.cliente_filter.pack(side="left", padx=(0, 20))
 
         # Tipo filter
         ctk.CTkLabel(
@@ -147,7 +175,7 @@ class ProjetosScreen(ctk.CTkFrame):
     def carregar_projetos(self):
         """Load and display projects (respecting active filters)"""
         # If we have active filters, apply them instead of loading all
-        if self.filtro_cliente_id or self.tipo_filter.get() != "Todos" or self.estado_filter.get() != "Todos":
+        if self.cliente_filter.get() != "Todos" or self.tipo_filter.get() != "Todos" or self.estado_filter.get() != "Todos":
             self.aplicar_filtros()
         else:
             # No filters active, load all
@@ -188,15 +216,21 @@ class ProjetosScreen(ctk.CTkFrame):
 
     def aplicar_filtros(self, *args):
         """Apply filters"""
+        cliente = self.cliente_filter.get()
         tipo = self.tipo_filter.get()
         estado = self.estado_filter.get()
 
         # Get all projects
         projetos = self.manager.listar_todos()
 
-        # Filter by cliente if set
-        if self.filtro_cliente_id:
-            projetos = [p for p in projetos if p.cliente_id == self.filtro_cliente_id]
+        # Filter by cliente
+        if cliente != "Todos":
+            # Extract cliente ID from "numero - nome" format
+            cliente_numero = cliente.split(" - ")[0]
+            # Find cliente in list
+            cliente_obj = next((c for c in self.clientes_list if c.numero == cliente_numero), None)
+            if cliente_obj:
+                projetos = [p for p in projetos if p.cliente_id == cliente_obj.id]
 
         # Filter by tipo
         if tipo != "Todos":
