@@ -231,7 +231,7 @@ class DataTableV2(ctk.CTkFrame):
             # Set inner frame width to minimum (must accommodate all columns + actions + paddings)
             self.canvas.itemconfig(self.canvas_window, width=total_min_width)
             # Show horizontal scrollbar when needed
-            self.h_scrollbar.grid(row=1, column=0, sticky="ew")
+            self.h_scrollbar.grid(row=2, column=0, sticky="ew")
 
     def _on_canvas_configure(self, event):
         """Update layout when canvas resizes"""
@@ -378,9 +378,9 @@ class DataTableV2(ctk.CTkFrame):
         header_frame = ctk.CTkFrame(
             self.header_container,
             fg_color=("#efd578", "#d4bb5e"),
-            corner_radius=8
+            corner_radius=0
         )
-        header_frame.pack(fill="x", padx=0, pady=(0, 1))
+        header_frame.pack(fill="both", expand=True, padx=0, pady=0)
         self.header_widgets.append(header_frame)
 
         col_index = 0
