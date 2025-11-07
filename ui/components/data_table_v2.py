@@ -104,6 +104,7 @@ class DataTableV2(ctk.CTkFrame):
         # Selection state
         self.selected_rows = set()  # Set of row indices
         self.row_data_map = {}  # Map row_frame widget -> (data, index)
+        self.last_clicked_index = None  # For shift-click range selection
 
         # Sorting state
         self.sort_column = None  # Column key being sorted
@@ -119,6 +120,9 @@ class DataTableV2(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=0)  # Header row (fixed height)
         self.grid_rowconfigure(1, weight=1)  # Data row (expandable)
         self.grid_columnconfigure(0, weight=1)
+
+        # Keyboard shortcuts
+        self._setup_keyboard_shortcuts()
 
         # Create header canvas (fixed height, scrolls horizontally with content)
         self.header_canvas = ctk.CTkCanvas(self, highlightthickness=0, height=50, bg="#3a3a3a")
@@ -287,6 +291,46 @@ class DataTableV2(ctk.CTkFrame):
         # Also bind to the frame and all its children
         self.inner_frame.bind("<Enter>", self._on_enter)
         self.inner_frame.bind("<Leave>", self._on_leave)
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for selection"""
+        # Select all: Command-A on Mac, Control-A on others
+        if self.is_mac:
+            self.bind_all("<Command-a>", self._select_all)
+            self.bind_all("<Command-z>", self._clear_selection_key)
+        else:
+            self.bind_all("<Control-a>", self._select_all)
+            self.bind_all("<Control-z>", self._clear_selection_key)
+
+        # Clear selection: Escape
+        self.bind_all("<Escape>", self._clear_selection_key)
+
+    def _select_all(self, event=None):
+        """Select all rows"""
+        # Select all row indices
+        self.selected_rows = set(range(len(self.row_widgets)))
+
+        # Update colors for all rows
+        for row_frame in self.row_widgets:
+            if hasattr(row_frame, '_index'):
+                is_hovered = getattr(row_frame, '_is_hovered', False)
+                self._update_row_color(row_frame, True, is_hovered=is_hovered)
+
+        # Update last clicked index to last row
+        if self.row_widgets:
+            self.last_clicked_index = len(self.row_widgets) - 1
+
+        # Notify callback
+        if self.on_selection_change:
+            selected_data = self.get_selected_data()
+            self.on_selection_change(selected_data)
+
+        return "break"  # Prevent default behavior
+
+    def _clear_selection_key(self, event=None):
+        """Clear selection via keyboard"""
+        self.clear_selection()
+        return "break"  # Prevent default behavior
 
     def _on_enter(self, event):
         """When mouse enters the widget area"""
@@ -502,7 +546,7 @@ class DataTableV2(ctk.CTkFrame):
         row_frame.bind("<Leave>", lambda e, rf=row_frame: self._on_row_leave(e, rf))
 
         # Bind click for selection and double-click for edit
-        row_frame.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(rf))
+        row_frame.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
         row_frame.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
 
         col_index = 0
@@ -543,7 +587,7 @@ class DataTableV2(ctk.CTkFrame):
             label.bind("<Leave>", lambda e, rf=row_frame: self._on_row_leave(e, rf))
 
             # Bind click for selection and double-click for edit
-            label.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(rf))
+            label.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
             label.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
 
             col_index += 1
@@ -581,19 +625,45 @@ class DataTableV2(ctk.CTkFrame):
         is_selected = index in self.selected_rows
         self._update_row_color(row_frame, is_selected, is_hovered=False)
 
-    def _on_row_click(self, row_frame):
-        """Handle single click - toggle selection"""
+    def _on_row_click(self, event, row_frame):
+        """Handle single click - toggle selection or range selection with shift"""
         index = row_frame._index
 
-        # Toggle selection
-        if index in self.selected_rows:
-            self.selected_rows.remove(index)
-        else:
-            self.selected_rows.add(index)
+        # Check if shift is held
+        if event.state & 0x1:  # Shift key is held
+            # Range selection
+            if self.last_clicked_index is not None:
+                # Select all rows between last clicked and current
+                start = min(self.last_clicked_index, index)
+                end = max(self.last_clicked_index, index)
 
-        # Update row color
-        is_selected = index in self.selected_rows
-        self._update_row_color(row_frame, is_selected, is_hovered=row_frame._is_hovered)
+                # Add all rows in range to selection
+                for i in range(start, end + 1):
+                    self.selected_rows.add(i)
+
+                # Update colors for all affected rows
+                for rf in self.row_widgets:
+                    if hasattr(rf, '_index') and rf._index in self.selected_rows:
+                        is_hovered = getattr(rf, '_is_hovered', False)
+                        self._update_row_color(rf, True, is_hovered=is_hovered)
+            else:
+                # No previous click, just select this one
+                self.selected_rows.add(index)
+                is_selected = index in self.selected_rows
+                self._update_row_color(row_frame, is_selected, is_hovered=row_frame._is_hovered)
+        else:
+            # Normal toggle selection
+            if index in self.selected_rows:
+                self.selected_rows.remove(index)
+            else:
+                self.selected_rows.add(index)
+
+            # Update row color
+            is_selected = index in self.selected_rows
+            self._update_row_color(row_frame, is_selected, is_hovered=row_frame._is_hovered)
+
+        # Update last clicked index
+        self.last_clicked_index = index
 
         # Notify callback
         if self.on_selection_change:
