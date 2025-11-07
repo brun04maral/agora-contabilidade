@@ -374,16 +374,22 @@ class ProjetosScreen(ctk.CTkFrame):
         self.table.clear_selection()
 
     def criar_relatorio(self):
-        """Create report for selected projects"""
+        """Create report for selected projects and navigate to Relatorios tab"""
         selected_data = self.table.get_selected_data()
         if len(selected_data) > 0:
-            # TODO: Implement report creation
-            messagebox.showinfo(
-                "Criar Relatório",
-                f"Funcionalidade em desenvolvimento.\n\n"
-                f"Projetos selecionados: {len(selected_data)}\n"
-                f"Total: €{sum(item.get('valor_sem_iva', 0) for item in selected_data):,.2f}"
-            )
+            # Extract project IDs from selected data
+            projeto_ids = [item.get('id') for item in selected_data if item.get('id')]
+
+            # Navigate to Relatorios tab
+            # Hierarchy: self (ProjetosScreen) -> master (content_frame) -> master (MainWindow)
+            main_window = self.master.master
+            if hasattr(main_window, 'show_relatorios'):
+                main_window.show_relatorios(projeto_ids=projeto_ids)
+            else:
+                messagebox.showerror(
+                    "Erro",
+                    "Não foi possível navegar para a aba de Relatórios"
+                )
 
 
 class FormularioProjetoDialog(ctk.CTkToplevel):

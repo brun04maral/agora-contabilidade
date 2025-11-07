@@ -18,15 +18,28 @@ class RelatoriosScreen(ctk.CTkFrame):
     Tela de relatórios com filtros e exportação
     """
 
-    def __init__(self, parent, db_session: Session, **kwargs):
+    def __init__(self, parent, db_session: Session, projeto_ids=None, **kwargs):
+        """
+        Initialize relatorios screen
+
+        Args:
+            parent: Parent widget
+            db_session: SQLAlchemy database session
+            projeto_ids: Optional list of project IDs to pre-filter report
+        """
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
         self.manager = RelatoriosManager(db_session)
         self.current_report_data = None
+        self.projeto_ids_prefilter = projeto_ids
 
         self.configure(fg_color="transparent")
         self.create_widgets()
+
+        # Auto-generate preview if project IDs provided
+        if self.projeto_ids_prefilter:
+            self.after(100, self.apply_project_prefilter)
 
     def create_widgets(self):
         """Create screen widgets"""
@@ -323,6 +336,19 @@ class RelatoriosScreen(ctk.CTkFrame):
                 messagebox.showerror("Erro", "Datas inválidas! Use formato AAAA-MM-DD")
                 return None, None
 
+    def apply_project_prefilter(self):
+        """Apply pre-filter for selected projects and auto-generate preview"""
+        # Set report type to Projetos
+        self.tipo_relatorio.set("Projetos")
+        self.on_tipo_changed("Projetos")
+
+        # Set period to "Atual" (no date filter)
+        self.periodo_var.set("atual")
+        self.on_periodo_changed()
+
+        # Generate preview
+        self.gerar_preview()
+
     def gerar_preview(self):
         """Generate report preview"""
         tipo = self.tipo_relatorio.get()
@@ -386,7 +412,8 @@ class RelatoriosScreen(ctk.CTkFrame):
                     tipo=tipo_projeto,
                     estado=estado_projeto,
                     data_inicio=data_inicio,
-                    data_fim=data_fim
+                    data_fim=data_fim,
+                    projeto_ids=self.projeto_ids_prefilter  # Pass pre-filter IDs if available
                 )
                 self.render_projetos_preview(self.current_report_data)
 

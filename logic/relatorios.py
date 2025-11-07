@@ -213,7 +213,8 @@ class RelatoriosManager:
         tipo: Optional['TipoProjeto'] = None,
         estado: Optional['EstadoProjeto'] = None,
         data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None
+        data_fim: Optional[date] = None,
+        projeto_ids: Optional[list] = None
     ) -> Dict[str, Any]:
         """
         Gera relatório de projetos
@@ -223,6 +224,7 @@ class RelatoriosManager:
             estado: Filtrar por estado (opcional)
             data_inicio: Data de início do período (opcional)
             data_fim: Data de fim do período (opcional)
+            projeto_ids: Lista de IDs de projetos específicos para filtrar (opcional)
 
         Returns:
             Dicionário com dados do relatório
@@ -233,14 +235,19 @@ class RelatoriosManager:
         query = self.db_session.query(Projeto)
 
         # Apply filters
-        if tipo:
-            query = query.filter(Projeto.tipo == tipo)
-        if estado:
-            query = query.filter(Projeto.estado == estado)
-        if data_inicio:
-            query = query.filter(Projeto.data_inicio >= data_inicio)
-        if data_fim:
-            query = query.filter(Projeto.data_inicio <= data_fim)
+        if projeto_ids:
+            # If specific project IDs provided, filter by those (overrides other filters)
+            query = query.filter(Projeto.id.in_(projeto_ids))
+        else:
+            # Otherwise apply standard filters
+            if tipo:
+                query = query.filter(Projeto.tipo == tipo)
+            if estado:
+                query = query.filter(Projeto.estado == estado)
+            if data_inicio:
+                query = query.filter(Projeto.data_inicio >= data_inicio)
+            if data_fim:
+                query = query.filter(Projeto.data_inicio <= data_fim)
 
         projetos = query.all()
 
