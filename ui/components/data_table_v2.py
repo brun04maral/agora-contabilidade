@@ -146,14 +146,18 @@ class DataTableV2(ctk.CTkFrame):
 
     def _calculate_min_width(self) -> int:
         """Calculate minimum width needed for all columns"""
-        total = sum(col.get('width', 100) + 10 for col in self.base_columns)  # +10 for padding per column
+        # Data columns + their paddings
+        data_width = sum(col.get('width', 100) + 10 for col in self.base_columns)
+
+        actions_width = 0
         if self.has_actions:
-            # Actions column: buttons + spacing + padding
-            # 3 buttons (50px each) + spacing (2px*6) + frame padding (5px*2) + header padding (5px*2) = ~190px
-            # 2 buttons (50px each) + spacing (2px*4) + frame padding (5px*2) + header padding (5px*2) = ~130px
-            actions_width = 190 if self.on_view else 130
-            total += actions_width + 10  # +10 for padding like other columns
-        return total + 10  # +10 for outer margins (was +5, now +10 for safety)
+            # Increased to ensure buttons fit comfortably
+            # 2 buttons (100px) + spacing (8px) + frame padding (10px) + grid padding (10px) = ~130px minimum
+            # Using 150px to have comfortable margin
+            actions_width = 200 if self.on_view else 150
+            actions_width += 10  # Add padding like other columns
+
+        return data_width + actions_width + 10  # +10 for outer margins
 
     def _update_responsive_widths(self, available_width: int):
         """
@@ -162,19 +166,29 @@ class DataTableV2(ctk.CTkFrame):
         Args:
             available_width: Width available in canvas
         """
-        # Account for scrollbar and padding (needs to match outer margins + some buffer)
-        usable_width = available_width - 30  # More margin for scrollbar + safety
+        # Account for scrollbar and padding
+        usable_width = available_width - 30
 
-        # Calculate actions column width (same as in _calculate_min_width)
+        # Calculate actions column width (needs extra space for buttons + padding + spacing)
         actions_width = 0
+        actions_total_width = 0  # Including all paddings
         if self.has_actions:
-            actions_width = 190 if self.on_view else 130
+            # 2 buttons: 50+50=100px, spacing 2*4=8px, padx 5*2=10px = 118px minimum
+            # 3 buttons: 50+50+50=150px, spacing 2*6=12px, padx 5*2=10px = 172px minimum
+            # Add extra buffer for safety
+            actions_width = 200 if self.on_view else 150  # Increased from 130
+            # Total with grid padding
+            actions_total_width = actions_width + 10  # +10 for column padding
 
-        # Calculate total minimum width for data columns
+        # Calculate total minimum width for data columns (with their paddings)
         min_data_width = sum(col.get('width', 100) for col in self.base_columns)
-        total_min_width = min_data_width + actions_width
+        # Add padding per column
+        data_columns_total = min_data_width + (len(self.base_columns) * 10)
 
-        # If we have extra space, distribute it proportionally
+        # Total minimum width including everything
+        total_min_width = data_columns_total + actions_total_width
+
+        # If we have extra space, distribute it proportionally to data columns only
         if usable_width > total_min_width:
             extra_space = usable_width - total_min_width
 
@@ -189,13 +203,13 @@ class DataTableV2(ctk.CTkFrame):
                 new_col['width'] = base_width + extra_for_col
                 self.columns.append(new_col)
 
-            # Set inner frame width to fill canvas
+            # Set inner frame width to fill canvas (data columns expanded + fixed actions column)
             self.canvas.itemconfig(self.canvas_window, width=usable_width)
         else:
             # Use minimum widths + enable horizontal scroll
             self.columns = [col.copy() for col in self.base_columns]
 
-            # Set inner frame width to minimum
+            # Set inner frame width to minimum (must accommodate all columns + actions + paddings)
             self.canvas.itemconfig(self.canvas_window, width=total_min_width)
 
     def _on_canvas_configure(self, event):
@@ -354,7 +368,7 @@ class DataTableV2(ctk.CTkFrame):
 
         # Actions column
         if self.has_actions:
-            width = 190 if self.on_view else 130
+            width = 200 if self.on_view else 150  # Increased to give more room
             label = ctk.CTkLabel(
                 header_frame,
                 text="Ações",
