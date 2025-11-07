@@ -114,20 +114,32 @@ class DataTableV2(ctk.CTkFrame):
         # Calculate minimum width needed
         self.min_table_width = self._calculate_min_width()
 
-        # Create main container
-        self.grid_rowconfigure(0, weight=1)
+        # Create main container with 2 rows: header (fixed) + data (scrollable)
+        self.grid_rowconfigure(0, weight=0)  # Header row (fixed height)
+        self.grid_rowconfigure(1, weight=1)  # Data row (expandable)
         self.grid_columnconfigure(0, weight=1)
 
-        # Create canvas for scrolling
+        # Create header canvas (fixed height, scrolls horizontally with content)
+        self.header_canvas = ctk.CTkCanvas(self, highlightthickness=0, height=50)
+        self.header_canvas.grid(row=0, column=0, sticky="ew")
+
+        # Create header container inside canvas
+        self.header_container = ctk.CTkFrame(self.header_canvas, fg_color="transparent")
+        self.header_canvas_window = self.header_canvas.create_window((0, 0), window=self.header_container, anchor="nw")
+
+        # Create header
+        self.create_header()
+
+        # Create canvas for scrolling data (below header)
         self.canvas = ctk.CTkCanvas(self, highlightthickness=0)
-        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.canvas.grid(row=1, column=0, sticky="nsew")
 
         # Create scrollbars
         self.v_scrollbar = ctk.CTkScrollbar(self, orientation="vertical", command=self.canvas.yview)
-        self.v_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.v_scrollbar.grid(row=1, column=1, sticky="ns")
 
-        self.h_scrollbar = ctk.CTkScrollbar(self, orientation="horizontal", command=self.canvas.xview)
-        self.h_scrollbar.grid(row=1, column=0, sticky="ew")
+        self.h_scrollbar = ctk.CTkScrollbar(self, orientation="horizontal", command=self._on_h_scroll)
+        self.h_scrollbar.grid(row=2, column=0, sticky="ew")
 
         # Configure canvas
         self.canvas.configure(
@@ -135,19 +147,20 @@ class DataTableV2(ctk.CTkFrame):
             xscrollcommand=self.h_scrollbar.set
         )
 
+        # Configure header canvas to use same horizontal scrollbar
+        self.header_canvas.configure(xscrollcommand=lambda *args: None)  # Ignore, we'll sync manually
+
         # Create inner frame for content (NO fixed width - will be responsive)
         self.inner_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
         self.canvas_window = self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
 
         # Bind events
         self.inner_frame.bind("<Configure>", self._on_frame_configure)
+        self.header_container.bind("<Configure>", self._on_header_configure)
         self.canvas.bind("<Configure>", self._on_canvas_configure)
 
         # Bind scroll events
         self._bind_scroll_events()
-
-        # Create header
-        self.create_header()
 
     def _calculate_min_width(self) -> int:
         """Calculate minimum width needed for all columns"""
@@ -350,10 +363,20 @@ class DataTableV2(ctk.CTkFrame):
         """Update scroll region when frame changes"""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+    def _on_header_configure(self, event=None):
+        """Update header scroll region when header changes"""
+        self.header_canvas.configure(scrollregion=self.header_canvas.bbox("all"))
+
+    def _on_h_scroll(self, *args):
+        """Sync horizontal scroll between header and content"""
+        # Scroll both canvases horizontally
+        self.canvas.xview(*args)
+        self.header_canvas.xview(*args)
+
     def create_header(self):
-        """Create table header with sortable columns"""
+        """Create fixed table header with sortable columns"""
         header_frame = ctk.CTkFrame(
-            self.inner_frame,
+            self.header_container,
             fg_color=("#efd578", "#d4bb5e"),
             corner_radius=8
         )
@@ -362,9 +385,12 @@ class DataTableV2(ctk.CTkFrame):
 
         col_index = 0
         for col in self.columns:
+            # Check if column is sortable (default True)
+            is_sortable = col.get('sortable', True)
+
             # Get sort indicator
             sort_indicator = ""
-            if self.sort_column == col['key']:
+            if is_sortable and self.sort_column == col['key']:
                 sort_indicator = " ▲" if self.sort_direction == "asc" else " ▼"
 
             label = ctk.CTkLabel(
@@ -374,12 +400,13 @@ class DataTableV2(ctk.CTkFrame):
                 width=col.get('width', 100),
                 anchor="w",
                 text_color=("#1a1a1a", "#1a1a1a"),
-                cursor="hand2"  # Show clickable cursor
+                cursor="hand2" if is_sortable else "arrow"  # Show clickable cursor only if sortable
             )
             label.grid(row=0, column=col_index, padx=5, pady=6, sticky="w")
 
-            # Make column header clickable for sorting
-            label.bind("<Button-1>", lambda e, key=col['key']: self._on_header_click(key))
+            # Make column header clickable for sorting (only if sortable)
+            if is_sortable:
+                label.bind("<Button-1>", lambda e, key=col['key']: self._on_header_click(key))
 
             self.header_widgets.append(label)
             col_index += 1

@@ -131,7 +131,7 @@ class ProjetosScreen(ctk.CTkFrame):
             {'key': 'numero', 'label': 'Nº', 'width': 80},
             {'key': 'tipo', 'label': 'Tipo', 'width': 140},
             {'key': 'cliente_nome', 'label': 'Cliente', 'width': 180},
-            {'key': 'descricao', 'label': 'Descrição', 'width': 280},
+            {'key': 'descricao', 'label': 'Descrição', 'width': 280, 'sortable': False},
             {'key': 'valor_sem_iva', 'label': 'Valor', 'width': 100,
              'formatter': lambda v: f"€{v:,.2f}" if v else "€0,00"},
             {'key': 'estado', 'label': 'Estado', 'width': 120},
