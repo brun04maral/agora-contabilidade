@@ -494,11 +494,12 @@ class DataTableV2(ctk.CTkFrame):
         # Store data and state in row frame
         row_frame._base_color = bg_color
         row_frame._index = index
+        row_frame._is_hovered = False
         self.row_data_map[row_frame] = (data, index)
 
         # Propagate scroll events from row to canvas
-        row_frame.bind("<Enter>", self._on_enter)
-        row_frame.bind("<Leave>", self._on_leave)
+        row_frame.bind("<Enter>", lambda e, rf=row_frame: self._on_row_enter(e, rf))
+        row_frame.bind("<Leave>", lambda e, rf=row_frame: self._on_row_leave(e, rf))
 
         # Bind click for selection and double-click for edit
         row_frame.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(rf))
@@ -537,9 +538,9 @@ class DataTableV2(ctk.CTkFrame):
             if truncate and displayed_value != original_value:
                 ToolTip(label, original_value)
 
-            # Propagate scroll events from labels to canvas
-            label.bind("<Enter>", self._on_enter)
-            label.bind("<Leave>", self._on_leave)
+            # Propagate scroll events and hover from labels to canvas/row
+            label.bind("<Enter>", lambda e, rf=row_frame: self._on_row_enter(e, rf))
+            label.bind("<Leave>", lambda e, rf=row_frame: self._on_row_leave(e, rf))
 
             # Bind click for selection and double-click for edit
             label.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(rf))
@@ -558,6 +559,28 @@ class DataTableV2(ctk.CTkFrame):
             widget.destroy()
         self.row_widgets = []
 
+    def _on_row_enter(self, event, row_frame):
+        """Handle mouse enter on row - show hover state"""
+        # Propagate scroll events
+        self._on_enter(event)
+
+        # Update hover state
+        row_frame._is_hovered = True
+        index = row_frame._index
+        is_selected = index in self.selected_rows
+        self._update_row_color(row_frame, is_selected, is_hovered=True)
+
+    def _on_row_leave(self, event, row_frame):
+        """Handle mouse leave on row - remove hover state"""
+        # Propagate scroll events
+        self._on_leave(event)
+
+        # Update hover state
+        row_frame._is_hovered = False
+        index = row_frame._index
+        is_selected = index in self.selected_rows
+        self._update_row_color(row_frame, is_selected, is_hovered=False)
+
     def _on_row_click(self, row_frame):
         """Handle single click - toggle selection"""
         index = row_frame._index
@@ -569,7 +592,8 @@ class DataTableV2(ctk.CTkFrame):
             self.selected_rows.add(index)
 
         # Update row color
-        self._update_row_color(row_frame, index in self.selected_rows)
+        is_selected = index in self.selected_rows
+        self._update_row_color(row_frame, is_selected, is_hovered=row_frame._is_hovered)
 
         # Notify callback
         if self.on_selection_change:
@@ -581,13 +605,21 @@ class DataTableV2(ctk.CTkFrame):
         if self.on_row_double_click:
             self.on_row_double_click(data)
 
-    def _update_row_color(self, row_frame, is_selected: bool):
-        """Update row color based on selection state"""
+    def _update_row_color(self, row_frame, is_selected: bool, is_hovered: bool = False):
+        """Update row color based on selection and hover state"""
+        base_color = row_frame._base_color
+
         if is_selected:
-            # Darken the color slightly to indicate selection
-            base_color = row_frame._base_color
+            # Saturate color significantly for selected state (more obvious)
             if isinstance(base_color, tuple):
-                # Apply a darker overlay
+                light_color = self._saturate_color(base_color[0])
+                dark_color = self._saturate_color(base_color[1])
+                row_frame.configure(fg_color=(light_color, dark_color))
+            else:
+                row_frame.configure(fg_color=self._saturate_color(base_color))
+        elif is_hovered:
+            # Darken slightly for hover state (clickable indication)
+            if isinstance(base_color, tuple):
                 light_color = self._darken_color(base_color[0])
                 dark_color = self._darken_color(base_color[1])
                 row_frame.configure(fg_color=(light_color, dark_color))
@@ -595,7 +627,7 @@ class DataTableV2(ctk.CTkFrame):
                 row_frame.configure(fg_color=self._darken_color(base_color))
         else:
             # Restore base color
-            row_frame.configure(fg_color=row_frame._base_color)
+            row_frame.configure(fg_color=base_color)
 
     def _darken_color(self, hex_color: str, factor: float = 0.85) -> str:
         """Darken a hex color by a factor"""
@@ -615,6 +647,46 @@ class DataTableV2(ctk.CTkFrame):
         # Convert back to hex
         return f"#{r:02x}{g:02x}{b:02x}"
 
+    def _saturate_color(self, hex_color: str) -> str:
+        """Saturate a hex color to make it more vivid/obvious for selection"""
+        # Remove # if present
+        hex_color = hex_color.lstrip('#')
+
+        # Convert to RGB
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+
+        # Find the dominant color and boost it
+        max_val = max(r, g, b)
+        min_val = min(r, g, b)
+
+        # If already saturated or neutral, slightly darken instead
+        if max_val - min_val < 30:
+            # Neutral color (gray-ish), just darken it more
+            r = int(r * 0.7)
+            g = int(g * 0.7)
+            b = int(b * 0.7)
+        else:
+            # Boost saturation: push high values higher, low values lower
+            # This makes the color more vivid
+            factor = 1.3
+            if r == max_val:
+                r = min(255, int(r * factor))
+                g = int(g * 0.8)
+                b = int(b * 0.8)
+            elif g == max_val:
+                g = min(255, int(g * factor))
+                r = int(r * 0.8)
+                b = int(b * 0.8)
+            else:  # b == max_val
+                b = min(255, int(b * factor))
+                r = int(r * 0.8)
+                g = int(g * 0.8)
+
+        # Convert back to hex
+        return f"#{r:02x}{g:02x}{b:02x}"
+
     def get_selected_data(self) -> List[Dict]:
         """Get data for all selected rows"""
         selected_data = []
@@ -629,7 +701,8 @@ class DataTableV2(ctk.CTkFrame):
         """Clear all selected rows"""
         for row_frame in self.row_widgets:
             if hasattr(row_frame, '_index') and row_frame._index in self.selected_rows:
-                self._update_row_color(row_frame, False)
+                is_hovered = getattr(row_frame, '_is_hovered', False)
+                self._update_row_color(row_frame, False, is_hovered=is_hovered)
         self.selected_rows.clear()
 
         # Notify callback

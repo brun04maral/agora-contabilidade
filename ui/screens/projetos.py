@@ -170,6 +170,13 @@ class ProjetosScreen(ctk.CTkFrame):
             hover_color=("#9E9E9E", "#757575")
         )
 
+        # Selection count label
+        self.count_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="0 selecionados",
+            font=ctk.CTkFont(size=13)
+        )
+
         # Report button
         self.report_btn = ctk.CTkButton(
             self.selection_frame,
@@ -340,14 +347,21 @@ class ProjetosScreen(ctk.CTkFrame):
         """Handle selection change in table"""
         num_selected = len(selected_data)
 
-        # Hide all buttons first
+        # Hide all widgets first
         self.cancel_btn.pack_forget()
+        self.count_label.pack_forget()
         self.report_btn.pack_forget()
         self.total_label.pack_forget()
 
         if num_selected > 0:
             # Show selection bar
             self.cancel_btn.pack(side="left", padx=5)
+
+            # Show count
+            count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
+            self.count_label.configure(text=count_text)
+            self.count_label.pack(side="left", padx=15)
+
             self.report_btn.pack(side="left", padx=5)
 
             # Calculate and show total
