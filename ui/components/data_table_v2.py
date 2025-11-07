@@ -380,7 +380,7 @@ class DataTableV2(ctk.CTkFrame):
             fg_color=("#efd578", "#d4bb5e"),
             corner_radius=8
         )
-        header_frame.pack(fill="x", padx=2, pady=(2, 4))
+        header_frame.pack(fill="x", padx=0, pady=(0, 1))
         self.header_widgets.append(header_frame)
 
         col_index = 0
