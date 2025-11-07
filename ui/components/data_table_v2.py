@@ -167,6 +167,10 @@ class DataTableV2(ctk.CTkFrame):
         # Setup keyboard shortcuts (after canvas creation)
         self._setup_keyboard_shortcuts()
 
+        # Ensure canvas starts at top-left (delayed to ensure canvas is fully initialized)
+        self.after(10, lambda: self.canvas.yview_moveto(0))
+        self.after(10, lambda: self.canvas.xview_moveto(0))
+
     def _calculate_min_width(self) -> int:
         """Calculate minimum width needed for all columns"""
         # Data columns + their paddings (minimal)
@@ -257,6 +261,13 @@ class DataTableV2(ctk.CTkFrame):
         # Update scroll region
         self.inner_frame.update_idletasks()
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+        # Force another update to ensure scrollregion is applied
+        self.canvas.update_idletasks()
+
+        # Reset scroll to top-left (delayed to ensure canvas is fully updated)
+        self.after(1, lambda: self.canvas.yview_moveto(0))
+        self.after(1, lambda: self.canvas.xview_moveto(0))
 
     def _truncate_text(self, text: str, max_width: int, font_size: int = 12) -> str:
         """
