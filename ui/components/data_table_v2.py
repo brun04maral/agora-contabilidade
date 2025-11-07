@@ -722,13 +722,9 @@ class DataTableV2(ctk.CTkFrame):
         base_color = row_frame._base_color
 
         if is_selected:
-            # Saturate color significantly for selected state (more obvious)
-            if isinstance(base_color, tuple):
-                light_color = self._saturate_color(base_color[0])
-                dark_color = self._saturate_color(base_color[1])
-                row_frame.configure(fg_color=(light_color, dark_color))
-            else:
-                row_frame.configure(fg_color=self._saturate_color(base_color))
+            # Use fixed orange color for all selected rows (same across all tabs)
+            # Orange color like when selecting FATURADO projects
+            row_frame.configure(fg_color=("#FFB74D", "#CC8844"))
         elif is_hovered:
             # Darken slightly for hover state (clickable indication)
             if isinstance(base_color, tuple):
