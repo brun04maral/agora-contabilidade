@@ -43,6 +43,7 @@ class DataTableV2(ctk.CTkFrame):
         self.on_view = on_view
         self.data_rows = []
         self.row_widgets = []
+        self.is_mac = platform.system() == "Darwin"
 
         # Configure
         self.configure(fg_color="transparent")
@@ -80,8 +81,9 @@ class DataTableV2(ctk.CTkFrame):
 
         # Bind events
         self.inner_frame.bind("<Configure>", self._on_frame_configure)
-        self.bind("<Enter>", self._bind_mouse_scroll)
-        self.bind("<Leave>", self._unbind_mouse_scroll)
+
+        # Bind scroll events - use multiple approaches for maximum compatibility
+        self._bind_scroll_events()
 
         # Create header
         self.create_header()
@@ -93,45 +95,68 @@ class DataTableV2(ctk.CTkFrame):
             total += 180 if self.on_view else 120
         return total + 10  # +10 for margins
 
-    def _bind_mouse_scroll(self, event):
-        """Bind mouse scroll events when mouse enters widget"""
-        # Detect OS for appropriate scroll binding
-        system = platform.system()
+    def _bind_scroll_events(self):
+        """Bind scroll events for all platforms"""
+        # Bind to canvas itself
+        self.canvas.bind("<Enter>", self._on_enter)
+        self.canvas.bind("<Leave>", self._on_leave)
 
-        if system == "Darwin":  # macOS
-            self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_mac)
-        elif system == "Linux":
-            self.canvas.bind_all("<Button-4>", self._on_mousewheel_linux)
-            self.canvas.bind_all("<Button-5>", self._on_mousewheel_linux)
-        else:  # Windows
-            self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_windows)
+        # Also bind to the frame and all its children
+        self.inner_frame.bind("<Enter>", self._on_enter)
+        self.inner_frame.bind("<Leave>", self._on_leave)
 
-    def _unbind_mouse_scroll(self, event):
-        """Unbind mouse scroll events when mouse leaves widget"""
-        system = platform.system()
+    def _on_enter(self, event):
+        """When mouse enters the widget area"""
+        # Bind scroll events based on platform
+        if self.is_mac:
+            # macOS trackpad and mouse
+            self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_vertical)
+            self.canvas.bind_all("<Shift-MouseWheel>", self._on_mousewheel_horizontal)
+        elif platform.system() == "Linux":
+            # Linux
+            self.canvas.bind_all("<Button-4>", self._on_mousewheel_vertical)
+            self.canvas.bind_all("<Button-5>", self._on_mousewheel_vertical)
+        else:
+            # Windows
+            self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_vertical)
+            self.canvas.bind_all("<Shift-MouseWheel>", self._on_mousewheel_horizontal)
 
-        if system == "Darwin":
+    def _on_leave(self, event):
+        """When mouse leaves the widget area"""
+        # Unbind scroll events
+        if self.is_mac:
             self.canvas.unbind_all("<MouseWheel>")
-        elif system == "Linux":
+            self.canvas.unbind_all("<Shift-MouseWheel>")
+        elif platform.system() == "Linux":
             self.canvas.unbind_all("<Button-4>")
             self.canvas.unbind_all("<Button-5>")
         else:
             self.canvas.unbind_all("<MouseWheel>")
+            self.canvas.unbind_all("<Shift-MouseWheel>")
 
-    def _on_mousewheel_mac(self, event):
-        """Handle mouse wheel scrolling on macOS"""
-        self.canvas.yview_scroll(int(-1 * event.delta), "units")
+    def _on_mousewheel_vertical(self, event):
+        """Handle vertical scrolling"""
+        if self.is_mac:
+            # macOS: use delta directly
+            self.canvas.yview_scroll(-1 * event.delta, "units")
+        elif platform.system() == "Linux":
+            # Linux: Button-4 is scroll up, Button-5 is scroll down
+            if event.num == 4:
+                self.canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                self.canvas.yview_scroll(1, "units")
+        else:
+            # Windows
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
-    def _on_mousewheel_windows(self, event):
-        """Handle mouse wheel scrolling on Windows"""
-        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    def _on_mousewheel_linux(self, event):
-        """Handle mouse wheel scrolling on Linux"""
-        if event.num == 4:
-            self.canvas.yview_scroll(-1, "units")
-        elif event.num == 5:
-            self.canvas.yview_scroll(1, "units")
+    def _on_mousewheel_horizontal(self, event):
+        """Handle horizontal scrolling (Shift + scroll)"""
+        if self.is_mac:
+            # macOS: use delta directly
+            self.canvas.xview_scroll(-1 * event.delta, "units")
+        else:
+            # Windows
+            self.canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def _on_frame_configure(self, event=None):
         """Update scroll region when frame changes"""
@@ -215,6 +240,10 @@ class DataTableV2(ctk.CTkFrame):
         )
         row_frame.pack(fill="x", padx=5, pady=3)
 
+        # Propagate scroll events from row to canvas
+        row_frame.bind("<Enter>", self._on_enter)
+        row_frame.bind("<Leave>", self._on_leave)
+
         col_index = 0
         for col in self.columns:
             value = data.get(col['key'], '')
@@ -231,12 +260,21 @@ class DataTableV2(ctk.CTkFrame):
                 anchor="w"
             )
             label.grid(row=0, column=col_index, padx=10, pady=10, sticky="w")
+
+            # Propagate scroll events from labels to canvas
+            label.bind("<Enter>", self._on_enter)
+            label.bind("<Leave>", self._on_leave)
+
             col_index += 1
 
         # Actions buttons
         if self.has_actions:
             actions_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
             actions_frame.grid(row=0, column=col_index, padx=10, pady=5)
+
+            # Propagate scroll events from actions frame
+            actions_frame.bind("<Enter>", self._on_enter)
+            actions_frame.bind("<Leave>", self._on_leave)
 
             if self.on_view:
                 view_btn = ctk.CTkButton(
@@ -286,6 +324,6 @@ class DataTableV2(ctk.CTkFrame):
 
     def destroy(self):
         """Clean up before destroying"""
-        # Unbind mousewheel to avoid memory leaks
-        self._unbind_mouse_scroll(None)
+        # Unbind all scroll events to avoid memory leaks
+        self._on_leave(None)
         super().destroy()
