@@ -146,17 +146,17 @@ class DataTableV2(ctk.CTkFrame):
 
     def _calculate_min_width(self) -> int:
         """Calculate minimum width needed for all columns"""
-        # Data columns + their paddings
-        data_width = sum(col.get('width', 100) + 10 for col in self.base_columns)
+        # Data columns + their paddings (reduced padding per column)
+        data_width = sum(col.get('width', 100) + 6 for col in self.base_columns)
 
         actions_width = 0
         if self.has_actions:
             # 2 buttons (100px) + spacing (8px) + frame padding (10px) + grid padding (10px) = ~130px minimum
             # Using 150px to have comfortable margin
             actions_width = 200 if self.on_view else 150
-            actions_width += 10  # Add padding like other columns
+            actions_width += 6  # Add padding like other columns (reduced from 10)
 
-        return data_width + actions_width + 6  # +6 for outer margins (reduced from 10)
+        return data_width + actions_width + 4  # +4 for outer margins (reduced from 6)
 
     def _update_responsive_widths(self, available_width: int):
         """
@@ -165,8 +165,8 @@ class DataTableV2(ctk.CTkFrame):
         Args:
             available_width: Width available in canvas
         """
-        # Account for scrollbar and padding (reduced buffer)
-        usable_width = available_width - 15  # Reduced from 30 to 15
+        # Account for outer margins only (minimal buffer)
+        usable_width = available_width - 8  # Just enough for padding (reduced from 15)
 
         # Calculate actions column width (needs extra space for buttons + padding + spacing)
         actions_width = 0
@@ -175,14 +175,14 @@ class DataTableV2(ctk.CTkFrame):
             # 2 buttons: 50+50=100px, spacing 2*4=8px, padx 5*2=10px = 118px minimum
             # 3 buttons: 50+50+50=150px, spacing 2*6=12px, padx 5*2=10px = 172px minimum
             # Add extra buffer for safety
-            actions_width = 200 if self.on_view else 150  # Increased from 130
-            # Total with grid padding
-            actions_total_width = actions_width + 10  # +10 for column padding
+            actions_width = 200 if self.on_view else 150
+            # Total with grid padding (reduced)
+            actions_total_width = actions_width + 6  # +6 for column padding (reduced from 10)
 
         # Calculate total minimum width for data columns (with their paddings)
         min_data_width = sum(col.get('width', 100) for col in self.base_columns)
-        # Add padding per column
-        data_columns_total = min_data_width + (len(self.base_columns) * 10)
+        # Add padding per column (reduced)
+        data_columns_total = min_data_width + (len(self.base_columns) * 6)
 
         # Total minimum width including everything
         total_min_width = data_columns_total + actions_total_width
