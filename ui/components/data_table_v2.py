@@ -294,16 +294,24 @@ class DataTableV2(ctk.CTkFrame):
 
     def _setup_keyboard_shortcuts(self):
         """Setup keyboard shortcuts for selection"""
+        # Bind to multiple widgets to ensure shortcuts work when focused
+        widgets_to_bind = [self, self.canvas, self.header_canvas]
+
+        for widget in widgets_to_bind:
+            self._bind_shortcuts_to_widget(widget)
+
+    def _bind_shortcuts_to_widget(self, widget):
+        """Bind keyboard shortcuts to a specific widget"""
         # Select all: Command-A on Mac, Control-A on others
         if self.is_mac:
-            self.bind_all("<Command-a>", self._select_all)
-            self.bind_all("<Command-z>", self._clear_selection_key)
+            widget.bind("<Command-a>", self._select_all)
+            widget.bind("<Command-z>", self._clear_selection_key)
         else:
-            self.bind_all("<Control-a>", self._select_all)
-            self.bind_all("<Control-z>", self._clear_selection_key)
+            widget.bind("<Control-a>", self._select_all)
+            widget.bind("<Control-z>", self._clear_selection_key)
 
         # Clear selection: Escape
-        self.bind_all("<Escape>", self._clear_selection_key)
+        widget.bind("<Escape>", self._clear_selection_key)
 
     def _select_all(self, event=None):
         """Select all rows"""
@@ -549,6 +557,9 @@ class DataTableV2(ctk.CTkFrame):
         row_frame.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
         row_frame.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
 
+        # Bind keyboard shortcuts
+        self._bind_shortcuts_to_widget(row_frame)
+
         col_index = 0
         for col in self.columns:
             value = data.get(col['key'], '')
@@ -589,6 +600,9 @@ class DataTableV2(ctk.CTkFrame):
             # Bind click for selection and double-click for edit
             label.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
             label.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
+
+            # Bind keyboard shortcuts
+            self._bind_shortcuts_to_widget(label)
 
             col_index += 1
 
