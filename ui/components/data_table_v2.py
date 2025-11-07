@@ -521,6 +521,10 @@ class DataTableV2(ctk.CTkFrame):
         self.inner_frame.update_idletasks()
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+        # Reset scroll to top-left
+        self.canvas.yview_moveto(0)
+        self.canvas.xview_moveto(0)
+
     def add_row(self, data: Dict, index: int = 0):
         """
         Add a single row
