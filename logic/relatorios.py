@@ -506,6 +506,137 @@ class RelatoriosManager:
         }
         return mapping.get(estado, str(estado))
 
+    def gerar_relatorio_boletins(
+        self,
+        socio: Optional['Socio'] = None,
+        estado: Optional['EstadoBoletim'] = None,
+        data_inicio: Optional[date] = None,
+        data_fim: Optional[date] = None,
+        boletim_ids: Optional[list] = None
+    ) -> Dict[str, Any]:
+        """
+        Gera relatório de boletins
+
+        Args:
+            socio: Filtrar por sócio (opcional)
+            estado: Filtrar por estado (opcional)
+            data_inicio: Data de início do período (opcional)
+            data_fim: Data de fim do período (opcional)
+            boletim_ids: Lista de IDs de boletins específicos para filtrar (opcional)
+
+        Returns:
+            Dicionário com dados do relatório
+        """
+        from database.models import Socio, EstadoBoletim, Boletim
+
+        # Base query
+        query = self.db_session.query(Boletim)
+
+        # Apply filters
+        if boletim_ids:
+            # If specific boletim IDs provided, filter by those (overrides other filters)
+            query = query.filter(Boletim.id.in_(boletim_ids))
+        else:
+            # Otherwise apply standard filters
+            if socio:
+                query = query.filter(Boletim.socio == socio)
+            if estado:
+                query = query.filter(Boletim.estado == estado)
+            if data_inicio:
+                query = query.filter(Boletim.data_emissao >= data_inicio)
+            if data_fim:
+                query = query.filter(Boletim.data_emissao <= data_fim)
+
+        boletins = query.all()
+
+        # Calculate statistics
+        stats_por_socio = {
+            Socio.BRUNO: {'count': 0, 'valor': Decimal('0')},
+            Socio.RAFAEL: {'count': 0, 'valor': Decimal('0')}
+        }
+
+        stats_por_estado = {
+            EstadoBoletim.PENDENTE: {'count': 0, 'valor': Decimal('0')},
+            EstadoBoletim.PAGO: {'count': 0, 'valor': Decimal('0')}
+        }
+
+        total_valor = Decimal('0')
+
+        boletins_formatados = []
+
+        for boletim in boletins:
+            # Stats por socio
+            stats_por_socio[boletim.socio]['count'] += 1
+            stats_por_socio[boletim.socio]['valor'] += boletim.valor
+
+            # Stats por estado
+            stats_por_estado[boletim.estado]['count'] += 1
+            stats_por_estado[boletim.estado]['valor'] += boletim.valor
+
+            # Totals
+            total_valor += boletim.valor
+
+            # Format boletim for table
+            boletins_formatados.append({
+                'numero': boletim.numero,
+                'socio': "Bruno" if boletim.socio == Socio.BRUNO else "Rafael",
+                'data_emissao': boletim.data_emissao.strftime("%Y-%m-%d") if boletim.data_emissao else '-',
+                'valor': float(boletim.valor),
+                'valor_fmt': self._format_currency(float(boletim.valor)),
+                'descricao': boletim.descricao[:40] + '...' if boletim.descricao and len(boletim.descricao) > 40 else (boletim.descricao or '-'),
+                'estado': self._get_estado_boletim_label(boletim.estado),
+                'data_pagamento': boletim.data_pagamento.strftime("%Y-%m-%d") if boletim.data_pagamento else '-',
+            })
+
+        # Format statistics
+        stats_socio_fmt = []
+        for socio_bol, stats in stats_por_socio.items():
+            stats_socio_fmt.append({
+                'socio': "Bruno" if socio_bol == Socio.BRUNO else "Rafael",
+                'count': stats['count'],
+                'valor': float(stats['valor']),
+                'valor_fmt': self._format_currency(float(stats['valor']))
+            })
+
+        stats_estado_fmt = []
+        for estado_bol, stats in stats_por_estado.items():
+            stats_estado_fmt.append({
+                'estado': self._get_estado_boletim_label(estado_bol),
+                'count': stats['count'],
+                'valor': float(stats['valor']),
+                'valor_fmt': self._format_currency(float(stats['valor']))
+            })
+
+        periodo_str = self._format_periodo(data_inicio, data_fim)
+
+        return {
+            'tipo': 'boletins',
+            'titulo': 'Relatório de Boletins',
+            'periodo': periodo_str,
+            'data_geracao': datetime.now().strftime('%d/%m/%Y %H:%M'),
+            'data_inicio': data_inicio,
+            'data_fim': data_fim,
+            'filtros': {
+                'socio': "Bruno" if socio == Socio.BRUNO else ("Rafael" if socio == Socio.RAFAEL else "Todos"),
+                'estado': self._get_estado_boletim_label(estado) if estado else 'Todos'
+            },
+            'total_boletins': len(boletins),
+            'total_valor': float(total_valor),
+            'total_valor_fmt': self._format_currency(float(total_valor)),
+            'stats_por_socio': stats_socio_fmt,
+            'stats_por_estado': stats_estado_fmt,
+            'boletins': boletins_formatados
+        }
+
+    def _get_estado_boletim_label(self, estado: 'EstadoBoletim') -> str:
+        """Get estado boletim label in Portuguese"""
+        from database.models import EstadoBoletim
+        mapping = {
+            EstadoBoletim.PENDENTE: "Pendente",
+            EstadoBoletim.PAGO: "Pago"
+        }
+        return mapping.get(estado, str(estado))
+
     def _get_tipo_label(self, tipo: 'TipoProjeto') -> str:
         """Get tipo label in Portuguese"""
         from database.models import TipoProjeto

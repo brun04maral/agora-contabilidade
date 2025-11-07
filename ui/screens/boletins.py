@@ -318,16 +318,18 @@ class BoletinsScreen(ctk.CTkFrame):
                 self.carregar_boletins()
 
     def criar_relatorio(self):
-        """Create report for selected boletins"""
+        """Create report for selected boletins and navigate to Relatorios tab"""
         selected_data = self.table.get_selected_data()
         if len(selected_data) > 0:
-            # TODO: Implement boletins report navigation (when boletins reports are implemented)
-            messagebox.showinfo(
-                "Criar Relatório",
-                f"Funcionalidade em desenvolvimento.\n\n"
-                f"Boletins selecionados: {len(selected_data)}\n"
-                f"Total: €{sum(item.get('valor', 0) for item in selected_data):,.2f}"
-            )
+            # Extract boletim IDs from selected data
+            boletim_ids = [item.get('id') for item in selected_data if item.get('id')]
+
+            # Navigate to Relatorios tab with selected boletim IDs
+            main_window = self.master.master
+            if hasattr(main_window, 'show_relatorios'):
+                main_window.show_relatorios(boletim_ids=boletim_ids)
+            else:
+                messagebox.showerror("Erro", "Não foi possível navegar para a aba de Relatórios")
 
 
 class FormularioBoletimDialog(ctk.CTkToplevel):

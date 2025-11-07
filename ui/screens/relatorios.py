@@ -18,7 +18,7 @@ class RelatoriosScreen(ctk.CTkFrame):
     Tela de relatórios com filtros e exportação
     """
 
-    def __init__(self, parent, db_session: Session, projeto_ids=None, despesa_ids=None, **kwargs):
+    def __init__(self, parent, db_session: Session, projeto_ids=None, despesa_ids=None, boletim_ids=None, **kwargs):
         """
         Initialize relatorios screen
 
@@ -27,6 +27,7 @@ class RelatoriosScreen(ctk.CTkFrame):
             db_session: SQLAlchemy database session
             projeto_ids: Optional list of project IDs to pre-filter report
             despesa_ids: Optional list of despesa IDs to pre-filter report
+            boletim_ids: Optional list of boletim IDs to pre-filter report
         """
         super().__init__(parent, **kwargs)
 
@@ -35,6 +36,7 @@ class RelatoriosScreen(ctk.CTkFrame):
         self.current_report_data = None
         self.projeto_ids_prefilter = projeto_ids
         self.despesa_ids_prefilter = despesa_ids
+        self.boletim_ids_prefilter = boletim_ids
 
         self.configure(fg_color="transparent")
         self.create_widgets()
@@ -45,6 +47,9 @@ class RelatoriosScreen(ctk.CTkFrame):
         # Auto-generate preview if despesa IDs provided
         elif self.despesa_ids_prefilter:
             self.after(100, self.apply_despesa_prefilter)
+        # Auto-generate preview if boletim IDs provided
+        elif self.boletim_ids_prefilter:
+            self.after(100, self.apply_boletim_prefilter)
 
     def create_widgets(self):
         """Create screen widgets"""
@@ -367,6 +372,19 @@ class RelatoriosScreen(ctk.CTkFrame):
         # Generate preview
         self.gerar_preview()
 
+    def apply_boletim_prefilter(self):
+        """Apply pre-filter for selected boletins and auto-generate preview"""
+        # Set report type to Boletins
+        self.tipo_relatorio.set("Boletins")
+        self.on_tipo_changed("Boletins")
+
+        # Set period to "Atual" (no date filter)
+        self.periodo_var.set("atual")
+        self.on_periodo_changed()
+
+        # Generate preview
+        self.gerar_preview()
+
     def gerar_preview(self):
         """Generate report preview"""
         tipo = self.tipo_relatorio.get()
@@ -443,6 +461,15 @@ class RelatoriosScreen(ctk.CTkFrame):
                     despesa_ids=self.despesa_ids_prefilter  # Pass pre-filter IDs if available
                 )
                 self.render_despesas_preview(self.current_report_data)
+
+            elif tipo == "Boletins":
+                # Boletins report doesn't have tipo/estado filters yet, just use pre-filter IDs
+                self.current_report_data = self.manager.gerar_relatorio_boletins(
+                    data_inicio=data_inicio,
+                    data_fim=data_fim,
+                    boletim_ids=self.boletim_ids_prefilter  # Pass pre-filter IDs if available
+                )
+                self.render_boletins_preview(self.current_report_data)
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao gerar relatório: {e}")
@@ -1189,6 +1216,194 @@ class RelatoriosScreen(ctk.CTkFrame):
             ctk.CTkLabel(
                 more_frame,
                 text=f"... e mais {len(data['despesas']) - 15} despesas (ver exportação completa)",
+                font=ctk.CTkFont(size=11, slant="italic"),
+                text_color="gray"
+            ).pack(pady=10)
+
+    def render_boletins_preview(self, data):
+        """Render boletins report preview"""
+        preview_frame = ctk.CTkFrame(self.preview_scroll, fg_color="transparent")
+        preview_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Title
+        ctk.CTkLabel(
+            preview_frame,
+            text=data['titulo'],
+            font=ctk.CTkFont(size=24, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        # Period
+        ctk.CTkLabel(
+            preview_frame,
+            text=f"Período: {data['periodo']}",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        ).pack(anchor="w", pady=(0, 10))
+
+        # Filters
+        filter_str = f"Filtros: {data['filtros']['socio']}, {data['filtros']['estado']}"
+        ctk.CTkLabel(
+            preview_frame,
+            text=filter_str,
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).pack(anchor="w", pady=(0, 20))
+
+        # Summary stats
+        stats_frame = ctk.CTkFrame(preview_frame, fg_color=("#E8F5E9", "#1B5E20"))
+        stats_frame.pack(fill="x", pady=(0, 20))
+
+        summary_grid = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        summary_grid.pack(padx=20, pady=15)
+
+        # Total boletins
+        ctk.CTkLabel(
+            summary_grid,
+            text=f"Total de Boletins: {data['total_boletins']}",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).grid(row=0, column=0, sticky="w", padx=10, pady=5)
+
+        # Total valor
+        ctk.CTkLabel(
+            summary_grid,
+            text=f"Total: {data['total_valor_fmt']}",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).grid(row=0, column=1, sticky="w", padx=10, pady=5)
+
+        # Stats by socio
+        stats_socio_frame = ctk.CTkFrame(preview_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+        stats_socio_frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(
+            stats_socio_frame,
+            text="Por Sócio",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+
+        for stat in data['stats_por_socio']:
+            if stat['count'] > 0:  # Only show socios with data
+                stat_row = ctk.CTkFrame(stats_socio_frame, fg_color="transparent")
+                stat_row.pack(fill="x", padx=15, pady=2)
+
+                ctk.CTkLabel(
+                    stat_row,
+                    text=f"{stat['socio']}: {stat['count']} boletim(ns) - {stat['valor_fmt']}",
+                    font=ctk.CTkFont(size=12)
+                ).pack(side="left")
+
+        # Stats by estado
+        stats_estado_frame = ctk.CTkFrame(preview_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+        stats_estado_frame.pack(fill="x", pady=(0, 20))
+
+        ctk.CTkLabel(
+            stats_estado_frame,
+            text="Por Estado",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+
+        for stat in data['stats_por_estado']:
+            if stat['count'] > 0:  # Only show estados with data
+                stat_row = ctk.CTkFrame(stats_estado_frame, fg_color="transparent")
+                stat_row.pack(fill="x", padx=15, pady=2)
+
+                ctk.CTkLabel(
+                    stat_row,
+                    text=f"{stat['estado']}: {stat['count']} boletim(ns) - {stat['valor_fmt']}",
+                    font=ctk.CTkFont(size=12)
+                ).pack(side="left")
+
+        # Boletins table
+        ctk.CTkLabel(
+            preview_frame,
+            text="Detalhes dos Boletins",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        table_frame = ctk.CTkFrame(preview_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+        table_frame.pack(fill="x", pady=(0, 10))
+
+        # Table header
+        header_frame = ctk.CTkFrame(table_frame, fg_color=("#efd578", "#d4bb5e"))
+        header_frame.pack(fill="x", padx=5, pady=5)
+
+        ctk.CTkLabel(header_frame, text="Nº", font=ctk.CTkFont(size=11, weight="bold"), width=80).pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Sócio", font=ctk.CTkFont(size=11, weight="bold"), width=80).pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Data Emissão", font=ctk.CTkFont(size=11, weight="bold"), width=110).pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Valor", font=ctk.CTkFont(size=11, weight="bold"), width=100, anchor="e").pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Estado", font=ctk.CTkFont(size=11, weight="bold"), width=90, anchor="center").pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Data Pagamento", font=ctk.CTkFont(size=11, weight="bold"), width=120, anchor="center").pack(side="left", padx=8, pady=6)
+
+        # Show first 15 boletins
+        for i, bol in enumerate(data['boletins'][:15]):
+            is_even = i % 2 == 0
+            row_frame = ctk.CTkFrame(
+                table_frame,
+                fg_color=("#FFFFFF", "#1E1E1E") if is_even else ("#F8F8F8", "#252525")
+            )
+            row_frame.pack(fill="x", padx=5, pady=2)
+
+            # Numero
+            ctk.CTkLabel(
+                row_frame,
+                text=bol['numero'],
+                font=ctk.CTkFont(size=11),
+                width=80,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Socio
+            ctk.CTkLabel(
+                row_frame,
+                text=bol['socio'],
+                font=ctk.CTkFont(size=11),
+                width=80,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Data Emissão
+            ctk.CTkLabel(
+                row_frame,
+                text=bol['data_emissao'],
+                font=ctk.CTkFont(size=11),
+                width=110,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Valor
+            ctk.CTkLabel(
+                row_frame,
+                text=bol['valor_fmt'],
+                font=ctk.CTkFont(size=11),
+                width=100,
+                anchor="e"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Estado
+            ctk.CTkLabel(
+                row_frame,
+                text=bol['estado'],
+                font=ctk.CTkFont(size=11),
+                width=90,
+                anchor="center"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Data Pagamento
+            ctk.CTkLabel(
+                row_frame,
+                text=bol['data_pagamento'],
+                font=ctk.CTkFont(size=11),
+                width=120,
+                anchor="center"
+            ).pack(side="left", padx=8, pady=6)
+
+        # Show count if more boletins
+        if len(data['boletins']) > 15:
+            more_frame = ctk.CTkFrame(table_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+            more_frame.pack(fill="x", padx=5, pady=(0, 5))
+
+            ctk.CTkLabel(
+                more_frame,
+                text=f"... e mais {len(data['boletins']) - 15} boletins (ver exportação completa)",
                 font=ctk.CTkFont(size=11, slant="italic"),
                 text_color="gray"
             ).pack(pady=10)
