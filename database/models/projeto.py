@@ -21,6 +21,7 @@ class EstadoProjeto(enum.Enum):
     NAO_FATURADO = "NAO_FATURADO"
     FATURADO = "FATURADO"
     RECEBIDO = "RECEBIDO"
+    ANULADO = "ANULADO"
 
 
 class Projeto(Base):

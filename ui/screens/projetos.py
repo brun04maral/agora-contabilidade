@@ -148,7 +148,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
         self.estado_filter = ctk.CTkOptionMenu(
             filters_frame,
-            values=["Todos", "Não Faturado", "Faturado", "Recebido"],
+            values=["Todos", "Não Faturado", "Faturado", "Recebido", "Anulado"],
             command=self.aplicar_filtros,
             width=150
         )
@@ -211,7 +211,8 @@ class ProjetosScreen(ctk.CTkFrame):
         mapping = {
             EstadoProjeto.NAO_FATURADO: "Não Faturado",
             EstadoProjeto.FATURADO: "Faturado",
-            EstadoProjeto.RECEBIDO: "Recebido"
+            EstadoProjeto.RECEBIDO: "Recebido",
+            EstadoProjeto.ANULADO: "Anulado"
         }
         return mapping.get(estado, str(estado))
 
@@ -220,7 +221,8 @@ class ProjetosScreen(ctk.CTkFrame):
         mapping = {
             EstadoProjeto.NAO_FATURADO: ("#FFB3BA", "#8B5A5E"),  # Pastel red
             EstadoProjeto.FATURADO: ("#FFFFBA", "#B8B85A"),     # Pastel yellow
-            EstadoProjeto.RECEBIDO: ("#BAFFC9", "#5A8B63")      # Pastel green
+            EstadoProjeto.RECEBIDO: ("#BAFFC9", "#5A8B63"),     # Pastel green
+            EstadoProjeto.ANULADO: ("#808080", "#505050")       # Dark gray
         }
         return mapping.get(estado, ("#f8f8f8", "#252525"))
 
@@ -255,7 +257,8 @@ class ProjetosScreen(ctk.CTkFrame):
             estado_map = {
                 "Não Faturado": EstadoProjeto.NAO_FATURADO,
                 "Faturado": EstadoProjeto.FATURADO,
-                "Recebido": EstadoProjeto.RECEBIDO
+                "Recebido": EstadoProjeto.RECEBIDO,
+                "Anulado": EstadoProjeto.ANULADO
             }
             estado_enum = estado_map[estado]
             projetos = [p for p in projetos if p.estado == estado_enum]

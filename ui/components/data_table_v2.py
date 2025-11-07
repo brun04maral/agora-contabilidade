@@ -109,7 +109,7 @@ class DataTableV2(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
 
         # Create header canvas (fixed height, scrolls horizontally with content)
-        self.header_canvas = ctk.CTkCanvas(self, highlightthickness=0, height=50)
+        self.header_canvas = ctk.CTkCanvas(self, highlightthickness=0, height=50, bg="#3a3a3a")
         self.header_canvas.grid(row=0, column=0, sticky="ew")
 
         # Create header container inside canvas
@@ -120,7 +120,7 @@ class DataTableV2(ctk.CTkFrame):
         self.create_header()
 
         # Create canvas for scrolling data (below header)
-        self.canvas = ctk.CTkCanvas(self, highlightthickness=0)
+        self.canvas = ctk.CTkCanvas(self, highlightthickness=0, bg="#3a3a3a")
         self.canvas.grid(row=1, column=0, sticky="nsew")
 
         # Create scrollbars
