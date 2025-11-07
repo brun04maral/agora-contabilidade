@@ -27,6 +27,7 @@ def run_migrations():
 
     migrations = [
         '003_add_pais_to_fornecedor',
+        '004_add_anulado_estado',
     ]
 
     with engine.connect() as connection:

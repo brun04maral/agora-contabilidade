@@ -467,7 +467,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
         # Estado
         ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
-        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Não Faturado", "Faturado", "Recebido"], height=35)
+        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Não Faturado", "Faturado", "Recebido", "Anulado"], height=35)
         self.estado_dropdown.pack(anchor="w", pady=(0, 18))
 
         # Prémios (só para projetos EMPRESA)
