@@ -204,12 +204,16 @@ class DataTableV2(ctk.CTkFrame):
 
             # Set inner frame width to fill canvas (data columns expanded + fixed actions column)
             self.canvas.itemconfig(self.canvas_window, width=usable_width)
+            # Hide horizontal scrollbar when not needed
+            self.h_scrollbar.grid_remove()
         else:
             # Use minimum widths + enable horizontal scroll
             self.columns = [col.copy() for col in self.base_columns]
 
             # Set inner frame width to minimum (must accommodate all columns + actions + paddings)
             self.canvas.itemconfig(self.canvas_window, width=total_min_width)
+            # Show horizontal scrollbar when needed
+            self.h_scrollbar.grid(row=1, column=0, sticky="ew")
 
     def _on_canvas_configure(self, event):
         """Update layout when canvas resizes"""
