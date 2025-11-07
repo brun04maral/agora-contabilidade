@@ -11,7 +11,7 @@ import tkinter.messagebox as messagebox
 
 from logic.boletins import BoletinsManager
 from database.models import Socio, EstadoBoletim
-from ui.components.data_table import DataTable
+from ui.components.data_table_v2 import DataTableV2
 
 
 class BoletinsScreen(ctk.CTkFrame):
@@ -110,164 +110,101 @@ class BoletinsScreen(ctk.CTkFrame):
         )
         self.estado_filter.pack(side="left")
 
+        # Selection actions bar (created but NOT packed - will be shown on selection)
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+
+        # Clear selection button
+        self.cancel_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Limpar Seleção",
+            command=self.cancelar_selecao,
+            width=150, height=35
+        )
+
+        # Selection count label
+        self.count_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="0 selecionados",
+            font=ctk.CTkFont(size=13)
+        )
+
+        # Mark as paid button
+        self.marcar_pago_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="✅ Marcar como Pago",
+            command=self.marcar_como_pago_batch,
+            width=180, height=35,
+            fg_color=("#4CAF50", "#388E3C"),
+            hover_color=("#66BB6A", "#2E7D32")
+        )
+
+        # Report button
+        self.report_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📊 Criar Relatório",
+            command=self.criar_relatorio,
+            width=160, height=35
+        )
+
+        # Total label
+        self.total_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="Total: €0,00",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+
         # Table
         columns = [
-            {'key': 'numero', 'label': 'Nº', 'width': 80},
-            {'key': 'socio', 'label': 'Sócio', 'width': 120},
-            {'key': 'data_emissao', 'label': 'Data Emissão', 'width': 110},
-            {'key': 'valor', 'label': 'Valor', 'width': 100,
-             'formatter': lambda v: f"€{v:,.2f}" if v else "€0,00"},
-            {'key': 'descricao', 'label': 'Descrição', 'width': 280},
-            {'key': 'estado', 'label': 'Estado', 'width': 100},
-            {'key': 'data_pagamento', 'label': 'Data Pagamento', 'width': 130},
+            {'key': 'numero', 'label': 'Nº', 'width': 80, 'sortable': True},
+            {'key': 'socio', 'label': 'Sócio', 'width': 120, 'sortable': True},
+            {'key': 'data_emissao', 'label': 'Data Emissão', 'width': 120, 'sortable': True},
+            {'key': 'valor_fmt', 'label': 'Valor', 'width': 110, 'sortable': True},
+            {'key': 'descricao', 'label': 'Descrição', 'width': 260, 'sortable': False},
+            {'key': 'estado', 'label': 'Estado', 'width': 100, 'sortable': True},
+            {'key': 'data_pagamento', 'label': 'Data Pagamento', 'width': 130, 'sortable': True},
         ]
 
-        # Custom table with special actions
-        self.table_frame = ctk.CTkScrollableFrame(self, height=400)
-        self.table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
-
-        self.create_custom_table(columns)
-
-    def create_custom_table(self, columns):
-        """Create custom table with conditional actions"""
-        self.columns = columns
-        self.boletins_data = []
-
-        # Header
-        header_frame = ctk.CTkFrame(self.table_frame, fg_color=("#E0E0E0", "#2a2a2a"))
-        header_frame.pack(fill="x", padx=5, pady=(5, 0))
-
-        col_index = 0
-        for col in columns:
-            label = ctk.CTkLabel(
-                header_frame,
-                text=col['label'],
-                font=ctk.CTkFont(size=12, weight="bold"),
-                width=col.get('width', 100),
-                anchor="w"
-            )
-            label.grid(row=0, column=col_index, padx=10, pady=10, sticky="w")
-            col_index += 1
-
-        # Actions
-        label = ctk.CTkLabel(
-            header_frame,
-            text="Ações",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            width=200,
-            anchor="center"
+        self.table = DataTableV2(
+            self,
+            columns=columns,
+            on_row_double_click=self.editar_boletim,
+            on_selection_change=self.on_selection_change,
+            height=400
         )
-        label.grid(row=0, column=col_index, padx=10, pady=10)
+        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
     def carregar_boletins(self):
         """Load and display boletins"""
         boletins = self.manager.listar_todos()
-        self.display_boletins(boletins)
-
-    def display_boletins(self, boletins):
-        """Display boletins in table"""
-        # Clear existing rows (except header)
-        for widget in self.table_frame.winfo_children()[1:]:
-            widget.destroy()
-
-        # Add rows
-        for boletim in boletins:
-            self.add_boletim_row(boletim)
-
-    def add_boletim_row(self, boletim):
-        """Add a boletim row with conditional actions"""
-        row_frame = ctk.CTkFrame(
-            self.table_frame,
-            fg_color=("white", "#1e1e1e"),
-            corner_radius=5
-        )
-        row_frame.pack(fill="x", padx=5, pady=2)
-
-        data = self.boletim_to_dict(boletim)
-
-        col_index = 0
-        for col in self.columns:
-            value = data.get(col['key'], '')
-
-            if 'formatter' in col:
-                value = col['formatter'](value)
-
-            label = ctk.CTkLabel(
-                row_frame,
-                text=str(value),
-                font=ctk.CTkFont(size=12),
-                width=col.get('width', 100),
-                anchor="w"
-            )
-            label.grid(row=0, column=col_index, padx=10, pady=10, sticky="w")
-            col_index += 1
-
-        # Actions
-        actions_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-        actions_frame.grid(row=0, column=col_index, padx=10, pady=5)
-
-        # Marcar como Pago (só se PENDENTE)
-        if boletim.estado == EstadoBoletim.PENDENTE:
-            pagar_btn = ctk.CTkButton(
-                actions_frame,
-                text="✅ Pagar",
-                command=lambda: self.marcar_como_pago(boletim.id),
-                width=80,
-                height=30,
-                font=ctk.CTkFont(size=12),
-                fg_color=("#4CAF50", "#388E3C"),
-                hover_color=("#66BB6A", "#2E7D32")
-            )
-            pagar_btn.pack(side="left", padx=2)
-        else:
-            # Já pago - botão para desfazer
-            despagar_btn = ctk.CTkButton(
-                actions_frame,
-                text="↩️ Pendente",
-                command=lambda: self.marcar_como_pendente(boletim.id),
-                width=80,
-                height=30,
-                font=ctk.CTkFont(size=12),
-                fg_color=("#FF9800", "#F57C00"),
-                hover_color=("#FFB74D", "#E65100")
-            )
-            despagar_btn.pack(side="left", padx=2)
-
-        # Edit
-        edit_btn = ctk.CTkButton(
-            actions_frame,
-            text="✏️",
-            command=lambda: self.editar_boletim(boletim),
-            width=40,
-            height=30,
-            font=ctk.CTkFont(size=14)
-        )
-        edit_btn.pack(side="left", padx=2)
-
-        # Delete
-        delete_btn = ctk.CTkButton(
-            actions_frame,
-            text="🗑️",
-            command=lambda: self.apagar_boletim(boletim),
-            width=40,
-            height=30,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#F44336", "#C62828"),
-            hover_color=("#E53935", "#B71C1C")
-        )
-        delete_btn.pack(side="left", padx=2)
+        data = [self.boletim_to_dict(b) for b in boletins]
+        self.table.set_data(data)
 
     def boletim_to_dict(self, boletim) -> dict:
-        """Convert boletim to dict"""
+        """Convert boletim to dict for table"""
+        # Determine color based on estado
+        color = self.get_estado_color(boletim.estado)
+
         return {
+            'id': boletim.id,
             'numero': boletim.numero,
             'socio': "Bruno" if boletim.socio == Socio.BRUNO else "Rafael",
             'data_emissao': boletim.data_emissao.strftime("%Y-%m-%d") if boletim.data_emissao else '-',
             'valor': float(boletim.valor),
-            'descricao': boletim.descricao[:50] + '...' if boletim.descricao and len(boletim.descricao) > 50 else (boletim.descricao or '-'),
+            'valor_fmt': f"€{float(boletim.valor):,.2f}",
+            'descricao': boletim.descricao or '-',
             'estado': "Pendente" if boletim.estado == EstadoBoletim.PENDENTE else "Pago",
             'data_pagamento': boletim.data_pagamento.strftime("%Y-%m-%d") if boletim.data_pagamento else '-',
+            '_bg_color': color,
+            '_boletim': boletim
         }
+
+    def get_estado_color(self, estado: EstadoBoletim) -> tuple:
+        """Get color for estado (returns tuple: light, dark mode)"""
+        color_map = {
+            EstadoBoletim.PENDENTE: ("#FFF9C4", "#8B8B5A"),  # Amarelo pastel (pendente)
+            EstadoBoletim.PAGO: ("#C8E6C9", "#4A6E4A")        # Verde pastel (pago)
+        }
+        return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
 
     def aplicar_filtros(self, *args):
         """Apply filters"""
@@ -286,50 +223,111 @@ class BoletinsScreen(ctk.CTkFrame):
             estado_enum = EstadoBoletim.PENDENTE if estado == "Pendente" else EstadoBoletim.PAGO
             boletins = [b for b in boletins if b.estado == estado_enum]
 
-        self.display_boletins(boletins)
+        data = [self.boletim_to_dict(b) for b in boletins]
+        self.table.set_data(data)
+
+        # Clear selection when filters change
+        self.table.clear_selection()
 
     def abrir_formulario(self, boletim=None):
         """Open form dialog"""
         FormularioBoletimDialog(self, self.manager, boletim, self.carregar_boletins)
 
-    def editar_boletim(self, boletim):
-        """Edit boletim"""
-        self.abrir_formulario(boletim)
+    def editar_boletim(self, data: dict):
+        """Edit boletim (triggered by double-click)"""
+        boletim = data.get('_boletim')
+        if boletim:
+            self.abrir_formulario(boletim)
 
-    def marcar_como_pago(self, boletim_id: int):
-        """Marcar boletim como pago"""
-        sucesso, erro = self.manager.marcar_como_pago(boletim_id)
-        if sucesso:
-            messagebox.showinfo("Sucesso", "Boletim marcado como pago!")
-            self.carregar_boletins()
+    def on_selection_change(self, selected_data: list):
+        """Handle selection change in table"""
+        num_selected = len(selected_data)
+
+        if num_selected > 0:
+            # Show selection frame
+            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+
+            # Show selection bar
+            self.cancel_btn.pack(side="left", padx=5)
+
+            # Show count
+            count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
+            self.count_label.configure(text=count_text)
+            self.count_label.pack(side="left", padx=15)
+
+            # Show "Marcar como Pago" only if there are unpaid boletins
+            has_unpaid = any(
+                item.get('_boletim') and item.get('_boletim').estado != EstadoBoletim.PAGO
+                for item in selected_data
+            )
+            if has_unpaid:
+                self.marcar_pago_btn.pack(side="left", padx=5)
+
+            self.report_btn.pack(side="left", padx=5)
+
+            # Calculate and show total
+            total = sum(item.get('valor', 0) for item in selected_data)
+            self.total_label.configure(text=f"Total: €{total:,.2f}")
+            self.total_label.pack(side="left", padx=20)
         else:
-            messagebox.showerror("Erro", f"Erro: {erro}")
+            # Hide entire selection frame when nothing is selected
+            self.selection_frame.pack_forget()
 
-    def marcar_como_pendente(self, boletim_id: int):
-        """Marcar boletim como pendente"""
-        sucesso, erro = self.manager.marcar_como_pendente(boletim_id)
-        if sucesso:
-            messagebox.showinfo("Sucesso", "Boletim marcado como pendente!")
-            self.carregar_boletins()
-        else:
-            messagebox.showerror("Erro", f"Erro: {erro}")
+    def cancelar_selecao(self):
+        """Cancel selection"""
+        self.table.clear_selection()
 
-    def apagar_boletim(self, boletim):
-        """Delete boletim"""
+    def marcar_como_pago_batch(self):
+        """Mark selected boletins as paid"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) == 0:
+            return
+
+        # Filter only unpaid boletins
+        unpaid_boletins = [
+            item.get('_boletim') for item in selected_data
+            if item.get('_boletim') and item.get('_boletim').estado != EstadoBoletim.PAGO
+        ]
+
+        if len(unpaid_boletins) == 0:
+            messagebox.showinfo("Info", "Todos os boletins selecionados já estão pagos.")
+            return
+
+        # Confirm action
         resposta = messagebox.askyesno(
             "Confirmar",
-            f"Tem certeza que deseja apagar o boletim {boletim.numero}?\n\n"
-            f"⚠️ ATENÇÃO: Isto vai afetar os cálculos de Saldos Pessoais!",
-            icon='warning'
+            f"Marcar {len(unpaid_boletins)} boletim(ns) como pago(s)?\n\n"
+            f"Data de pagamento será definida como hoje ({date.today().strftime('%Y-%m-%d')})."
         )
 
         if resposta:
-            sucesso, erro = self.manager.apagar(boletim.id)
-            if sucesso:
-                messagebox.showinfo("Sucesso", "Boletim apagado!")
+            hoje = date.today()
+            erros = []
+
+            for boletim in unpaid_boletins:
+                sucesso, erro = self.manager.marcar_como_pago(boletim.id)
+                if not sucesso:
+                    erros.append(f"{boletim.numero}: {erro}")
+
+            if len(erros) == 0:
+                messagebox.showinfo("Sucesso", f"{len(unpaid_boletins)} boletim(ns) marcado(s) como pago(s)!")
                 self.carregar_boletins()
+                self.table.clear_selection()
             else:
-                messagebox.showerror("Erro", f"Erro: {erro}")
+                messagebox.showerror("Erro", f"Erros ao marcar boletins:\n" + "\n".join(erros))
+                self.carregar_boletins()
+
+    def criar_relatorio(self):
+        """Create report for selected boletins"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) > 0:
+            # TODO: Implement boletins report navigation (when boletins reports are implemented)
+            messagebox.showinfo(
+                "Criar Relatório",
+                f"Funcionalidade em desenvolvimento.\n\n"
+                f"Boletins selecionados: {len(selected_data)}\n"
+                f"Total: €{sum(item.get('valor', 0) for item in selected_data):,.2f}"
+            )
 
 
 class FormularioBoletimDialog(ctk.CTkToplevel):
