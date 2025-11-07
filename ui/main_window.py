@@ -166,12 +166,13 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_relatorios(self, projeto_ids=None):
+    def show_relatorios(self, projeto_ids=None, despesa_ids=None):
         """
         Show relatorios screen
 
         Args:
             projeto_ids: Optional list of project IDs to pre-filter report
+            despesa_ids: Optional list of despesa IDs to pre-filter report
         """
         # Clear current screen if navigating programmatically
         if self.current_screen:
@@ -182,7 +183,7 @@ class MainWindow(ctk.CTkFrame):
         self.sidebar.update_selection("relatorios")
 
         from ui.screens.relatorios import RelatoriosScreen
-        screen = RelatoriosScreen(self.content_frame, self.db_session, projeto_ids=projeto_ids)
+        screen = RelatoriosScreen(self.content_frame, self.db_session, projeto_ids=projeto_ids, despesa_ids=despesa_ids)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 

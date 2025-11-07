@@ -355,16 +355,22 @@ class DespesasScreen(ctk.CTkFrame):
                 self.carregar_despesas()
 
     def criar_relatorio(self):
-        """Create report for selected despesas"""
+        """Create report for selected despesas and navigate to Relatorios tab"""
         selected_data = self.table.get_selected_data()
         if len(selected_data) > 0:
-            # TODO: Implement despesas report navigation (when despesas reports are implemented)
-            messagebox.showinfo(
-                "Criar Relatório",
-                f"Funcionalidade em desenvolvimento.\n\n"
-                f"Despesas selecionadas: {len(selected_data)}\n"
-                f"Total: €{sum(item.get('valor_com_iva', 0) for item in selected_data):,.2f}"
-            )
+            # Extract despesa IDs from selected data
+            despesa_ids = [item.get('id') for item in selected_data if item.get('id')]
+
+            # Navigate to Relatorios tab
+            # Hierarchy: self (DespesasScreen) -> master (content_frame) -> master (MainWindow)
+            main_window = self.master.master
+            if hasattr(main_window, 'show_relatorios'):
+                main_window.show_relatorios(despesa_ids=despesa_ids)
+            else:
+                messagebox.showerror(
+                    "Erro",
+                    "Não foi possível navegar para a aba de Relatórios"
+                )
 
 
 class FormularioDespesaDialog(ctk.CTkToplevel):

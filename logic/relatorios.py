@@ -352,6 +352,160 @@ class RelatoriosManager:
             'projetos': projetos_formatados
         }
 
+    def gerar_relatorio_despesas(
+        self,
+        tipo: Optional['TipoDespesa'] = None,
+        estado: Optional['EstadoDespesa'] = None,
+        data_inicio: Optional[date] = None,
+        data_fim: Optional[date] = None,
+        despesa_ids: Optional[list] = None
+    ) -> Dict[str, Any]:
+        """
+        Gera relatório de despesas
+
+        Args:
+            tipo: Filtrar por tipo de despesa (opcional)
+            estado: Filtrar por estado (opcional)
+            data_inicio: Data de início do período (opcional)
+            data_fim: Data de fim do período (opcional)
+            despesa_ids: Lista de IDs de despesas específicas para filtrar (opcional)
+
+        Returns:
+            Dicionário com dados do relatório
+        """
+        from database.models import TipoDespesa, EstadoDespesa
+
+        # Base query
+        query = self.db_session.query(Despesa)
+
+        # Apply filters
+        if despesa_ids:
+            # If specific despesa IDs provided, filter by those (overrides other filters)
+            query = query.filter(Despesa.id.in_(despesa_ids))
+        else:
+            # Otherwise apply standard filters
+            if tipo:
+                query = query.filter(Despesa.tipo == tipo)
+            if estado:
+                query = query.filter(Despesa.estado == estado)
+            if data_inicio:
+                query = query.filter(Despesa.data >= data_inicio)
+            if data_fim:
+                query = query.filter(Despesa.data <= data_fim)
+
+        despesas = query.all()
+
+        # Calculate statistics
+        stats_por_tipo = {
+            TipoDespesa.FIXA_MENSAL: {'count': 0, 'valor': Decimal('0')},
+            TipoDespesa.PESSOAL_BRUNO: {'count': 0, 'valor': Decimal('0')},
+            TipoDespesa.PESSOAL_RAFAEL: {'count': 0, 'valor': Decimal('0')},
+            TipoDespesa.EQUIPAMENTO: {'count': 0, 'valor': Decimal('0')},
+            TipoDespesa.PROJETO: {'count': 0, 'valor': Decimal('0')}
+        }
+
+        stats_por_estado = {
+            EstadoDespesa.ATIVO: {'count': 0, 'valor': Decimal('0')},
+            EstadoDespesa.VENCIDO: {'count': 0, 'valor': Decimal('0')},
+            EstadoDespesa.PAGO: {'count': 0, 'valor': Decimal('0')}
+        }
+
+        total_valor_sem_iva = Decimal('0')
+        total_valor_com_iva = Decimal('0')
+
+        despesas_formatadas = []
+
+        for despesa in despesas:
+            # Stats por tipo
+            stats_por_tipo[despesa.tipo]['count'] += 1
+            stats_por_tipo[despesa.tipo]['valor'] += despesa.valor_com_iva
+
+            # Stats por estado
+            stats_por_estado[despesa.estado]['count'] += 1
+            stats_por_estado[despesa.estado]['valor'] += despesa.valor_com_iva
+
+            # Totals
+            total_valor_sem_iva += despesa.valor_sem_iva
+            total_valor_com_iva += despesa.valor_com_iva
+
+            # Format despesa for table
+            despesas_formatadas.append({
+                'numero': despesa.numero,
+                'tipo': self._get_tipo_despesa_label(despesa.tipo),
+                'credor': despesa.credor.nome if despesa.credor else '-',
+                'descricao': despesa.descricao[:40] + '...' if len(despesa.descricao) > 40 else despesa.descricao,
+                'data': despesa.data.strftime("%Y-%m-%d") if despesa.data else '-',
+                'valor_sem_iva': float(despesa.valor_sem_iva),
+                'valor_sem_iva_fmt': self._format_currency(float(despesa.valor_sem_iva)),
+                'valor_com_iva': float(despesa.valor_com_iva),
+                'valor_com_iva_fmt': self._format_currency(float(despesa.valor_com_iva)),
+                'estado': self._get_estado_despesa_label(despesa.estado),
+            })
+
+        # Format statistics
+        stats_tipo_fmt = []
+        for tipo_desp, stats in stats_por_tipo.items():
+            stats_tipo_fmt.append({
+                'tipo': self._get_tipo_despesa_label(tipo_desp),
+                'count': stats['count'],
+                'valor': float(stats['valor']),
+                'valor_fmt': self._format_currency(float(stats['valor']))
+            })
+
+        stats_estado_fmt = []
+        for estado_desp, stats in stats_por_estado.items():
+            stats_estado_fmt.append({
+                'estado': self._get_estado_despesa_label(estado_desp),
+                'count': stats['count'],
+                'valor': float(stats['valor']),
+                'valor_fmt': self._format_currency(float(stats['valor']))
+            })
+
+        periodo_str = self._format_periodo(data_inicio, data_fim)
+
+        return {
+            'tipo': 'despesas',
+            'titulo': 'Relatório de Despesas',
+            'periodo': periodo_str,
+            'data_geracao': datetime.now().strftime('%d/%m/%Y %H:%M'),
+            'data_inicio': data_inicio,
+            'data_fim': data_fim,
+            'filtros': {
+                'tipo': self._get_tipo_despesa_label(tipo) if tipo else 'Todos',
+                'estado': self._get_estado_despesa_label(estado) if estado else 'Todos'
+            },
+            'total_despesas': len(despesas),
+            'total_valor_sem_iva': float(total_valor_sem_iva),
+            'total_valor_sem_iva_fmt': self._format_currency(float(total_valor_sem_iva)),
+            'total_valor_com_iva': float(total_valor_com_iva),
+            'total_valor_com_iva_fmt': self._format_currency(float(total_valor_com_iva)),
+            'stats_por_tipo': stats_tipo_fmt,
+            'stats_por_estado': stats_estado_fmt,
+            'despesas': despesas_formatadas
+        }
+
+    def _get_tipo_despesa_label(self, tipo: 'TipoDespesa') -> str:
+        """Get tipo despesa label in Portuguese"""
+        from database.models import TipoDespesa
+        mapping = {
+            TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
+            TipoDespesa.PESSOAL_BRUNO: "Pessoal Bruno",
+            TipoDespesa.PESSOAL_RAFAEL: "Pessoal Rafael",
+            TipoDespesa.EQUIPAMENTO: "Equipamento",
+            TipoDespesa.PROJETO: "Projeto"
+        }
+        return mapping.get(tipo, str(tipo))
+
+    def _get_estado_despesa_label(self, estado: 'EstadoDespesa') -> str:
+        """Get estado despesa label in Portuguese"""
+        from database.models import EstadoDespesa
+        mapping = {
+            EstadoDespesa.ATIVO: "Ativo",
+            EstadoDespesa.VENCIDO: "Vencido",
+            EstadoDespesa.PAGO: "Pago"
+        }
+        return mapping.get(estado, str(estado))
+
     def _get_tipo_label(self, tipo: 'TipoProjeto') -> str:
         """Get tipo label in Portuguese"""
         from database.models import TipoProjeto

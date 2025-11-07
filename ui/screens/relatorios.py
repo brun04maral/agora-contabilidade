@@ -18,7 +18,7 @@ class RelatoriosScreen(ctk.CTkFrame):
     Tela de relatórios com filtros e exportação
     """
 
-    def __init__(self, parent, db_session: Session, projeto_ids=None, **kwargs):
+    def __init__(self, parent, db_session: Session, projeto_ids=None, despesa_ids=None, **kwargs):
         """
         Initialize relatorios screen
 
@@ -26,6 +26,7 @@ class RelatoriosScreen(ctk.CTkFrame):
             parent: Parent widget
             db_session: SQLAlchemy database session
             projeto_ids: Optional list of project IDs to pre-filter report
+            despesa_ids: Optional list of despesa IDs to pre-filter report
         """
         super().__init__(parent, **kwargs)
 
@@ -33,6 +34,7 @@ class RelatoriosScreen(ctk.CTkFrame):
         self.manager = RelatoriosManager(db_session)
         self.current_report_data = None
         self.projeto_ids_prefilter = projeto_ids
+        self.despesa_ids_prefilter = despesa_ids
 
         self.configure(fg_color="transparent")
         self.create_widgets()
@@ -40,6 +42,9 @@ class RelatoriosScreen(ctk.CTkFrame):
         # Auto-generate preview if project IDs provided
         if self.projeto_ids_prefilter:
             self.after(100, self.apply_project_prefilter)
+        # Auto-generate preview if despesa IDs provided
+        elif self.despesa_ids_prefilter:
+            self.after(100, self.apply_despesa_prefilter)
 
     def create_widgets(self):
         """Create screen widgets"""
@@ -349,6 +354,19 @@ class RelatoriosScreen(ctk.CTkFrame):
         # Generate preview
         self.gerar_preview()
 
+    def apply_despesa_prefilter(self):
+        """Apply pre-filter for selected despesas and auto-generate preview"""
+        # Set report type to Despesas
+        self.tipo_relatorio.set("Despesas")
+        self.on_tipo_changed("Despesas")
+
+        # Set period to "Atual" (no date filter)
+        self.periodo_var.set("atual")
+        self.on_periodo_changed()
+
+        # Generate preview
+        self.gerar_preview()
+
     def gerar_preview(self):
         """Generate report preview"""
         tipo = self.tipo_relatorio.get()
@@ -418,7 +436,13 @@ class RelatoriosScreen(ctk.CTkFrame):
                 self.render_projetos_preview(self.current_report_data)
 
             elif tipo == "Despesas":
-                messagebox.showinfo("Em breve", "Relatório de Despesas em desenvolvimento")
+                # Despesas report doesn't have tipo/estado filters yet, just use pre-filter IDs
+                self.current_report_data = self.manager.gerar_relatorio_despesas(
+                    data_inicio=data_inicio,
+                    data_fim=data_fim,
+                    despesa_ids=self.despesa_ids_prefilter  # Pass pre-filter IDs if available
+                )
+                self.render_despesas_preview(self.current_report_data)
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao gerar relatório: {e}")
@@ -968,6 +992,203 @@ class RelatoriosScreen(ctk.CTkFrame):
             ctk.CTkLabel(
                 more_frame,
                 text=f"... e mais {len(data['projetos']) - 15} projetos (ver exportação completa)",
+                font=ctk.CTkFont(size=11, slant="italic"),
+                text_color="gray"
+            ).pack(pady=10)
+
+    def render_despesas_preview(self, data):
+        """Render despesas report preview"""
+        preview_frame = ctk.CTkFrame(self.preview_scroll, fg_color="transparent")
+        preview_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Title
+        ctk.CTkLabel(
+            preview_frame,
+            text=data['titulo'],
+            font=ctk.CTkFont(size=24, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        # Period
+        ctk.CTkLabel(
+            preview_frame,
+            text=f"Período: {data['periodo']}",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        ).pack(anchor="w", pady=(0, 10))
+
+        # Filters
+        filter_str = f"Filtros: {data['filtros']['tipo']}, {data['filtros']['estado']}"
+        ctk.CTkLabel(
+            preview_frame,
+            text=filter_str,
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).pack(anchor="w", pady=(0, 20))
+
+        # Summary stats
+        stats_frame = ctk.CTkFrame(preview_frame, fg_color=("#E8F5E9", "#1B5E20"))
+        stats_frame.pack(fill="x", pady=(0, 20))
+
+        summary_grid = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        summary_grid.pack(padx=20, pady=15)
+
+        # Total despesas
+        ctk.CTkLabel(
+            summary_grid,
+            text=f"Total de Despesas: {data['total_despesas']}",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).grid(row=0, column=0, sticky="w", padx=10, pady=5)
+
+        # Total valor sem IVA
+        ctk.CTkLabel(
+            summary_grid,
+            text=f"Total sem IVA: {data['total_valor_sem_iva_fmt']}",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).grid(row=0, column=1, sticky="w", padx=10, pady=5)
+
+        # Total valor com IVA
+        ctk.CTkLabel(
+            summary_grid,
+            text=f"Total com IVA: {data['total_valor_com_iva_fmt']}",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).grid(row=0, column=2, sticky="w", padx=10, pady=5)
+
+        # Stats by type
+        stats_tipo_frame = ctk.CTkFrame(preview_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+        stats_tipo_frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(
+            stats_tipo_frame,
+            text="Por Tipo",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+
+        for stat in data['stats_por_tipo']:
+            if stat['count'] > 0:  # Only show types with data
+                stat_row = ctk.CTkFrame(stats_tipo_frame, fg_color="transparent")
+                stat_row.pack(fill="x", padx=15, pady=2)
+
+                ctk.CTkLabel(
+                    stat_row,
+                    text=f"{stat['tipo']}: {stat['count']} despesa(s) - {stat['valor_fmt']}",
+                    font=ctk.CTkFont(size=12)
+                ).pack(side="left")
+
+        # Stats by estado
+        stats_estado_frame = ctk.CTkFrame(preview_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+        stats_estado_frame.pack(fill="x", pady=(0, 20))
+
+        ctk.CTkLabel(
+            stats_estado_frame,
+            text="Por Estado",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+
+        for stat in data['stats_por_estado']:
+            if stat['count'] > 0:  # Only show estados with data
+                stat_row = ctk.CTkFrame(stats_estado_frame, fg_color="transparent")
+                stat_row.pack(fill="x", padx=15, pady=2)
+
+                ctk.CTkLabel(
+                    stat_row,
+                    text=f"{stat['estado']}: {stat['count']} despesa(s) - {stat['valor_fmt']}",
+                    font=ctk.CTkFont(size=12)
+                ).pack(side="left")
+
+        # Despesas table
+        ctk.CTkLabel(
+            preview_frame,
+            text="Detalhes das Despesas",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        table_frame = ctk.CTkFrame(preview_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+        table_frame.pack(fill="x", pady=(0, 10))
+
+        # Table header
+        header_frame = ctk.CTkFrame(table_frame, fg_color=("#efd578", "#d4bb5e"))
+        header_frame.pack(fill="x", padx=5, pady=5)
+
+        ctk.CTkLabel(header_frame, text="Nº", font=ctk.CTkFont(size=11, weight="bold"), width=80).pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Data", font=ctk.CTkFont(size=11, weight="bold"), width=90).pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Tipo", font=ctk.CTkFont(size=11, weight="bold"), width=110).pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Credor", font=ctk.CTkFont(size=11, weight="bold"), width=140).pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Valor c/ IVA", font=ctk.CTkFont(size=11, weight="bold"), width=100, anchor="e").pack(side="left", padx=8, pady=6)
+        ctk.CTkLabel(header_frame, text="Estado", font=ctk.CTkFont(size=11, weight="bold"), width=90, anchor="center").pack(side="left", padx=8, pady=6)
+
+        # Show first 15 despesas
+        for i, desp in enumerate(data['despesas'][:15]):
+            is_even = i % 2 == 0
+            row_frame = ctk.CTkFrame(
+                table_frame,
+                fg_color=("#FFFFFF", "#1E1E1E") if is_even else ("#F8F8F8", "#252525")
+            )
+            row_frame.pack(fill="x", padx=5, pady=2)
+
+            # Numero
+            ctk.CTkLabel(
+                row_frame,
+                text=desp['numero'],
+                font=ctk.CTkFont(size=11),
+                width=80,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Data
+            ctk.CTkLabel(
+                row_frame,
+                text=desp['data'],
+                font=ctk.CTkFont(size=11),
+                width=90,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Tipo
+            tipo_len = 13
+            ctk.CTkLabel(
+                row_frame,
+                text=desp['tipo'][:tipo_len] + '...' if len(desp['tipo']) > tipo_len else desp['tipo'],
+                font=ctk.CTkFont(size=11),
+                width=110,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Credor
+            credor_len = 18
+            ctk.CTkLabel(
+                row_frame,
+                text=desp['credor'][:credor_len] + '...' if len(desp['credor']) > credor_len else desp['credor'],
+                font=ctk.CTkFont(size=11),
+                width=140,
+                anchor="w"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Valor com IVA
+            ctk.CTkLabel(
+                row_frame,
+                text=desp['valor_com_iva_fmt'],
+                font=ctk.CTkFont(size=11),
+                width=100,
+                anchor="e"
+            ).pack(side="left", padx=8, pady=6)
+
+            # Estado
+            ctk.CTkLabel(
+                row_frame,
+                text=desp['estado'],
+                font=ctk.CTkFont(size=11),
+                width=90,
+                anchor="center"
+            ).pack(side="left", padx=8, pady=6)
+
+        # Show count if more despesas
+        if len(data['despesas']) > 15:
+            more_frame = ctk.CTkFrame(table_frame, fg_color=("#F5F5F5", "#2B2B2B"))
+            more_frame.pack(fill="x", padx=5, pady=(0, 5))
+
+            ctk.CTkLabel(
+                more_frame,
+                text=f"... e mais {len(data['despesas']) - 15} despesas (ver exportação completa)",
                 font=ctk.CTkFont(size=11, slant="italic"),
                 text_color="gray"
             ).pack(pady=10)
