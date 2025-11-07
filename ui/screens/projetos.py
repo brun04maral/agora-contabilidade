@@ -154,6 +154,41 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         self.estado_filter.pack(side="left")
 
+        # Selection actions frame (hidden by default)
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+
+        # Edit button (for single selection)
+        self.edit_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="✏️ Editar",
+            command=self.editar_selecionado,
+            width=120,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#2196F3", "#1565C0"),
+            hover_color=("#1976D2", "#0D47A1")
+        )
+
+        # Report button (for multiple selection)
+        self.report_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📊 Criar Relatório",
+            command=self.criar_relatorio,
+            width=160,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#9C27B0", "#7B1FA2"),
+            hover_color=("#AB47BC", "#6A1B9A")
+        )
+
+        # Total label (for multiple selection)
+        self.total_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="Total: €0,00",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+
         # Table
         columns = [
             {'key': 'numero', 'label': 'Nº', 'width': 80},
@@ -168,7 +203,8 @@ class ProjetosScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             self,
             columns=columns,
-            height=400
+            height=400,
+            on_selection_change=self.on_selection_change
         )
         self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
@@ -298,6 +334,48 @@ class ProjetosScreen(ctk.CTkFrame):
                 self.carregar_projetos()
             else:
                 messagebox.showerror("Erro", f"Erro ao apagar projeto: {erro}")
+
+    def on_selection_change(self, selected_data: list):
+        """Handle selection change in table"""
+        num_selected = len(selected_data)
+
+        # Hide all buttons first
+        self.edit_btn.pack_forget()
+        self.report_btn.pack_forget()
+        self.total_label.pack_forget()
+
+        if num_selected == 0:
+            # No selection - hide all
+            pass
+        elif num_selected == 1:
+            # Single selection - show edit button
+            self.edit_btn.pack(side="left", padx=5)
+        else:
+            # Multiple selection - show report button and total
+            self.report_btn.pack(side="left", padx=5)
+
+            # Calculate total
+            total = sum(item.get('valor_sem_iva', 0) for item in selected_data)
+            self.total_label.configure(text=f"Total: €{total:,.2f}")
+            self.total_label.pack(side="left", padx=20)
+
+    def editar_selecionado(self):
+        """Edit selected project"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) == 1:
+            self.editar_projeto(selected_data[0])
+
+    def criar_relatorio(self):
+        """Create report for selected projects"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) > 0:
+            # TODO: Implement report creation
+            messagebox.showinfo(
+                "Criar Relatório",
+                f"Funcionalidade em desenvolvimento.\n\n"
+                f"Projetos selecionados: {len(selected_data)}\n"
+                f"Total: €{sum(item.get('valor_sem_iva', 0) for item in selected_data):,.2f}"
+            )
 
 
 class FormularioProjetoDialog(ctk.CTkToplevel):
