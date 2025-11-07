@@ -158,12 +158,12 @@ class ProjetosScreen(ctk.CTkFrame):
         self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
 
-        # Cancel button
+        # Clear selection button
         self.cancel_btn = ctk.CTkButton(
             self.selection_frame,
-            text="❌ Cancelar",
+            text="🗑️ Limpar Seleção",
             command=self.cancelar_selecao,
-            width=120,
+            width=150,
             height=35,
             font=ctk.CTkFont(size=13),
             fg_color=("#757575", "#616161"),
