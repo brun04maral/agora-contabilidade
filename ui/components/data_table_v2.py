@@ -151,13 +151,12 @@ class DataTableV2(ctk.CTkFrame):
 
         actions_width = 0
         if self.has_actions:
-            # Increased to ensure buttons fit comfortably
             # 2 buttons (100px) + spacing (8px) + frame padding (10px) + grid padding (10px) = ~130px minimum
             # Using 150px to have comfortable margin
             actions_width = 200 if self.on_view else 150
             actions_width += 10  # Add padding like other columns
 
-        return data_width + actions_width + 10  # +10 for outer margins
+        return data_width + actions_width + 6  # +6 for outer margins (reduced from 10)
 
     def _update_responsive_widths(self, available_width: int):
         """
@@ -166,8 +165,8 @@ class DataTableV2(ctk.CTkFrame):
         Args:
             available_width: Width available in canvas
         """
-        # Account for scrollbar and padding
-        usable_width = available_width - 30
+        # Account for scrollbar and padding (reduced buffer)
+        usable_width = available_width - 15  # Reduced from 30 to 15
 
         # Calculate actions column width (needs extra space for buttons + padding + spacing)
         actions_width = 0
@@ -349,7 +348,7 @@ class DataTableV2(ctk.CTkFrame):
             fg_color=("#efd578", "#d4bb5e"),
             corner_radius=8
         )
-        header_frame.pack(fill="x", padx=3, pady=(3, 5))
+        header_frame.pack(fill="x", padx=2, pady=(2, 4))
         self.header_widgets.append(header_frame)
 
         col_index = 0
@@ -421,7 +420,7 @@ class DataTableV2(ctk.CTkFrame):
             fg_color=bg_color,
             corner_radius=6
         )
-        row_frame.pack(fill="x", padx=3, pady=2)
+        row_frame.pack(fill="x", padx=2, pady=1)
 
         # Propagate scroll events from row to canvas
         row_frame.bind("<Enter>", self._on_enter)
