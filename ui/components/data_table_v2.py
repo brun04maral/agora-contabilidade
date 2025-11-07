@@ -459,14 +459,18 @@ class DataTableV2(ctk.CTkFrame):
         Add a single row
 
         Args:
-            data: Row data dictionary
+            data: Row data dictionary (can include '_bg_color' for custom background)
             index: Row index for alternating colors
         """
-        # Alternating row colors
-        if index % 2 == 0:
-            bg_color = ("#f8f8f8", "#252525")
+        # Check for custom background color
+        if '_bg_color' in data:
+            bg_color = data['_bg_color']
         else:
-            bg_color = ("#ffffff", "#1e1e1e")
+            # Alternating row colors
+            if index % 2 == 0:
+                bg_color = ("#f8f8f8", "#252525")
+            else:
+                bg_color = ("#ffffff", "#1e1e1e")
 
         row_frame = ctk.CTkFrame(
             self.inner_frame,

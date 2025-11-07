@@ -193,6 +193,7 @@ class ProjetosScreen(ctk.CTkFrame):
             'descricao': projeto.descricao,  # DataTableV2 will truncate automatically with tooltip
             'valor_sem_iva': float(projeto.valor_sem_iva),
             'estado': self.estado_to_label(projeto.estado),
+            '_bg_color': self.estado_to_color(projeto.estado),  # Color by estado
             '_projeto': projeto  # Keep reference
         }
 
@@ -213,6 +214,15 @@ class ProjetosScreen(ctk.CTkFrame):
             EstadoProjeto.RECEBIDO: "Recebido"
         }
         return mapping.get(estado, str(estado))
+
+    def estado_to_color(self, estado: EstadoProjeto) -> tuple:
+        """Convert estado enum to pastel background color (light, dark)"""
+        mapping = {
+            EstadoProjeto.NAO_FATURADO: ("#FFB3BA", "#8B5A5E"),  # Pastel red
+            EstadoProjeto.FATURADO: ("#FFFFBA", "#B8B85A"),     # Pastel yellow
+            EstadoProjeto.RECEBIDO: ("#BAFFC9", "#5A8B63")      # Pastel green
+        }
+        return mapping.get(estado, ("#f8f8f8", "#252525"))
 
     def aplicar_filtros(self, *args):
         """Apply filters"""
