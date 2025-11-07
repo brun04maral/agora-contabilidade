@@ -146,10 +146,10 @@ class DataTableV2(ctk.CTkFrame):
 
     def _calculate_min_width(self) -> int:
         """Calculate minimum width needed for all columns"""
-        total = sum(col.get('width', 100) + 20 for col in self.base_columns)  # +20 for padding
+        total = sum(col.get('width', 100) + 10 for col in self.base_columns)  # +10 for padding
         if self.has_actions:
             total += 200 if self.on_view else 140
-        return total + 10  # +10 for margins
+        return total + 5  # +5 for margins
 
     def _update_responsive_widths(self, available_width: int):
         """
@@ -159,7 +159,7 @@ class DataTableV2(ctk.CTkFrame):
             available_width: Width available in canvas
         """
         # Account for scrollbar and padding
-        usable_width = available_width - 20  # Padding
+        usable_width = available_width - 10  # Padding
 
         # Calculate actions column width
         actions_width = 0
@@ -250,7 +250,7 @@ class DataTableV2(ctk.CTkFrame):
 
         # Rough estimation: each character is ~6-8 pixels for size 12 font
         char_width = font_size * 0.6
-        max_chars = int((max_width - 20) / char_width)  # -20 for padding
+        max_chars = int((max_width - 10) / char_width)  # -10 for padding
 
         if len(text) <= max_chars:
             return text
@@ -331,7 +331,7 @@ class DataTableV2(ctk.CTkFrame):
             fg_color=("#efd578", "#d4bb5e"),
             corner_radius=8
         )
-        header_frame.pack(fill="x", padx=5, pady=(5, 10))
+        header_frame.pack(fill="x", padx=3, pady=(3, 5))
         self.header_widgets.append(header_frame)
 
         col_index = 0
@@ -344,7 +344,7 @@ class DataTableV2(ctk.CTkFrame):
                 anchor="w",
                 text_color=("#1a1a1a", "#1a1a1a")
             )
-            label.grid(row=0, column=col_index, padx=10, pady=12, sticky="w")
+            label.grid(row=0, column=col_index, padx=5, pady=6, sticky="w")
             self.header_widgets.append(label)
             col_index += 1
 
@@ -359,7 +359,7 @@ class DataTableV2(ctk.CTkFrame):
                 anchor="center",
                 text_color=("#1a1a1a", "#1a1a1a")
             )
-            label.grid(row=0, column=col_index, padx=10, pady=12)
+            label.grid(row=0, column=col_index, padx=5, pady=6)
             self.header_widgets.append(label)
 
     def set_data(self, data: List[Dict]):
@@ -403,7 +403,7 @@ class DataTableV2(ctk.CTkFrame):
             fg_color=bg_color,
             corner_radius=6
         )
-        row_frame.pack(fill="x", padx=5, pady=3)
+        row_frame.pack(fill="x", padx=3, pady=2)
 
         # Propagate scroll events from row to canvas
         row_frame.bind("<Enter>", self._on_enter)
@@ -436,7 +436,7 @@ class DataTableV2(ctk.CTkFrame):
                 width=col.get('width', 100),
                 anchor="w"
             )
-            label.grid(row=0, column=col_index, padx=10, pady=10, sticky="w")
+            label.grid(row=0, column=col_index, padx=5, pady=5, sticky="w")
 
             # Add tooltip if text was truncated
             if truncate and displayed_value != original_value:
@@ -451,7 +451,7 @@ class DataTableV2(ctk.CTkFrame):
         # Actions buttons
         if self.has_actions:
             actions_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-            actions_frame.grid(row=0, column=col_index, padx=10, pady=5)
+            actions_frame.grid(row=0, column=col_index, padx=5, pady=3)
 
             # Propagate scroll events from actions frame
             actions_frame.bind("<Enter>", self._on_enter)
