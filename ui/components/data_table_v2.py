@@ -56,7 +56,7 @@ class ToolTip:
 class DataTableV2(ctk.CTkFrame):
     """
     Tabela de dados com scroll horizontal + vertical nativo
-    API compatível com DataTable original
+    Colunas responsivas: expandem em fullscreen, scroll horizontal em janelas pequenas
     """
 
     def __init__(
@@ -77,7 +77,7 @@ class DataTableV2(ctk.CTkFrame):
             columns: List of column definitions. Each column can have:
                 - key: Data key
                 - label: Column header
-                - width: Column width in pixels
+                - width: Minimum column width in pixels
                 - truncate: If True, truncate text and show tooltip (default: True)
                 - formatter: Optional function to format value
             on_edit: Callback for edit action (receives row data)
@@ -87,13 +87,18 @@ class DataTableV2(ctk.CTkFrame):
         """
         super().__init__(parent, **kwargs)
 
-        self.columns = columns
+        # Store base column widths (minimum widths)
+        self.base_columns = columns
+        self.columns = columns.copy()  # Will be updated with responsive widths
+
         self.on_edit = on_edit
         self.on_delete = on_delete
         self.on_view = on_view
         self.data_rows = []
         self.row_widgets = []
+        self.header_widgets = []
         self.is_mac = platform.system() == "Darwin"
+        self.last_canvas_width = 0
 
         # Configure
         self.configure(fg_color="transparent")
@@ -101,8 +106,8 @@ class DataTableV2(ctk.CTkFrame):
         # Add actions column if needed
         self.has_actions = bool(on_view or on_edit or on_delete)
 
-        # Calculate total width needed for horizontal scroll
-        self.table_width = self._calculate_table_width()
+        # Calculate minimum width needed
+        self.min_table_width = self._calculate_min_width()
 
         # Create main container
         self.grid_rowconfigure(0, weight=1)
@@ -125,25 +130,108 @@ class DataTableV2(ctk.CTkFrame):
             xscrollcommand=self.h_scrollbar.set
         )
 
-        # Create inner frame for content with fixed width
-        self.inner_frame = ctk.CTkFrame(self.canvas, fg_color="transparent", width=self.table_width)
+        # Create inner frame for content (NO fixed width - will be responsive)
+        self.inner_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
         self.canvas_window = self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
 
         # Bind events
         self.inner_frame.bind("<Configure>", self._on_frame_configure)
+        self.canvas.bind("<Configure>", self._on_canvas_configure)
 
-        # Bind scroll events - use multiple approaches for maximum compatibility
+        # Bind scroll events
         self._bind_scroll_events()
 
         # Create header
         self.create_header()
 
-    def _calculate_table_width(self) -> int:
-        """Calculate total width needed for all columns"""
-        total = sum(col.get('width', 100) + 20 for col in self.columns)  # +20 for padding
+    def _calculate_min_width(self) -> int:
+        """Calculate minimum width needed for all columns"""
+        total = sum(col.get('width', 100) + 20 for col in self.base_columns)  # +20 for padding
         if self.has_actions:
-            total += 180 if self.on_view else 120
+            total += 200 if self.on_view else 140
         return total + 10  # +10 for margins
+
+    def _update_responsive_widths(self, available_width: int):
+        """
+        Update column widths based on available space
+
+        Args:
+            available_width: Width available in canvas
+        """
+        # Account for scrollbar and padding
+        usable_width = available_width - 20  # Padding
+
+        # Calculate actions column width
+        actions_width = 0
+        if self.has_actions:
+            actions_width = 200 if self.on_view else 140
+
+        # Calculate total minimum width for data columns
+        min_data_width = sum(col.get('width', 100) for col in self.base_columns)
+        total_min_width = min_data_width + actions_width
+
+        # If we have extra space, distribute it proportionally
+        if usable_width > total_min_width:
+            extra_space = usable_width - total_min_width
+
+            # Distribute extra space proportionally to column widths
+            self.columns = []
+            for col in self.base_columns:
+                base_width = col.get('width', 100)
+                proportion = base_width / min_data_width
+                extra_for_col = int(extra_space * proportion)
+
+                new_col = col.copy()
+                new_col['width'] = base_width + extra_for_col
+                self.columns.append(new_col)
+
+            # Set inner frame width to fill canvas
+            self.canvas.itemconfig(self.canvas_window, width=usable_width)
+        else:
+            # Use minimum widths + enable horizontal scroll
+            self.columns = [col.copy() for col in self.base_columns]
+
+            # Set inner frame width to minimum
+            self.canvas.itemconfig(self.canvas_window, width=total_min_width)
+
+    def _on_canvas_configure(self, event):
+        """Update layout when canvas resizes"""
+        new_width = event.width
+
+        # Only update if width actually changed (avoid loops)
+        if abs(new_width - self.last_canvas_width) > 5:
+            self.last_canvas_width = new_width
+
+            # Update responsive widths
+            self._update_responsive_widths(new_width)
+
+            # Rebuild table with new widths
+            if self.data_rows:
+                self._rebuild_table()
+
+    def _rebuild_table(self):
+        """Rebuild table with updated column widths"""
+        # Store current data
+        current_data = self.data_rows.copy()
+
+        # Clear and rebuild header
+        for widget in self.header_widgets:
+            widget.destroy()
+        self.header_widgets = []
+        self.create_header()
+
+        # Clear and rebuild rows
+        for widget in self.row_widgets:
+            widget.destroy()
+        self.row_widgets = []
+
+        # Recreate rows with new widths
+        for index, item in enumerate(current_data):
+            self.add_row(item, index)
+
+        # Update scroll region
+        self.inner_frame.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def _truncate_text(self, text: str, max_width: int, font_size: int = 12) -> str:
         """
@@ -244,6 +332,7 @@ class DataTableV2(ctk.CTkFrame):
             corner_radius=8
         )
         header_frame.pack(fill="x", padx=5, pady=(5, 10))
+        self.header_widgets.append(header_frame)
 
         col_index = 0
         for col in self.columns:
@@ -256,11 +345,12 @@ class DataTableV2(ctk.CTkFrame):
                 text_color=("#1a1a1a", "#1a1a1a")
             )
             label.grid(row=0, column=col_index, padx=10, pady=12, sticky="w")
+            self.header_widgets.append(label)
             col_index += 1
 
         # Actions column
         if self.has_actions:
-            width = 180 if self.on_view else 120
+            width = 200 if self.on_view else 140
             label = ctk.CTkLabel(
                 header_frame,
                 text="Ações",
@@ -270,6 +360,7 @@ class DataTableV2(ctk.CTkFrame):
                 text_color=("#1a1a1a", "#1a1a1a")
             )
             label.grid(row=0, column=col_index, padx=10, pady=12)
+            self.header_widgets.append(label)
 
     def set_data(self, data: List[Dict]):
         """
