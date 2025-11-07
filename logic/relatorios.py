@@ -254,7 +254,8 @@ class RelatoriosManager:
         stats_por_estado = {
             EstadoProjeto.NAO_FATURADO: {'count': 0, 'valor': Decimal('0')},
             EstadoProjeto.FATURADO: {'count': 0, 'valor': Decimal('0')},
-            EstadoProjeto.RECEBIDO: {'count': 0, 'valor': Decimal('0')}
+            EstadoProjeto.RECEBIDO: {'count': 0, 'valor': Decimal('0')},
+            EstadoProjeto.ANULADO: {'count': 0, 'valor': Decimal('0')}
         }
 
         total_valor = Decimal('0')
@@ -360,7 +361,8 @@ class RelatoriosManager:
         mapping = {
             EstadoProjeto.NAO_FATURADO: "Não Faturado",
             EstadoProjeto.FATURADO: "Faturado",
-            EstadoProjeto.RECEBIDO: "Recebido"
+            EstadoProjeto.RECEBIDO: "Recebido",
+            EstadoProjeto.ANULADO: "Anulado"
         }
         return mapping.get(estado, str(estado))
 
