@@ -6,9 +6,11 @@ import customtkinter as ctk
 from typing import Optional
 from sqlalchemy.orm import Session
 from logic.fornecedores import FornecedoresManager
-from ui.components.data_table import DataTable
+from ui.components.data_table_v2 import DataTableV2
 from database.models import Fornecedor, EstatutoFornecedor
 from datetime import datetime
+from tkinter import messagebox
+import csv
 
 
 class FornecedoresScreen(ctk.CTkFrame):
@@ -154,6 +156,34 @@ class FornecedoresScreen(ctk.CTkFrame):
         )
         order_menu.pack(side="left")
 
+        # Selection actions bar (created but NOT packed - will be shown on selection)
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+
+        # Clear selection button
+        self.cancel_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Limpar Seleção",
+            command=self.cancelar_selecao,
+            width=150, height=35
+        )
+
+        # Export button
+        self.export_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📊 Exportar CSV",
+            command=self.exportar_selecionados,
+            width=150, height=35,
+            fg_color=("#4CAF50", "#388E3C"),
+            hover_color=("#66BB6A", "#2E7D32")
+        )
+
+        # Selection count label
+        self.count_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="",
+            font=ctk.CTkFont(size=13)
+        )
+
         # Table container
         table_container = ctk.CTkFrame(self)
         table_container.pack(fill="both", expand=True, padx=30, pady=(0, 30))
@@ -161,22 +191,31 @@ class FornecedoresScreen(ctk.CTkFrame):
         # Create table
         columns = [
             {"key": "numero", "label": "Número", "width": 100},
-            {"key": "nome", "label": "Nome", "width": 200},
+            {"key": "nome", "label": "Nome", "width": 250},
             {"key": "estatuto", "label": "Estatuto", "width": 120},
             {"key": "area", "label": "Área", "width": 150},
             {"key": "funcao", "label": "Função", "width": 150},
-            {"key": "classificacao", "label": "★", "width": 60},
-            {"key": "contacto", "label": "Contacto", "width": 120},
-            {"key": "despesas_count", "label": "Despesas", "width": 80},
+            {"key": "classificacao", "label": "★", "width": 80},
+            {"key": "despesas_count", "label": "Despesas", "width": 100},
         ]
 
-        self.table = DataTable(
+        self.table = DataTableV2(
             table_container,
             columns=columns,
-            on_edit=self.editar_fornecedor,
-            on_delete=self.apagar_fornecedor
+            sortable_columns=["numero", "nome", "estatuto", "area", "funcao", "classificacao", "despesas_count"],
+            on_row_double_click=self.on_double_click,
+            on_selection_change=self.on_selection_change
         )
         self.table.pack(fill="both", expand=True)
+
+    def get_estatuto_color(self, estatuto: EstatutoFornecedor) -> tuple:
+        """Get color for estatuto (tonalidades diferentes da mesma cor)"""
+        color_map = {
+            EstatutoFornecedor.EMPRESA: ("#B3D9FF", "#5A8BB8"),      # Azul claro
+            EstatutoFornecedor.FREELANCER: ("#99CCFF", "#4D7A99"),  # Azul médio
+            EstatutoFornecedor.ESTADO: ("#80BFFF", "#406B8B")        # Azul escuro
+        }
+        return color_map.get(estatuto, ("#E0E0E0", "#4A4A4A"))
 
     def carregar_fornecedores(self):
         """Load and display fornecedores"""
@@ -190,6 +229,7 @@ class FornecedoresScreen(ctk.CTkFrame):
         # Prepare data
         data = []
         for fornecedor in fornecedores:
+            color = self.get_estatuto_color(fornecedor.estatuto) if fornecedor.estatuto else ("#E0E0E0", "#4A4A4A")
             data.append({
                 "id": fornecedor.id,
                 "numero": fornecedor.numero,
@@ -198,8 +238,9 @@ class FornecedoresScreen(ctk.CTkFrame):
                 "area": fornecedor.area or "-",
                 "funcao": fornecedor.funcao or "-",
                 "classificacao": "★" * fornecedor.classificacao if fornecedor.classificacao else "-",
-                "contacto": fornecedor.contacto or "-",
-                "despesas_count": str(len(fornecedor.despesas))
+                "despesas_count": str(len(fornecedor.despesas)),
+                "_bg_color": color,
+                "_fornecedor": fornecedor
             })
 
         self.table.set_data(data)
@@ -217,6 +258,7 @@ class FornecedoresScreen(ctk.CTkFrame):
         # Prepare data
         data = []
         for fornecedor in fornecedores:
+            color = self.get_estatuto_color(fornecedor.estatuto) if fornecedor.estatuto else ("#E0E0E0", "#4A4A4A")
             data.append({
                 "id": fornecedor.id,
                 "numero": fornecedor.numero,
@@ -225,8 +267,9 @@ class FornecedoresScreen(ctk.CTkFrame):
                 "area": fornecedor.area or "-",
                 "funcao": fornecedor.funcao or "-",
                 "classificacao": "★" * fornecedor.classificacao if fornecedor.classificacao else "-",
-                "contacto": fornecedor.contacto or "-",
-                "despesas_count": str(len(fornecedor.despesas))
+                "despesas_count": str(len(fornecedor.despesas)),
+                "_bg_color": color,
+                "_fornecedor": fornecedor
             })
 
         self.table.set_data(data)
@@ -235,6 +278,72 @@ class FornecedoresScreen(ctk.CTkFrame):
         """Clear search"""
         self.search_entry.delete(0, "end")
         self.carregar_fornecedores()
+
+    def on_selection_change(self, selected_data: list):
+        """Handle selection change in table"""
+        num_selected = len(selected_data)
+
+        if num_selected > 0:
+            # Show selection frame
+            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+            self.cancel_btn.pack(side="left", padx=(0, 10))
+            self.export_btn.pack(side="left", padx=(0, 20))
+            self.count_label.configure(text=f"{num_selected} fornecedor(es) selecionado(s)")
+            self.count_label.pack(side="left")
+        else:
+            # Hide entire selection frame when nothing is selected
+            self.selection_frame.pack_forget()
+
+    def on_double_click(self, data: dict):
+        """Handle double click - open for edit"""
+        fornecedor_id = data.get("id")
+        if fornecedor_id:
+            self.editar_fornecedor(fornecedor_id)
+
+    def cancelar_selecao(self):
+        """Clear selection"""
+        self.table.clear_selection()
+
+    def exportar_selecionados(self):
+        """Export selected fornecedores to CSV"""
+        selected_data = self.table.get_selected_data()
+
+        if not selected_data:
+            messagebox.showwarning("Aviso", "Nenhum fornecedor selecionado")
+            return
+
+        # Prepare filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"fornecedores_export_{timestamp}.csv"
+
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                fieldnames = ['Número', 'Nome', 'Estatuto', 'Área', 'Função', 'Classificação', 'NIF', 'Contacto', 'Email', 'Despesas']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for item in selected_data:
+                    fornecedor = item.get('_fornecedor')
+                    if fornecedor:
+                        writer.writerow({
+                            'Número': fornecedor.numero,
+                            'Nome': fornecedor.nome,
+                            'Estatuto': fornecedor.estatuto.value if fornecedor.estatuto else '',
+                            'Área': fornecedor.area or '',
+                            'Função': fornecedor.funcao or '',
+                            'Classificação': str(fornecedor.classificacao) if fornecedor.classificacao else '',
+                            'NIF': fornecedor.nif or '',
+                            'Contacto': fornecedor.contacto or '',
+                            'Email': fornecedor.email or '',
+                            'Despesas': str(len(fornecedor.despesas))
+                        })
+
+            messagebox.showinfo(
+                "Sucesso",
+                f"Exportados {len(selected_data)} fornecedor(es) para {filename}"
+            )
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao exportar: {str(e)}")
 
     def adicionar_fornecedor(self):
         """Show dialog to add new fornecedor"""

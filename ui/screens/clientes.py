@@ -6,8 +6,11 @@ import customtkinter as ctk
 from typing import Callable, Optional, Dict
 from sqlalchemy.orm import Session
 from logic.clientes import ClientesManager
-from ui.components.data_table import DataTable
+from ui.components.data_table_v2 import DataTableV2
 from database.models import Cliente
+from tkinter import messagebox
+import csv
+from datetime import datetime
 
 
 class ClientesScreen(ctk.CTkFrame):
@@ -130,12 +133,40 @@ class ClientesScreen(ctk.CTkFrame):
         order_menu = ctk.CTkOptionMenu(
             filter_frame,
             variable=self.order_var,
-            values=["numero", "nome", "pais"],
+            values=["numero", "nome", "nif"],
             command=lambda x: self.carregar_clientes(),
             width=120,
             height=35
         )
         order_menu.pack(side="left")
+
+        # Selection actions bar (created but NOT packed - will be shown on selection)
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+
+        # Clear selection button
+        self.cancel_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Limpar Seleção",
+            command=self.cancelar_selecao,
+            width=150, height=35
+        )
+
+        # Export button
+        self.export_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📊 Exportar CSV",
+            command=self.exportar_selecionados,
+            width=150, height=35,
+            fg_color=("#4CAF50", "#388E3C"),
+            hover_color=("#66BB6A", "#2E7D32")
+        )
+
+        # Selection count label
+        self.count_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="",
+            font=ctk.CTkFont(size=13)
+        )
 
         # Table container
         table_container = ctk.CTkFrame(self)
@@ -144,20 +175,18 @@ class ClientesScreen(ctk.CTkFrame):
         # Create table
         columns = [
             {"key": "numero", "label": "Número", "width": 100},
-            {"key": "nome", "label": "Nome", "width": 250},
-            {"key": "nif", "label": "NIF", "width": 120},
-            {"key": "pais", "label": "País", "width": 120},
-            {"key": "contacto", "label": "Contacto", "width": 120},
-            {"key": "email", "label": "Email", "width": 200},
-            {"key": "projetos_count", "label": "Projetos", "width": 80},
+            {"key": "nome", "label": "Nome", "width": 300},
+            {"key": "nif", "label": "NIF", "width": 150},
+            {"key": "projetos_count", "label": "Projetos", "width": 100},
         ]
 
-        self.table = DataTable(
+        self.table = DataTableV2(
             table_container,
             columns=columns,
-            on_view=self.ver_projetos_cliente if self.main_window else None,
-            on_edit=self.editar_cliente,
-            on_delete=self.apagar_cliente
+            sortable_columns=["numero", "nome", "nif"],
+            on_row_double_click=self.on_double_click,
+            on_selection_change=self.on_selection_change,
+            on_cell_click=self.on_cell_click
         )
         self.table.pack(fill="both", expand=True)
 
@@ -169,15 +198,16 @@ class ClientesScreen(ctk.CTkFrame):
         # Prepare data
         data = []
         for cliente in clientes:
+            projetos_count = len(cliente.projetos)
             data.append({
                 "id": cliente.id,
                 "numero": cliente.numero,
                 "nome": cliente.nome,
                 "nif": cliente.nif or "-",
-                "pais": cliente.pais or "-",
-                "contacto": cliente.contacto or "-",
-                "email": cliente.email or "-",
-                "projetos_count": str(len(cliente.projetos))
+                "projetos_count": str(projetos_count) if projetos_count > 0 else "0",
+                # Store full data for export
+                "_cliente": cliente,
+                "_has_projetos": projetos_count > 0
             })
 
         self.table.set_data(data)
@@ -195,15 +225,15 @@ class ClientesScreen(ctk.CTkFrame):
         # Prepare data
         data = []
         for cliente in clientes:
+            projetos_count = len(cliente.projetos)
             data.append({
                 "id": cliente.id,
                 "numero": cliente.numero,
                 "nome": cliente.nome,
                 "nif": cliente.nif or "-",
-                "pais": cliente.pais or "-",
-                "contacto": cliente.contacto or "-",
-                "email": cliente.email or "-",
-                "projetos_count": str(len(cliente.projetos))
+                "projetos_count": str(projetos_count) if projetos_count > 0 else "0",
+                "_cliente": cliente,
+                "_has_projetos": projetos_count > 0
             })
 
         self.table.set_data(data)
@@ -213,6 +243,74 @@ class ClientesScreen(ctk.CTkFrame):
         self.search_entry.delete(0, "end")
         self.carregar_clientes()
 
+    def on_selection_change(self, selected_data: list):
+        """Handle selection change in table"""
+        num_selected = len(selected_data)
+
+        if num_selected > 0:
+            # Show selection frame
+            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+            self.cancel_btn.pack(side="left", padx=(0, 10))
+            self.export_btn.pack(side="left", padx=(0, 20))
+            self.count_label.configure(text=f"{num_selected} cliente(s) selecionado(s)")
+            self.count_label.pack(side="left")
+        else:
+            # Hide entire selection frame when nothing is selected
+            self.selection_frame.pack_forget()
+
+    def on_double_click(self, data: Dict):
+        """Handle double click - open for edit"""
+        cliente_id = data.get("id")
+        if cliente_id:
+            self.editar_cliente(cliente_id)
+
+    def on_cell_click(self, data: Dict, column_key: str):
+        """Handle cell click - if clicking on projetos_count, navigate to projetos"""
+        if column_key == "projetos_count" and data.get("_has_projetos"):
+            self.ver_projetos_cliente(data)
+
+    def cancelar_selecao(self):
+        """Clear selection"""
+        self.table.clear_selection()
+
+    def exportar_selecionados(self):
+        """Export selected clientes to CSV"""
+        selected_data = self.table.get_selected_data()
+
+        if not selected_data:
+            messagebox.showwarning("Aviso", "Nenhum cliente selecionado")
+            return
+
+        # Prepare filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"clientes_export_{timestamp}.csv"
+
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                fieldnames = ['Número', 'Nome', 'NIF', 'País', 'Contacto', 'Email', 'Projetos']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for item in selected_data:
+                    cliente = item.get('_cliente')
+                    if cliente:
+                        writer.writerow({
+                            'Número': cliente.numero,
+                            'Nome': cliente.nome,
+                            'NIF': cliente.nif or '',
+                            'País': cliente.pais or '',
+                            'Contacto': cliente.contacto or '',
+                            'Email': cliente.email or '',
+                            'Projetos': str(len(cliente.projetos))
+                        })
+
+            messagebox.showinfo(
+                "Sucesso",
+                f"Exportados {len(selected_data)} cliente(s) para {filename}"
+            )
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao exportar: {str(e)}")
+
     def ver_projetos_cliente(self, row_data: Dict):
         """
         Navigate to projetos screen filtered by this cliente
@@ -221,8 +319,7 @@ class ClientesScreen(ctk.CTkFrame):
             row_data: Row data containing cliente info
         """
         # Check if cliente has projects
-        projetos_count = int(row_data.get("projetos_count", "0"))
-        if projetos_count == 0:
+        if not row_data.get("_has_projetos"):
             return  # No projects to show
 
         # Get cliente ID for filtering
