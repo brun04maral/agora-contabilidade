@@ -67,9 +67,16 @@ class Sidebar(ctk.CTkFrame):
         version_label.pack()
 
         # Menu items
+        # Dashboard (separado)
+        btn = self.create_menu_button("dashboard", "📊 Dashboard")
+        self.menu_buttons["dashboard"] = btn
+
+        # Spacer após Dashboard
+        spacer0 = ctk.CTkFrame(self, fg_color="transparent", height=15)
+        spacer0.pack(fill="x", pady=5)
+
         # Grupo principal: Operações
         menu_items_main = [
-            ("dashboard", "📊 Dashboard"),
             ("saldos", "💰 Saldos Pessoais"),
             ("projetos", "📁 Projetos"),
             ("despesas", "💸 Despesas"),
