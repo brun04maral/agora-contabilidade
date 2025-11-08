@@ -169,7 +169,7 @@ class OrcamentosScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             table_frame,
             columns=columns,
-            on_double_click=self.editar_orcamento,
+            on_row_double_click=self.editar_orcamento,
             on_selection_change=self.on_selection_change
         )
         self.table.pack(fill="both", expand=True)
