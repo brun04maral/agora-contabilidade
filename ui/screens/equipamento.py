@@ -144,8 +144,7 @@ class EquipamentoScreen(ctk.CTkFrame):
                 {"key": "estado", "label": "Estado", "width": 120},
                 {"key": "fornecedor", "label": "Fornecedor", "width": 150},
             ],
-            height=500,
-            row_height=40
+            height=500
         )
         self.table.pack(fill="both", expand=True)
 
