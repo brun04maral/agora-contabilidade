@@ -145,7 +145,8 @@ class EquipamentoScreen(ctk.CTkFrame):
                 {"key": "fornecedor", "label": "Fornecedor", "width": 150},
             ],
             height=500,
-            on_selection_change=self.on_selection_changed
+            on_selection_change=self.on_selection_changed,
+            on_row_double_click=self.editar_equipamento_duplo_clique
         )
         self.table.pack(fill="both", expand=True)
 
@@ -244,13 +245,9 @@ class EquipamentoScreen(ctk.CTkFrame):
         if dialog.result:
             self.carregar_equipamentos()
 
-    def editar_equipamento(self):
-        """Edita equipamento selecionado"""
-        selected = self.table.get_selected_rows()
-        if len(selected) != 1:
-            return
-
-        equipamento_id = selected[0]["id"]
+    def editar_equipamento_duplo_clique(self, row_data):
+        """Edita equipamento com duplo clique"""
+        equipamento_id = row_data["id"]
         equipamento = self.manager.obter_equipamento(equipamento_id)
 
         if not equipamento:
@@ -268,9 +265,17 @@ class EquipamentoScreen(ctk.CTkFrame):
         if dialog.result:
             self.carregar_equipamentos()
 
+    def editar_equipamento(self):
+        """Edita equipamento selecionado (via botão)"""
+        selected = self.table.get_selected_data()
+        if len(selected) != 1:
+            return
+
+        self.editar_equipamento_duplo_clique(selected[0])
+
     def eliminar_equipamento(self):
         """Elimina equipamentos selecionados"""
-        selected = self.table.get_selected_rows()
+        selected = self.table.get_selected_data()
         if not selected:
             return
 
