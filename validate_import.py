@@ -45,7 +45,7 @@ calc = SaldosCalculator(session)
 saldo_bruno = calc.calcular_saldo_bruno()
 saldo_rafael = calc.calcular_saldo_rafael()
 
-print(f"\n👤 BRUNO AMARAL:")
+print(f"\n👤 BA:")
 print(f"  INs (Entradas):")
 print(f"    • Projetos pessoais: €{saldo_bruno['ins']['projetos_pessoais']:,.2f}")
 print(f"    • Prémios:           €{saldo_bruno['ins']['premios']:,.2f}")
@@ -59,7 +59,7 @@ print(f"  ━━━━━━━━━━━━━━━━━━━━━━━�
 print(f"  💵 SALDO TOTAL:      €{saldo_bruno['saldo_total']:,.2f}")
 print(f"  💡 Sugestão boletim: €{saldo_bruno['sugestao_boletim']:,.2f}")
 
-print(f"\n👤 RAFAEL REIGOTA:")
+print(f"\n👤 RR:")
 print(f"  INs (Entradas):")
 print(f"    • Projetos pessoais: €{saldo_rafael['ins']['projetos_pessoais']:,.2f}")
 print(f"    • Prémios:           €{saldo_rafael['ins']['premios']:,.2f}")

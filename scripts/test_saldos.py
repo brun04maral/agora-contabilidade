@@ -51,24 +51,24 @@ def create_test_data(db_session):
 
     db_session.flush()
 
-    # BRUNO: Projeto pessoal de €1000
+    # BA: Projeto pessoal de €1000
     projeto_bruno = Projeto(
         numero="#P0001",
         tipo=TipoProjeto.PESSOAL_BRUNO,
         cliente_id=cliente.id,
-        descricao="Projeto Pessoal Bruno",
+        descricao="Projeto Pessoal BA",
         valor_sem_iva=Decimal("1000.00"),
         data_faturacao=date(2025, 1, 15),
         estado=EstadoProjeto.RECEBIDO
     )
     db_session.add(projeto_bruno)
 
-    # RAFAEL: Projeto pessoal de €1500
+    # RR: Projeto pessoal de €1500
     projeto_rafael = Projeto(
         numero="#P0002",
         tipo=TipoProjeto.PESSOAL_RAFAEL,
         cliente_id=cliente.id,
-        descricao="Projeto Pessoal Rafael",
+        descricao="Projeto Pessoal RR",
         valor_sem_iva=Decimal("1500.00"),
         data_faturacao=date(2025, 1, 20),
         estado=EstadoProjeto.RECEBIDO
@@ -102,7 +102,7 @@ def create_test_data(db_session):
     )
     db_session.add(despesa_fixa)
 
-    # Boletim Bruno: €400
+    # Boletim BA: €400
     boletim_bruno = Boletim(
         numero="#B0001",
         socio=Socio.BRUNO,
@@ -125,8 +125,8 @@ def test_saldos(db_session):
 
     calculator = SaldosCalculator(db_session)
 
-    # Test Bruno
-    print("\n📊 SALDO BRUNO:")
+    # Test BA
+    print("\n📊 SALDO BA:")
     saldo_bruno = calculator.calcular_saldo_bruno()
     print(f"\n  💰 SALDO TOTAL: €{saldo_bruno['saldo_total']:.2f}")
     print(f"\n  📈 INs (Entradas):")
@@ -142,8 +142,8 @@ def test_saldos(db_session):
     print(f"     TOTAL OUTs: €{saldo_bruno['outs']['total']:.2f}")
     print(f"\n  💡 Sugestão de boletim: €{saldo_bruno['sugestao_boletim']:.2f}")
 
-    # Test Rafael
-    print("\n\n📊 SALDO RAFAEL:")
+    # Test RR
+    print("\n\n📊 SALDO RR:")
     saldo_rafael = calculator.calcular_saldo_rafael()
     print(f"\n  💰 SALDO TOTAL: €{saldo_rafael['saldo_total']:.2f}")
     print(f"\n  📈 INs (Entradas):")
@@ -165,14 +165,14 @@ def test_saldos(db_session):
 
     # Verify calculations
     print("\n🔍 Verificação dos cálculos:")
-    print(f"\nBruno esperado:")
+    print(f"\nBA esperado:")
     print(f"  INs: €1000 (projeto) + €200 (prémio) = €1200")
     print(f"  OUTs: €450 (fixas÷2) + €400 (boletim) = €850")
     print(f"  Saldo: €1200 - €850 = €350")
     print(f"  Calculado: €{saldo_bruno['saldo_total']:.2f}")
     print(f"  ✓ Correto!" if abs(saldo_bruno['saldo_total'] - 350) < 0.01 else "  ✗ Erro!")
 
-    print(f"\nRafael esperado:")
+    print(f"\nRR esperado:")
     print(f"  INs: €1500 (projeto) + €200 (prémio) = €1700")
     print(f"  OUTs: €450 (fixas÷2) + €0 (sem boletins) = €450")
     print(f"  Saldo: €1700 - €450 = €1250")

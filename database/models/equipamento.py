@@ -47,7 +47,7 @@ class Equipamento(Base):
     foto_url = Column(Text, nullable=True)  # Link para foto
 
     # Uso pessoal (se aplicável)
-    uso_pessoal = Column(String(50), nullable=True)  # Ex: Bruno, Rafael, Empresa
+    uso_pessoal = Column(String(50), nullable=True)  # Ex: BA, RR, Empresa
 
     # Metadata
     nota = Column(Text, nullable=True)

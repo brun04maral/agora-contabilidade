@@ -449,7 +449,7 @@ def main():
     print("      • Todas as despesas")
     print("      • Todos os boletins")
     print("   ✅ Isto NÃO vai apagar:")
-    print("      • Utilizadores (Bruno e Rafael)")
+    print("      • Utilizadores (BA e RR)")
 
     clear_response = input("\nLimpar tudo? (sim/não): ").strip().lower()
     clear_all = clear_response in ['sim', 's', 'yes', 'y']

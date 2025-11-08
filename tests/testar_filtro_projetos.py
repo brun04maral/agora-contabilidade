@@ -43,18 +43,18 @@ for proj in relatorio['projetos'][:5]:
     print(f"  - {proj['numero']}: {proj['tipo']} - {proj['cliente']}")
 
 # Test 3: Apenas Pessoais Bruno
-print("\n[TESTE 3] Filtro: APENAS PESSOAIS BRUNO")
+print("\n[TESTE 3] Filtro: APENAS PESSOAIS BA")
 print("-" * 80)
-relatorio = manager.gerar_relatorio_projetos(tipo=TipoProjeto.PESSOAL_BRUNO)
+relatorio = manager.gerar_relatorio_projetos(tipo=TipoProjeto.PESSOAL_BA)
 print(f"Total de projetos: {relatorio['total_projetos']}")
 print(f"Valor total: {relatorio['total_valor_fmt']}")
 for proj in relatorio['projetos'][:5]:
     print(f"  - {proj['numero']}: {proj['tipo']} - {proj['cliente']}")
 
 # Test 4: Apenas Pessoais Rafael
-print("\n[TESTE 4] Filtro: APENAS PESSOAIS RAFAEL")
+print("\n[TESTE 4] Filtro: APENAS PESSOAIS RR")
 print("-" * 80)
-relatorio = manager.gerar_relatorio_projetos(tipo=TipoProjeto.PESSOAL_RAFAEL)
+relatorio = manager.gerar_relatorio_projetos(tipo=TipoProjeto.PESSOAL_RR)
 print(f"Total de projetos: {relatorio['total_projetos']}")
 print(f"Valor total: {relatorio['total_valor_fmt']}")
 for proj in relatorio['projetos'][:5]:
