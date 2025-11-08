@@ -177,16 +177,14 @@ class ClientesScreen(ctk.CTkFrame):
             {"key": "numero", "label": "Número", "width": 100},
             {"key": "nome", "label": "Nome", "width": 300},
             {"key": "nif", "label": "NIF", "width": 150},
-            {"key": "projetos_count", "label": "Projetos", "width": 100},
+            {"key": "projetos_count", "label": "Projetos", "width": 100, "sortable": False},
         ]
 
         self.table = DataTableV2(
             table_container,
             columns=columns,
-            sortable_columns=["numero", "nome", "nif"],
             on_row_double_click=self.on_double_click,
-            on_selection_change=self.on_selection_change,
-            on_cell_click=self.on_cell_click
+            on_selection_change=self.on_selection_change
         )
         self.table.pack(fill="both", expand=True)
 
@@ -263,11 +261,6 @@ class ClientesScreen(ctk.CTkFrame):
         cliente_id = data.get("id")
         if cliente_id:
             self.editar_cliente(cliente_id)
-
-    def on_cell_click(self, data: Dict, column_key: str):
-        """Handle cell click - if clicking on projetos_count, navigate to projetos"""
-        if column_key == "projetos_count" and data.get("_has_projetos"):
-            self.ver_projetos_cliente(data)
 
     def cancelar_selecao(self):
         """Clear selection"""

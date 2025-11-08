@@ -202,7 +202,6 @@ class FornecedoresScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             table_container,
             columns=columns,
-            sortable_columns=["numero", "nome", "estatuto", "area", "funcao", "classificacao", "despesas_count"],
             on_row_double_click=self.on_double_click,
             on_selection_change=self.on_selection_change
         )
