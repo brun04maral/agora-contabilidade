@@ -205,40 +205,10 @@ class MainWindow(ctk.CTkFrame):
         self.current_screen = screen
 
     def show_equipamento(self):
-        """Show equipamento screen (placeholder)"""
-        screen = ctk.CTkFrame(self.content_frame)
+        """Show equipamento screen"""
+        from ui.screens.equipamento import EquipamentoScreen
+        screen = EquipamentoScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        # Header
-        header_frame = ctk.CTkFrame(screen, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
-
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="💻 Equipamento",
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        title_label.pack(side="left")
-
-        # Content
-        content_frame = ctk.CTkFrame(screen, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=30, pady=20)
-
-        # Placeholder message
-        info_label = ctk.CTkLabel(
-            content_frame,
-            text="Esta funcionalidade será desenvolvida em breve.\n\n"
-                 "Aqui será possível gerir o equipamento da empresa:\n"
-                 "• Registo de equipamentos\n"
-                 "• Alocação a projetos\n"
-                 "• Controlo de manutenção\n"
-                 "• Histórico de utilização",
-            font=ctk.CTkFont(size=14),
-            text_color="gray",
-            justify="center"
-        )
-        info_label.pack(pady=100)
-
         self.current_screen = screen
 
     def show_settings(self):
