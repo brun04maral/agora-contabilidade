@@ -144,7 +144,8 @@ class EquipamentoScreen(ctk.CTkFrame):
                 {"key": "estado", "label": "Estado", "width": 120},
                 {"key": "fornecedor", "label": "Fornecedor", "width": 150},
             ],
-            height=500
+            height=500,
+            on_selection_change=self.on_selection_changed
         )
         self.table.pack(fill="both", expand=True)
 
@@ -182,9 +183,6 @@ class EquipamentoScreen(ctk.CTkFrame):
             text_color="gray"
         )
         self.info_label.pack(side="right", padx=20)
-
-        # Selection callback
-        self.table.set_selection_callback(self.on_selection_changed)
 
     def carregar_equipamentos(self):
         """Carrega equipamentos com filtros aplicados"""
@@ -226,10 +224,10 @@ class EquipamentoScreen(ctk.CTkFrame):
                  f"Com aluguer: {stats['com_preco_aluguer']}"
         )
 
-    def on_selection_changed(self, selected_ids):
+    def on_selection_changed(self, selected_rows):
         """Handle selection change"""
-        has_selection = len(selected_ids) > 0
-        single_selection = len(selected_ids) == 1
+        has_selection = len(selected_rows) > 0
+        single_selection = len(selected_rows) == 1
 
         self.edit_btn.configure(state="normal" if single_selection else "disabled")
         self.delete_btn.configure(state="normal" if has_selection else "disabled")
