@@ -32,14 +32,14 @@ print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos()
 print(f"mostrar_premios: {relatorio['mostrar_premios']}")
 print(f"Total de projetos: {relatorio['total_projetos']}")
-print(f"Prémios Bruno: {relatorio['total_premios_bruno_fmt']}")
-print(f"Prémios Rafael: {relatorio['total_premios_rafael_fmt']}")
+print(f"Prémios BA: {relatorio['total_premios_bruno_fmt']}")
+print(f"Prémios RR: {relatorio['total_premios_rafael_fmt']}")
 print("\nPrimeiro projeto:")
 proj = relatorio['projetos'][0]
 print(f"  {proj['numero']}: {proj['tipo']} - {proj['cliente']}")
 print(f"  Valor: {proj['valor_fmt']}")
-print(f"  Prémio Bruno: {proj['premio_bruno_fmt']}")
-print(f"  Prémio Rafael: {proj['premio_rafael_fmt']}")
+print(f"  Prémio BA: {proj['premio_bruno_fmt']}")
+print(f"  Prémio RR: {proj['premio_rafael_fmt']}")
 
 # Test 2: Empresa - deve mostrar prémios
 print("\n\n[TESTE 2] Filtro: EMPRESA (deve mostrar prémios: True)")
@@ -47,16 +47,16 @@ print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos(tipo=TipoProjeto.EMPRESA)
 print(f"mostrar_premios: {relatorio['mostrar_premios']}")
 print(f"Total de projetos: {relatorio['total_projetos']}")
-print(f"Prémios Bruno: {relatorio['total_premios_bruno_fmt']}")
-print(f"Prémios Rafael: {relatorio['total_premios_rafael_fmt']}")
+print(f"Prémios BA: {relatorio['total_premios_bruno_fmt']}")
+print(f"Prémios RR: {relatorio['total_premios_rafael_fmt']}")
 print("\nPrimeiro projeto:")
 proj = relatorio['projetos'][0]
 print(f"  {proj['numero']}: {proj['tipo']} - {proj['cliente']}")
 print(f"  Valor: {proj['valor_fmt']}")
-print(f"  Prémio Bruno: {proj['premio_bruno_fmt']}")
-print(f"  Prémio Rafael: {proj['premio_rafael_fmt']}")
+print(f"  Prémio BA: {proj['premio_bruno_fmt']}")
+print(f"  Prémio RR: {proj['premio_rafael_fmt']}")
 
-# Test 3: Pessoais Bruno - NÃO deve mostrar prémios
+# Test 3: Pessoais BA - NÃO deve mostrar prémios
 print("\n\n[TESTE 3] Filtro: PESSOAIS BRUNO (deve mostrar prémios: False)")
 print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos(tipo=TipoProjeto.PESSOAL_BRUNO)
@@ -69,7 +69,7 @@ print(f"  {proj['numero']}: {proj['tipo']} - {proj['cliente']}")
 print(f"  Valor: {proj['valor_fmt']}")
 print(f"  (Prémios não devem aparecer na UI)")
 
-# Test 4: Pessoais Rafael - NÃO deve mostrar prémios
+# Test 4: Pessoais RR - NÃO deve mostrar prémios
 print("\n\n[TESTE 4] Filtro: PESSOAIS RAFAEL (deve mostrar prémios: False)")
 print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos(tipo=TipoProjeto.PESSOAL_RAFAEL)
