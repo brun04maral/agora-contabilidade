@@ -212,7 +212,7 @@ class ClientesScreen(ctk.CTkFrame):
                 "numero": cliente.numero,
                 "nome": cliente.nome,
                 "nif": cliente.nif or "-",
-                "projetos_count": str(projetos_count) if projetos_count > 0 else "0",
+                "projetos_count": projetos_count,  # Keep as integer for proper sorting
                 # Store full data for export
                 "_cliente": cliente,
                 "_has_projetos": projetos_count > 0
@@ -239,7 +239,7 @@ class ClientesScreen(ctk.CTkFrame):
                 "numero": cliente.numero,
                 "nome": cliente.nome,
                 "nif": cliente.nif or "-",
-                "projetos_count": str(projetos_count) if projetos_count > 0 else "0",
+                "projetos_count": projetos_count,  # Keep as integer for proper sorting
                 "_cliente": cliente,
                 "_has_projetos": projetos_count > 0
             })

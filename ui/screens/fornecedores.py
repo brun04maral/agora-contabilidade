@@ -237,7 +237,7 @@ class FornecedoresScreen(ctk.CTkFrame):
                 "area": fornecedor.area or "-",
                 "funcao": fornecedor.funcao or "-",
                 "classificacao": "★" * fornecedor.classificacao if fornecedor.classificacao else "-",
-                "despesas_count": str(len(fornecedor.despesas)),
+                "despesas_count": len(fornecedor.despesas),  # Keep as integer for proper sorting
                 "_bg_color": color,
                 "_fornecedor": fornecedor
             })
@@ -266,7 +266,7 @@ class FornecedoresScreen(ctk.CTkFrame):
                 "area": fornecedor.area or "-",
                 "funcao": fornecedor.funcao or "-",
                 "classificacao": "★" * fornecedor.classificacao if fornecedor.classificacao else "-",
-                "despesas_count": str(len(fornecedor.despesas)),
+                "despesas_count": len(fornecedor.despesas),  # Keep as integer for proper sorting
                 "_bg_color": color,
                 "_fornecedor": fornecedor
             })
