@@ -635,7 +635,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
         ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
 
         # Load clientes
-        clientes = self.clientes_manager.listar_clientes()
+        clientes = self.clientes_manager.listar_todos()
         cliente_names = ["(Nenhum)"] + [f"{c.numero} - {c.nome}" for c in clientes]
         self.clientes_map = {f"{c.numero} - {c.nome}": c.id for c in clientes}
 
