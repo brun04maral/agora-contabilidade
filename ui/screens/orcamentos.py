@@ -5,8 +5,12 @@ Tela de Orçamentos - Gestão de orçamentos (frontend e backend)
 import customtkinter as ctk
 from sqlalchemy.orm import Session
 from logic.orcamentos import OrcamentoManager
+from logic.clientes import ClientesManager
 from ui.components.data_table_v2 import DataTableV2
 from typing import Optional
+from datetime import date, datetime
+from tkinter import messagebox
+from database.models.orcamento import Orcamento
 
 
 class OrcamentosScreen(ctk.CTkFrame):
@@ -308,16 +312,10 @@ class OrcamentosScreen(ctk.CTkFrame):
 
     def adicionar_orcamento(self):
         """Add new orcamento"""
-        # TODO: Implementar diálogo de criação
-        from tkinter import messagebox
-        messagebox.showinfo(
-            "Em Desenvolvimento",
-            "A funcionalidade de criação de orçamentos está em desenvolvimento.\n\n"
-            "Por enquanto, você pode:\n"
-            "• Visualizar orçamentos existentes\n"
-            "• Filtrar por tipo, status e pesquisar\n"
-            "• Ver estatísticas"
-        )
+        dialog = OrcamentoDialog(self, self.manager, self.db_session)
+        self.wait_window(dialog)
+        if dialog.orcamento_criado:
+            self.carregar_orcamentos()
 
     def editar_orcamento(self):
         """Edit selected orcamento"""
@@ -326,14 +324,16 @@ class OrcamentosScreen(ctk.CTkFrame):
             return
 
         orcamento_id = selected[0]["id"]
+        orcamento = self.manager.obter_orcamento(orcamento_id)
 
-        # TODO: Implementar diálogo de edição
-        from tkinter import messagebox
-        messagebox.showinfo(
-            "Em Desenvolvimento",
-            f"Edição do orçamento ID {orcamento_id} está em desenvolvimento.\n\n"
-            "Use a opção 'Visualizar' para ver os detalhes."
-        )
+        if not orcamento:
+            messagebox.showerror("Erro", "Orçamento não encontrado!")
+            return
+
+        dialog = OrcamentoDialog(self, self.manager, self.db_session, orcamento=orcamento)
+        self.wait_window(dialog)
+        if dialog.orcamento_atualizado:
+            self.carregar_orcamentos()
 
     def visualizar_orcamento(self):
         """View selected orcamento details"""
@@ -546,3 +546,312 @@ class OrcamentosScreen(ctk.CTkFrame):
 
         # Reload
         self.carregar_orcamentos()
+
+
+class OrcamentoDialog(ctk.CTkToplevel):
+    """Dialog para criar/editar orçamento"""
+
+    def __init__(self, parent, manager: OrcamentoManager, db_session: Session, orcamento: Optional[Orcamento] = None):
+        super().__init__(parent)
+
+        self.manager = manager
+        self.db_session = db_session
+        self.clientes_manager = ClientesManager(db_session)
+        self.orcamento = orcamento
+        self.orcamento_criado = False
+        self.orcamento_atualizado = False
+
+        # Window config
+        self.title("Editar Orçamento" if orcamento else "Novo Orçamento")
+        self.geometry("800x750")
+        self.resizable(False, False)
+
+        # Make modal
+        self.transient(parent)
+        self.grab_set()
+
+        # Center window
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (800 // 2)
+        y = (self.winfo_screenheight() // 2) - (750 // 2)
+        self.geometry(f"800x750+{x}+{y}")
+
+        # Create widgets
+        self.create_widgets()
+
+        # Load data if editing
+        if self.orcamento:
+            self.load_data()
+
+    def create_widgets(self):
+        """Create dialog widgets"""
+
+        # Main container
+        main_frame = ctk.CTkFrame(self)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        title = ctk.CTkLabel(
+            main_frame,
+            text="✏️ Editar Orçamento" if self.orcamento else "➕ Novo Orçamento",
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
+        title.pack(pady=(0, 20))
+
+        # Scrollable form
+        scroll = ctk.CTkScrollableFrame(main_frame)
+        scroll.pack(fill="both", expand=True)
+
+        # Código *
+        ctk.CTkLabel(scroll, text="Código do Orçamento *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.codigo_entry = ctk.CTkEntry(scroll, placeholder_text="Ex: 20250909_Orçamento-SGS_Conf", height=35)
+        self.codigo_entry.pack(fill="x", pady=(0, 10))
+
+        # Tipo e Versão (2 columns)
+        tipo_versao_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        tipo_versao_frame.pack(fill="x", pady=(10, 10))
+
+        # Tipo *
+        tipo_col = ctk.CTkFrame(tipo_versao_frame, fg_color="transparent")
+        tipo_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(tipo_col, text="Tipo *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.tipo_combo = ctk.CTkComboBox(
+            tipo_col,
+            values=["frontend", "backend"],
+            height=35,
+            command=self.on_tipo_change
+        )
+        self.tipo_combo.set("frontend")
+        self.tipo_combo.pack(fill="x")
+
+        # Versão (only for frontend)
+        versao_col = ctk.CTkFrame(tipo_versao_frame, fg_color="transparent")
+        versao_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(versao_col, text="Versão (Frontend)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.versao_entry = ctk.CTkEntry(versao_col, placeholder_text="Ex: V1, V2", height=35)
+        self.versao_entry.pack(fill="x")
+
+        # Cliente
+        ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+
+        # Load clientes
+        clientes = self.clientes_manager.listar_clientes()
+        cliente_names = ["(Nenhum)"] + [f"{c.numero} - {c.nome}" for c in clientes]
+        self.clientes_map = {f"{c.numero} - {c.nome}": c.id for c in clientes}
+
+        self.cliente_combo = ctk.CTkComboBox(
+            scroll,
+            values=cliente_names,
+            height=35
+        )
+        self.cliente_combo.set("(Nenhum)")
+        self.cliente_combo.pack(fill="x", pady=(0, 10))
+
+        # Data de Criação e Data do Evento (2 columns)
+        datas_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        datas_frame.pack(fill="x", pady=(10, 10))
+
+        # Data de Criação *
+        data_criacao_col = ctk.CTkFrame(datas_frame, fg_color="transparent")
+        data_criacao_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(data_criacao_col, text="Data de Criação *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.data_criacao_entry = ctk.CTkEntry(
+            data_criacao_col,
+            placeholder_text="YYYY-MM-DD",
+            height=35
+        )
+        self.data_criacao_entry.insert(0, date.today().strftime("%Y-%m-%d"))
+        self.data_criacao_entry.pack(fill="x")
+
+        # Data do Evento
+        data_evento_col = ctk.CTkFrame(datas_frame, fg_color="transparent")
+        data_evento_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(data_evento_col, text="Data do Evento", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.data_evento_entry = ctk.CTkEntry(
+            data_evento_col,
+            placeholder_text="Ex: 2025-05-29 | 2025-07-06",
+            height=35
+        )
+        self.data_evento_entry.pack(fill="x")
+
+        # Local do Evento
+        ctk.CTkLabel(scroll, text="Local do Evento", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.local_evento_entry = ctk.CTkEntry(scroll, placeholder_text="Ex: Lisboa, Porto", height=35)
+        self.local_evento_entry.pack(fill="x", pady=(0, 10))
+
+        # Descrição da Proposta
+        ctk.CTkLabel(scroll, text="Descrição da Proposta", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.descricao_textbox = ctk.CTkTextbox(scroll, height=80)
+        self.descricao_textbox.pack(fill="x", pady=(0, 10))
+
+        # Status
+        ctk.CTkLabel(scroll, text="Status", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.status_combo = ctk.CTkComboBox(
+            scroll,
+            values=["rascunho", "enviado", "aprovado", "rejeitado"],
+            height=35
+        )
+        self.status_combo.set("rascunho")
+        self.status_combo.pack(fill="x", pady=(0, 10))
+
+        # Notas Contratuais
+        ctk.CTkLabel(scroll, text="Notas Contratuais", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.notas_textbox = ctk.CTkTextbox(scroll, height=80)
+        self.notas_textbox.pack(fill="x", pady=(0, 10))
+
+        # Info text
+        info_label = ctk.CTkLabel(
+            scroll,
+            text="ℹ️ Após criar o orçamento, você poderá adicionar secções e items.",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        )
+        info_label.pack(pady=(10, 10))
+
+        # Buttons
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        cancel_btn = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            height=35,
+            fg_color="gray",
+            hover_color="darkgray"
+        )
+        cancel_btn.pack(side="left", padx=(0, 10))
+
+        save_btn = ctk.CTkButton(
+            btn_frame,
+            text="💾 Guardar",
+            command=self.save,
+            width=120,
+            height=35,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        )
+        save_btn.pack(side="left")
+
+    def on_tipo_change(self, value):
+        """Handle tipo change"""
+        if value == "backend":
+            # Clear versao for backend
+            self.versao_entry.delete(0, "end")
+            self.versao_entry.configure(state="disabled", placeholder_text="N/A (Backend)")
+        else:
+            self.versao_entry.configure(state="normal", placeholder_text="Ex: V1, V2")
+
+    def load_data(self):
+        """Load orcamento data into form"""
+        if not self.orcamento:
+            return
+
+        # Basic fields
+        self.codigo_entry.insert(0, self.orcamento.codigo or "")
+        self.tipo_combo.set(self.orcamento.tipo or "frontend")
+
+        if self.orcamento.versao:
+            self.versao_entry.delete(0, "end")
+            self.versao_entry.insert(0, self.orcamento.versao)
+
+        # Trigger tipo change to enable/disable versao
+        self.on_tipo_change(self.orcamento.tipo or "frontend")
+
+        # Cliente
+        if self.orcamento.cliente:
+            cliente_value = f"{self.orcamento.cliente.numero} - {self.orcamento.cliente.nome}"
+            self.cliente_combo.set(cliente_value)
+
+        # Dates
+        if self.orcamento.data_criacao:
+            self.data_criacao_entry.delete(0, "end")
+            self.data_criacao_entry.insert(0, self.orcamento.data_criacao.strftime("%Y-%m-%d"))
+
+        if self.orcamento.data_evento:
+            self.data_evento_entry.insert(0, self.orcamento.data_evento)
+
+        if self.orcamento.local_evento:
+            self.local_evento_entry.insert(0, self.orcamento.local_evento)
+
+        # Text fields
+        if self.orcamento.descricao_proposta:
+            self.descricao_textbox.insert("1.0", self.orcamento.descricao_proposta)
+
+        if self.orcamento.status:
+            self.status_combo.set(self.orcamento.status)
+
+        if self.orcamento.notas_contratuais:
+            self.notas_textbox.insert("1.0", self.orcamento.notas_contratuais)
+
+    def save(self):
+        """Save orcamento"""
+        # Validate required fields
+        codigo = self.codigo_entry.get().strip()
+        if not codigo:
+            messagebox.showerror("Erro", "O código do orçamento é obrigatório!")
+            return
+
+        tipo = self.tipo_combo.get()
+
+        data_criacao_str = self.data_criacao_entry.get().strip()
+        if not data_criacao_str:
+            messagebox.showerror("Erro", "A data de criação é obrigatória!")
+            return
+
+        # Parse data_criacao
+        try:
+            data_criacao = datetime.strptime(data_criacao_str, "%Y-%m-%d").date()
+        except ValueError:
+            messagebox.showerror("Erro", "Data de criação inválida! Use o formato YYYY-MM-DD")
+            return
+
+        # Get versao (only for frontend)
+        versao = None
+        if tipo == "frontend":
+            versao = self.versao_entry.get().strip() or None
+
+        # Get cliente_id
+        cliente_id = None
+        cliente_value = self.cliente_combo.get()
+        if cliente_value != "(Nenhum)":
+            cliente_id = self.clientes_map.get(cliente_value)
+
+        # Prepare data
+        data = {
+            "codigo": codigo,
+            "tipo": tipo,
+            "versao": versao,
+            "cliente_id": cliente_id,
+            "data_criacao": data_criacao,
+            "data_evento": self.data_evento_entry.get().strip() or None,
+            "local_evento": self.local_evento_entry.get().strip() or None,
+            "descricao_proposta": self.descricao_textbox.get("1.0", "end-1c").strip() or None,
+            "status": self.status_combo.get(),
+            "notas_contratuais": self.notas_textbox.get("1.0", "end-1c").strip() or None,
+        }
+
+        # Create or update
+        try:
+            if self.orcamento:
+                # Update
+                sucesso, _, erro = self.manager.atualizar_orcamento(self.orcamento.id, **data)
+                if sucesso:
+                    self.orcamento_atualizado = True
+                    messagebox.showinfo("Sucesso", "Orçamento atualizado com sucesso!")
+                    self.destroy()
+                else:
+                    messagebox.showerror("Erro", f"Erro ao atualizar orçamento: {erro}")
+            else:
+                # Create
+                sucesso, _, erro = self.manager.criar_orcamento(**data)
+                if sucesso:
+                    self.orcamento_criado = True
+                    messagebox.showinfo("Sucesso", "Orçamento criado com sucesso!")
+                    self.destroy()
+                else:
+                    messagebox.showerror("Erro", f"Erro ao criar orçamento: {erro}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
