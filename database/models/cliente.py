@@ -29,6 +29,7 @@ class Cliente(Base):
 
     # Relacionamentos
     projetos = relationship("Projeto", back_populates="cliente", cascade="all, delete-orphan")
+    orcamentos = relationship("Orcamento", back_populates="cliente", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Cliente(id={self.id}, numero='{self.numero}', nome='{self.nome}')>"
