@@ -151,6 +151,16 @@ class ClientesScreen(ctk.CTkFrame):
             width=150, height=35
         )
 
+        # Ver Projetos button (only shown when 1 cliente selected)
+        self.ver_projetos_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📁 Ver Projetos",
+            command=self.ver_projetos_selecionado,
+            width=150, height=35,
+            fg_color=("#2196F3", "#1565C0"),
+            hover_color=("#1976D2", "#0D47A1")
+        )
+
         # Export button
         self.export_btn = ctk.CTkButton(
             self.selection_frame,
@@ -249,6 +259,13 @@ class ClientesScreen(ctk.CTkFrame):
             # Show selection frame
             self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
             self.cancel_btn.pack(side="left", padx=(0, 10))
+
+            # Show "Ver Projetos" button only when exactly 1 cliente is selected
+            if num_selected == 1:
+                self.ver_projetos_btn.pack(side="left", padx=(0, 10))
+            else:
+                self.ver_projetos_btn.pack_forget()
+
             self.export_btn.pack(side="left", padx=(0, 20))
             self.count_label.configure(text=f"{num_selected} cliente(s) selecionado(s)")
             self.count_label.pack(side="left")
@@ -265,6 +282,19 @@ class ClientesScreen(ctk.CTkFrame):
     def cancelar_selecao(self):
         """Clear selection"""
         self.table.clear_selection()
+
+    def ver_projetos_selecionado(self):
+        """Navigate to projetos screen filtered by selected cliente"""
+        selected_data = self.table.get_selected_data()
+
+        if len(selected_data) != 1:
+            return
+
+        cliente_id = selected_data[0].get("id")
+
+        # Navigate to projetos with cliente filter
+        if self.main_window and cliente_id:
+            self.main_window.show_projetos(filtro_cliente_id=cliente_id)
 
     def exportar_selecionados(self):
         """Export selected clientes to CSV"""
