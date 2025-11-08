@@ -74,12 +74,12 @@ class SaldosScreen(ctk.CTkFrame):
         saldos_container.grid_columnconfigure(0, weight=1)
         saldos_container.grid_columnconfigure(1, weight=1)
 
-        # Bruno's saldo
-        self.bruno_frame = self.create_saldo_card(saldos_container, "Bruno Amaral", Socio.BRUNO)
+        # BA's saldo
+        self.bruno_frame = self.create_saldo_card(saldos_container, "BA", Socio.BRUNO)
         self.bruno_frame.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
 
-        # Rafael's saldo
-        self.rafael_frame = self.create_saldo_card(saldos_container, "Rafael Reigota", Socio.RAFAEL)
+        # RR's saldo
+        self.rafael_frame = self.create_saldo_card(saldos_container, "RR", Socio.RAFAEL)
         self.rafael_frame.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
 
     def create_saldo_card(self, parent, nome: str, socio: Socio) -> ctk.CTkFrame:
@@ -248,7 +248,7 @@ class SaldosScreen(ctk.CTkFrame):
         saldo_bruno = self.calculator.calcular_saldo_bruno()
         saldo_rafael = self.calculator.calcular_saldo_rafael()
 
-        # Update Bruno
+        # Update BA
         self.bruno_saldo_label.configure(
             text=f"€{saldo_bruno['saldo_total']:,.2f}",
             text_color=("#4CAF50", "#66BB6A") if saldo_bruno['saldo_total'] >= 0 else ("#F44336", "#E57373")
@@ -316,7 +316,7 @@ class SaldosScreen(ctk.CTkFrame):
             text=f"Emitir boletim de €{saldo_bruno['sugestao_boletim']:,.2f} para zerar saldo"
         )
 
-        # Update Rafael (same logic)
+        # Update RR (same logic)
         self.rafael_saldo_label.configure(
             text=f"€{saldo_rafael['saldo_total']:,.2f}",
             text_color=("#4CAF50", "#66BB6A") if saldo_rafael['saldo_total'] >= 0 else ("#F44336", "#E57373")

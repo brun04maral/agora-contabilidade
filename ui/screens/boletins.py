@@ -89,7 +89,7 @@ class BoletinsScreen(ctk.CTkFrame):
 
         self.socio_filter = ctk.CTkOptionMenu(
             filters_frame,
-            values=["Todos", "Bruno", "Rafael"],
+            values=["Todos", "BA", "RR"],
             command=self.aplicar_filtros,
             width=150
         )
@@ -187,7 +187,7 @@ class BoletinsScreen(ctk.CTkFrame):
         return {
             'id': boletim.id,
             'numero': boletim.numero,
-            'socio': "Bruno" if boletim.socio == Socio.BRUNO else "Rafael",
+            'socio': "BA" if boletim.socio == Socio.BRUNO else "RR",
             'data_emissao': boletim.data_emissao.strftime("%Y-%m-%d") if boletim.data_emissao else '-',
             'valor': float(boletim.valor),
             'valor_fmt': f"€{float(boletim.valor):,.2f}",
@@ -215,7 +215,7 @@ class BoletinsScreen(ctk.CTkFrame):
 
         # Filter by socio
         if socio != "Todos":
-            socio_enum = Socio.BRUNO if socio == "Bruno" else Socio.RAFAEL
+            socio_enum = Socio.BRUNO if socio == "BA" else Socio.RAFAEL
             boletins = [b for b in boletins if b.socio == socio_enum]
 
         # Filter by estado
@@ -372,7 +372,7 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
 
         self.socio_bruno_radio = ctk.CTkRadioButton(
             socio_frame,
-            text="Bruno",
+            text="BA",
             variable=self.socio_var,
             value="BRUNO",
             command=self.socio_mudou
@@ -381,7 +381,7 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
 
         self.socio_rafael_radio = ctk.CTkRadioButton(
             socio_frame,
-            text="Rafael",
+            text="RR",
             variable=self.socio_var,
             value="RAFAEL",
             command=self.socio_mudou

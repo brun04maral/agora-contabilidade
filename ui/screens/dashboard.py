@@ -83,12 +83,12 @@ class DashboardScreen(ctk.CTkFrame):
         saldos_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         saldos_container.pack(fill="x", pady=(0, 35))
 
-        # Bruno card
-        self.bruno_card = self.create_saldo_card(saldos_container, "Bruno Amaral", "#4CAF50")
+        # BA card
+        self.bruno_card = self.create_saldo_card(saldos_container, "BA", "#4CAF50")
         self.bruno_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-        # Rafael card
-        self.rafael_card = self.create_saldo_card(saldos_container, "Rafael Reigota", "#2196F3")
+        # RR card
+        self.rafael_card = self.create_saldo_card(saldos_container, "RR", "#2196F3")
         self.rafael_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === PROJETOS ===

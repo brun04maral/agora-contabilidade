@@ -57,11 +57,11 @@ class RelatoriosManager:
         if socio == Socio.BRUNO:
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
             detalhes_bruno = self._get_detalhes_saldo_bruno(filtro_tipo_projeto)
-            socios_data = [self._format_socio_data_detalhado("Bruno Amaral", saldo_bruno, detalhes_bruno, "#4CAF50")]
+            socios_data = [self._format_socio_data_detalhado("BA", saldo_bruno, detalhes_bruno, "#4CAF50")]
         elif socio == Socio.RAFAEL:
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
             detalhes_rafael = self._get_detalhes_saldo_rafael(filtro_tipo_projeto)
-            socios_data = [self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#efd578")]
+            socios_data = [self._format_socio_data_detalhado("RR", saldo_rafael, detalhes_rafael, "#efd578")]
         else:
             # Ambos
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
@@ -69,8 +69,8 @@ class RelatoriosManager:
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
             detalhes_rafael = self._get_detalhes_saldo_rafael(filtro_tipo_projeto)
             socios_data = [
-                self._format_socio_data_detalhado("Bruno Amaral", saldo_bruno, detalhes_bruno, "#4CAF50"),
-                self._format_socio_data_detalhado("Rafael Reigota", saldo_rafael, detalhes_rafael, "#efd578")
+                self._format_socio_data_detalhado("BA", saldo_bruno, detalhes_bruno, "#4CAF50"),
+                self._format_socio_data_detalhado("RR", saldo_rafael, detalhes_rafael, "#efd578")
             ]
 
         # Build report data
@@ -489,8 +489,8 @@ class RelatoriosManager:
         from database.models import TipoDespesa
         mapping = {
             TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
-            TipoDespesa.PESSOAL_BRUNO: "Pessoal Bruno",
-            TipoDespesa.PESSOAL_RAFAEL: "Pessoal Rafael",
+            TipoDespesa.PESSOAL_BRUNO: "Pessoal BA",
+            TipoDespesa.PESSOAL_RAFAEL: "Pessoal RR",
             TipoDespesa.EQUIPAMENTO: "Equipamento",
             TipoDespesa.PROJETO: "Projeto"
         }
@@ -579,7 +579,7 @@ class RelatoriosManager:
             # Format boletim for table
             boletins_formatados.append({
                 'numero': boletim.numero,
-                'socio': "Bruno" if boletim.socio == Socio.BRUNO else "Rafael",
+                'socio': "BA" if boletim.socio == Socio.BRUNO else "RR",
                 'data_emissao': boletim.data_emissao.strftime("%Y-%m-%d") if boletim.data_emissao else '-',
                 'valor': float(boletim.valor),
                 'valor_fmt': self._format_currency(float(boletim.valor)),
@@ -592,7 +592,7 @@ class RelatoriosManager:
         stats_socio_fmt = []
         for socio_bol, stats in stats_por_socio.items():
             stats_socio_fmt.append({
-                'socio': "Bruno" if socio_bol == Socio.BRUNO else "Rafael",
+                'socio': "BA" if socio_bol == Socio.BRUNO else "RR",
                 'count': stats['count'],
                 'valor': float(stats['valor']),
                 'valor_fmt': self._format_currency(float(stats['valor']))
@@ -617,7 +617,7 @@ class RelatoriosManager:
             'data_inicio': data_inicio,
             'data_fim': data_fim,
             'filtros': {
-                'socio': "Bruno" if socio == Socio.BRUNO else ("Rafael" if socio == Socio.RAFAEL else "Todos"),
+                'socio': "BA" if socio == Socio.BRUNO else ("RR" if socio == Socio.RAFAEL else "Todos"),
                 'estado': self._get_estado_boletim_label(estado) if estado else 'Todos'
             },
             'total_boletins': len(boletins),
@@ -642,8 +642,8 @@ class RelatoriosManager:
         from database.models import TipoProjeto
         mapping = {
             TipoProjeto.EMPRESA: "Empresa",
-            TipoProjeto.PESSOAL_BRUNO: "Pessoal Bruno",
-            TipoProjeto.PESSOAL_RAFAEL: "Pessoal Rafael"
+            TipoProjeto.PESSOAL_BRUNO: "Pessoal BA",
+            TipoProjeto.PESSOAL_RAFAEL: "Pessoal RR"
         }
         return mapping.get(tipo, str(tipo))
 
@@ -659,21 +659,21 @@ class RelatoriosManager:
         return mapping.get(estado, str(estado))
 
     def _get_detalhes_saldo_bruno(self, filtro_tipo: Optional[str] = None) -> Dict[str, Any]:
-        """Get detailed breakdown for Bruno's saldo with optional filter"""
+        """Get detailed breakdown for BA's saldo with optional filter"""
 
         # Projetos pessoais recebidos (aplicar filtro)
         if filtro_tipo == "empresa":
             projetos_pessoais = []  # Não mostrar pessoais se filtro é empresa
         elif filtro_tipo == "rafael":
-            projetos_pessoais = []  # Não mostrar Bruno se filtro é Rafael
+            projetos_pessoais = []  # Não mostrar BA se filtro é RR
         else:
-            # "todos" ou "bruno" - mostrar projetos pessoais Bruno
+            # "todos" ou "bruno" - mostrar projetos pessoais BA
             projetos_pessoais = self.db_session.query(Projeto).filter(
                 Projeto.tipo == TipoProjeto.PESSOAL_BRUNO,
                 Projeto.estado == EstadoProjeto.RECEBIDO
             ).all()
 
-        # Prémios (projetos empresa onde Bruno tem prémio) - aplicar filtro
+        # Prémios (projetos empresa onde BA tem prémio) - aplicar filtro
         if filtro_tipo in ["bruno", "rafael"]:
             projetos_premios = []  # Não mostrar prémios se filtro é só pessoais
         else:
@@ -709,21 +709,21 @@ class RelatoriosManager:
         }
 
     def _get_detalhes_saldo_rafael(self, filtro_tipo: Optional[str] = None) -> Dict[str, Any]:
-        """Get detailed breakdown for Rafael's saldo with optional filter"""
+        """Get detailed breakdown for RR's saldo with optional filter"""
 
         # Projetos pessoais recebidos (aplicar filtro)
         if filtro_tipo == "empresa":
             projetos_pessoais = []  # Não mostrar pessoais se filtro é empresa
         elif filtro_tipo == "bruno":
-            projetos_pessoais = []  # Não mostrar Rafael se filtro é Bruno
+            projetos_pessoais = []  # Não mostrar RR se filtro é BA
         else:
-            # "todos" ou "rafael" - mostrar projetos pessoais Rafael
+            # "todos" ou "rafael" - mostrar projetos pessoais RR
             projetos_pessoais = self.db_session.query(Projeto).filter(
                 Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL,
                 Projeto.estado == EstadoProjeto.RECEBIDO
             ).all()
 
-        # Prémios (projetos empresa onde Rafael tem prémio) - aplicar filtro
+        # Prémios (projetos empresa onde RR tem prémio) - aplicar filtro
         if filtro_tipo in ["bruno", "rafael"]:
             projetos_premios = []  # Não mostrar prémios se filtro é só pessoais
         else:
@@ -779,7 +779,7 @@ class RelatoriosManager:
         # Format prémios list
         premios_list = []
         for proj in detalhes['projetos_premios']:
-            premio_bruno = proj.premio_bruno if 'Bruno' in nome else proj.premio_rafael
+            premio_bruno = proj.premio_bruno if 'BA' in nome else proj.premio_rafael
             if premio_bruno > 0:
                 premios_list.append({
                     'numero': proj.numero,
@@ -1758,8 +1758,8 @@ class RelatoriosManager:
         summary_data = [[
             f"Total: {report_data['total_projetos']} projetos",
             f"Valor Total: {report_data['total_valor_fmt']}",
-            f"Prémios Bruno: {report_data['total_premios_bruno_fmt']}",
-            f"Prémios Rafael: {report_data['total_premios_rafael_fmt']}"
+            f"Prémios BA: {report_data['total_premios_bruno_fmt']}",
+            f"Prémios RR: {report_data['total_premios_rafael_fmt']}"
         ]]
 
         summary_table = Table(summary_data, colWidths=[5*cm, 5*cm, 5*cm, 5*cm])
@@ -1858,14 +1858,14 @@ class RelatoriosManager:
         # Summary
         ws.merge_cells(f'A{row}:H{row}')
         cell = ws[f'A{row}']
-        cell.value = f"Total: {report_data['total_projetos']} projetos | Valor: {report_data['total_valor_fmt']} | Prémios: Bruno {report_data['total_premios_bruno_fmt']} | Rafael {report_data['total_premios_rafael_fmt']}"
+        cell.value = f"Total: {report_data['total_projetos']} projetos | Valor: {report_data['total_valor_fmt']} | Prémios: BA {report_data['total_premios_bruno_fmt']} | RR {report_data['total_premios_rafael_fmt']}"
         cell.font = Font(size=11, bold=True)
         cell.fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
         cell.alignment = Alignment(horizontal='center')
         row += 2
 
         # Header
-        headers = ['Nº', 'Tipo', 'Cliente', 'Descrição', 'Valor', 'Prémio Bruno', 'Prémio Rafael', 'Estado']
+        headers = ['Nº', 'Tipo', 'Cliente', 'Descrição', 'Valor', 'Prémio BA', 'Prémio RR', 'Estado']
         for col_idx, header in enumerate(headers, start=1):
             cell = ws.cell(row=row, column=col_idx)
             cell.value = header

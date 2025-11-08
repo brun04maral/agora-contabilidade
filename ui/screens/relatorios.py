@@ -167,7 +167,7 @@ class RelatoriosScreen(ctk.CTkFrame):
 
         self.socio_filter = ctk.CTkOptionMenu(
             self.socio_frame,
-            values=["Ambos", "Bruno", "Rafael"]
+            values=["Ambos", "BA", "RR"]
         )
         self.socio_filter.pack(fill="x")
 
@@ -185,8 +185,8 @@ class RelatoriosScreen(ctk.CTkFrame):
         tipo_projeto_options = [
             ("Todos", "todos"),
             ("Empresa", "empresa"),
-            ("Pessoais Bruno", "bruno"),
-            ("Pessoais Rafael", "rafael")
+            ("Pessoais BA", "bruno"),
+            ("Pessoais RR", "rafael")
         ]
 
         for label, value in tipo_projeto_options:
@@ -401,9 +401,9 @@ class RelatoriosScreen(ctk.CTkFrame):
             if tipo == "Saldos Pessoais":
                 socio_str = self.socio_filter.get()
                 socio = None
-                if socio_str == "Bruno":
+                if socio_str == "BA":
                     socio = Socio.BRUNO
-                elif socio_str == "Rafael":
+                elif socio_str == "RR":
                     socio = Socio.RAFAEL
 
                 self.current_report_data = self.manager.gerar_relatorio_saldos(
@@ -887,7 +887,7 @@ class RelatoriosScreen(ctk.CTkFrame):
         # Build summary text based on whether to show premios
         mostrar_premios = data.get('mostrar_premios', False)
         if mostrar_premios:
-            summary_text = f"📊 {data['total_projetos']} Projetos  |  💰 Valor Total: {data['total_valor_fmt']}  |  🏆 Prémios: Bruno {data['total_premios_bruno_fmt']} | Rafael {data['total_premios_rafael_fmt']}"
+            summary_text = f"📊 {data['total_projetos']} Projetos  |  💰 Valor Total: {data['total_valor_fmt']}  |  🏆 Prémios: BA {data['total_premios_bruno_fmt']} | RR {data['total_premios_rafael_fmt']}"
         else:
             summary_text = f"📊 {data['total_projetos']} Projetos  |  💰 Valor Total: {data['total_valor_fmt']}"
 
@@ -984,7 +984,7 @@ class RelatoriosScreen(ctk.CTkFrame):
 
             # Prémios (apenas se mostrar_premios)
             if mostrar_premios:
-                # Prémio Bruno
+                # Prémio BA
                 ctk.CTkLabel(
                     row_frame,
                     text=proj['premio_bruno_fmt'],
@@ -993,7 +993,7 @@ class RelatoriosScreen(ctk.CTkFrame):
                     anchor="e"
                 ).pack(side="left", padx=8, pady=6)
 
-                # Prémio Rafael
+                # Prémio RR
                 ctk.CTkLabel(
                     row_frame,
                     text=proj['premio_rafael_fmt'],
@@ -1424,10 +1424,10 @@ class RelatoriosScreen(ctk.CTkFrame):
             parts.append('Saldos')
             # Add socio filter
             socio_str = self.socio_filter.get()
-            if socio_str == "Bruno":
-                parts.append('Bruno')
-            elif socio_str == "Rafael":
-                parts.append('Rafael')
+            if socio_str == "BA":
+                parts.append('BA')
+            elif socio_str == "RR":
+                parts.append('RR')
             else:
                 parts.append('Ambos')
         elif tipo == 'financeiro_mensal':

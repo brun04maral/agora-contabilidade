@@ -89,7 +89,7 @@ class DespesasScreen(ctk.CTkFrame):
 
         self.tipo_filter = ctk.CTkOptionMenu(
             filters_frame,
-            values=["Todos", "Fixa Mensal", "Pessoal Bruno", "Pessoal Rafael", "Equipamento", "Projeto"],
+            values=["Todos", "Fixa Mensal", "Pessoal BA", "Pessoal RR", "Equipamento", "Projeto"],
             command=self.aplicar_filtros,
             width=180
         )
@@ -211,8 +211,8 @@ class DespesasScreen(ctk.CTkFrame):
         """Convert tipo enum to label"""
         mapping = {
             TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
-            TipoDespesa.PESSOAL_BRUNO: "Pessoal Bruno",
-            TipoDespesa.PESSOAL_RAFAEL: "Pessoal Rafael",
+            TipoDespesa.PESSOAL_BRUNO: "Pessoal BA",
+            TipoDespesa.PESSOAL_RAFAEL: "Pessoal RR",
             TipoDespesa.EQUIPAMENTO: "Equipamento",
             TipoDespesa.PROJETO: "Projeto"
         }
@@ -238,8 +238,8 @@ class DespesasScreen(ctk.CTkFrame):
         if tipo != "Todos":
             tipo_map = {
                 "Fixa Mensal": TipoDespesa.FIXA_MENSAL,
-                "Pessoal Bruno": TipoDespesa.PESSOAL_BRUNO,
-                "Pessoal Rafael": TipoDespesa.PESSOAL_RAFAEL,
+                "Pessoal BA": TipoDespesa.PESSOAL_BRUNO,
+                "Pessoal RR": TipoDespesa.PESSOAL_RAFAEL,
                 "Equipamento": TipoDespesa.EQUIPAMENTO,
                 "Projeto": TipoDespesa.PROJETO
             }
@@ -410,8 +410,8 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
         tipos = [
             ("Fixa Mensal", "FIXA_MENSAL"),
-            ("Pessoal Bruno", "PESSOAL_BRUNO"),
-            ("Pessoal Rafael", "PESSOAL_RAFAEL"),
+            ("Pessoal BA", "PESSOAL_BRUNO"),
+            ("Pessoal RR", "PESSOAL_RAFAEL"),
             ("Equipamento", "EQUIPAMENTO"),
             ("Projeto", "PROJETO")
         ]

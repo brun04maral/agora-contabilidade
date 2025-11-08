@@ -133,7 +133,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
         self.tipo_filter = ctk.CTkOptionMenu(
             filters_frame,
-            values=["Todos", "Empresa", "Pessoal Bruno", "Pessoal Rafael"],
+            values=["Todos", "Empresa", "Pessoal BA", "Pessoal RR"],
             command=self.aplicar_filtros,
             width=180
         )
@@ -244,8 +244,8 @@ class ProjetosScreen(ctk.CTkFrame):
         """Convert tipo enum to label"""
         mapping = {
             TipoProjeto.EMPRESA: "Empresa",
-            TipoProjeto.PESSOAL_BRUNO: "Pessoal Bruno",
-            TipoProjeto.PESSOAL_RAFAEL: "Pessoal Rafael"
+            TipoProjeto.PESSOAL_BRUNO: "Pessoal BA",
+            TipoProjeto.PESSOAL_RAFAEL: "Pessoal RR"
         }
         return mapping.get(tipo, str(tipo))
 
@@ -289,8 +289,8 @@ class ProjetosScreen(ctk.CTkFrame):
         if tipo != "Todos":
             tipo_map = {
                 "Empresa": TipoProjeto.EMPRESA,
-                "Pessoal Bruno": TipoProjeto.PESSOAL_BRUNO,
-                "Pessoal Rafael": TipoProjeto.PESSOAL_RAFAEL
+                "Pessoal BA": TipoProjeto.PESSOAL_BRUNO,
+                "Pessoal RR": TipoProjeto.PESSOAL_RAFAEL
             }
             tipo_enum = tipo_map[tipo]
             projetos = [p for p in projetos if p.tipo == tipo_enum]
@@ -432,8 +432,8 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         tipo_frame.pack(fill="x", pady=(0, 18))
 
         ctk.CTkRadioButton(tipo_frame, text="Empresa", variable=self.tipo_var, value="EMPRESA").pack(side="left", padx=(0, 20))
-        ctk.CTkRadioButton(tipo_frame, text="Pessoal Bruno", variable=self.tipo_var, value="PESSOAL_BRUNO").pack(side="left", padx=(0, 20))
-        ctk.CTkRadioButton(tipo_frame, text="Pessoal Rafael", variable=self.tipo_var, value="PESSOAL_RAFAEL").pack(side="left")
+        ctk.CTkRadioButton(tipo_frame, text="Pessoal BA", variable=self.tipo_var, value="PESSOAL_BRUNO").pack(side="left", padx=(0, 20))
+        ctk.CTkRadioButton(tipo_frame, text="Pessoal RR", variable=self.tipo_var, value="PESSOAL_RAFAEL").pack(side="left")
 
         # Cliente
         ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
@@ -488,11 +488,11 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         premios_frame.pack(fill="x", pady=(5, 18))
         premios_frame.grid_columnconfigure((0, 1), weight=1)
 
-        ctk.CTkLabel(premios_frame, text="Prémio Bruno (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 12))
+        ctk.CTkLabel(premios_frame, text="Prémio BA (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 12))
         self.premio_bruno_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=35)
         self.premio_bruno_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
 
-        ctk.CTkLabel(premios_frame, text="Prémio Rafael (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=1, sticky="w")
+        ctk.CTkLabel(premios_frame, text="Prémio RR (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=1, sticky="w")
         self.premio_rafael_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=35)
         self.premio_rafael_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
 
