@@ -77,6 +77,8 @@ class MainWindow(ctk.CTkFrame):
             self.show_saldos()
         elif menu_id == "projetos":
             self.show_projetos()
+        elif menu_id == "orcamentos":
+            self.show_orcamentos()
         elif menu_id == "despesas":
             self.show_despesas()
         elif menu_id == "boletins":
@@ -208,6 +210,34 @@ class MainWindow(ctk.CTkFrame):
         """Show equipamento screen"""
         from ui.screens.equipamento import EquipamentoScreen
         screen = EquipamentoScreen(self.content_frame, self.db_session)
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_orcamentos(self, filtro_tipo=None, filtro_status=None, filtro_cliente_id=None):
+        """
+        Show orcamentos screen
+
+        Args:
+            filtro_tipo: Optional tipo filter ("frontend", "backend")
+            filtro_status: Optional status filter ("rascunho", "enviado", "aprovado", "rejeitado")
+            filtro_cliente_id: Optional cliente ID to filter by
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("orcamentos")
+
+        from ui.screens.orcamentos import OrcamentosScreen
+        screen = OrcamentosScreen(
+            self.content_frame,
+            self.db_session,
+            filtro_tipo=filtro_tipo,
+            filtro_status=filtro_status,
+            filtro_cliente_id=filtro_cliente_id
+        )
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 

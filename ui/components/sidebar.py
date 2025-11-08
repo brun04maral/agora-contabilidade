@@ -79,6 +79,7 @@ class Sidebar(ctk.CTkFrame):
         menu_items_main = [
             ("saldos", "💰 Saldos Pessoais"),
             ("projetos", "📁 Projetos"),
+            ("orcamentos", "📋 Orçamentos"),
             ("despesas", "💸 Despesas"),
             ("boletins", "📄 Boletins"),
         ]
