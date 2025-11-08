@@ -7,7 +7,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "Facturas.Fornecedores@bondalti.com",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "Facturas.Fornecedores@bondalti.com\nInes.Ribeiro@bondalti.com (em CC)"
     },
     {
@@ -17,7 +17,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "geral@digitalazul.pt",
-      "angariacao": "Bruno Amaral",
+      "angariacao": "BA",
       "nota": "geral@digitalazul.pt"
     },
     {
@@ -27,7 +27,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": null,
-      "angariacao": "Bruno Amaral",
+      "angariacao": "BA",
       "nota": null
     },
     {
@@ -37,7 +37,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "docsuporte@gmail.com",
-      "angariacao": "Bruno Amaral",
+      "angariacao": "BA",
       "nota": "docsuporte@gmail.com"
     },
     {
@@ -47,7 +47,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "contabilidade@audiovisuais.com",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "contabilidade@audiovisuais.com ; orlandovedor@audiovisuais.com"
     },
     {
@@ -57,7 +57,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "efatura@biond.pt",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "efatura@biond.pt"
     },
     {
@@ -67,7 +67,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "miguel.osorio@conceptmedia.pt",
-      "angariacao": "Bruno Amaral",
+      "angariacao": "BA",
       "nota": "miguel.osorio@conceptmedia.pt"
     },
     {
@@ -77,7 +77,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "trosado@impresa.pt",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "trosado@impresa.pt\nimpresa.fornecedores@impresa.pt"
     },
     {
@@ -87,7 +87,7 @@
       "pais": "Emirados Árabes Unidos",
       "contacto": null,
       "email": "office@stagetechnology.ae",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "office@stagetechnology.ae"
     },
     {
@@ -97,7 +97,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "geral@boostsound.pt",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "geral@boostsound.pt"
     },
     {
@@ -107,7 +107,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "pedro.oliveira@sgs.com",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "pedro.oliveira@sgs.com"
     },
     {
@@ -117,7 +117,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "serenamelodia.pt@gmail.com",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "serenamelodia.pt@gmail.com"
     },
     {
@@ -127,7 +127,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "info@rhp.pt",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "info@rhp.pt"
     },
     {
@@ -137,7 +137,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "paulo.manquinho@europalco.pt",
-      "angariacao": "Bruno Amaral",
+      "angariacao": "BA",
       "nota": "paulo.manquinho@europalco.pt"
     },
     {
@@ -147,7 +147,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "avconnection.pt@gmail.com",
-      "angariacao": "Bruno Amaral",
+      "angariacao": "BA",
       "nota": "avconnection.pt@gmail.com"
     },
     {
@@ -157,7 +157,7 @@
       "pais": "Holanda",
       "contacto": null,
       "email": "invoices@oncue.pt",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "invoices@oncue.pt"
     },
     {
@@ -167,7 +167,7 @@
       "pais": "Portugal",
       "contacto": null,
       "email": "ana.paula@avk.pt",
-      "angariacao": "Rafael Reigota",
+      "angariacao": "RR",
       "nota": "ana.paula@avk.pt ; rui.campos@avk.pt"
     }
   ],
@@ -243,7 +243,7 @@
       "nota": "Sandra Henriques - Gestora de conta"
     },
     {
-      "nome": "Rafael Reigota",
+      "nome": "RR",
       "estatuto": "FREELANCER",
       "area": "VIDEO",
       "funcao": "Técnico de vídeo, Repórter de imagem, Operador de câmara, Editor de vídeo, Operador vMix, Operador PTZ",
@@ -257,7 +257,7 @@
       "nota": null
     },
     {
-      "nome": "Bruno Amaral",
+      "nome": "BA",
       "estatuto": "FREELANCER",
       "area": "VIDEO",
       "funcao": "Técnico de vídeo, Repórter de imagem, Operador de câmara, Editor de vídeo, Operador vMix, Operador PTZ",
@@ -1586,7 +1586,7 @@
     {
       "tipo": "PROJETO",
       "data": "2024-10-19",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0001",
       "descricao": "Link",
       "valor_sem_iva": 428.75,
@@ -1598,7 +1598,7 @@
     {
       "tipo": "PROJETO",
       "data": "2024-10-19",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0001",
       "descricao": "Link",
       "valor_sem_iva": 428.75,
@@ -1646,7 +1646,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-10-31",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 534.0,
@@ -1658,7 +1658,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-10-31",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 534.0,
@@ -1670,7 +1670,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-10-31",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 132.0,
@@ -1682,7 +1682,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-10-31",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 132.0,
@@ -1790,7 +1790,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-11-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 534.0,
@@ -1802,7 +1802,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-11-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 534.0,
@@ -1814,7 +1814,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-11-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 132.0,
@@ -1826,7 +1826,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-11-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 132.0,
@@ -1886,7 +1886,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-12-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 534.0,
@@ -1898,7 +1898,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-12-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 534.0,
@@ -1910,7 +1910,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-12-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 132.0,
@@ -1922,7 +1922,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2024-12-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 132.0,
@@ -1982,7 +1982,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-01-31",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 534.0,
@@ -1994,7 +1994,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-01-31",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 534.0,
@@ -2006,7 +2006,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-01-31",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 132.0,
@@ -2018,7 +2018,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-01-31",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 132.0,
@@ -2078,7 +2078,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 534.0,
@@ -2090,7 +2090,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 534.0,
@@ -2102,7 +2102,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 132.0,
@@ -2114,7 +2114,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 132.0,
@@ -2162,7 +2162,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-26",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 534.0,
@@ -2174,7 +2174,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-26",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 534.0,
@@ -2186,7 +2186,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-26",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 132.0,
@@ -2198,7 +2198,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-26",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 132.0,
@@ -2246,7 +2246,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-04-03",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0014",
       "descricao": "Montagem e operação PTZ",
       "valor_sem_iva": 300.0,
@@ -2258,7 +2258,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-04-04",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0014",
       "descricao": "Aluguer e operação Gimbal",
       "valor_sem_iva": 250.0,
@@ -2306,7 +2306,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 534.0,
@@ -2318,7 +2318,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 534.0,
@@ -2330,7 +2330,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 132.0,
@@ -2342,7 +2342,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 132.0,
@@ -2450,7 +2450,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-31",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 534.0,
@@ -2462,7 +2462,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-31",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 534.0,
@@ -2474,7 +2474,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-31",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 132.0,
@@ -2486,7 +2486,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-31",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 132.0,
@@ -2534,7 +2534,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-20",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0018",
       "descricao": "refeição em nome e por conta do cliente (paga com cartão pessoal)",
       "valor_sem_iva": 12.8,
@@ -2546,7 +2546,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-05-27",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0021",
       "descricao": "Link",
       "valor_sem_iva": 968.06,
@@ -2606,7 +2606,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-06-03",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0031",
       "descricao": "vMix para a Europalco",
       "valor_sem_iva": 380.0,
@@ -2654,7 +2654,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-06-26",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0032",
       "descricao": "vMix para a Europalco",
       "valor_sem_iva": 450.0,
@@ -2702,7 +2702,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-06-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0024",
       "descricao": "Livestream FEL",
       "valor_sem_iva": 220.0,
@@ -2714,7 +2714,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-06-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0024",
       "descricao": "Livestream FEL",
       "valor_sem_iva": 295.0,
@@ -2726,7 +2726,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 534.0,
@@ -2738,7 +2738,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 534.0,
@@ -2750,7 +2750,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 132.0,
@@ -2762,7 +2762,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 132.0,
@@ -2870,7 +2870,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-07-11",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0025",
       "descricao": "Livestream FEL",
       "valor_sem_iva": 70.0,
@@ -2882,7 +2882,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-07-11",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0025",
       "descricao": "Livestream FEL",
       "valor_sem_iva": 310.0,
@@ -2918,7 +2918,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-07-19",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0026",
       "descricao": "Livestream FEL",
       "valor_sem_iva": 70.0,
@@ -2930,7 +2930,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-07-19",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0026",
       "descricao": "Livestream FEL",
       "valor_sem_iva": 310.0,
@@ -2942,7 +2942,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 534.0,
@@ -2954,7 +2954,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 534.0,
@@ -2966,7 +2966,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 132.0,
@@ -2978,7 +2978,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 132.0,
@@ -3050,7 +3050,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 534.0,
@@ -3062,7 +3062,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 534.0,
@@ -3074,7 +3074,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 132.0,
@@ -3086,7 +3086,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 132.0,
@@ -3158,7 +3158,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-09-22",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0046",
       "descricao": "Comissão montagem LED Wall",
       "valor_sem_iva": 50.0,
@@ -3170,7 +3170,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-09-25",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0038",
       "descricao": "Livestream Expresso",
       "valor_sem_iva": 537.5,
@@ -3182,7 +3182,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-09-25",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0049",
       "descricao": "Livestream Factorial",
       "valor_sem_iva": 45.0,
@@ -3194,7 +3194,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-09-25",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0038",
       "descricao": "Livestream Expresso",
       "valor_sem_iva": 375.14,
@@ -3206,7 +3206,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-09-25",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0049",
       "descricao": "Livestream Factorial",
       "valor_sem_iva": 430.0,
@@ -3230,7 +3230,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 534.0,
@@ -3242,7 +3242,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 534.0,
@@ -3254,7 +3254,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 132.0,
@@ -3266,7 +3266,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 132.0,
@@ -3338,7 +3338,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-09-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0051",
       "descricao": "Deloitte",
       "valor_sem_iva": 325.0,
@@ -3482,7 +3482,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-10-24",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0054",
       "descricao": "Captação (1dia) + Edição APREN",
       "valor_sem_iva": 740.0,
@@ -3494,7 +3494,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-10-24",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0055",
       "descricao": "Equipamento MEO",
       "valor_sem_iva": 130.0,
@@ -3506,7 +3506,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-10-24",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0056",
       "descricao": "Equipamento + Edição NOS",
       "valor_sem_iva": 688.22,
@@ -3518,7 +3518,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-10-24",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": "#P0063",
       "descricao": "Captação (2dia) + Edição Portugal Digital Summit",
       "valor_sem_iva": 890.0,
@@ -3530,7 +3530,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-10-24",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0055",
       "descricao": "Edição MEO",
       "valor_sem_iva": 360.0,
@@ -3542,7 +3542,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-10-24",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0056",
       "descricao": "Montagens NOS",
       "valor_sem_iva": 175.0,
@@ -3626,7 +3626,7 @@
     {
       "tipo": "PROJETO",
       "data": "2025-10-27",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": "#P0065",
       "descricao": "Europalco CCE",
       "valor_sem_iva": 25.0,
@@ -3674,7 +3674,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 534.0,
@@ -3686,7 +3686,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 534.0,
@@ -3698,7 +3698,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 132.0,
@@ -3710,7 +3710,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-02-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "outubro 2024",
       "valor_sem_iva": 132.0,
@@ -3746,7 +3746,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-18",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 534.0,
@@ -3758,7 +3758,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-18",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 534.0,
@@ -3770,7 +3770,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-18",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 132.0,
@@ -3782,7 +3782,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-03-18",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "nov.2024",
       "valor_sem_iva": 132.0,
@@ -3818,7 +3818,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 534.0,
@@ -3830,7 +3830,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 534.0,
@@ -3842,7 +3842,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 132.0,
@@ -3854,7 +3854,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-04-30",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "dez.2024",
       "valor_sem_iva": 132.0,
@@ -3902,7 +3902,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-15",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 534.0,
@@ -3914,7 +3914,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-15",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 534.0,
@@ -3926,7 +3926,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-15",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 132.0,
@@ -3938,7 +3938,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-15",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "jan.2025",
       "valor_sem_iva": 132.0,
@@ -3986,7 +3986,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 534.0,
@@ -3998,7 +3998,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 534.0,
@@ -4010,7 +4010,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 132.0,
@@ -4022,7 +4022,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-05-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "FEV2025",
       "valor_sem_iva": 132.0,
@@ -4070,7 +4070,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-09",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 534.0,
@@ -4082,7 +4082,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-09",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 534.0,
@@ -4094,7 +4094,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-09",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 132.0,
@@ -4106,7 +4106,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-06-09",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAR2025",
       "valor_sem_iva": 132.0,
@@ -4154,7 +4154,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-01",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 534.0,
@@ -4166,7 +4166,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-01",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 534.0,
@@ -4178,7 +4178,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-01",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 132.0,
@@ -4190,7 +4190,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-01",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "ABR2025",
       "valor_sem_iva": 132.0,
@@ -4238,7 +4238,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 534.0,
@@ -4250,7 +4250,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 534.0,
@@ -4262,7 +4262,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 132.0,
@@ -4274,7 +4274,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "MAI2025",
       "valor_sem_iva": 132.0,
@@ -4322,7 +4322,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 534.0,
@@ -4334,7 +4334,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 534.0,
@@ -4346,7 +4346,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 132.0,
@@ -4358,7 +4358,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-07-04",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUN2025",
       "valor_sem_iva": 132.0,
@@ -4406,7 +4406,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-01",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 534.0,
@@ -4418,7 +4418,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-01",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 534.0,
@@ -4430,7 +4430,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-01",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 132.0,
@@ -4442,7 +4442,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-01",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "JUL2025",
       "valor_sem_iva": 132.0,
@@ -4490,7 +4490,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 534.0,
@@ -4502,7 +4502,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 534.0,
@@ -4514,7 +4514,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-28",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 132.0,
@@ -4526,7 +4526,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-08-28",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "AGO2025",
       "valor_sem_iva": 132.0,
@@ -4574,7 +4574,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-25",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 534.0,
@@ -4586,7 +4586,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-25",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 534.0,
@@ -4598,7 +4598,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-25",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 132.0,
@@ -4610,7 +4610,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-09-25",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "SET2025",
       "valor_sem_iva": 132.0,
@@ -4646,7 +4646,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-10-27",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "OUT2025",
       "valor_sem_iva": 534.0,
@@ -4658,7 +4658,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-10-27",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "OUT2025",
       "valor_sem_iva": 534.0,
@@ -4670,7 +4670,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-10-27",
-      "credor_nome": "Bruno Amaral",
+      "credor_nome": "BA",
       "projeto_descricao": null,
       "descricao": "OUT2025",
       "valor_sem_iva": 132.0,
@@ -4682,7 +4682,7 @@
     {
       "tipo": "FIXA_MENSAL",
       "data": "2025-10-27",
-      "credor_nome": "Rafael Reigota",
+      "credor_nome": "RR",
       "projeto_descricao": null,
       "descricao": "OUT2025",
       "valor_sem_iva": 132.0,
@@ -5037,6 +5037,6 @@
     }
   ],
   "mapeamento_explicacao": {
-    "descricao": "\nMAPEAMENTO FINAL VALIDADO:\n\nVALORES CONFIRMADOS (comparados com fórmulas Excel):\n✓ Projetos pessoais Bruno: €15040.00 (esperado €15,040.00)\n✓ Projetos pessoais Rafael: €11154.45 (esperado €11,154.45)\n✓ Prémios Bruno: €3111.25\n✓ Prémios Rafael: €6140.17\n✓ Boletins Bruno: €5215.36\n✓ Boletins Rafael: €4649.69\n\nREGRAS APLICADAS:\n\n1. PROJETOS PESSOAIS (33 registos):\n   - Critério: ESTADO='pessoal' (lowercase) + OWNER + DATA VENCIMENTO preenchida\n   - IMPORTANTE: Só incluídos se coluna H (DATA VENCIMENTO) tem valor\n   - Projetos \"pessoais\" sem data vencimento foram EXCLUÍDOS conforme fórmula Excel\n\n2. PRÉMIOS (26 registos):\n   - Extraídos de DESPESAS onde TIPO contém \"Prémio\" ou \"Comissão venda\"\n   - Separados por CREDOR (Bruno Amaral ou Rafael Reigota)\n\n3. BOLETINS (38 registos):\n   - Extraídos de DESPESAS onde TIPO contém \"Pessoal\" + keywords\n   - Keywords: \"Deslocação\", \"Per Diem PT\", \"Per Diem FORA\"\n   - Removidos da lista de despesas para evitar duplicação\n\nRESUMO:\n- 17 clientes\n- 37 fornecedores  \n- 61 projetos\n- 179 despesas\n- 38 boletins\n\n\n✅ ATUALIZAÇÃO FINAL (2025-10-28):\n==================================\nFIXAS MENSAIS corrigidas com ficheiro atualizado do Google Sheet.\n\nValor anterior (Excel desatualizado): €11,559.71/pessoa\nValor correto (Google Sheet atual): €12,315.71/pessoa\nDiferença: €756.00/pessoa\n\nRAZÃO: Ficheiro anterior não tinha despesas de OUTUBRO 2025:\n- #D000221: Contabilidade GMD + bizdocs (€180.00)\n- #D000222-225: Ordenados e Sub. Alimentação OUT2025 (€1,332.00)\n\nTotal de despesas mensais: 88 registos\nSoma total: €24,631.41\nPor pessoa: €12,315.71\n"
+    "descricao": "\nMAPEAMENTO FINAL VALIDADO:\n\nVALORES CONFIRMADOS (comparados com fórmulas Excel):\n✓ Projetos pessoais Bruno: €15040.00 (esperado €15,040.00)\n✓ Projetos pessoais Rafael: €11154.45 (esperado €11,154.45)\n✓ Prémios Bruno: €3111.25\n✓ Prémios Rafael: €6140.17\n✓ Boletins Bruno: €5215.36\n✓ Boletins Rafael: €4649.69\n\nREGRAS APLICADAS:\n\n1. PROJETOS PESSOAIS (33 registos):\n   - Critério: ESTADO='pessoal' (lowercase) + OWNER + DATA VENCIMENTO preenchida\n   - IMPORTANTE: Só incluídos se coluna H (DATA VENCIMENTO) tem valor\n   - Projetos \"pessoais\" sem data vencimento foram EXCLUÍDOS conforme fórmula Excel\n\n2. PRÉMIOS (26 registos):\n   - Extraídos de DESPESAS onde TIPO contém \"Prémio\" ou \"Comissão venda\"\n   - Separados por CREDOR (BA ou RR)\n\n3. BOLETINS (38 registos):\n   - Extraídos de DESPESAS onde TIPO contém \"Pessoal\" + keywords\n   - Keywords: \"Deslocação\", \"Per Diem PT\", \"Per Diem FORA\"\n   - Removidos da lista de despesas para evitar duplicação\n\nRESUMO:\n- 17 clientes\n- 37 fornecedores  \n- 61 projetos\n- 179 despesas\n- 38 boletins\n\n\n✅ ATUALIZAÇÃO FINAL (2025-10-28):\n==================================\nFIXAS MENSAIS corrigidas com ficheiro atualizado do Google Sheet.\n\nValor anterior (Excel desatualizado): €11,559.71/pessoa\nValor correto (Google Sheet atual): €12,315.71/pessoa\nDiferença: €756.00/pessoa\n\nRAZÃO: Ficheiro anterior não tinha despesas de OUTUBRO 2025:\n- #D000221: Contabilidade GMD + bizdocs (€180.00)\n- #D000222-225: Ordenados e Sub. Alimentação OUT2025 (€1,332.00)\n\nTotal de despesas mensais: 88 registos\nSoma total: €24,631.41\nPor pessoa: €12,315.71\n"
   }
 }

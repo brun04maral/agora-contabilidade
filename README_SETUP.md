@@ -39,8 +39,8 @@ python3 setup_database.py
 Isto vai:
 - Criar todas as tabelas
 - Criar utilizadores iniciais:
-  - **Bruno**: `bruno@agoramedia.pt` / senha: `bruno123`
-  - **Rafael**: `rafael@agoramedia.pt` / senha: `rafael123`
+  - **BA**: `bruno@agoramedia.pt` / senha: `bruno123`
+  - **RR**: `rafael@agoramedia.pt` / senha: `rafael123`
 
 ### 4️⃣ Executar aplicação
 
@@ -56,8 +56,8 @@ Após inicializar a base de dados, usa estas credenciais:
 
 | Utilizador | Email | Senha |
 |------------|-------|-------|
-| Bruno Amaral | bruno@agoramedia.pt | bruno123 |
-| Rafael Reigota | rafael@agoramedia.pt | rafael123 |
+| BA | bruno@agoramedia.pt | bruno123 |
+| RR | rafael@agoramedia.pt | rafael123 |
 
 ---
 

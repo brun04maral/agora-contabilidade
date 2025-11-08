@@ -501,7 +501,7 @@ class EquipamentoDialog(ctk.CTkToplevel):
         uso_col = ctk.CTkFrame(outros_frame, fg_color="transparent")
         uso_col.pack(side="left", fill="x", expand=True)
         ctk.CTkLabel(uso_col, text="Uso Pessoal", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.uso_pessoal_entry = ctk.CTkEntry(uso_col, placeholder_text="Bruno, Rafael, Empresa", height=35)
+        self.uso_pessoal_entry = ctk.CTkEntry(uso_col, placeholder_text="BA, RR, Empresa", height=35)
         self.uso_pessoal_entry.pack(fill="x")
 
         # URLs (Fatura e Foto)
