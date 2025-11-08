@@ -320,7 +320,7 @@ class EquipamentoDialog(ctk.CTkToplevel):
 
         # Window config
         self.title(kwargs.get("title", "Equipamento"))
-        self.geometry("600x700")
+        self.geometry("700x800")
         self.resizable(False, False)
 
         # Center window
@@ -366,10 +366,23 @@ class EquipamentoDialog(ctk.CTkToplevel):
         self.produto_entry = ctk.CTkEntry(scroll, height=35)
         self.produto_entry.pack(fill="x", pady=(0, 10))
 
+        # Tipo e Label (2 columns)
+        tipo_label_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        tipo_label_frame.pack(fill="x", pady=(10, 10))
+
         # Tipo
-        ctk.CTkLabel(scroll, text="Tipo", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.tipo_entry = ctk.CTkEntry(scroll, placeholder_text="Ex: Vídeo, Áudio, Iluminação", height=35)
-        self.tipo_entry.pack(fill="x", pady=(0, 10))
+        tipo_col = ctk.CTkFrame(tipo_label_frame, fg_color="transparent")
+        tipo_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(tipo_col, text="Tipo", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.tipo_entry = ctk.CTkEntry(tipo_col, placeholder_text="Ex: Vídeo, Áudio, Iluminação", height=35)
+        self.tipo_entry.pack(fill="x")
+
+        # Label
+        label_col = ctk.CTkFrame(tipo_label_frame, fg_color="transparent")
+        label_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(label_col, text="Label/Categoria", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.label_entry = ctk.CTkEntry(label_col, placeholder_text="Categoria", height=35)
+        self.label_entry.pack(fill="x")
 
         # Descrição
         ctk.CTkLabel(scroll, text="Descrição", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
@@ -416,10 +429,91 @@ class EquipamentoDialog(ctk.CTkToplevel):
         self.estado_entry = ctk.CTkEntry(estado_frame, placeholder_text="Novo, Usado, etc", height=35)
         self.estado_entry.pack(fill="x")
 
+        # Fornecedor e Data de Compra (2 columns)
+        fornecedor_data_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        fornecedor_data_frame.pack(fill="x", pady=(10, 10))
+
         # Fornecedor
-        ctk.CTkLabel(scroll, text="Fornecedor", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.fornecedor_entry = ctk.CTkEntry(scroll, height=35)
-        self.fornecedor_entry.pack(fill="x", pady=(0, 10))
+        fornecedor_col = ctk.CTkFrame(fornecedor_data_frame, fg_color="transparent")
+        fornecedor_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(fornecedor_col, text="Fornecedor", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.fornecedor_entry = ctk.CTkEntry(fornecedor_col, height=35)
+        self.fornecedor_entry.pack(fill="x")
+
+        # Data de Compra
+        data_col = ctk.CTkFrame(fornecedor_data_frame, fg_color="transparent")
+        data_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(data_col, text="Data Compra", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.data_compra_entry = ctk.CTkEntry(data_col, placeholder_text="AAAA-MM-DD", height=35)
+        self.data_compra_entry.pack(fill="x")
+
+        # Especificações técnicas (3 columns)
+        specs_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        specs_frame.pack(fill="x", pady=(10, 10))
+
+        # Número de Série
+        serie_col = ctk.CTkFrame(specs_frame, fg_color="transparent")
+        serie_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(serie_col, text="Nº Série", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.numero_serie_entry = ctk.CTkEntry(serie_col, height=35)
+        self.numero_serie_entry.pack(fill="x")
+
+        # MAC Address
+        mac_col = ctk.CTkFrame(specs_frame, fg_color="transparent")
+        mac_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(mac_col, text="MAC Address", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.mac_address_entry = ctk.CTkEntry(mac_col, height=35)
+        self.mac_address_entry.pack(fill="x")
+
+        # Referência
+        ref_col = ctk.CTkFrame(specs_frame, fg_color="transparent")
+        ref_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(ref_col, text="Referência", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.referencia_entry = ctk.CTkEntry(ref_col, height=35)
+        self.referencia_entry.pack(fill="x")
+
+        # Tamanho, Localização, Uso Pessoal (3 columns)
+        outros_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        outros_frame.pack(fill="x", pady=(10, 10))
+
+        # Tamanho
+        tamanho_col = ctk.CTkFrame(outros_frame, fg_color="transparent")
+        tamanho_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(tamanho_col, text="Tamanho", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.tamanho_entry = ctk.CTkEntry(tamanho_col, height=35)
+        self.tamanho_entry.pack(fill="x")
+
+        # Localização
+        loc_col = ctk.CTkFrame(outros_frame, fg_color="transparent")
+        loc_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(loc_col, text="Localização", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.localizacao_entry = ctk.CTkEntry(loc_col, height=35)
+        self.localizacao_entry.pack(fill="x")
+
+        # Uso Pessoal
+        uso_col = ctk.CTkFrame(outros_frame, fg_color="transparent")
+        uso_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(uso_col, text="Uso Pessoal", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.uso_pessoal_entry = ctk.CTkEntry(uso_col, placeholder_text="Bruno, Rafael, Empresa", height=35)
+        self.uso_pessoal_entry.pack(fill="x")
+
+        # URLs (Fatura e Foto)
+        urls_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        urls_frame.pack(fill="x", pady=(10, 10))
+
+        # Fatura URL
+        fatura_col = ctk.CTkFrame(urls_frame, fg_color="transparent")
+        fatura_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(fatura_col, text="URL Fatura", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.fatura_url_entry = ctk.CTkEntry(fatura_col, height=35)
+        self.fatura_url_entry.pack(fill="x")
+
+        # Foto URL
+        foto_col = ctk.CTkFrame(urls_frame, fg_color="transparent")
+        foto_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(foto_col, text="URL Foto", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.foto_url_entry = ctk.CTkEntry(foto_col, height=35)
+        self.foto_url_entry.pack(fill="x")
 
         # Nota
         ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
@@ -455,18 +549,42 @@ class EquipamentoDialog(ctk.CTkToplevel):
         if not self.equipamento:
             return
 
+        # Identificação
         self.produto_entry.insert(0, self.equipamento.produto or "")
         self.tipo_entry.insert(0, self.equipamento.tipo or "")
+        self.label_entry.insert(0, self.equipamento.label or "")
 
         if self.equipamento.descricao:
             self.descricao_entry.insert("1.0", self.equipamento.descricao)
 
+        # Valores
         self.valor_compra_entry.insert(0, str(float(self.equipamento.valor_compra or 0)))
         self.preco_aluguer_entry.insert(0, str(float(self.equipamento.preco_aluguer or 0)))
+
+        # Quantidade e Estado
         self.quantidade_entry.insert(0, str(self.equipamento.quantidade or 1))
         self.estado_entry.insert(0, self.equipamento.estado or "")
-        self.fornecedor_entry.insert(0, self.equipamento.fornecedor or "")
 
+        # Fornecedor e Data
+        self.fornecedor_entry.insert(0, self.equipamento.fornecedor or "")
+        if self.equipamento.data_compra:
+            self.data_compra_entry.insert(0, self.equipamento.data_compra.isoformat())
+
+        # Especificações técnicas
+        self.numero_serie_entry.insert(0, self.equipamento.numero_serie or "")
+        self.mac_address_entry.insert(0, self.equipamento.mac_address or "")
+        self.referencia_entry.insert(0, self.equipamento.referencia or "")
+
+        # Outros
+        self.tamanho_entry.insert(0, self.equipamento.tamanho or "")
+        self.localizacao_entry.insert(0, self.equipamento.localizacao or "")
+        self.uso_pessoal_entry.insert(0, self.equipamento.uso_pessoal or "")
+
+        # URLs
+        self.fatura_url_entry.insert(0, self.equipamento.fatura_url or "")
+        self.foto_url_entry.insert(0, self.equipamento.foto_url or "")
+
+        # Nota
         if self.equipamento.nota:
             self.nota_entry.insert("1.0", self.equipamento.nota)
 
@@ -487,16 +605,37 @@ class EquipamentoDialog(ctk.CTkToplevel):
             messagebox.showerror("Erro", "Valores numéricos inválidos")
             return
 
+        # Parse data de compra
+        data_compra = None
+        data_compra_str = self.data_compra_entry.get().strip()
+        if data_compra_str:
+            try:
+                from datetime import datetime
+                data_compra = datetime.strptime(data_compra_str, "%Y-%m-%d").date()
+            except ValueError:
+                messagebox.showerror("Erro", "Data inválida. Use formato AAAA-MM-DD")
+                return
+
         # Prepare data
         data = {
             "produto": produto,
             "tipo": self.tipo_entry.get().strip() or None,
+            "label": self.label_entry.get().strip() or None,
             "descricao": self.descricao_entry.get("1.0", "end-1c").strip() or None,
             "valor_compra": valor_compra,
             "preco_aluguer": preco_aluguer,
             "quantidade": quantidade,
             "estado": self.estado_entry.get().strip() or None,
             "fornecedor": self.fornecedor_entry.get().strip() or None,
+            "data_compra": data_compra,
+            "numero_serie": self.numero_serie_entry.get().strip() or None,
+            "mac_address": self.mac_address_entry.get().strip() or None,
+            "referencia": self.referencia_entry.get().strip() or None,
+            "tamanho": self.tamanho_entry.get().strip() or None,
+            "localizacao": self.localizacao_entry.get().strip() or None,
+            "uso_pessoal": self.uso_pessoal_entry.get().strip() or None,
+            "fatura_url": self.fatura_url_entry.get().strip() or None,
+            "foto_url": self.foto_url_entry.get().strip() or None,
             "nota": self.nota_entry.get("1.0", "end-1c").strip() or None,
         }
 
