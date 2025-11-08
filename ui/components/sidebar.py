@@ -67,18 +67,44 @@ class Sidebar(ctk.CTkFrame):
         version_label.pack()
 
         # Menu items
-        menu_items = [
+        # Grupo principal: Operações
+        menu_items_main = [
             ("dashboard", "📊 Dashboard"),
             ("saldos", "💰 Saldos Pessoais"),
             ("projetos", "📁 Projetos"),
             ("despesas", "💸 Despesas"),
             ("boletins", "📄 Boletins"),
-            ("relatorios", "📑 Relatórios"),
-            ("clientes", "👥 Clientes"),
-            ("fornecedores", "🏢 Fornecedores"),
         ]
 
-        for menu_id, menu_text in menu_items:
+        for menu_id, menu_text in menu_items_main:
+            btn = self.create_menu_button(menu_id, menu_text)
+            self.menu_buttons[menu_id] = btn
+
+        # Spacer entre grupos
+        spacer1 = ctk.CTkFrame(self, fg_color="transparent", height=15)
+        spacer1.pack(fill="x", pady=5)
+
+        # Grupo secundário: Cadastros
+        menu_items_cadastros = [
+            ("clientes", "👥 Clientes"),
+            ("fornecedores", "🏢 Fornecedores"),
+            ("equipamento", "💻 Equipamento"),
+        ]
+
+        for menu_id, menu_text in menu_items_cadastros:
+            btn = self.create_menu_button(menu_id, menu_text)
+            self.menu_buttons[menu_id] = btn
+
+        # Spacer entre grupos
+        spacer2 = ctk.CTkFrame(self, fg_color="transparent", height=15)
+        spacer2.pack(fill="x", pady=5)
+
+        # Grupo relatórios
+        menu_items_relatorios = [
+            ("relatorios", "📑 Relatórios"),
+        ]
+
+        for menu_id, menu_text in menu_items_relatorios:
             btn = self.create_menu_button(menu_id, menu_text)
             self.menu_buttons[menu_id] = btn
 
