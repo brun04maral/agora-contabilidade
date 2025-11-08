@@ -317,13 +317,18 @@ class OrcamentosScreen(ctk.CTkFrame):
         if dialog.orcamento_criado:
             self.carregar_orcamentos()
 
-    def editar_orcamento(self):
+    def editar_orcamento(self, data=None):
         """Edit selected orcamento"""
-        selected = self.table.get_selected_data()
-        if not selected or len(selected) != 1:
-            return
+        if data:
+            # Double click - data already provided
+            orcamento_id = data["id"]
+        else:
+            # Button click - get from selection
+            selected = self.table.get_selected_data()
+            if not selected or len(selected) != 1:
+                return
+            orcamento_id = selected[0]["id"]
 
-        orcamento_id = selected[0]["id"]
         orcamento = self.manager.obter_orcamento(orcamento_id)
 
         if not orcamento:
