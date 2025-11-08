@@ -187,7 +187,7 @@ class ClientesScreen(ctk.CTkFrame):
             {"key": "numero", "label": "Número", "width": 100},
             {"key": "nome", "label": "Nome", "width": 300},
             {"key": "nif", "label": "NIF", "width": 150},
-            {"key": "projetos_count", "label": "Projetos", "width": 100, "sortable": False},
+            {"key": "projetos_count", "label": "Projetos", "width": 100},
         ]
 
         self.table = DataTableV2(
