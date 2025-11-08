@@ -155,7 +155,7 @@ class DespesasScreen(ctk.CTkFrame):
 
         # Table
         columns = [
-            {'key': 'numero', 'label': 'Nº', 'width': 100, 'sortable': True},
+            {'key': 'numero', 'label': 'ID', 'width': 100, 'sortable': True},
             {'key': 'data', 'label': 'Data', 'width': 120, 'sortable': True},
             {'key': 'tipo', 'label': 'Tipo', 'width': 140, 'sortable': False},
             {'key': 'credor_nome', 'label': 'Credor', 'width': 160, 'sortable': True},

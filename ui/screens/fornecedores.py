@@ -190,7 +190,7 @@ class FornecedoresScreen(ctk.CTkFrame):
 
         # Create table
         columns = [
-            {"key": "numero", "label": "Número", "width": 100},
+            {"key": "numero", "label": "ID", "width": 100},
             {"key": "nome", "label": "Nome", "width": 250},
             {"key": "estatuto", "label": "Estatuto", "width": 120},
             {"key": "area", "label": "Área", "width": 150},

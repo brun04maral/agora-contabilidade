@@ -184,7 +184,7 @@ class ClientesScreen(ctk.CTkFrame):
 
         # Create table
         columns = [
-            {"key": "numero", "label": "Número", "width": 100},
+            {"key": "numero", "label": "ID", "width": 100},
             {"key": "nome", "label": "Nome", "width": 300},
             {"key": "nif", "label": "NIF", "width": 150},
             {"key": "projetos_count", "label": "Projetos", "width": 100},

@@ -197,7 +197,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
         # Table
         columns = [
-            {'key': 'numero', 'label': 'Nº', 'width': 80},
+            {'key': 'numero', 'label': 'ID', 'width': 80},
             {'key': 'tipo', 'label': 'Tipo', 'width': 140},
             {'key': 'cliente_nome', 'label': 'Cliente', 'width': 180},
             {'key': 'descricao', 'label': 'Descrição', 'width': 280, 'sortable': False},

@@ -155,7 +155,7 @@ class BoletinsScreen(ctk.CTkFrame):
 
         # Table
         columns = [
-            {'key': 'numero', 'label': 'Nº', 'width': 80, 'sortable': True},
+            {'key': 'numero', 'label': 'ID', 'width': 80, 'sortable': True},
             {'key': 'socio', 'label': 'Sócio', 'width': 120, 'sortable': True},
             {'key': 'data_emissao', 'label': 'Data Emissão', 'width': 120, 'sortable': True},
             {'key': 'valor_fmt', 'label': 'Valor', 'width': 110, 'sortable': True},
