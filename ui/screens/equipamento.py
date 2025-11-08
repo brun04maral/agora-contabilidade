@@ -235,14 +235,10 @@ class EquipamentoScreen(ctk.CTkFrame):
 
     def adicionar_equipamento(self):
         """Abre formulário para adicionar equipamento"""
-        dialog = EquipamentoDialog(
-            self,
-            self.manager,
-            title="Novo Equipamento"
-        )
+        dialog = EquipamentoDialog(self, self.manager)
         self.wait_window(dialog)
 
-        if dialog.result:
+        if dialog.equipamento_criado:
             self.carregar_equipamentos()
 
     def editar_equipamento_duplo_clique(self, row_data):
@@ -254,15 +250,10 @@ class EquipamentoScreen(ctk.CTkFrame):
             messagebox.showerror("Erro", "Equipamento não encontrado")
             return
 
-        dialog = EquipamentoDialog(
-            self,
-            self.manager,
-            equipamento=equipamento,
-            title="Editar Equipamento"
-        )
+        dialog = EquipamentoDialog(self, self.manager, equipamento=equipamento)
         self.wait_window(dialog)
 
-        if dialog.result:
+        if dialog.equipamento_atualizado:
             self.carregar_equipamentos()
 
     def editar_equipamento(self):
@@ -311,22 +302,30 @@ class EquipamentoScreen(ctk.CTkFrame):
 class EquipamentoDialog(ctk.CTkToplevel):
     """Dialog para criar/editar equipamento"""
 
-    def __init__(self, parent, manager: EquipamentoManager, equipamento: Optional[Equipamento] = None, **kwargs):
-        super().__init__(parent, **kwargs)
+    def __init__(self, parent, manager: EquipamentoManager, equipamento: Optional[Equipamento] = None):
+        super().__init__(parent)
 
         self.manager = manager
         self.equipamento = equipamento
-        self.result = False
+        self.equipamento_criado = False
+        self.equipamento_atualizado = False
 
         # Window config
-        self.title(kwargs.get("title", "Equipamento"))
+        self.title("Editar Equipamento" if equipamento else "Novo Equipamento")
         self.geometry("700x800")
         self.resizable(False, False)
 
-        # Center window
+        # Make modal
         self.transient(parent)
         self.grab_set()
 
+        # Center window
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (700 // 2)
+        y = (self.winfo_screenheight() // 2) - (800 // 2)
+        self.geometry(f"700x800+{x}+{y}")
+
+        # Create widgets
         self.create_widgets()
 
         # Load data if editing
@@ -337,11 +336,19 @@ class EquipamentoDialog(ctk.CTkToplevel):
         """Create dialog widgets"""
 
         # Main container
-        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame = ctk.CTkFrame(self)
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Scroll
-        scroll = ctk.CTkScrollableFrame(main_frame, fg_color="transparent")
+        # Title
+        title = ctk.CTkLabel(
+            main_frame,
+            text="✏️ Editar Equipamento" if self.equipamento else "➕ Novo Equipamento",
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
+        title.pack(pady=(0, 20))
+
+        # Scrollable form
+        scroll = ctk.CTkScrollableFrame(main_frame)
         scroll.pack(fill="both", expand=True)
 
         # Número (auto-generated or display)
@@ -521,8 +528,8 @@ class EquipamentoDialog(ctk.CTkToplevel):
         self.nota_entry.pack(fill="x", pady=(0, 10))
 
         # Buttons
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        button_frame.pack(fill="x", pady=(10, 0))
+        button_frame = ctk.CTkFrame(main_frame)
+        button_frame.pack(fill="x", pady=(20, 0))
 
         cancel_btn = ctk.CTkButton(
             button_frame,
@@ -643,12 +650,15 @@ class EquipamentoDialog(ctk.CTkToplevel):
         if self.equipamento:
             # Update
             sucesso, _, erro = self.manager.atualizar_equipamento(self.equipamento.id, **data)
+            if sucesso:
+                self.equipamento_atualizado = True
         else:
             # Create
             sucesso, _, erro = self.manager.criar_equipamento(numero=self.numero_value, **data)
+            if sucesso:
+                self.equipamento_criado = True
 
         if sucesso:
-            self.result = True
             messagebox.showinfo("Sucesso", "Equipamento guardado com sucesso")
             self.destroy()
         else:
