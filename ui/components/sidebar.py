@@ -4,7 +4,7 @@ Sidebar component - Menu de navegação lateral
 """
 import customtkinter as ctk
 from typing import Callable, Optional
-from assets.resources import get_logo
+from assets.resources import get_logo_with_fallback
 
 
 class Sidebar(ctk.CTkFrame):
@@ -40,8 +40,8 @@ class Sidebar(ctk.CTkFrame):
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
         logo_frame.pack(fill="x", padx=20, pady=(30, 40))
 
-        # Load logo SVG (escalável)
-        logo_image = get_logo("logo.svg", size=(100, 60))
+        # Load logo (SVG ou PNG pré-gerado)
+        logo_image = get_logo_with_fallback("logo", size=(100, 60), suffix="sidebar")
         if logo_image:
             logo_ctk = ctk.CTkImage(
                 light_image=logo_image,

@@ -117,6 +117,67 @@ def get_logo(svg_filename: str, size: Tuple[int, int] = (200, 100)) -> Optional[
         return None
 
 
+def get_logo_with_fallback(logo_name: str, size: Tuple[int, int], suffix: str = "") -> Optional[Image.Image]:
+    """
+    Carrega logo com fallback inteligente: SVG → PNG → None
+
+    Esta é a função RECOMENDADA para usar na aplicação.
+    Funciona em desenvolvimento (SVG) e produção Windows (PNG pré-gerado).
+
+    Args:
+        logo_name: Nome base do logo sem extensão (ex: "logo")
+        size: Tuplo (width, height) para o tamanho final
+        suffix: Sufixo opcional para identificar o tamanho (ex: "sidebar", "login")
+
+    Returns:
+        PIL.Image object ou None se nenhum logo for encontrado
+
+    Comportamento:
+        1. Tenta carregar SVG (se Cairo disponível)
+        2. Tenta carregar PNG pré-gerado (media/logos/{logo_name}_{suffix}.png)
+        3. Retorna None (UI usará fallback de texto)
+
+    Exemplo:
+        # Sidebar (tenta logo.svg → logo_sidebar.png → None)
+        logo = get_logo_with_fallback("logo", size=(100, 60), suffix="sidebar")
+
+        # Login (tenta logo.svg → logo_login.png → None)
+        logo = get_logo_with_fallback("logo", size=(313, 80), suffix="login")
+    """
+    # 1. Tentar SVG primeiro (desenvolvimento)
+    if CAIROSVG_AVAILABLE:
+        svg_logo = get_logo(f"{logo_name}.svg", size=size)
+        if svg_logo:
+            return svg_logo
+
+    # 2. Tentar PNG pré-gerado (produção/Windows)
+    if suffix:
+        png_filename = f"{logo_name}_{suffix}.png"
+    else:
+        png_filename = f"{logo_name}_{size[0]}x{size[1]}.png"
+
+    # Determinar caminho
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    png_path = os.path.join(base_path, "media", "logos", png_filename)
+
+    if os.path.exists(png_path):
+        try:
+            image = Image.open(png_path)
+            # Garantir que está no tamanho correto
+            if image.size != size:
+                image = image.resize(size, Image.Resampling.LANCZOS)
+            return image
+        except Exception as e:
+            pass  # Silenciar e seguir para fallback None
+
+    # 3. Fallback final: None (UI usará texto)
+    return None
+
+
 def get_icon(base64_string: str, size: Optional[Tuple[int, int]] = None) -> Optional[Image.Image]:
     """
     Descodifica um ícone Base64 e retorna como PIL.Image.

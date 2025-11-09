@@ -4,7 +4,7 @@ Login screen UI using CustomTkinter
 """
 import customtkinter as ctk
 from typing import Callable, Optional
-from assets.resources import get_logo
+from assets.resources import get_logo_with_fallback
 
 
 class LoginScreen(ctk.CTkFrame):
@@ -41,8 +41,8 @@ class LoginScreen(ctk.CTkFrame):
         login_container.grid(row=0, column=0, sticky="nsew")
         login_container.grid_columnconfigure(0, weight=1)
 
-        # Logo/Title (SVG escalável)
-        logo_image = get_logo("logo.svg", size=(313, 80))
+        # Logo/Title (SVG ou PNG pré-gerado)
+        logo_image = get_logo_with_fallback("logo", size=(313, 80), suffix="login")
         if logo_image:
             logo_ctk = ctk.CTkImage(
                 light_image=logo_image,
