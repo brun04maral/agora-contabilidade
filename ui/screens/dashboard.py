@@ -143,12 +143,22 @@ class DashboardScreen(ctk.CTkFrame):
         saldos_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         saldos_container.pack(fill="x", pady=(0, 35))
 
-        # BA card
-        self.bruno_card = self.create_saldo_card(saldos_container, "BA", "#4CAF50")
+        # BA card (clickable - navigates to Saldos)
+        self.bruno_card = self.create_saldo_card(
+            saldos_container,
+            "BA",
+            "#4CAF50",
+            on_click=lambda: self.navigate_to_saldos()
+        )
         self.bruno_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-        # RR card
-        self.rafael_card = self.create_saldo_card(saldos_container, "RR", "#2196F3")
+        # RR card (clickable - navigates to Saldos)
+        self.rafael_card = self.create_saldo_card(
+            saldos_container,
+            "RR",
+            "#2196F3",
+            on_click=lambda: self.navigate_to_saldos()
+        )
         self.rafael_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === PROJETOS ===
@@ -240,13 +250,25 @@ class DashboardScreen(ctk.CTkFrame):
         outros_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         outros_container.pack(fill="x", pady=(0, 35))
 
-        self.total_clientes_card = self.create_stat_card(outros_container, "Clientes", "0", "#3F51B5")
+        self.total_clientes_card = self.create_stat_card(
+            outros_container,
+            "Clientes",
+            "0",
+            "#3F51B5",
+            on_click=lambda: self.navigate_to_clientes()
+        )
         self.total_clientes_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-        self.total_fornecedores_card = self.create_stat_card(outros_container, "Fornecedores", "0", "#009688")
+        self.total_fornecedores_card = self.create_stat_card(
+            outros_container,
+            "Fornecedores",
+            "0",
+            "#009688",
+            on_click=lambda: self.navigate_to_fornecedores()
+        )
         self.total_fornecedores_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
-    def create_saldo_card(self, parent, nome: str, color: str) -> ctk.CTkFrame:
+    def create_saldo_card(self, parent, nome: str, color: str, on_click=None) -> ctk.CTkFrame:
         """
         Create saldo card
 
@@ -254,6 +276,7 @@ class DashboardScreen(ctk.CTkFrame):
             parent: Parent widget
             nome: Nome do sócio
             color: Card color
+            on_click: Optional callback when card is clicked
 
         Returns:
             Card frame
@@ -286,6 +309,34 @@ class DashboardScreen(ctk.CTkFrame):
 
         # Store reference to update later
         card.value_label = value_label
+
+        # Make clickable if callback provided
+        if on_click:
+            card.configure(cursor="hand2")
+
+            # Bind click events to card and all children
+            def handle_click(event):
+                on_click()
+
+            card.bind("<Button-1>", handle_click)
+            name_label.bind("<Button-1>", handle_click)
+            value_label.bind("<Button-1>", handle_click)
+
+            # Add hover effects
+            original_border = card.cget("border_color")
+
+            def on_enter(event):
+                card.configure(border_color=("#ffffff", "#ffffff"), border_width=3)
+
+            def on_leave(event):
+                card.configure(border_color=original_border, border_width=2)
+
+            card.bind("<Enter>", on_enter)
+            card.bind("<Leave>", on_leave)
+            name_label.bind("<Enter>", on_enter)
+            name_label.bind("<Leave>", on_leave)
+            value_label.bind("<Enter>", on_enter)
+            value_label.bind("<Leave>", on_leave)
 
         return card
 
@@ -391,6 +442,21 @@ class DashboardScreen(ctk.CTkFrame):
         """
         if self.main_window:
             self.main_window.show_boletins(filtro_estado=estado)
+
+    def navigate_to_saldos(self):
+        """Navigate to saldos pessoais screen"""
+        if self.main_window:
+            self.main_window.show_saldos()
+
+    def navigate_to_clientes(self):
+        """Navigate to clientes screen"""
+        if self.main_window:
+            self.main_window.show_clientes()
+
+    def navigate_to_fornecedores(self):
+        """Navigate to fornecedores screen"""
+        if self.main_window:
+            self.main_window.show_fornecedores()
 
     def carregar_dados(self):
         """Load and display all dashboard data"""
