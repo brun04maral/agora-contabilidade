@@ -81,6 +81,11 @@
 
 <!-- Ideias não comprometidas, para discussão -->
 
+- 💰 **Screen de Financeiro**
+  - Consulta de saldo bancário (integração/manual)
+  - Visualização de lucros (mensal/anual)
+  - Cálculo de impostos a pagar
+  - Previsões financeiras
 - 🔌 **Integração TOConline API**
   - Importar faturas emitidas automaticamente
   - Sincronizar clientes/fornecedores
