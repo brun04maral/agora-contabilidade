@@ -1,104 +1,105 @@
-# 💰 Agora Media - Sistema de Contabilidade
+# 🎬 Agora Media Contabilidade
 
-Sistema de gestão contabilística para a Agora Media Production, com foco especial no **cálculo de Saldos Pessoais** dos sócios.
+Sistema de gestão contabilística para Agora Media Production (BA + RR).
+
+---
+
+## 🚀 **FRASE MÁGICA** - Iniciar Nova Sessão Claude Code
+
+Quando abrires uma nova sessão no Claude Code, usa esta frase:
+
+```
+Lê memory/CURRENT_STATE.md e memory/TODO.md para contexto do projeto
+```
+
+Isto dá ao Claude contexto completo em **segundos**:
+- ✅ Estado atual (features implementadas)
+- ✅ Próximos passos e tarefas
+- ✅ Toda a informação necessária
+
+**Contexto adicional:** Consulta `/memory/` para arquitetura, decisões, schema, etc.
+
+---
 
 ## ⚙️ Requisitos do Sistema
 
-**Python:** 3.10-3.12 (testado e recomendado: Python 3.12)
+- **Python:** 3.12+ (recomendado)
+- **SO:** Windows, macOS, Linux
+- **Dependências:** Ver `requirements.txt`
 
-**Para verificar compatibilidade:**
-```bash
-python check_python_version.py
-```
+## ✨ Funcionalidades (Todas Completas ✅)
 
-**Windows:** Consulte [WINDOWS_SETUP.md](WINDOWS_SETUP.md) para instruções detalhadas
+### 💰 Saldos Pessoais (CORE)
+- Cálculo automático 50/50
+- Visualização em cards lado a lado
+- Breakdown detalhado (INs/OUTs)
 
-## ✨ Funcionalidades Principais
+### 📊 Gestão Completa
+- ✅ **Dashboard** - Visão geral do sistema
+- ✅ **Projetos** - Gestão com prémios individuais
+- ✅ **Orçamentos** - Versões e aprovações
+- ✅ **Despesas** - Fixas e variáveis
+- ✅ **Boletins** - RVs com cálculos automáticos
+- ✅ **Clientes** - Base de dados completa
+- ✅ **Fornecedores** - Base de dados completa
+- ✅ **Equipamento** - Inventário
+- ✅ **Relatórios** - Exportação Excel
 
-### 🎯 Saldos Pessoais (CORE do Sistema)
-- **Cálculo automático** dos saldos de cada sócio
-- **INs (Entradas)**: Projetos pessoais + Prémios de projetos da empresa
-- **OUTs (Saídas)**: Despesas fixas ÷ 2 + Boletins emitidos + Despesas pessoais
-- **Sugestão automática** de valor de boletim para zerar saldo
-- **Visualização clara** em cards lado a lado
-
-### 📊 Outras Funcionalidades
-- ✅ Gestão de Projetos (Empresa / Pessoal Bruno / Pessoal Rafael)
-- ✅ Gestão de Despesas (Fixas / Pessoais / Equipamento)
-- ✅ Emissão e controlo de Boletins
-- ✅ Base de dados de Clientes
-- ✅ Base de dados de Fornecedores
-- 🔄 Dashboard (em desenvolvimento)
-- 🔄 Relatórios e análises (em desenvolvimento)
+### 🎨 Interface
+- Ícones PNG profissionais (Base64)
+- Logos de alta qualidade
+- CustomTkinter moderno
 
 ## 🚀 Setup Rápido
 
-### 1. Instalar Dependências
-
 ```bash
+# 1. Criar ambiente virtual (recomendado)
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# 2. Instalar dependências
 pip install -r requirements.txt
-```
 
-### 2. Configurar Base de Dados
+# 3. Configurar base de dados
+alembic upgrade head
 
-**Opção A: SQLite (Local - para desenvolvimento)**
-```bash
-# Já está configurado no .env por defeito
-python3 setup_database.py
-```
+# 4. (Opcional) Dados de teste
+python -c "from database.seed import seed_database; seed_database()"
 
-**Opção B: Supabase (Cloud - para produção)**
-```bash
-# Editar .env e descomentar a linha do PostgreSQL
-# DATABASE_URL=postgresql://...
-python3 setup_database.py
-```
-
-### 3. Executar Aplicação
-
-```bash
+# 5. Executar
 python main.py
 ```
 
-### 4. Login
-
-Use uma das contas criadas automaticamente:
-- **Bruno**: `bruno@agoramedia.pt` / `bruno123`
-- **Rafael**: `rafael@agoramedia.pt` / `rafael123`
+**Detalhes completos:** Consulta `memory/DEV_SETUP.md`
 
 ## 📂 Estrutura do Projeto
 
 ```
 agora-contabilidade/
-├── main.py                 # Ponto de entrada
-├── setup_database.py       # Script de setup da BD
-├── test_saldos.py         # Testes da lógica de saldos
+├── main.py              # Entry point
+├── agora_media.db       # SQLite (gitignored)
 │
-├── database/
-│   ├── models/            # Modelos SQLAlchemy
-│   │   ├── user.py
-│   │   ├── cliente.py
-│   │   ├── fornecedor.py
-│   │   ├── projeto.py     # ⭐ Com tipos: EMPRESA/PESSOAL_BRUNO/PESSOAL_RAFAEL
-│   │   ├── despesa.py     # ⭐ Com tipos: FIXA_MENSAL/PESSOAL_X/EQUIPAMENTO
-│   │   ├── boletim.py     # ⭐ Desconta ao ser emitido
-│   │   └── equipamento.py
-│   └── migrations/        # Scripts de migração
+├── database/            # Camada de dados
+│   ├── models/         # SQLAlchemy models
+│   └── migrations/     # Alembic migrations
 │
-├── logic/
-│   ├── auth.py           # Autenticação JWT
-│   └── saldos.py         # ⭐⭐⭐ LÓGICA CORE - Cálculo de saldos
+├── logic/              # Lógica de negócio
+│   ├── saldos.py      # ⭐ CORE - Cálculo 50/50
+│   └── ...            # Outros managers
 │
-├── ui/
-│   ├── main_window.py    # Janela principal com sidebar
-│   ├── components/
-│   │   └── sidebar.py    # Menu lateral
-│   └── screens/
-│       ├── login.py      # Tela de login
-│       └── saldos.py     # ⭐ Tela de Saldos Pessoais
+├── ui/                 # Interface gráfica
+│   ├── screens/       # 10 screens principais
+│   └── components/    # Componentes reutilizáveis
 │
-└── utils/
-    └── session.py        # Gestão de sessões
+├── assets/            # Ícones Base64
+├── media/             # Logos PNG
+│
+└── memory/            # 🧠 Documentação dev
+    ├── CURRENT_STATE.md  ⭐ COMEÇA AQUI!
+    ├── TODO.md
+    ├── ARCHITECTURE.md
+    └── ...
 ```
 
 ## 💡 Como Funciona o Cálculo de Saldos
@@ -156,46 +157,73 @@ Saldo = €2.000 - €775 = €1.225
 
 ## 🎨 Stack Tecnológica
 
-- **Interface**: CustomTkinter (moderna e responsiva)
-- **Base de Dados**: PostgreSQL (Supabase) ou SQLite
-- **ORM**: SQLAlchemy
-- **Autenticação**: JWT + bcrypt
-- **Python**: 3.11+
+- **Interface:** CustomTkinter
+- **Base de Dados:** SQLite
+- **ORM:** SQLAlchemy + Alembic
+- **Python:** 3.12+
+- **Exportação:** openpyxl (Excel)
 
 ## 📝 Próximos Passos
 
-- [ ] Tela de gestão de Projetos (CRUD completo)
-- [ ] Tela de gestão de Despesas (CRUD completo)
-- [ ] Tela de gestão de Boletins
-- [ ] Dashboard com indicadores
-- [ ] Relatórios e gráficos
-- [ ] Histórico mensal de saldos
-- [ ] Exportar para Excel
-- [ ] Integração TOConline API
-- [ ] Dark/Light theme toggle
+Ver `memory/TODO.md` para lista completa. Destaques:
+- [ ] Testes automatizados
+- [ ] Build para Windows (PyInstaller)
+- [ ] Backup automático da BD
+- [ ] Integração TOConline API (futuro)
 
-## 🆘 Resolução de Problemas
+## 🔧 Comandos Úteis
+
+### Base de Dados
+```bash
+# Ver estado migrations
+alembic current
+
+# Aplicar migrations
+alembic upgrade head
+
+# Criar nova migration
+alembic revision --autogenerate -m "descrição"
+
+# Reset completo (dev)
+rm agora_media.db
+alembic upgrade head
+```
+
+### Git
+```bash
+git status
+git add .
+git commit -m "mensagem"
+git push
+```
+
+## 🆘 Troubleshooting
 
 ### Erro: "No module named..."
 ```bash
 pip install -r requirements.txt
 ```
 
-### Erro: Base de dados não conecta
-Verifique o `.env` e as credenciais do Supabase.
+### DB locked
+Fecha todas as instâncias da app e remove `.db-journal`
 
-### Resetar base de dados
-```bash
-rm agora_media.db  # Se usando SQLite
-python3 setup_database.py
-```
+### Logos não aparecem
+Verifica `media/logos/*.png` - devem existir 4 ficheiros
 
-## 📞 Suporte
+**Mais ajuda:** Consulta `memory/DEV_SETUP.md`
 
-Para dúvidas ou problemas:
-- Bruno Amaral: bruno@agoramedia.pt
-- Rafael Reigota: rafael@agoramedia.pt
+---
+
+## 📚 Documentação Completa
+
+Toda a documentação técnica está em `/memory/`:
+- `CURRENT_STATE.md` ⭐ - Estado atual
+- `ARCHITECTURE.md` - Como funciona
+- `DECISIONS.md` - Porquê fizemos assim
+- `DATABASE_SCHEMA.md` - Estrutura da BD
+- `DEV_SETUP.md` - Setup detalhado
 
 ---
 
 **© 2025 Agora Media Production**
+**Status:** ✅ Produção Ready
