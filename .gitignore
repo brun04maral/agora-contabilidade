@@ -184,3 +184,6 @@ cython_debug/
 
 # NOTA: agora_media.db ESTÁ NO GIT para facilitar sincronização
 # A base de dados é pequena e só tem 2 utilizadores
+
+# Preview files (temporary)
+color_preview.html
