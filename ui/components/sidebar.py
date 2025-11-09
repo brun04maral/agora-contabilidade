@@ -17,6 +17,7 @@ from assets.resources import (
     FORNECEDORES,
     EQUIPAMENTO,
     RELATORIOS,
+    INFO,
 )
 
 
@@ -63,9 +64,9 @@ class Sidebar(ctk.CTkFrame):
     def create_widgets(self):
         """Create sidebar widgets"""
 
-        # Logo/Title
+        # Logo/Title (FIXED - stays at top)
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
-        logo_frame.pack(fill="x", padx=20, pady=(30, 40))
+        logo_frame.pack(fill="x", padx=20, pady=(30, 20))
 
         # Load logo (SVG ou PNG pré-gerado)
         logo_image = get_logo_with_fallback("logo", size=(100, 60), suffix="sidebar")
@@ -99,13 +100,22 @@ class Sidebar(ctk.CTkFrame):
         )
         version_label.pack()
 
+        # SCROLLABLE Menu Container
+        menu_scroll = ctk.CTkScrollableFrame(
+            self,
+            fg_color="transparent",
+            scrollbar_button_color=("#C0C0C0", "#3a3a3a"),
+            scrollbar_button_hover_color=("#A0A0A0", "#4a4a4a")
+        )
+        menu_scroll.pack(fill="both", expand=True, padx=0, pady=(10, 10))
+
         # Menu items
         # Dashboard (separado)
-        btn = self.create_menu_button("dashboard", "Dashboard")
+        btn = self.create_menu_button(menu_scroll, "dashboard", "Dashboard")
         self.menu_buttons["dashboard"] = btn
 
         # Spacer após Dashboard
-        spacer0 = ctk.CTkFrame(self, fg_color="transparent", height=15)
+        spacer0 = ctk.CTkFrame(menu_scroll, fg_color="transparent", height=15)
         spacer0.pack(fill="x", pady=5)
 
         # Grupo principal: Operações
@@ -118,11 +128,11 @@ class Sidebar(ctk.CTkFrame):
         ]
 
         for menu_id, menu_text in menu_items_main:
-            btn = self.create_menu_button(menu_id, menu_text)
+            btn = self.create_menu_button(menu_scroll, menu_id, menu_text)
             self.menu_buttons[menu_id] = btn
 
         # Spacer entre grupos
-        spacer1 = ctk.CTkFrame(self, fg_color="transparent", height=15)
+        spacer1 = ctk.CTkFrame(menu_scroll, fg_color="transparent", height=15)
         spacer1.pack(fill="x", pady=5)
 
         # Grupo secundário: Cadastros
@@ -133,11 +143,11 @@ class Sidebar(ctk.CTkFrame):
         ]
 
         for menu_id, menu_text in menu_items_cadastros:
-            btn = self.create_menu_button(menu_id, menu_text)
+            btn = self.create_menu_button(menu_scroll, menu_id, menu_text)
             self.menu_buttons[menu_id] = btn
 
         # Spacer entre grupos
-        spacer2 = ctk.CTkFrame(self, fg_color="transparent", height=15)
+        spacer2 = ctk.CTkFrame(menu_scroll, fg_color="transparent", height=15)
         spacer2.pack(fill="x", pady=5)
 
         # Grupo relatórios
@@ -146,25 +156,46 @@ class Sidebar(ctk.CTkFrame):
         ]
 
         for menu_id, menu_text in menu_items_relatorios:
-            btn = self.create_menu_button(menu_id, menu_text)
+            btn = self.create_menu_button(menu_scroll, menu_id, menu_text)
             self.menu_buttons[menu_id] = btn
 
-        # Spacer
-        spacer = ctk.CTkFrame(self, fg_color="transparent", height=20)
-        spacer.pack(fill="both", expand=True)
+        # FIXED Bottom Section (Info & Logout - outside scroll)
+        # Separator line
+        separator = ctk.CTkFrame(self, fg_color=("#C0C0C0", "#3a3a3a"), height=1)
+        separator.pack(fill="x", padx=10, pady=(5, 5))
 
-        # Settings/Logout at bottom
-        settings_btn = ctk.CTkButton(
-            self,
-            text="⚙️ Definições",
-            command=lambda: self.select_menu("settings"),
-            fg_color="transparent",
-            hover_color=("#C0C0C0", "#2a2a2a"),
-            anchor="w",
-            height=40,
-            font=ctk.CTkFont(size=13)
-        )
-        settings_btn.pack(fill="x", padx=10, pady=(5, 5))
+        # Info button with icon
+        info_icon_pil = get_icon(INFO, size=(20, 20))
+        if info_icon_pil:
+            info_icon_ctk = ctk.CTkImage(
+                light_image=info_icon_pil,
+                dark_image=info_icon_pil,
+                size=(20, 20)
+            )
+            info_btn = ctk.CTkButton(
+                self,
+                text=" Info",
+                image=info_icon_ctk,
+                compound="left",
+                command=lambda: self.select_menu("info"),
+                fg_color="transparent",
+                hover_color=("#C0C0C0", "#2a2a2a"),
+                anchor="w",
+                height=40,
+                font=ctk.CTkFont(size=13)
+            )
+        else:
+            info_btn = ctk.CTkButton(
+                self,
+                text="ℹ️ Info",
+                command=lambda: self.select_menu("info"),
+                fg_color="transparent",
+                hover_color=("#C0C0C0", "#2a2a2a"),
+                anchor="w",
+                height=40,
+                font=ctk.CTkFont(size=13)
+            )
+        info_btn.pack(fill="x", padx=10, pady=(5, 5))
 
         logout_btn = ctk.CTkButton(
             self,
@@ -181,11 +212,12 @@ class Sidebar(ctk.CTkFrame):
         # Select dashboard by default
         self.select_menu("saldos")
 
-    def create_menu_button(self, menu_id: str, text: str) -> ctk.CTkButton:
+    def create_menu_button(self, parent, menu_id: str, text: str) -> ctk.CTkButton:
         """
         Create a menu button with icon
 
         Args:
+            parent: Parent widget (usually menu_scroll)
             menu_id: Menu identifier
             text: Button text
 
@@ -196,17 +228,17 @@ class Sidebar(ctk.CTkFrame):
         icon_image = None
         if menu_id in self.MENU_ICONS:
             icon_base64 = self.MENU_ICONS[menu_id]
-            icon_pil = get_icon(icon_base64, size=(20, 20))
+            icon_pil = get_icon(icon_base64, size=(27, 27))
             if icon_pil:
                 icon_image = ctk.CTkImage(
                     light_image=icon_pil,
                     dark_image=icon_pil,
-                    size=(20, 20)
+                    size=(27, 27)
                 )
 
         # Criar botão
         btn = ctk.CTkButton(
-            self,
+            parent,
             text=text,
             image=icon_image if icon_image else None,
             compound="left" if icon_image else "none",

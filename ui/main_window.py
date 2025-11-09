@@ -91,8 +91,8 @@ class MainWindow(ctk.CTkFrame):
             self.show_fornecedores()
         elif menu_id == "equipamento":
             self.show_equipamento()
-        elif menu_id == "settings":
-            self.show_settings()
+        elif menu_id == "info":
+            self.show_info()
         elif menu_id == "logout":
             self.handle_logout()
 
@@ -241,49 +241,11 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_settings(self):
-        """Show settings screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+    def show_info(self):
+        """Show info screen"""
+        from ui.screens.info import InfoScreen
+        screen = InfoScreen(self.content_frame)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        # Header
-        header_frame = ctk.CTkFrame(screen, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
-
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="⚙️ Definições",
-            font=ctk.CTkFont(size=28, weight="bold")
-        )
-        title_label.pack(anchor="w")
-
-        # User info
-        info_frame = ctk.CTkFrame(screen)
-        info_frame.pack(fill="x", padx=30, pady=20)
-
-        user_label = ctk.CTkLabel(
-            info_frame,
-            text=f"Utilizador: {self.user_data.get('name', 'N/A')}",
-            font=ctk.CTkFont(size=16)
-        )
-        user_label.pack(anchor="w", padx=20, pady=(20, 5))
-
-        email_label = ctk.CTkLabel(
-            info_frame,
-            text=f"Email: {self.user_data.get('email', 'N/A')}",
-            font=ctk.CTkFont(size=14),
-            text_color="gray"
-        )
-        email_label.pack(anchor="w", padx=20, pady=(0, 5))
-
-        role_label = ctk.CTkLabel(
-            info_frame,
-            text=f"Função: {self.user_data.get('role', 'N/A')}",
-            font=ctk.CTkFont(size=14),
-            text_color="gray"
-        )
-        role_label.pack(anchor="w", padx=20, pady=(0, 20))
-
         self.current_screen = screen
 
     def handle_logout(self):
