@@ -51,6 +51,10 @@
 
 ### 🟢 Baixa Prioridade (Nice-to-have)
 
+- [ ] 🔄 Botão de atualização na tela Info
+  - Check de atualizações automático
+  - Download e instalação de novas versões
+  - Notificação quando nova versão disponível
 - [ ] 🎨 Temas (Dark/Light mode)
   - Toggle no menu de definições
   - Persistir preferência do utilizador
@@ -104,6 +108,24 @@
 ## ✅ Concluído Recentemente
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
+
+- [x] 🎨 **09/11** - Melhorias na Sidebar
+  - Scroll vertical adicionado (CTkScrollableFrame)
+  - Ícones aumentados de 20x20 para 27x27 pixels
+  - "Definições" renomeado para "Info" com ícone PNG
+  - Botões Info e Sair fixos no fundo
+  - Separador visual antes da secção fixa
+
+- [x] ℹ️ **09/11** - Nova tela Info
+  - Criado ui/screens/info.py
+  - Versão: v0.0.1
+  - Créditos: "Desenvolvido por Bruno Amaral para Agora Media Production"
+  - Layout centralizado e profissional
+  - Preparado para botão "Atualizar" no futuro
+
+- [x] 🎨 **09/11** - Dashboard com ícones PNG nos títulos de secções
+  - Método create_section_title() reutilizável
+  - 5 secções com ícones: Saldos, Projetos, Despesas, Boletins, Clientes
 
 - [x] 🗂️ **09/11** - Organizar documentação histórica em `memory/archive/`
   - Criada estrutura: importacao/, setup_antigo/, migrations_docs/, problemas/

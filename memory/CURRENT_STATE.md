@@ -8,13 +8,14 @@
 ## ✅ Features Completas e Funcionais
 
 ### 🎨 Sistema de Assets e Ícones (COMPLETO)
-- ✅ Ícones PNG Base64 embutidos no código
+- ✅ Ícones PNG Base64 embutidos no código (11 ícones disponíveis)
 - ✅ Sistema de fallback: SVG → PNG → Emoji
 - ✅ Logos PNG de alta qualidade fornecidos manualmente (71KB, 156KB)
 - ✅ Ícones aplicados em:
-  - Sidebar (10 menus)
-  - Títulos de todas as screens (10 screens)
-- ✅ Documentação em `BUILD_ASSETS_README.md`
+  - Sidebar (10 menus + Info) - 27x27 pixels
+  - Títulos de todas as screens (10 screens) - 22x22 pixels
+  - Dashboard com ícones nas secções (5 secções)
+- ✅ Documentação em `memory/ASSET_SYSTEM.md`
 
 ### 💾 Sistema de Base de Dados (COMPLETO)
 - ✅ SQLAlchemy ORM com SQLite
@@ -25,8 +26,8 @@
 
 ### 🖥️ Interface Gráfica (COMPLETO)
 - ✅ CustomTkinter (tema moderno)
-- ✅ 10 screens funcionais:
-  - Dashboard
+- ✅ 10 screens funcionais + Info screen:
+  - Dashboard (com ícones nas secções)
   - Saldos Pessoais (CORE)
   - Projetos
   - Orçamentos
@@ -36,8 +37,14 @@
   - Fornecedores
   - Equipamento
   - Relatórios
+  - Info (versão v0.0.1, créditos)
 - ✅ Componentes reutilizáveis (DataTableV2, forms)
-- ✅ Navegação por sidebar
+- ✅ Sidebar com scroll vertical
+  - Logo fixo no topo
+  - Menus scrollable (27x27 icons)
+  - Info e Sair fixos no fundo
+  - Separador visual
+- ✅ Navegação intuitiva e profissional
 
 ### 💰 Lógica de Negócio (COMPLETO)
 - ✅ Cálculo de saldos pessoais (50/50)
