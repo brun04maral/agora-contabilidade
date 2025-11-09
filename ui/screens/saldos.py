@@ -7,6 +7,7 @@ from typing import Callable, Optional
 from sqlalchemy.orm import Session
 from logic.saldos import SaldosCalculator
 from database.models import Socio
+from assets.resources import get_icon, SALDOSPESSOAIS
 
 
 class SaldosScreen(ctk.CTkFrame):
@@ -43,11 +44,27 @@ class SaldosScreen(ctk.CTkFrame):
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
         header_frame.pack(fill="x", padx=30, pady=(30, 20))
 
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="💰 Saldos Pessoais",
-            font=ctk.CTkFont(size=28, weight="bold")
-        )
+        # Title with PNG icon
+        icon_pil = get_icon(SALDOSPESSOAIS, size=(28, 28))
+        if icon_pil:
+            icon_ctk = ctk.CTkImage(
+                light_image=icon_pil,
+                dark_image=icon_pil,
+                size=(28, 28)
+            )
+            title_label = ctk.CTkLabel(
+                header_frame,
+                image=icon_ctk,
+                text=" Saldos Pessoais",
+                compound="left",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
+        else:
+            title_label = ctk.CTkLabel(
+                header_frame,
+                text="💰 Saldos Pessoais",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
         title_label.pack(side="left")
 
         # Refresh button

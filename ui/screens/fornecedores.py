@@ -11,6 +11,7 @@ from database.models import Fornecedor, EstatutoFornecedor
 from datetime import datetime
 from tkinter import messagebox
 import csv
+from assets.resources import get_icon, FORNECEDORES
 
 
 class FornecedoresScreen(ctk.CTkFrame):
@@ -47,11 +48,27 @@ class FornecedoresScreen(ctk.CTkFrame):
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
         header_frame.pack(fill="x", padx=30, pady=(30, 20))
 
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="🏢 Fornecedores",
-            font=ctk.CTkFont(size=28, weight="bold")
-        )
+        # Title with PNG icon
+        icon_pil = get_icon(FORNECEDORES, size=(28, 28))
+        if icon_pil:
+            icon_ctk = ctk.CTkImage(
+                light_image=icon_pil,
+                dark_image=icon_pil,
+                size=(28, 28)
+            )
+            title_label = ctk.CTkLabel(
+                header_frame,
+                image=icon_ctk,
+                text=" Fornecedores",
+                compound="left",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
+        else:
+            title_label = ctk.CTkLabel(
+                header_frame,
+                text="🏢 Fornecedores",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
         title_label.pack(side="left")
 
         # Buttons
