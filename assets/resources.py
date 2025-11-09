@@ -34,6 +34,12 @@ EXEMPLOS DE USO:
 COMPATIBILIDADE PYINSTALLER:
     - Logos SVG: Adicionar --add-data "media/logos;media/logos" ao comando PyInstaller
     - Ícones Base64: Funcionam automaticamente sem configuração extra
+
+NOTA SOBRE WINDOWS:
+    - No Windows, logos SVG requerem a biblioteca Cairo nativa (DLL)
+    - Se Cairo não estiver disponível, a aplicação usará fallback de texto automaticamente
+    - Para instalar Cairo no Windows: consulte WINDOWS_CAIRO.md
+    - Ícones Base64 funcionam em todos os sistemas sem dependências extras
 """
 
 import os
@@ -46,10 +52,14 @@ from PIL import Image
 try:
     import cairosvg
     CAIROSVG_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError) as e:
     CAIROSVG_AVAILABLE = False
-    print("⚠️  AVISO: cairosvg não instalado. Logos SVG não estarão disponíveis.")
-    print("   Instale com: pip install cairosvg")
+    if isinstance(e, OSError):
+        # Cairo biblioteca nativa não está instalada (comum no Windows)
+        pass  # Silenciar - mostraremos aviso apenas quando tentar usar
+    else:
+        print("⚠️  AVISO: cairosvg não instalado. Logos SVG não estarão disponíveis.")
+        print("   Instale com: pip install cairosvg")
 
 
 # =============================================================================
@@ -73,7 +83,7 @@ def get_logo(svg_filename: str, size: Tuple[int, int] = (200, 100)) -> Optional[
             ctk_image = ctk.CTkImage(light_image=logo, size=(300, 150))
     """
     if not CAIROSVG_AVAILABLE:
-        print(f"❌ Erro: cairosvg não disponível. Não é possível carregar '{svg_filename}'")
+        # Silenciar - fallback será usado automaticamente
         return None
 
     # Determinar o caminho correto (dev vs PyInstaller)
