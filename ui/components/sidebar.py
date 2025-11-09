@@ -91,15 +91,6 @@ class Sidebar(ctk.CTkFrame):
             )
             logo_label.pack(pady=(0, 10))
 
-        # Subtitle
-        version_label = ctk.CTkLabel(
-            logo_frame,
-            text="Contabilidade",
-            font=ctk.CTkFont(size=10),
-            text_color="gray"
-        )
-        version_label.pack()
-
         # SCROLLABLE Menu Container
         menu_scroll = ctk.CTkScrollableFrame(
             self,

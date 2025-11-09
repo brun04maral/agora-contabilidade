@@ -25,7 +25,7 @@ class App(ctk.CTk):
         super().__init__()
 
         # Configurar janela
-        self.title(os.getenv("APP_NAME", "Agora Media Production"))
+        self.title(os.getenv("APP_NAME", "Agora - Contabilidade"))
         self.geometry("1200x800")
 
         # Inicializar gerenciadores
