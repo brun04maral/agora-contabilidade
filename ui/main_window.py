@@ -104,7 +104,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("dashboard")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("dashboard")
 
         from ui.screens.dashboard import DashboardScreen
         screen = DashboardScreen(self.content_frame, self.db_session, self)
@@ -119,7 +120,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("saldos")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("saldos")
 
         screen = SaldosScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
@@ -139,7 +141,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("projetos")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("projetos")
 
         from ui.screens.projetos import ProjetosScreen
         screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_cliente_id=filtro_cliente_id)
@@ -159,7 +162,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("despesas")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("despesas")
 
         from ui.screens.despesas import DespesasScreen
         screen = DespesasScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
@@ -179,7 +183,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("boletins")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("boletins")
 
         from ui.screens.boletins import BoletinsScreen
         screen = BoletinsScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
@@ -201,7 +206,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("relatorios")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("relatorios")
 
         from ui.screens.relatorios import RelatoriosScreen
         screen = RelatoriosScreen(self.content_frame, self.db_session, projeto_ids=projeto_ids, despesa_ids=despesa_ids, boletim_ids=boletim_ids)
@@ -216,7 +222,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("clientes")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("clientes")
 
         from ui.screens.clientes import ClientesScreen
         screen = ClientesScreen(self.content_frame, self.db_session, self)
@@ -231,7 +238,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("fornecedores")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("fornecedores")
 
         from ui.screens.fornecedores import FornecedoresScreen
         screen = FornecedoresScreen(self.content_frame, self.db_session)
@@ -246,7 +254,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("equipamento")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("equipamento")
 
         from ui.screens.equipamento import EquipamentoScreen
         screen = EquipamentoScreen(self.content_frame, self.db_session)
@@ -268,7 +277,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("orcamentos")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("orcamentos")
 
         from ui.screens.orcamentos import OrcamentosScreen
         screen = OrcamentosScreen(
@@ -289,7 +299,8 @@ class MainWindow(ctk.CTkFrame):
             self.current_screen = None
 
         # Update sidebar selection (visual only, no callback)
-        self.sidebar.update_selection("info")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("info")
 
         from ui.screens.info import InfoScreen
         screen = InfoScreen(self.content_frame)
