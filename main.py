@@ -44,7 +44,7 @@ class App(ctk.CTk):
         database_url = os.getenv("DATABASE_URL")
 
         if not database_url:
-            print("WARNING: DATABASE_URL not set in .env file")
+            print("ℹ️  INFO: Usando SQLite (agora_media.db) - base de dados local")
             # Use SQLite as fallback for development
             database_url = "sqlite:///./agora_media.db"
 
