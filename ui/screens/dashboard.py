@@ -147,7 +147,7 @@ class DashboardScreen(ctk.CTkFrame):
         self.bruno_card = self.create_saldo_card(
             saldos_container,
             "BA",
-            "#4CAF50",
+            "#C9941F",  # Dourado muito escuro (Agora yellow - dark)
             on_click=lambda: self.navigate_to_saldos()
         )
         self.bruno_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
@@ -156,7 +156,7 @@ class DashboardScreen(ctk.CTkFrame):
         self.rafael_card = self.create_saldo_card(
             saldos_container,
             "RR",
-            "#2196F3",
+            "#A67F1B",  # Âmbar profundo (Agora yellow - darker)
             on_click=lambda: self.navigate_to_saldos()
         )
         self.rafael_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
