@@ -2,6 +2,22 @@
 
 Sistema de gestão contabilística para a Agora Media Production, com foco especial no **cálculo de Saldos Pessoais** dos sócios.
 
+## ⚙️ Requisitos do Sistema
+
+**Python:** 3.10, 3.11 ou 3.12 (recomendado: **3.11** ou **3.12**)
+
+⚠️ **IMPORTANTE:**
+- ❌ Python 3.13+ pode ter problemas de compatibilidade
+- ❌ Python 3.14 (alpha/beta) **NÃO é suportado** - use 3.11 ou 3.12
+- ❌ Python 3.9 ou anterior não é suportado
+
+**Para verificar compatibilidade:**
+```bash
+python check_python_version.py
+```
+
+**Windows:** Consulte [WINDOWS_SETUP.md](WINDOWS_SETUP.md) para instruções detalhadas
+
 ## ✨ Funcionalidades Principais
 
 ### 🎯 Saldos Pessoais (CORE do Sistema)
