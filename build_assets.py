@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script de Build de Assets - Gerar PNGs a partir de SVGs
+Script de Build de Assets - Gerar PNGs a partir do logo original
 
 Este script deve ser executado ANTES de compilar a aplicação com PyInstaller.
-Gera versões PNG de alta qualidade dos logos SVG para uso em produção Windows.
+Gera versões PNG de alta qualidade do logo original para uso em produção Windows.
 
 USO:
     python build_assets.py
 
 QUANDO EXECUTAR:
     - Antes de criar build com PyInstaller
-    - Depois de atualizar logos SVG
+    - Depois de atualizar logo
     - Quando preparar para distribuição
 
 O QUE FAZ:
-    - Lê todos os SVGs de media/logos/
-    - Converte para PNG nos tamanhos usados pela aplicação
-    - Salva em media/logos/ com nome padrão
+    - Carrega logo_original.png (extraído do SVG, 3746x3748px)
+    - Redimensiona para os tamanhos necessários com LANCZOS (máxima qualidade)
+    - Aplica transparência removendo fundo branco
+    - Salva em media/logos/ com nomes padronizados
     - Esses PNGs são usados automaticamente quando Cairo não está disponível
 """
 
@@ -26,11 +27,6 @@ import sys
 from pathlib import Path
 from PIL import Image
 import numpy as np
-
-# Adicionar diretório raiz ao path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from assets.resources import get_logo, CAIROSVG_AVAILABLE
 
 
 # Configuração dos assets a gerar
@@ -44,39 +40,51 @@ LOGO_SIZES = {
 }
 
 
-def ensure_cairo_available():
-    """Verifica se Cairo está disponível"""
-    if not CAIROSVG_AVAILABLE:
+def load_original_logo():
+    """
+    Carrega o logo original de alta resolução
+
+    Returns:
+        PIL.Image ou None se não encontrar
+    """
+    logos_dir = Path("media") / "logos"
+    original_path = logos_dir / "logo_original.png"
+
+    if not original_path.exists():
         print("=" * 70)
-        print("❌ ERRO: Cairo não disponível")
+        print("❌ ERRO: logo_original.png não encontrado")
         print("=" * 70)
         print()
-        print("Para gerar assets PNG a partir de SVG, é necessário ter Cairo instalado.")
+        print("Execute primeiro: python3 extract_logo_png.py")
         print()
-        print("OPÇÕES:")
-        print()
-        print("1. Instalar Cairo no Linux/Mac:")
-        print("   pip install cairosvg")
-        print()
-        print("2. Usar os PNGs já existentes (se houver)")
-        print()
-        print("3. Executar este script num sistema com Cairo instalado")
+        print("Isso vai extrair o PNG original de alta resolução do logo.svg")
         print()
         print("=" * 70)
-        return False
-    return True
+        return None
+
+    try:
+        img = Image.open(str(original_path))
+        print(f"✅ Logo original carregado: {img.size[0]}x{img.size[1]}px")
+        return img
+    except Exception as e:
+        print(f"❌ Erro ao carregar logo original: {e}")
+        return None
 
 
 def build_logo_pngs():
     """Gera PNGs dos logos em diferentes tamanhos"""
 
     print("=" * 70)
-    print("🎨 BUILD DE ASSETS - Geração de PNGs")
+    print("🎨 BUILD DE ASSETS - Geração de PNGs de Alta Qualidade")
     print("=" * 70)
     print()
 
-    if not ensure_cairo_available():
+    # Carregar logo original de alta resolução
+    original_logo = load_original_logo()
+    if not original_logo:
         sys.exit(1)
+
+    print()
 
     # Diretório de logos
     logos_dir = Path("media") / "logos"
@@ -90,14 +98,7 @@ def build_logo_pngs():
 
     # Processar cada logo
     for logo_name, sizes in LOGO_SIZES.items():
-        svg_filename = f"{logo_name}.svg"
-        svg_path = logos_dir / svg_filename
-
-        if not svg_path.exists():
-            print(f"⚠️  Aviso: {svg_filename} não encontrado, pulando...")
-            continue
-
-        print(f"📄 Processando: {svg_filename}")
+        print(f"📄 Gerando versões do logo:")
         print()
 
         # Gerar cada tamanho
@@ -106,49 +107,39 @@ def build_logo_pngs():
             output_path = logos_dir / output_name
 
             try:
-                # NOTA: logo.svg contém PNG embutido, não é vetorial
-                # Estratégia: carregar em 2x resolução, depois reduzir com LANCZOS = melhor qualidade
-                logo_img = get_logo(svg_filename, size=(width * 2, height * 2))
+                # Fazer cópia do original para não modificar
+                logo_img = original_logo.copy()
 
-                if logo_img:
-                    # Converter para RGBA se necessário
-                    if logo_img.mode != 'RGBA':
-                        logo_img = logo_img.convert('RGBA')
+                # Garantir RGBA
+                if logo_img.mode != 'RGBA':
+                    logo_img = logo_img.convert('RGBA')
 
-                    # Reduzir para tamanho final com LANCZOS (alta qualidade)
-                    logo_img = logo_img.resize((width, height), Image.Resampling.LANCZOS)
+                # Redimensionar com LANCZOS (máxima qualidade)
+                # LANCZOS é o melhor algoritmo para redução de tamanho
+                logo_img = logo_img.resize((width, height), Image.Resampling.LANCZOS)
 
-                    # Remover fundo branco com threshold agressivo
-                    data = np.array(logo_img)
+                # Processar transparência
+                data = np.array(logo_img)
 
-                    # Pixels muito claros (quase brancos) tornam-se transparentes
-                    # Threshold: RGB > 250 (quase branco)
-                    near_white = (
-                        (data[:, :, 0] > 250) &
-                        (data[:, :, 1] > 250) &
-                        (data[:, :, 2] > 250)
-                    )
+                # Remover fundo branco: pixels RGB > 245 tornam-se transparentes
+                # Threshold mais conservador para preservar detalhes
+                white_mask = (
+                    (data[:, :, 0] > 245) &
+                    (data[:, :, 1] > 245) &
+                    (data[:, :, 2] > 245)
+                )
+                data[white_mask, 3] = 0
 
-                    # Tornar pixels quase brancos completamente transparentes
-                    data[near_white, 3] = 0
+                logo_img = Image.fromarray(data)
 
-                    # Suavizar bordas para remover artefactos
-                    low_alpha = data[:, :, 3] < 128
-                    data[low_alpha, 3] = data[low_alpha, 3] // 2
+                # Salvar com máxima qualidade
+                logo_img.save(str(output_path), "PNG", optimize=False)
 
-                    logo_img = Image.fromarray(data)
+                # Verificar tamanho do arquivo
+                file_size = output_path.stat().st_size / 1024  # KB
 
-                    # Salvar PNG com alta qualidade
-                    logo_img.save(str(output_path), "PNG", optimize=True, compress_level=6)
-
-                    # Verificar tamanho do arquivo
-                    file_size = output_path.stat().st_size / 1024  # KB
-
-                    print(f"   ✅ {output_name:30s} ({width}x{height}) - {file_size:.1f} KB")
-                    total_generated += 1
-                else:
-                    print(f"   ❌ {output_name:30s} - Falha ao converter")
-                    total_failed += 1
+                print(f"   ✅ {output_name:30s} ({width}x{height}) - {file_size:.1f} KB")
+                total_generated += 1
 
             except Exception as e:
                 print(f"   ❌ {output_name:30s} - Erro: {e}")
