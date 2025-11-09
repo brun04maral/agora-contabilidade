@@ -1,4 +1,4 @@
-# 📊 Estado Atual do Projeto - Agora Media Contabilidade
+# 📊 Estado Atual do Projeto - Agora Contabilidade
 
 **Última atualização:** 2025-11-09
 **Sessão:** claude/import-excel-20251108-011CUvZzMj9kRn2HWWgKpho5

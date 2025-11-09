@@ -1,4 +1,4 @@
-# 📝 Changelog - Agora Media Contabilidade
+# 📝 Changelog - Agora Contabilidade
 
 Registo de mudanças significativas no projeto.
 
@@ -122,4 +122,4 @@ Seguimos [Keep a Changelog](https://keepachangelog.com/):
 
 ---
 
-**Mantido por:** Equipa Agora Media
+**Mantido por:** Equipa Agora

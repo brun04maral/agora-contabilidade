@@ -227,7 +227,7 @@ pip install pyinstaller
 
 ### Criar executável
 ```bash
-pyinstaller --name "Agora Media" \
+pyinstaller --name "Agora" \
             --windowed \
             --icon=media/logos/icon.ico \
             --add-data "media;media" \
@@ -235,7 +235,7 @@ pyinstaller --name "Agora Media" \
 ```
 
 ### Output
-- `dist/Agora Media/` - pasta com executável
+- `dist/Agora/` - pasta com executável
 - Distribuir pasta completa (contém DLLs)
 
 ---
@@ -308,5 +308,5 @@ import pdb; pdb.set_trace()
 
 ---
 
-**Mantido por:** Equipa Agora Media
+**Mantido por:** Equipa Agora
 **Última atualização:** 2025-11-09

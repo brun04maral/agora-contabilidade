@@ -1,4 +1,4 @@
-# 🎬 Agora Media Contabilidade
+# 🎬 Agora Contabilidade
 
 Sistema de gestão contabilística para Agora Media Production (BA + RR).
 

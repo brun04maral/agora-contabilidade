@@ -1,4 +1,4 @@
-# 📝 TODO - Agora Media Contabilidade
+# 📝 TODO - Agora Contabilidade
 
 ## 🎯 Fase 1: Setup e Fundação
 - [x] Estrutura de diretórios

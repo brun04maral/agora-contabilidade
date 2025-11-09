@@ -276,6 +276,6 @@ def test_criar_projeto():
 
 ---
 
-**Mantido por:** Equipa Agora Media
+**Mantido por:** Equipa Agora
 **Formato:** ADR simplificado (Architecture Decision Records)
 **Última atualização:** 2025-11-09

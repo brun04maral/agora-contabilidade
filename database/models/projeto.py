@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Modelo Projeto - Projetos da Agora Media e projetos pessoais dos sócios
+Modelo Projeto - Projetos da Agora Media Production e projetos pessoais dos sócios
 """
 from datetime import datetime, date
 from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, ForeignKey, Text, Enum as SQLEnum

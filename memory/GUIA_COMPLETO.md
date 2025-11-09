@@ -1,4 +1,4 @@
-# 📚 Guia Completo - Agora Media Contabilidade
+# 📚 Guia Completo - Agora Contabilidade
 
 Sistema de gestão contabilística completo para Agora Media Production.
 

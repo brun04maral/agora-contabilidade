@@ -1,5 +1,5 @@
 """
-Modelos de base de dados da Agora Media Contabilidade
+Modelos de base de dados da Agora Contabilidade
 
 Importa todos os modelos para facilitar o uso
 """

@@ -1,4 +1,4 @@
-# 🗄️ Database Schema - Agora Media Contabilidade
+# 🗄️ Database Schema - Agora Contabilidade
 
 Visão geral da estrutura da base de dados SQLite.
 
@@ -369,5 +369,5 @@ cp agora_media.db agora_media_backup_$(date +%Y%m%d).db
 
 ---
 
-**Mantido por:** Equipa Agora Media
+**Mantido por:** Equipa Agora
 **Última atualização:** 2025-11-09

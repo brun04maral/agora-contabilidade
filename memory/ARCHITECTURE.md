@@ -1,4 +1,4 @@
-# 🏗️ Arquitetura - Agora Media Contabilidade
+# 🏗️ Arquitetura - Agora Contabilidade
 
 ## 📐 Visão Geral
 
@@ -305,5 +305,5 @@ python-dateutil = "Datas"
 
 ---
 
-**Mantido por:** Equipa Agora Media
+**Mantido por:** Equipa Agora
 **Última revisão:** 2025-11-09
