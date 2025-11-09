@@ -109,6 +109,12 @@
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
 
+- [x] ✨ **09/11** - Dashboard com navegação interativa
+  - Cards BA/RR clicáveis → navegam para Saldos Pessoais
+  - Cards Clientes/Fornecedores clicáveis → navegam para screens respetivos
+  - Efeitos hover (border highlight, cursor pointer)
+  - Métodos de navegação: navigate_to_saldos(), navigate_to_clientes(), navigate_to_fornecedores()
+
 - [x] 🎨 **09/11** - Melhorias na Sidebar
   - Scroll vertical adicionado (CTkScrollableFrame)
   - Ícones aumentados de 20x20 para 27x27 pixels

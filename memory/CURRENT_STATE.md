@@ -27,7 +27,7 @@
 ### 🖥️ Interface Gráfica (COMPLETO)
 - ✅ CustomTkinter (tema moderno)
 - ✅ 10 screens funcionais + Info screen:
-  - Dashboard (com ícones nas secções)
+  - Dashboard (com ícones nas secções + navegação interativa em cards)
   - Saldos Pessoais (CORE)
   - Projetos
   - Orçamentos
