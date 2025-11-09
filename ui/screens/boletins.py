@@ -216,10 +216,10 @@ class BoletinsScreen(ctk.CTkFrame):
         }
 
     def get_estado_color(self, estado: EstadoBoletim) -> tuple:
-        """Get color for estado (returns tuple: light, dark mode)"""
+        """Get color for estado (returns tuple: light, dark mode) - Opção 3 Agora Inspired"""
         color_map = {
-            EstadoBoletim.PENDENTE: ("#FFF9C4", "#8B8B5A"),  # Amarelo pastel (pendente)
-            EstadoBoletim.PAGO: ("#C8E6C9", "#4A6E4A")        # Verde pastel (pago)
+            EstadoBoletim.PENDENTE: ("#FFE5D0", "#8B4513"),  # Laranja pastel - atenção
+            EstadoBoletim.PAGO: ("#E8F5E0", "#4A7028")        # Verde pastel - positivo
         }
         return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
 

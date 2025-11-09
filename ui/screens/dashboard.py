@@ -226,20 +226,21 @@ class DashboardScreen(ctk.CTkFrame):
         boletins_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         boletins_container.pack(fill="x", pady=(0, 35))
 
+        # Stats cards (Opção 3 - Agora Inspired)
         self.total_boletins_card = self.create_stat_card(
-            boletins_container, "Total", "0", "#607D8B",
+            boletins_container, "Total", "0", "#6D4C41",  # Brown terra neutral
             on_click=lambda: self.navigate_to_boletins("Todos")
         )
         self.total_boletins_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
         self.boletins_pagos_card = self.create_stat_card(
-            boletins_container, "Pagos", "0", "#4CAF50",
+            boletins_container, "Pagos", "0", "#7CB342",  # Light Green 600 - Positivo
             on_click=lambda: self.navigate_to_boletins("Pago")
         )
         self.boletins_pagos_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
         self.boletins_pendentes_card = self.create_stat_card(
-            boletins_container, "Pendentes", "0", "#FF9800",
+            boletins_container, "Pendentes", "0", "#EF6C00",  # Orange 800 - Atenção
             on_click=lambda: self.navigate_to_boletins("Pendente")
         )
         self.boletins_pendentes_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
