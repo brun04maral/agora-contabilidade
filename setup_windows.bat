@@ -31,9 +31,10 @@ if %ERRORLEVEL% EQU 0 (
 
 echo ERRO: Python nao encontrado!
 echo.
-echo Por favor instale Python de python.org OU:
-echo - Reabra PowerShell como Administrador
-echo - Execute: setx PATH "%PATH%;C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python314"
+echo Por favor instale Python 3.12 de python.org:
+echo   https://www.python.org/downloads/
+echo.
+echo IMPORTANTE: Ao instalar, marque a opcao "Add Python to PATH"
 echo.
 pause
 exit /b 1

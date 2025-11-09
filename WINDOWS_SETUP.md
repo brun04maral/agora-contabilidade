@@ -2,8 +2,8 @@
 
 ## ⚠️ Versões Recomendadas
 
-**Python:** 3.10, 3.11 ou 3.12 (recomendado: **3.11**)
-- ❌ Python 3.13+ pode ter problemas de compatibilidade com algumas bibliotecas
+**Python:** 3.10, 3.11 ou 3.12 (recomendado: **3.12**)
+- ❌ Python 3.13+ não é suportado (problemas de compatibilidade)
 - ❌ Python 3.9 ou anterior não é suportado
 
 ## 🚀 Setup Rápido
@@ -135,9 +135,8 @@ pip install customtkinter==5.2.2 --no-cache-dir
 | Componente | Versão Testada | Status |
 |------------|----------------|--------|
 | Python 3.10 | ✅ | Funcional |
-| Python 3.11 | ✅ | Recomendado |
-| Python 3.12 | ✅ | Funcional |
-| Python 3.13 | ⚠️ | Problemas conhecidos |
+| Python 3.11 | ✅ | Funcional |
+| Python 3.12 | ✅ | Recomendado |
 | Windows 10 | ✅ | Testado |
 | Windows 11 | ✅ | Testado |
 

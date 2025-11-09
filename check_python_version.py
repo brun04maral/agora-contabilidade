@@ -29,7 +29,7 @@ def check_python_version():
     if version.minor < 10:
         print("❌ ERRO: Python 3.9 ou anterior não é suportado!")
         print("   Versão mínima: Python 3.10")
-        print("   Versão recomendada: Python 3.11 ou 3.12")
+        print("   Versão recomendada: Python 3.12")
         return False
 
     if version.minor == 10:
@@ -48,21 +48,12 @@ def check_python_version():
         print("   Todas as bibliotecas devem funcionar")
         return True
 
-    if version.minor == 13:
-        print("⚠️  AVISO: Python 3.13 - Versão muito recente!")
+    if version.minor >= 13:
+        print("⚠️  AVISO: Python 3.13+ - Versão muito recente!")
         print("   Algumas bibliotecas podem ter problemas de compatibilidade")
         print("   Especialmente: psycopg2-binary, bcrypt, Pillow")
         print("   ")
-        print("   RECOMENDAÇÃO: Use Python 3.11 ou 3.12 para melhor estabilidade")
-        return True
-
-    if version.minor >= 14:
-        print("✅ Python 3.14+ detectado!")
-        print("   Versão muito recente - a maioria das bibliotecas deve funcionar.")
-        print("   ")
-        print("   ⚠️  NOTA: Se encontrar problemas de compatibilidade:")
-        print("   - Tente instalar com: pip install --upgrade --force-reinstall")
-        print("   - Algumas bibliotecas C podem precisar de recompilação")
+        print("   RECOMENDAÇÃO: Use Python 3.12 para melhor estabilidade")
         print("   ")
         return True
 
