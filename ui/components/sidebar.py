@@ -4,13 +4,40 @@ Sidebar component - Menu de navegação lateral
 """
 import customtkinter as ctk
 from typing import Callable, Optional
-from assets.resources import get_logo_with_fallback
+from assets.resources import (
+    get_logo_with_fallback,
+    get_icon,
+    DASHBOARD,
+    SALDOSPESSOAIS,
+    PROJETOS,
+    ORCAMENTOS,
+    DESPESAS,
+    BOLETINS,
+    CLIENTES,
+    FORNECEDORES,
+    EQUIPAMENTO,
+    RELATORIOS,
+)
 
 
 class Sidebar(ctk.CTkFrame):
     """
     Sidebar com menu de navegação
     """
+
+    # Mapeamento de ícones para cada menu
+    MENU_ICONS = {
+        "dashboard": DASHBOARD,
+        "saldos": SALDOSPESSOAIS,
+        "projetos": PROJETOS,
+        "orcamentos": ORCAMENTOS,
+        "despesas": DESPESAS,
+        "boletins": BOLETINS,
+        "clientes": CLIENTES,
+        "fornecedores": FORNECEDORES,
+        "equipamento": EQUIPAMENTO,
+        "relatorios": RELATORIOS,
+    }
 
     def __init__(self, parent, on_menu_select: Callable, **kwargs):
         """
@@ -74,7 +101,7 @@ class Sidebar(ctk.CTkFrame):
 
         # Menu items
         # Dashboard (separado)
-        btn = self.create_menu_button("dashboard", "📊 Dashboard")
+        btn = self.create_menu_button("dashboard", "Dashboard")
         self.menu_buttons["dashboard"] = btn
 
         # Spacer após Dashboard
@@ -83,11 +110,11 @@ class Sidebar(ctk.CTkFrame):
 
         # Grupo principal: Operações
         menu_items_main = [
-            ("saldos", "💰 Saldos Pessoais"),
-            ("projetos", "📁 Projetos"),
-            ("orcamentos", "📋 Orçamentos"),
-            ("despesas", "💸 Despesas"),
-            ("boletins", "📄 Boletins"),
+            ("saldos", "Saldos Pessoais"),
+            ("projetos", "Projetos"),
+            ("orcamentos", "Orçamentos"),
+            ("despesas", "Despesas"),
+            ("boletins", "Boletins"),
         ]
 
         for menu_id, menu_text in menu_items_main:
@@ -100,9 +127,9 @@ class Sidebar(ctk.CTkFrame):
 
         # Grupo secundário: Cadastros
         menu_items_cadastros = [
-            ("clientes", "👥 Clientes"),
-            ("fornecedores", "🏢 Fornecedores"),
-            ("equipamento", "💻 Equipamento"),
+            ("clientes", "Clientes"),
+            ("fornecedores", "Fornecedores"),
+            ("equipamento", "Equipamento"),
         ]
 
         for menu_id, menu_text in menu_items_cadastros:
@@ -115,7 +142,7 @@ class Sidebar(ctk.CTkFrame):
 
         # Grupo relatórios
         menu_items_relatorios = [
-            ("relatorios", "📑 Relatórios"),
+            ("relatorios", "Relatórios"),
         ]
 
         for menu_id, menu_text in menu_items_relatorios:
@@ -156,7 +183,7 @@ class Sidebar(ctk.CTkFrame):
 
     def create_menu_button(self, menu_id: str, text: str) -> ctk.CTkButton:
         """
-        Create a menu button
+        Create a menu button with icon
 
         Args:
             menu_id: Menu identifier
@@ -165,9 +192,24 @@ class Sidebar(ctk.CTkFrame):
         Returns:
             Button widget
         """
+        # Carregar ícone se disponível
+        icon_image = None
+        if menu_id in self.MENU_ICONS:
+            icon_base64 = self.MENU_ICONS[menu_id]
+            icon_pil = get_icon(icon_base64, size=(20, 20))
+            if icon_pil:
+                icon_image = ctk.CTkImage(
+                    light_image=icon_pil,
+                    dark_image=icon_pil,
+                    size=(20, 20)
+                )
+
+        # Criar botão
         btn = ctk.CTkButton(
             self,
             text=text,
+            image=icon_image if icon_image else None,
+            compound="left" if icon_image else "none",
             command=lambda: self.select_menu(menu_id),
             fg_color="transparent",
             hover_color=("#C0C0C0", "#2a2a2a"),

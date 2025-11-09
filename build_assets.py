@@ -24,6 +24,8 @@ O QUE FAZ:
 import os
 import sys
 from pathlib import Path
+from PIL import Image
+import numpy as np
 
 # Adicionar diretório raiz ao path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -108,6 +110,18 @@ def build_logo_pngs():
                 logo_img = get_logo(svg_filename, size=(width, height))
 
                 if logo_img:
+                    # Garantir transparência - converter pixels brancos em transparentes
+                    if logo_img.mode == 'RGBA':
+                        data = np.array(logo_img)
+
+                        # Encontrar pixels brancos ou quase brancos (RGB > 250)
+                        white_areas = (data[:, :, 0] > 250) & (data[:, :, 1] > 250) & (data[:, :, 2] > 250)
+
+                        # Tornar esses pixels completamente transparentes
+                        data[white_areas, 3] = 0
+
+                        logo_img = Image.fromarray(data)
+
                     # Salvar PNG
                     logo_img.save(str(output_path), "PNG", optimize=True)
 
