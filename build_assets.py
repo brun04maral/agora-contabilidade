@@ -106,31 +106,40 @@ def build_logo_pngs():
             output_path = logos_dir / output_name
 
             try:
-                # Converter SVG para PNG
-                logo_img = get_logo(svg_filename, size=(width, height))
+                # NOTA: logo.svg contém PNG embutido, não é vetorial
+                # Estratégia: carregar em 2x resolução, depois reduzir com LANCZOS = melhor qualidade
+                logo_img = get_logo(svg_filename, size=(width * 2, height * 2))
 
                 if logo_img:
-                    # Garantir transparência - remover APENAS fundo branco sólido
-                    # Preservar anti-aliasing e pixels semi-transparentes
-                    if logo_img.mode == 'RGBA':
-                        data = np.array(logo_img)
+                    # Converter para RGBA se necessário
+                    if logo_img.mode != 'RGBA':
+                        logo_img = logo_img.convert('RGBA')
 
-                        # Encontrar APENAS pixels completamente brancos E completamente opacos
-                        # (RGB = 255, Alpha = 255) - isto é o fundo branco sólido
-                        white_solid = (
-                            (data[:, :, 0] == 255) &
-                            (data[:, :, 1] == 255) &
-                            (data[:, :, 2] == 255) &
-                            (data[:, :, 3] == 255)
-                        )
+                    # Reduzir para tamanho final com LANCZOS (alta qualidade)
+                    logo_img = logo_img.resize((width, height), Image.Resampling.LANCZOS)
 
-                        # Tornar APENAS esses pixels completamente transparentes
-                        data[white_solid, 3] = 0
+                    # Remover fundo branco com threshold agressivo
+                    data = np.array(logo_img)
 
-                        logo_img = Image.fromarray(data)
+                    # Pixels muito claros (quase brancos) tornam-se transparentes
+                    # Threshold: RGB > 250 (quase branco)
+                    near_white = (
+                        (data[:, :, 0] > 250) &
+                        (data[:, :, 1] > 250) &
+                        (data[:, :, 2] > 250)
+                    )
 
-                    # Salvar PNG sem compressão agressiva
-                    logo_img.save(str(output_path), "PNG", optimize=False)
+                    # Tornar pixels quase brancos completamente transparentes
+                    data[near_white, 3] = 0
+
+                    # Suavizar bordas para remover artefactos
+                    low_alpha = data[:, :, 3] < 128
+                    data[low_alpha, 3] = data[low_alpha, 3] // 2
+
+                    logo_img = Image.fromarray(data)
+
+                    # Salvar PNG com alta qualidade
+                    logo_img.save(str(output_path), "PNG", optimize=True, compress_level=6)
 
                     # Verificar tamanho do arquivo
                     file_size = output_path.stat().st_size / 1024  # KB
