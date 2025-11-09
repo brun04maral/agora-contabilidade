@@ -200,20 +200,21 @@ class DashboardScreen(ctk.CTkFrame):
         despesas_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         despesas_container.pack(fill="x", pady=(0, 35))
 
+        # Stats cards (Opção 3 - Agora Inspired)
         self.total_despesas_card = self.create_stat_card(
-            despesas_container, "Total", "0", "#795548",
+            despesas_container, "Total", "0", "#6D4C41",  # Brown terra neutral
             on_click=lambda: self.navigate_to_despesas("Todos")
         )
         self.total_despesas_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
         self.despesas_pagas_card = self.create_stat_card(
-            despesas_container, "Pagas", "0", "#4CAF50",
+            despesas_container, "Pagas", "0", "#7CB342",  # Light Green 600 - Positivo
             on_click=lambda: self.navigate_to_despesas("Pago")
         )
         self.despesas_pagas_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
         self.despesas_pendentes_card = self.create_stat_card(
-            despesas_container, "Pendentes", "0", "#FF9800",
+            despesas_container, "Pendentes", "0", "#EF6C00",  # Orange 800 - Atenção
             on_click=lambda: self.navigate_to_despesas("Ativo")
         )
         self.despesas_pendentes_card.pack(side="left", fill="both", expand=True, padx=(10, 0))

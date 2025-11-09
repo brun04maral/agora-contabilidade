@@ -216,11 +216,11 @@ class DespesasScreen(ctk.CTkFrame):
         }
 
     def get_estado_color(self, estado: EstadoDespesa) -> tuple:
-        """Get color for estado (returns tuple: light, dark mode)"""
+        """Get color for estado (returns tuple: light, dark mode) - Opção 3 Agora Inspired"""
         color_map = {
-            EstadoDespesa.PAGO: ("#C8E6C9", "#4A6E4A"),        # Verde pastel (pago)
-            EstadoDespesa.PENDENTE: ("#FFF9C4", "#8B8B5A"),    # Amarelo pastel (pendente)
-            EstadoDespesa.VENCIDO: ("#FFCDD2", "#8B5A5E")      # Vermelho pastel (vencido/urgente)
+            EstadoDespesa.PAGO: ("#E8F5E0", "#4A7028"),        # Verde pastel - positivo
+            EstadoDespesa.PENDENTE: ("#FFF4CC", "#806020"),    # Dourado pastel - harmoniza com BA
+            EstadoDespesa.VENCIDO: ("#FFE5D0", "#8B4513")      # Laranja pastel - atenção urgente
         }
         return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
 
