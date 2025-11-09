@@ -47,7 +47,25 @@ echo.
 REM Criar ambiente virtual
 echo [2/5] Criando ambiente virtual...
 if exist venv (
-    echo Ambiente virtual ja existe. A usar o existente.
+    echo Ambiente virtual existente detectado. Verificando compatibilidade...
+
+    REM Verificar se o venv é compatível testando o executável
+    venv\Scripts\python.exe --version >nul 2>&1
+    if %ERRORLEVEL% NEQ 0 (
+        echo AVISO: Ambiente virtual incompativel detectado!
+        echo Removendo ambiente virtual antigo...
+        rmdir /s /q venv
+        echo Criando novo ambiente virtual com Python atual...
+        %PYTHON_CMD% -m venv venv
+        if %ERRORLEVEL% NEQ 0 (
+            echo ERRO: Falha ao criar ambiente virtual!
+            pause
+            exit /b 1
+        )
+        echo Ambiente virtual recriado com sucesso.
+    ) else (
+        echo Ambiente virtual compativel. A usar o existente.
+    )
 ) else (
     %PYTHON_CMD% -m venv venv
     if %ERRORLEVEL% NEQ 0 (
