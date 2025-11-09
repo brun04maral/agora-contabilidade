@@ -210,7 +210,7 @@ class Sidebar(ctk.CTkFrame):
         logout_btn.pack(fill="x", padx=10, pady=(0, 20))
 
         # Select dashboard by default
-        self.select_menu("saldos")
+        self.select_menu("dashboard")
 
     def create_menu_button(self, parent, menu_id: str, text: str) -> ctk.CTkButton:
         """
