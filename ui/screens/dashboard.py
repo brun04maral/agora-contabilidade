@@ -12,7 +12,16 @@ from database.models import (
     Boletim, EstadoBoletim,
     Cliente, Fornecedor
 )
-from assets.resources import get_icon, DASHBOARD
+from assets.resources import (
+    get_icon,
+    DASHBOARD,
+    SALDOSPESSOAIS,
+    PROJETOS,
+    DESPESAS,
+    BOLETINS,
+    CLIENTES,
+    FORNECEDORES
+)
 
 
 class DashboardScreen(ctk.CTkFrame):
@@ -43,6 +52,44 @@ class DashboardScreen(ctk.CTkFrame):
 
         # Load data
         self.carregar_dados()
+
+    def create_section_title(self, parent, text: str, icon_constant) -> ctk.CTkLabel:
+        """
+        Create section title with icon
+
+        Args:
+            parent: Parent widget
+            text: Section title text
+            icon_constant: Icon constant from assets.resources
+
+        Returns:
+            Label widget
+        """
+        # Try to load PNG icon
+        icon_pil = get_icon(icon_constant, size=(22, 22))
+
+        if icon_pil:
+            icon_ctk = ctk.CTkImage(
+                light_image=icon_pil,
+                dark_image=icon_pil,
+                size=(22, 22)
+            )
+            title_label = ctk.CTkLabel(
+                parent,
+                image=icon_ctk,
+                text=f" {text}",
+                compound="left",
+                font=ctk.CTkFont(size=22, weight="bold")
+            )
+        else:
+            # Fallback to emoji (shouldn't happen, but just in case)
+            title_label = ctk.CTkLabel(
+                parent,
+                text=text,
+                font=ctk.CTkFont(size=22, weight="bold")
+            )
+
+        return title_label
 
     def create_widgets(self):
         """Create screen widgets"""
@@ -90,11 +137,7 @@ class DashboardScreen(ctk.CTkFrame):
         scroll_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
         # === SALDOS PESSOAIS ===
-        saldos_title = ctk.CTkLabel(
-            scroll_frame,
-            text="💰 Saldos Pessoais",
-            font=ctk.CTkFont(size=22, weight="bold")
-        )
+        saldos_title = self.create_section_title(scroll_frame, "Saldos Pessoais", SALDOSPESSOAIS)
         saldos_title.pack(anchor="w", pady=(15, 15))
 
         saldos_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
@@ -109,11 +152,7 @@ class DashboardScreen(ctk.CTkFrame):
         self.rafael_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === PROJETOS ===
-        projetos_title = ctk.CTkLabel(
-            scroll_frame,
-            text="🎬 Projetos",
-            font=ctk.CTkFont(size=22, weight="bold")
-        )
+        projetos_title = self.create_section_title(scroll_frame, "Projetos", PROJETOS)
         projetos_title.pack(anchor="w", pady=(15, 15))
 
         projetos_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
@@ -145,11 +184,7 @@ class DashboardScreen(ctk.CTkFrame):
         self.projetos_nao_faturados_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === DESPESAS ===
-        despesas_title = ctk.CTkLabel(
-            scroll_frame,
-            text="💸 Despesas",
-            font=ctk.CTkFont(size=22, weight="bold")
-        )
+        despesas_title = self.create_section_title(scroll_frame, "Despesas", DESPESAS)
         despesas_title.pack(anchor="w", pady=(15, 15))
 
         despesas_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
@@ -174,11 +209,7 @@ class DashboardScreen(ctk.CTkFrame):
         self.despesas_pendentes_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === BOLETINS ===
-        boletins_title = ctk.CTkLabel(
-            scroll_frame,
-            text="📄 Boletins",
-            font=ctk.CTkFont(size=22, weight="bold")
-        )
+        boletins_title = self.create_section_title(scroll_frame, "Boletins", BOLETINS)
         boletins_title.pack(anchor="w", pady=(15, 15))
 
         boletins_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
@@ -203,11 +234,7 @@ class DashboardScreen(ctk.CTkFrame):
         self.boletins_pendentes_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
         # === CLIENTES & FORNECEDORES ===
-        outros_title = ctk.CTkLabel(
-            scroll_frame,
-            text="📇 Clientes & Fornecedores",
-            font=ctk.CTkFont(size=22, weight="bold")
-        )
+        outros_title = self.create_section_title(scroll_frame, "Clientes & Fornecedores", CLIENTES)
         outros_title.pack(anchor="w", pady=(15, 15))
 
         outros_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
