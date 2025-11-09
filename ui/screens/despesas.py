@@ -12,6 +12,7 @@ import tkinter.messagebox as messagebox
 from logic.despesas import DespesasManager
 from database.models import TipoDespesa, EstadoDespesa
 from ui.components.data_table_v2 import DataTableV2
+from assets.resources import get_icon, DESPESAS
 
 
 class DespesasScreen(ctk.CTkFrame):
@@ -43,11 +44,27 @@ class DespesasScreen(ctk.CTkFrame):
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
         header_frame.pack(fill="x", padx=30, pady=(30, 20))
 
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="💸 Despesas",
-            font=ctk.CTkFont(size=28, weight="bold")
-        )
+        # Title with PNG icon
+        icon_pil = get_icon(DESPESAS, size=(28, 28))
+        if icon_pil:
+            icon_ctk = ctk.CTkImage(
+                light_image=icon_pil,
+                dark_image=icon_pil,
+                size=(28, 28)
+            )
+            title_label = ctk.CTkLabel(
+                header_frame,
+                image=icon_ctk,
+                text=" Despesas",
+                compound="left",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
+        else:
+            title_label = ctk.CTkLabel(
+                header_frame,
+                text="💸 Despesas",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
         title_label.pack(side="left")
 
         # Buttons

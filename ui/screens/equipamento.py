@@ -9,6 +9,7 @@ from logic.equipamento import EquipamentoManager
 from ui.components.data_table_v2 import DataTableV2
 from database.models.equipamento import Equipamento
 from tkinter import messagebox
+from assets.resources import get_icon, EQUIPAMENTO
 
 
 class EquipamentoScreen(ctk.CTkFrame):
@@ -45,11 +46,27 @@ class EquipamentoScreen(ctk.CTkFrame):
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
         header_frame.pack(fill="x", padx=30, pady=(30, 20))
 
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="💻 Equipamento",
-            font=ctk.CTkFont(size=28, weight="bold")
-        )
+        # Title with PNG icon
+        icon_pil = get_icon(EQUIPAMENTO, size=(28, 28))
+        if icon_pil:
+            icon_ctk = ctk.CTkImage(
+                light_image=icon_pil,
+                dark_image=icon_pil,
+                size=(28, 28)
+            )
+            title_label = ctk.CTkLabel(
+                header_frame,
+                image=icon_ctk,
+                text=" Equipamento",
+                compound="left",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
+        else:
+            title_label = ctk.CTkLabel(
+                header_frame,
+                text="💻 Equipamento",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
         title_label.pack(side="left")
 
         # Buttons
