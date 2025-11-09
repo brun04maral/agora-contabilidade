@@ -110,20 +110,27 @@ def build_logo_pngs():
                 logo_img = get_logo(svg_filename, size=(width, height))
 
                 if logo_img:
-                    # Garantir transparência - converter pixels brancos em transparentes
+                    # Garantir transparência - remover APENAS fundo branco sólido
+                    # Preservar anti-aliasing e pixels semi-transparentes
                     if logo_img.mode == 'RGBA':
                         data = np.array(logo_img)
 
-                        # Encontrar pixels brancos ou quase brancos (RGB > 250)
-                        white_areas = (data[:, :, 0] > 250) & (data[:, :, 1] > 250) & (data[:, :, 2] > 250)
+                        # Encontrar APENAS pixels completamente brancos E completamente opacos
+                        # (RGB = 255, Alpha = 255) - isto é o fundo branco sólido
+                        white_solid = (
+                            (data[:, :, 0] == 255) &
+                            (data[:, :, 1] == 255) &
+                            (data[:, :, 2] == 255) &
+                            (data[:, :, 3] == 255)
+                        )
 
-                        # Tornar esses pixels completamente transparentes
-                        data[white_areas, 3] = 0
+                        # Tornar APENAS esses pixels completamente transparentes
+                        data[white_solid, 3] = 0
 
                         logo_img = Image.fromarray(data)
 
-                    # Salvar PNG
-                    logo_img.save(str(output_path), "PNG", optimize=True)
+                    # Salvar PNG sem compressão agressiva
+                    logo_img.save(str(output_path), "PNG", optimize=False)
 
                     # Verificar tamanho do arquivo
                     file_size = output_path.stat().st_size / 1024  # KB
