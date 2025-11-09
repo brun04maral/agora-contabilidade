@@ -1,10 +1,10 @@
-# 🎨 Build de Assets - Guia Completo
+# 🎨 Logos e Assets - Guia Completo
 
 ## 📋 O Que São Assets?
 
 Assets são os recursos visuais da aplicação:
-- **Logos SVG**: Ficheiros vetoriais escaláveis (development)
-- **Logos PNG**: Imagens pré-geradas para produção (Windows)
+- **Logos PNG**: Imagens pré-geradas para produção (mantidos **manualmente**)
+- **Logo SVG**: Ficheiro vetorial para desenvolvimento (apenas referência)
 - **Ícones Base64**: Ícones embutidos no código
 
 ## 🔄 Sistema de Fallback Inteligente
@@ -18,7 +18,7 @@ A aplicação usa um sistema de 3 níveis de fallback para logos:
 ### Desenvolvimento (Linux/Mac com Cairo)
 - ✅ Usa SVG diretamente
 - ✅ Qualidade perfeita em qualquer tamanho
-- ✅ Sem necessidade de gerar PNGs
+- ✅ Sem necessidade de PNGs
 
 ### Produção (Windows/Sem Cairo)
 - ✅ Usa PNG pré-gerado
@@ -29,53 +29,36 @@ A aplicação usa um sistema de 3 níveis de fallback para logos:
 - ✅ Texto "AGORA" e "AGORA Media Production"
 - ✅ Sempre funciona
 
-## 🚀 Como Gerar Assets para Produção
+## 🎨 Manutenção dos Logos PNG (Manual)
 
-### Passo 1: Preparar Ambiente
+Os logos PNG são **mantidos manualmente** no repositório.
 
-```bash
-# Certifica-te que Cairo está instalado (Linux/Mac)
-pip install cairosvg
+### 📁 Nomenclatura Obrigatória
 
-# Verificar
-python3 -c "import cairosvg; print('✅ Cairo OK')"
-```
+Os seguintes ficheiros devem estar em `media/logos/`:
 
-### Passo 2: Gerar PNGs
+- `logo_sidebar.png` - Sidebar (100x60px)
+- `logo_sidebar@2x.png` - Sidebar retina (200x120px)
+- `logo_login.png` - Login (313x80px)
+- `logo_login@2x.png` - Login retina (626x160px)
 
-```bash
-# Executar script de build
-python3 build_assets.py
+### ✅ Requisitos de Qualidade
 
-# Ver lista de PNGs gerados
-python3 build_assets.py --list
-```
+- **Formato**: PNG com canal alpha (RGBA)
+- **Fundo**: Completamente transparente
+- **Qualidade**: Alta resolução, sem artefactos ou "pixelização"
+- **Anti-aliasing**: Bordas suaves
 
-Isto gera:
-- `logo_sidebar.png` (100x60) - Normal
-- `logo_sidebar@2x.png` (200x120) - Retina
-- `logo_login.png` (313x80) - Normal
-- `logo_login@2x.png` (626x160) - Retina
+### 🔄 Como Atualizar
 
-### Passo 3: Verificar PNGs
-
-```bash
-ls -lh media/logos/*.png
-```
-
-Deves ver algo como:
-```
-logo_sidebar.png       1.3K
-logo_sidebar@2x.png    3.3K
-logo_login.png         2.1K
-logo_login@2x.png      5.5K
-```
-
-### Passo 4: Commit
+1. **Gerar PNGs** nos tamanhos especificados (usar Photoshop, GIMP, etc.)
+2. **Garantir transparência** e qualidade
+3. **Substituir ficheiros** em `media/logos/`
+4. **Commit e push**:
 
 ```bash
 git add media/logos/*.png
-git commit -m "✨ Adicionar logos PNG para produção Windows"
+git commit -m "🎨 Atualizar logos PNG"
 git push
 ```
 
