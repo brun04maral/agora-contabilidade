@@ -124,8 +124,8 @@ PAGO           # ✅ Despesa paga (conta para saldos)
 
 ### EstadoBoletim ✅
 ```python
-PENDENTE       # Boletim emitido mas não pago (já desconta do saldo)
-PAGO           # ✅ Boletim pago
+PENDENTE       # Boletim emitido mas não pago (NÃO desconta do saldo)
+PAGO           # ✅ Boletim pago (DESCONTA do saldo)
 ```
 
 ### TipoProjeto ✅

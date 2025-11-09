@@ -152,8 +152,8 @@ Saldo = €2.000 - €775 = €1.225
 - Apenas despesas **PAGAS** contam para saldos
 
 ### Boletins
-- Quando **EMITIDOS** → Descontam **IMEDIATAMENTE** do saldo
-- Quando **PAGOS** → Apenas muda estado (já tinha descontado)
+- Quando **EMITIDOS** → NÃO descontam do saldo (ainda não pagos)
+- Quando **PAGOS** → Descontam do saldo nesse momento
 
 ## 🎨 Stack Tecnológica
 

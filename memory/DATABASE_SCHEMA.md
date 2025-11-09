@@ -166,14 +166,13 @@ EstadoDespesa:
 - `contribuicao_seg_social_fgct` - Decimal
 - `retencao_irs` - Decimal
 - `valor_liquido` - Decimal
-- `estado` - ENUM (rascunho/emitido/pago)
+- `estado` - ENUM (pendente/pago)
 
 **Enums:**
 ```python
 EstadoBoletim:
-  - RASCUNHO
-  - EMITIDO
-  - PAGO
+  - PENDENTE  # Emitido mas não pago (NÃO desconta do saldo)
+  - PAGO      # Pago (DESCONTA do saldo)
 ```
 
 **Relações:**
