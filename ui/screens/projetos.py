@@ -277,11 +277,11 @@ class ProjetosScreen(ctk.CTkFrame):
         return mapping.get(estado, str(estado))
 
     def estado_to_color(self, estado: EstadoProjeto) -> tuple:
-        """Convert estado enum to pastel background color (light, dark)"""
+        """Convert estado enum to pastel background color (light, dark) - Opção 3 Agora Inspired"""
         mapping = {
-            EstadoProjeto.NAO_FATURADO: ("#FFB3BA", "#8B5A5E"),  # Pastel red
-            EstadoProjeto.FATURADO: ("#FFFFBA", "#B8B85A"),     # Pastel yellow
-            EstadoProjeto.RECEBIDO: ("#BAFFC9", "#5A8B63"),     # Pastel green
+            EstadoProjeto.NAO_FATURADO: ("#FFE5D0", "#8B4513"),  # Pastel orange (atenção)
+            EstadoProjeto.FATURADO: ("#FFF4CC", "#806020"),     # Pastel golden (match BA)
+            EstadoProjeto.RECEBIDO: ("#E8F5E0", "#4A7028"),     # Pastel green (positivo)
             EstadoProjeto.ANULADO: ("#808080", "#505050")       # Dark gray
         }
         return mapping.get(estado, ("#f8f8f8", "#252525"))
