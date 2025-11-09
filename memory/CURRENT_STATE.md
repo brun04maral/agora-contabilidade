@@ -5,6 +5,19 @@
 
 ---
 
+## 🚨 IMPORTANTE - Nova Sessão Claude Code?
+
+**SE ESTA É UMA NOVA SESSÃO:** O Claude Code cria um novo branch a cada sessão e **não importa contexto automaticamente**.
+
+**SOLUÇÃO:** Usa esta frase na nova sessão:
+```
+Esta sessão é continuação de uma anterior. Importa a sessão anterior para teres contexto completo do que foi feito.
+```
+
+**Mais informação:** Ver `/SESSION_IMPORT.md` na raiz do projeto.
+
+---
+
 ## ✅ Features Completas e Funcionais
 
 ### 🎨 Sistema de Assets e Ícones (COMPLETO)

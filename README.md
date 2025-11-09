@@ -4,20 +4,47 @@ Sistema de gestão contabilística para Agora Media Production (BA + RR).
 
 ---
 
-## 🚀 **FRASE MÁGICA** - Iniciar Nova Sessão Claude Code
+## 🚨 NOVA SESSÃO CLAUDE CODE? → [Lê Isto Primeiro](./SESSION_IMPORT.md)
 
-Quando abrires uma nova sessão no Claude Code, usa esta frase:
+**TL;DR:** Sempre que iniciares nova sessão, copia e cola:
+```
+Esta sessão é continuação de uma anterior. Importa a sessão anterior para teres contexto completo do que foi feito.
+```
+
+---
+
+## 🚀 **NOVAS SESSÕES CLAUDE CODE** - Importante!
+
+### ⚠️ Problema Comum
+O Claude Code cria um **novo branch** a cada sessão. A nova sessão **NÃO tem contexto** da sessão anterior automaticamente.
+
+### ✅ Solução: Importar Sessão Anterior
+
+**SEMPRE** que iniciares uma nova sessão, usa esta frase:
+
+```
+Esta sessão é continuação de uma anterior. Importa a sessão anterior para teres contexto completo do que foi feito.
+```
+
+O Claude Code vai:
+1. ✅ Importar toda a conversa da sessão anterior
+2. ✅ Ter contexto de todas as alterações feitas
+3. ✅ Continuar o trabalho sem perder informação
+
+### 📖 Contexto Adicional (Opcional)
+
+Se precisares de mais contexto sobre o projeto:
 
 ```
 Lê memory/CURRENT_STATE.md e memory/TODO.md para contexto do projeto
 ```
 
-Isto dá ao Claude contexto completo em **segundos**:
+Isto dá ao Claude:
 - ✅ Estado atual (features implementadas)
 - ✅ Próximos passos e tarefas
-- ✅ Toda a informação necessária
+- ✅ Arquitetura e decisões técnicas
 
-**Contexto adicional:** Consulta `/memory/` para arquitetura, decisões, schema, etc.
+**Documentação completa:** Consulta `/memory/` para detalhes técnicos.
 
 ---
 
