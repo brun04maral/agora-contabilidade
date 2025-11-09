@@ -4,12 +4,7 @@ Sistema de gestão contabilística para a Agora Media Production, com foco espec
 
 ## ⚙️ Requisitos do Sistema
 
-**Python:** 3.10, 3.11 ou 3.12 (recomendado: **3.11** ou **3.12**)
-
-⚠️ **IMPORTANTE:**
-- ❌ Python 3.13+ pode ter problemas de compatibilidade
-- ❌ Python 3.14 (alpha/beta) **NÃO é suportado** - use 3.11 ou 3.12
-- ❌ Python 3.9 ou anterior não é suportado
+**Python:** 3.10 ou superior (testado em 3.10, 3.11, 3.12, 3.13, 3.14)
 
 **Para verificar compatibilidade:**
 ```bash

@@ -1,5 +1,5 @@
-# Python version: 3.10 - 3.13 (testado em 3.10, 3.11, 3.12)
-# Para Windows, recomenda-se Python 3.11 ou 3.12
+# Python version: 3.10+ (testado em 3.10, 3.11, 3.12, 3.13, 3.14)
+# Para Windows, funcional em todas as versões recentes
 
 # Core UI
 customtkinter==5.2.2

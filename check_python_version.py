@@ -57,28 +57,14 @@ def check_python_version():
         return True
 
     if version.minor >= 14:
-        print("❌ ERRO CRÍTICO: Python 3.14+ - Versão em desenvolvimento!")
+        print("✅ Python 3.14+ detectado!")
+        print("   Versão muito recente - a maioria das bibliotecas deve funcionar.")
         print("   ")
-        print("   Python 3.14 ainda NÃO foi oficialmente lançado.")
-        print("   Esta é uma versão ALPHA/BETA não estável.")
+        print("   ⚠️  NOTA: Se encontrar problemas de compatibilidade:")
+        print("   - Tente instalar com: pip install --upgrade --force-reinstall")
+        print("   - Algumas bibliotecas C podem precisar de recompilação")
         print("   ")
-        print("   ⚠️  INCOMPATIBILIDADES ESPERADAS:")
-        print("   - customtkinter: Pode não funcionar")
-        print("   - psycopg2-binary: Compilação falhará")
-        print("   - bcrypt: Problemas de segurança")
-        print("   - Pillow: Extensões C incompatíveis")
-        print("   - pandas: Problemas com NumPy")
-        print("   ")
-        print("   🔧 SOLUÇÃO URGENTE:")
-        print("   1. Desinstale Python 3.14")
-        print("   2. Instale Python 3.11 ou 3.12 de python.org")
-        print("   3. Use o instalador oficial (não use versões beta/dev)")
-        print("   ")
-        print("   Download Python 3.12:")
-        print("   https://www.python.org/downloads/release/python-3120/")
-        print()
-
-        return False
+        return True
 
     return True
 
