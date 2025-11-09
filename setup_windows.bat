@@ -9,13 +9,38 @@ echo.
 
 REM Verificar versão do Python
 echo [1/5] Verificando versão do Python...
-python --version
-if %ERRORLEVEL% NEQ 0 (
-    echo ERRO: Python nao encontrado!
-    echo Por favor instale Python 3.10, 3.11 ou 3.12 de python.org
-    pause
-    exit /b 1
+
+REM Tentar diferentes comandos Python
+python --version >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    set PYTHON_CMD=python
+    goto :python_found
 )
+
+py --version >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    set PYTHON_CMD=py
+    goto :python_found
+)
+
+python3 --version >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    set PYTHON_CMD=python3
+    goto :python_found
+)
+
+echo ERRO: Python nao encontrado!
+echo.
+echo Por favor instale Python de python.org OU:
+echo - Reabra PowerShell como Administrador
+echo - Execute: setx PATH "%PATH%;C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python314"
+echo.
+pause
+exit /b 1
+
+:python_found
+%PYTHON_CMD% --version
+echo Python encontrado: %PYTHON_CMD%
 echo.
 
 REM Criar ambiente virtual
@@ -23,7 +48,7 @@ echo [2/5] Criando ambiente virtual...
 if exist venv (
     echo Ambiente virtual ja existe. A usar o existente.
 ) else (
-    python -m venv venv
+    %PYTHON_CMD% -m venv venv
     if %ERRORLEVEL% NEQ 0 (
         echo ERRO: Falha ao criar ambiente virtual!
         pause
@@ -45,7 +70,7 @@ echo.
 
 REM Atualizar pip
 echo [4/5] Atualizando pip...
-python -m pip install --upgrade pip
+%PYTHON_CMD% -m pip install --upgrade pip
 echo.
 
 REM Instalar dependências
