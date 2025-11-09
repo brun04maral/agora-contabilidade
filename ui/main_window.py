@@ -98,6 +98,14 @@ class MainWindow(ctk.CTkFrame):
 
     def show_dashboard(self):
         """Show dashboard screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("dashboard")
+
         from ui.screens.dashboard import DashboardScreen
         screen = DashboardScreen(self.content_frame, self.db_session, self)
         screen.grid(row=0, column=0, sticky="nsew")
@@ -105,6 +113,14 @@ class MainWindow(ctk.CTkFrame):
 
     def show_saldos(self):
         """Show saldos pessoais screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("saldos")
+
         screen = SaldosScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
@@ -194,6 +210,14 @@ class MainWindow(ctk.CTkFrame):
 
     def show_clientes(self):
         """Show clientes screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("clientes")
+
         from ui.screens.clientes import ClientesScreen
         screen = ClientesScreen(self.content_frame, self.db_session, self)
         screen.grid(row=0, column=0, sticky="nsew")
@@ -201,6 +225,14 @@ class MainWindow(ctk.CTkFrame):
 
     def show_fornecedores(self):
         """Show fornecedores screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("fornecedores")
+
         from ui.screens.fornecedores import FornecedoresScreen
         screen = FornecedoresScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
@@ -208,6 +240,14 @@ class MainWindow(ctk.CTkFrame):
 
     def show_equipamento(self):
         """Show equipamento screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("equipamento")
+
         from ui.screens.equipamento import EquipamentoScreen
         screen = EquipamentoScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
@@ -243,6 +283,14 @@ class MainWindow(ctk.CTkFrame):
 
     def show_info(self):
         """Show info screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        self.sidebar.update_selection("info")
+
         from ui.screens.info import InfoScreen
         screen = InfoScreen(self.content_frame)
         screen.grid(row=0, column=0, sticky="nsew")
