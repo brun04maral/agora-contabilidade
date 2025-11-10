@@ -61,4 +61,31 @@ Esta sessão é continuação de uma anterior. Importa a sessão anterior para t
 
 ---
 
+## 🔄 No Final da Sessão: Merge para Main
+
+**IMPORTANTE:** Quando terminares uma sessão de trabalho, **SEMPRE** faz merge do branch para main:
+
+```bash
+# 1. Commit todas as alterações
+git add -A
+git commit -m "mensagem descritiva"
+
+# 2. Muda para main
+git checkout main
+
+# 3. Faz merge do branch da sessão
+git merge nome-do-branch-da-sessao
+
+# 4. Push para main
+git push origin main
+```
+
+**Porquê?**
+- ✅ Próximas sessões começam do main atualizado
+- ✅ Têm acesso a estas instruções e todo o código novo
+- ✅ Evita branches desatualizados
+- ✅ Documentação sempre acessível
+
+---
+
 **📍 Lembrete:** Este ficheiro existe para te poupar tempo! Usa-o sempre.

@@ -46,6 +46,18 @@ Isto dá ao Claude:
 
 **Documentação completa:** Consulta `/memory/` para detalhes técnicos.
 
+### 🔄 No Final da Sessão: Merge para Main
+
+**CRÍTICO:** Quando terminares trabalho numa sessão, **SEMPRE** faz merge para `main`:
+
+```bash
+git checkout main
+git merge nome-do-branch-da-sessao
+git push origin main
+```
+
+**Porquê?** Próximas sessões começam do `main` e precisam ter acesso a todo o código e documentação atualizados.
+
 ---
 
 ## ⚙️ Requisitos do Sistema
