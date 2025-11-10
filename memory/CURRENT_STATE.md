@@ -7,14 +7,16 @@
 
 ## 🚨 IMPORTANTE - Nova Sessão Claude Code?
 
-**SE ESTA É UMA NOVA SESSÃO:** O Claude Code cria um novo branch a cada sessão e **não importa contexto automaticamente**.
+**SE ESTA É UMA NOVA SESSÃO:** O novo branch foi criado do `main` (desatualizado). O código atualizado está no branch da sessão anterior!
 
-**SOLUÇÃO:** Usa esta frase na nova sessão:
+**FRASE MÁGICA - Usa sempre:**
 ```
-Esta sessão é continuação de uma anterior. Importa a sessão anterior para teres contexto completo do que foi feito.
+Esta sessão é continuação de uma anterior. Faz merge do branch da última sessão para este branch atual para teres todo o código e contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md para contexto completo.
 ```
 
-**Mais informação:** Ver `/SESSION_IMPORT.md` na raiz do projeto.
+**Isto vai:** Fazer merge do branch anterior + Ler documentação = Contexto completo!
+
+**Instruções completas:** Ver `/SESSION_IMPORT.md` na raiz do projeto.
 
 ---
 

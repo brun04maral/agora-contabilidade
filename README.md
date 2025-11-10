@@ -6,57 +6,19 @@ Sistema de gestão contabilística para Agora Media Production (BA + RR).
 
 ## 🚨 NOVA SESSÃO CLAUDE CODE? → [Lê Isto Primeiro](./SESSION_IMPORT.md)
 
-**TL;DR:** Sempre que iniciares nova sessão, copia e cola:
+**⚠️ CRÍTICO:** O Claude cria novo branch do `main` (desatualizado). Código novo está no branch anterior!
+
+**FRASE MÁGICA - Copia e cola sempre:**
 ```
-Esta sessão é continuação de uma anterior. Importa a sessão anterior para teres contexto completo do que foi feito.
-```
-
----
-
-## 🚀 **NOVAS SESSÕES CLAUDE CODE** - Importante!
-
-### ⚠️ Problema Comum
-O Claude Code cria um **novo branch** a cada sessão. A nova sessão **NÃO tem contexto** da sessão anterior automaticamente.
-
-### ✅ Solução: Importar Sessão Anterior
-
-**SEMPRE** que iniciares uma nova sessão, usa esta frase:
-
-```
-Esta sessão é continuação de uma anterior. Importa a sessão anterior para teres contexto completo do que foi feito.
+Esta sessão é continuação de uma anterior. Faz merge do branch da última sessão para este branch atual para teres todo o código e contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md para contexto completo.
 ```
 
-O Claude Code vai:
-1. ✅ Importar toda a conversa da sessão anterior
-2. ✅ Ter contexto de todas as alterações feitas
-3. ✅ Continuar o trabalho sem perder informação
+**O que faz:**
+1. ✅ Faz merge do branch da sessão anterior (tem código atualizado)
+2. ✅ Lê README.md e memory/CURRENT_STATE.md (contexto completo)
+3. ✅ Está pronto para trabalhar com tudo atualizado
 
-### 📖 Contexto Adicional (Opcional)
-
-Se precisares de mais contexto sobre o projeto:
-
-```
-Lê memory/CURRENT_STATE.md e memory/TODO.md para contexto do projeto
-```
-
-Isto dá ao Claude:
-- ✅ Estado atual (features implementadas)
-- ✅ Próximos passos e tarefas
-- ✅ Arquitetura e decisões técnicas
-
-**Documentação completa:** Consulta `/memory/` para detalhes técnicos.
-
-### 🔄 No Final da Sessão: Merge para Main
-
-**CRÍTICO:** Quando terminares trabalho numa sessão, **SEMPRE** faz merge para `main`:
-
-```bash
-git checkout main
-git merge nome-do-branch-da-sessao
-git push origin main
-```
-
-**Porquê?** Próximas sessões começam do `main` e precisam ter acesso a todo o código e documentação atualizados.
+**Instruções detalhadas:** Ver [SESSION_IMPORT.md](./SESSION_IMPORT.md)
 
 ---
 
