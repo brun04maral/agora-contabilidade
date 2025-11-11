@@ -127,7 +127,7 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_projetos(self, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None):
+    def show_projetos(self, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None, filtro_premio_socio=None):
         """
         Show projetos screen
 
@@ -135,6 +135,7 @@ class MainWindow(ctk.CTkFrame):
             filtro_estado: Optional estado filter ("Todos", "Recebido", "Faturado", "Não Faturado")
             filtro_cliente_id: Optional cliente ID to filter by
             filtro_tipo: Optional tipo filter ("Pessoal BA", "Pessoal RR", "Empresa")
+            filtro_premio_socio: Optional filter for projects with prizes ("BA" or "RR")
         """
         # Clear current screen if navigating programmatically
         if self.current_screen:
@@ -146,7 +147,7 @@ class MainWindow(ctk.CTkFrame):
             self.sidebar.update_selection("projetos")
 
         from ui.screens.projetos import ProjetosScreen
-        screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_cliente_id=filtro_cliente_id, filtro_tipo=filtro_tipo)
+        screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_cliente_id=filtro_cliente_id, filtro_tipo=filtro_tipo, filtro_premio_socio=filtro_premio_socio)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 

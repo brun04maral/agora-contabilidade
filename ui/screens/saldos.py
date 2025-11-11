@@ -349,6 +349,16 @@ class SaldosScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_projetos(filtro_tipo="Pessoal RR")
 
+    def navegar_premios_bruno(self):
+        """Navigate to Projetos screen with Bruno's prizes filter"""
+        if self.main_window:
+            self.main_window.show_projetos(filtro_premio_socio="BA")
+
+    def navegar_premios_rafael(self):
+        """Navigate to Projetos screen with Rafael's prizes filter"""
+        if self.main_window:
+            self.main_window.show_projetos(filtro_premio_socio="RR")
+
     def carregar_saldos(self):
         """Load and display saldos"""
 
@@ -377,7 +387,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.bruno_ins_frame,
             "Prémios",
-            saldo_bruno['ins']['premios']
+            saldo_bruno['ins']['premios'],
+            clickable=True,
+            on_click=self.navegar_premios_bruno,
+            button_color=("#FFF8E1", "#4A3C0F")  # Light yellow/golden (BA color)
         )
 
         # Separator line
@@ -448,7 +461,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.rafael_ins_frame,
             "Prémios",
-            saldo_rafael['ins']['premios']
+            saldo_rafael['ins']['premios'],
+            clickable=True,
+            on_click=self.navegar_premios_rafael,
+            button_color=("#FFF3E0", "#3E2A0D")  # Light amber/orange (RR color)
         )
 
         sep = ctk.CTkFrame(self.rafael_ins_frame, height=1, fg_color="gray")
