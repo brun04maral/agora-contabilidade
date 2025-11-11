@@ -4,6 +4,47 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-11] Navegação Clicável em Saldos Pessoais
+
+### ✨ Adicionado
+- 🎨 **Navegação clicável completa em Saldos Pessoais**
+  - 10 botões clicáveis com navegação automática e filtros aplicados
+  - INs: Projetos Pessoais, Prémios (para cada sócio)
+  - OUTs: Despesas Fixas, Boletins Pendentes, Boletins Pagos, Despesas Pessoais
+- 🎨 **Cores semânticas consistentes**
+  - Verde (#E8F5E0/#4A7028) para INs - match Recebido
+  - Laranja (#FFE5D0/#8B4513) para OUTs - match Não Faturado
+- 🖼️ **Ícones PNG customizados**
+  - ins.png e outs.png (convertidos para Base64)
+  - Substituem emojis 💰 e 💸
+- ✨ **Efeitos hover profissionais**
+  - Border width aumenta 2→3 pixels
+  - Cursor hand2 em toda a extensão do card
+  - Texto branco para melhor contraste
+
+### 🔧 Alterado
+- **Boletins** separados em duas linhas: "Boletins pendentes" e "Boletins pagos"
+- **Títulos** simplificados: "INs (Entradas)" → "INs" e "OUTs (Saídas)" → "OUTs"
+- **TOTAL** sem bullet point (separadores visuais em vez de "• TOTAL")
+- Filtros propagados para Projetos, Despesas, Boletins (filtro_tipo, filtro_premio_socio, filtro_estado, filtro_socio)
+
+### 🐛 Problemas Identificados
+- **Scroll em popup de Projetos** propaga para lista por trás
+  - Múltiplas tentativas: bind_all, event detection, unbind parent
+  - Código implementado mas ainda não resolvido
+  - Documentado em memory/TODO.md como Alta Prioridade
+
+### 📝 Ficheiros Alterados
+- `ui/screens/saldos.py` - Navegação, cores, ícones, boletins separados
+- `logic/saldos.py` - Boletins separados em pendentes/pagos
+- `assets/resources.py` - Novos ícones INS e OUTS (Base64)
+- `ui/main_window.py` - Propagação de filtros (show_projetos, show_despesas, show_boletins)
+- `ui/screens/projetos.py` - Tentativa de fix para scroll no popup
+- `ui/screens/despesas.py` - Suporte para filtro_tipo
+- `ui/screens/boletins.py` - Suporte para filtro_socio
+
+---
+
 ## [2025-11-09] Sistema de Memória & Ícones Completo
 
 ### ✨ Adicionado
