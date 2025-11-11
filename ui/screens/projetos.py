@@ -444,9 +444,32 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         # Create form
         self.create_form()
 
+        # Prevent scroll events from propagating to parent (bind AFTER creating form)
+        self.bind("<MouseWheel>", self._on_mousewheel, add="+")
+        self.bind("<Button-4>", self._on_mousewheel, add="+")
+        self.bind("<Button-5>", self._on_mousewheel, add="+")
+
         # Load data if editing
         if projeto:
             self.carregar_dados()
+
+    def _on_mousewheel(self, event):
+        """Capture mousewheel events to prevent propagation to parent window"""
+        # Stop propagation - let CustomTkinter handle the scroll internally
+        return "break"
+
+    def destroy(self):
+        """Clean up event bindings before destroying"""
+        try:
+            # Unbind mousewheel events from this window
+            self.unbind("<MouseWheel>")
+            self.unbind("<Button-4>")
+            self.unbind("<Button-5>")
+        except:
+            pass
+
+        # Call parent destroy
+        super().destroy()
 
     def create_form(self):
         """Create form fields"""
