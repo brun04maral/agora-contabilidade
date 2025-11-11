@@ -451,54 +451,6 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         # Focus on the dialog
         self.focus_set()
 
-        # Bind mousewheel with special handling
-        self.bind_all("<MouseWheel>", self._on_mousewheel_smart, add="+")
-        self.bind_all("<Button-4>", self._on_mousewheel_smart, add="+")
-        self.bind_all("<Button-5>", self._on_mousewheel_smart, add="+")
-
-    def _on_mousewheel_smart(self, event):
-        """Smart mousewheel handling: allow scroll in popup, allow scroll in list if mouse outside popup"""
-        try:
-            # Get mouse position
-            x, y = self.winfo_pointerx(), self.winfo_pointery()
-
-            # Get widget under mouse
-            widget_under_mouse = self.winfo_containing(x, y)
-
-            if not widget_under_mouse:
-                return None
-
-            # Check if mouse is over this popup or its children
-            widget_path = str(widget_under_mouse)
-            popup_path = str(self)
-
-            if widget_path.startswith(popup_path):
-                # Mouse is over popup - allow scroll in popup only
-                # We don't return "break" to allow internal scrolling
-                # But the grab_set() should prevent parent from scrolling
-                return None
-            else:
-                # Mouse is outside popup (over parent list)
-                # Temporarily release grab to allow parent interaction
-                self.grab_release()
-                # Schedule grab_set to be called after event is processed
-                self.after(1, self.grab_set)
-                # Allow event to propagate
-                return None
-
-        except Exception as e:
-            return None
-
-    def destroy(self):
-        """Override destroy to clean up bindings"""
-        try:
-            self.unbind_all("<MouseWheel>")
-            self.unbind_all("<Button-4>")
-            self.unbind_all("<Button-5>")
-        except:
-            pass
-        super().destroy()
-
     def create_form(self):
         """Create form fields"""
 
