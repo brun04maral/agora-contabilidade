@@ -275,7 +275,9 @@ class SaldosCalculator:
 
         despesas_pessoais = query_despesas_pessoais.scalar() or Decimal("0.00")
 
-        total_outs = despesas_fixas + boletins_total + despesas_pessoais
+        # IMPORTANTE: Apenas boletins PAGOS entram no cálculo do saldo!
+        # Pendentes são apenas para visualização
+        total_outs = despesas_fixas + boletins_pagos + despesas_pessoais
 
         # === CALCULAR SALDO FINAL ===
         saldo_total = total_ins - total_outs
