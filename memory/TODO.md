@@ -1,6 +1,6 @@
 # 📝 TODO - Agora Contabilidade
 
-**Última atualização:** 09/11/2025
+**Última atualização:** 11/11/2025
 **Estado atual:** ✅ MVP Completo | Produção Ready | Melhorias incrementais
 
 ---
@@ -17,6 +17,14 @@
 
 ### 🔴 Alta Prioridade
 
+- [ ] 🐛 **Bug: Scroll em popup de Projetos propaga para lista**
+  - **Problema:** Ao fazer scroll no popup de edição/criação de projeto, a lista por trás também faz scroll
+  - **Comportamento esperado:** Scroll apenas dentro do popup, lista não deve mover
+  - **Requerimento:** Trackpad deve funcionar normalmente no popup
+  - **Tentativas:** Múltiplas abordagens testadas (bind_all, event detection, unbind parent)
+  - **Status:** Código implementado em ui/screens/projetos.py (unbind/rebind), mas ainda propaga
+  - **Ficheiro:** `ui/screens/projetos.py` (FormularioProjetoDialog)
+  - **Notas:** Problema pode ser específico do CustomTkinter/Tkinter modal behavior
 - [ ] 📦 Build executável para Windows (PyInstaller)
   - Testar em ambiente Windows limpo
   - Configurar inclusão de assets
@@ -113,6 +121,19 @@
 ## ✅ Concluído Recentemente
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
+
+- [x] 🎨 **11/11** - Navegação clicável completa em Saldos Pessoais
+  - **10 botões clicáveis** com navegação e filtros automáticos:
+    - INs: Projetos Pessoais, Prémios (para cada sócio)
+    - OUTs: Despesas Fixas, Boletins Pendentes, Boletins Pagos, Despesas Pessoais
+  - **Cores semânticas consistentes:**
+    - Verde (#E8F5E0/#4A7028) para INs (match Recebido)
+    - Laranja (#FFE5D0/#8B4513) para OUTs (match Não Faturado)
+  - **Ícones PNG customizados:** ins.png e outs.png (base64)
+  - **Títulos simplificados:** "INs (Entradas)" → "INs" e "OUTs (Saídas)" → "OUTs"
+  - **Efeitos hover:** Border width 2→3, cursor hand2
+  - **Boletins separados:** Mostrar Pendentes e Pagos como linhas distintas
+  - Ficheiros: ui/screens/saldos.py, logic/saldos.py, assets/resources.py
 
 - [x] ✨ **09/11** - Dashboard com navegação interativa
   - Cards BA/RR clicáveis → navegam para Saldos Pessoais
