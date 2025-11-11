@@ -384,6 +384,16 @@ class SaldosScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_boletins(filtro_estado="Pago", filtro_socio="RR")
 
+    def navegar_despesas_pessoais_bruno(self):
+        """Navigate to Despesas screen with Bruno's personal expenses"""
+        if self.main_window:
+            self.main_window.show_despesas(filtro_tipo="Pessoal BA")
+
+    def navegar_despesas_pessoais_rafael(self):
+        """Navigate to Despesas screen with Rafael's personal expenses"""
+        if self.main_window:
+            self.main_window.show_despesas(filtro_tipo="Pessoal RR")
+
     def carregar_saldos(self):
         """Load and display saldos"""
 
@@ -460,7 +470,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.bruno_outs_frame,
             "Despesas pessoais",
-            saldo_bruno['outs']['despesas_pessoais']
+            saldo_bruno['outs']['despesas_pessoais'],
+            clickable=True,
+            on_click=self.navegar_despesas_pessoais_bruno,
+            button_color=("#FFF8E1", "#4A3C0F")  # Light yellow/golden (matching BA)
         )
 
         # Separator line
@@ -547,7 +560,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.rafael_outs_frame,
             "Despesas pessoais",
-            saldo_rafael['outs']['despesas_pessoais']
+            saldo_rafael['outs']['despesas_pessoais'],
+            clickable=True,
+            on_click=self.navegar_despesas_pessoais_rafael,
+            button_color=("#FFF3E0", "#3E2A0D")  # Light amber/orange (matching RR)
         )
 
         sep = ctk.CTkFrame(self.rafael_outs_frame, height=1, fg_color="gray")
