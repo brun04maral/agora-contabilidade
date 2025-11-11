@@ -151,12 +151,13 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_despesas(self, filtro_estado=None):
+    def show_despesas(self, filtro_estado=None, filtro_tipo=None):
         """
         Show despesas screen
 
         Args:
-            filtro_estado: Optional estado filter ("Todos", "Ativo", "Vencido", "Pago")
+            filtro_estado: Optional estado filter ("Todos", "Pendente", "Vencido", "Pago")
+            filtro_tipo: Optional tipo filter ("Fixa Mensal", "Pessoal BA", "Pessoal RR", etc.)
         """
         # Clear current screen if navigating programmatically
         if self.current_screen:
@@ -168,7 +169,7 @@ class MainWindow(ctk.CTkFrame):
             self.sidebar.update_selection("despesas")
 
         from ui.screens.despesas import DespesasScreen
-        screen = DespesasScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
+        screen = DespesasScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_tipo=filtro_tipo)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 

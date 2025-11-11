@@ -359,6 +359,11 @@ class SaldosScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_projetos(filtro_premio_socio="RR")
 
+    def navegar_despesas_fixas(self):
+        """Navigate to Despesas screen with Fixa Mensal filter"""
+        if self.main_window:
+            self.main_window.show_despesas(filtro_tipo="Fixa Mensal")
+
     def carregar_saldos(self):
         """Load and display saldos"""
 
@@ -411,7 +416,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.bruno_outs_frame,
             "Despesas fixas (÷2)",
-            saldo_bruno['outs']['despesas_fixas']
+            saldo_bruno['outs']['despesas_fixas'],
+            clickable=True,
+            on_click=self.navegar_despesas_fixas,
+            button_color=("#FFF8E1", "#4A3C0F")  # Light yellow/golden (matching BA)
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -484,7 +492,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.rafael_outs_frame,
             "Despesas fixas (÷2)",
-            saldo_rafael['outs']['despesas_fixas']
+            saldo_rafael['outs']['despesas_fixas'],
+            clickable=True,
+            on_click=self.navegar_despesas_fixas,
+            button_color=("#FFF3E0", "#3E2A0D")  # Light amber/orange (matching RR)
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
