@@ -254,48 +254,74 @@ class SaldosScreen(ctk.CTkFrame):
             if button_color:
                 # Extract light/dark from tuple or use as single color
                 bg_light, bg_dark = button_color if isinstance(button_color, tuple) else (button_color, button_color)
-                # Set border and text colors (golden/amber tones)
+                # Set border color (golden/amber tones)
                 border_color = ("#C9941F", "#FFD54F")  # Golden border
-                text_color = ("#8B6914", "#FFD54F")  # Dark golden text (light) / Light golden (dark)
             else:
                 bg_light, bg_dark = "#E8F5E9", "#1B5E20"
                 border_color = ("#66BB6A", "#2E7D32")
-                text_color = ("#2E7D32", "#A5D6A7")
 
-            # Create a proper button-like card
+            # Create a proper button-like card (clickable frame)
             button_card = ctk.CTkFrame(
                 item_frame,
                 fg_color=(bg_light, bg_dark),
                 corner_radius=10,
                 border_width=2,
-                border_color=border_color
+                border_color=border_color,
+                cursor="hand2"
             )
             button_card.pack(fill="x", pady=2)
 
-            # Create button that fills the card
-            item_button = ctk.CTkButton(
+            # Label on the left (white text)
+            item_label = ctk.CTkLabel(
                 button_card,
-                text=f"➜  {label}",
+                text=f"{label}",
                 font=ctk.CTkFont(size=14, weight="bold"),
-                anchor="w",
-                fg_color="transparent",
-                hover_color=("#FFFFFF40", "#FFFFFF20"),  # Subtle white overlay on hover
-                text_color=text_color,
-                command=on_click,
-                cursor="hand2",
-                height=40
+                text_color="white",
+                anchor="w"
             )
-            item_button.pack(side="left", fill="both", expand=True, padx=2, pady=2)
+            item_label.pack(side="left", padx=15, pady=12)
 
-            # Value label on the right
+            # Value label on the right (white text)
             value_label = ctk.CTkLabel(
                 button_card,
                 text=f"€{value:,.2f}",
                 font=ctk.CTkFont(size=14, weight="bold"),
-                text_color=text_color,
+                text_color="white",
                 anchor="e"
             )
-            value_label.pack(side="right", padx=15, pady=2)
+            value_label.pack(side="right", padx=15, pady=12)
+
+            # Store original colors for hover effect
+            original_border = border_color
+            original_bg = (bg_light, bg_dark)
+
+            # Make entire card clickable
+            def handle_click(event):
+                on_click()
+
+            button_card.bind("<Button-1>", handle_click)
+            item_label.bind("<Button-1>", handle_click)
+            value_label.bind("<Button-1>", handle_click)
+
+            # Hover effects
+            def on_enter(event):
+                button_card.configure(
+                    border_width=3,
+                    border_color=("#FFFFFF", "#FFFFFF")
+                )
+
+            def on_leave(event):
+                button_card.configure(
+                    border_width=2,
+                    border_color=original_border
+                )
+
+            button_card.bind("<Enter>", on_enter)
+            button_card.bind("<Leave>", on_leave)
+            item_label.bind("<Enter>", on_enter)
+            item_label.bind("<Leave>", on_leave)
+            value_label.bind("<Enter>", on_enter)
+            value_label.bind("<Leave>", on_leave)
         else:
             item_label = ctk.CTkLabel(
                 item_frame,
