@@ -257,6 +257,7 @@ class EquipamentoScreen(ctk.CTkFrame):
 
         if dialog.equipamento_criado:
             self.carregar_equipamentos()
+            self.table.clear_selection()
 
     def editar_equipamento_duplo_clique(self, row_data):
         """Edita equipamento com duplo clique"""
@@ -269,6 +270,9 @@ class EquipamentoScreen(ctk.CTkFrame):
 
         dialog = EquipamentoDialog(self, self.manager, equipamento=equipamento)
         self.wait_window(dialog)
+
+        # Clear selection after closing dialog (whether updated or cancelled)
+        self.table.clear_selection()
 
         if dialog.equipamento_atualizado:
             self.carregar_equipamentos()

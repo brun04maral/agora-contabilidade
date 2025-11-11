@@ -369,6 +369,7 @@ class FornecedoresScreen(ctk.CTkFrame):
         # Reload if fornecedor was created
         if dialog.fornecedor_criado:
             self.carregar_fornecedores()
+            self.table.clear_selection()
 
     def editar_fornecedor(self, fornecedor_id: int):
         """Show dialog to edit fornecedor"""
@@ -379,6 +380,9 @@ class FornecedoresScreen(ctk.CTkFrame):
 
         dialog = FormularioFornecedorDialog(self, self.db_session, fornecedor=fornecedor)
         dialog.wait_window()
+
+        # Clear selection after closing dialog (whether updated or cancelled)
+        self.table.clear_selection()
 
         # Reload if fornecedor was updated
         if dialog.fornecedor_atualizado:

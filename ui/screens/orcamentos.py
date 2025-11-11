@@ -333,6 +333,7 @@ class OrcamentosScreen(ctk.CTkFrame):
         self.wait_window(dialog)
         if dialog.orcamento_criado:
             self.carregar_orcamentos()
+            self.table.clear_selection()
 
     def editar_orcamento(self, data=None):
         """Edit selected orcamento"""
@@ -354,6 +355,10 @@ class OrcamentosScreen(ctk.CTkFrame):
 
         dialog = OrcamentoDialog(self, self.manager, self.db_session, orcamento=orcamento)
         self.wait_window(dialog)
+
+        # Clear selection after closing dialog (whether updated or cancelled)
+        self.table.clear_selection()
+
         if dialog.orcamento_atualizado:
             self.carregar_orcamentos()
 

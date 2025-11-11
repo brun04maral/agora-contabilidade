@@ -283,9 +283,14 @@ class DespesasScreen(ctk.CTkFrame):
         # Clear selection when filters change
         self.table.clear_selection()
 
+    def after_save_callback(self):
+        """Callback after saving - reload data and clear selection"""
+        self.carregar_despesas()
+        self.table.clear_selection()
+
     def abrir_formulario(self, despesa=None):
         """Open form dialog"""
-        FormularioDespesaDialog(self, self.manager, despesa, self.carregar_despesas)
+        FormularioDespesaDialog(self, self.manager, despesa, self.after_save_callback)
 
     def editar_despesa(self, data: dict):
         """Edit despesa (triggered by double-click)"""
@@ -405,6 +410,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         self.manager = manager
         self.despesa = despesa
         self.callback = callback
+        self.parent = parent
 
         self.title("Nova Despesa" if not despesa else f"Editar Despesa {despesa.numero}")
         self.geometry("600x750")
@@ -416,6 +422,9 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
         if despesa:
             self.carregar_dados()
+
+        # Handle window close to clear selection
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def create_form(self):
         """Create form fields"""
@@ -506,7 +515,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         cancel_btn = ctk.CTkButton(
             btn_frame,
             text="Cancelar",
-            command=self.destroy,
+            command=self._on_close,
             width=120,
             fg_color="gray",
             hover_color="darkgray"
@@ -650,3 +659,9 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
             messagebox.showerror("Erro", f"Erro nos dados: {e}")
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
+
+    def _on_close(self):
+        """Handle window close - clear selection"""
+        if hasattr(self.parent, 'table'):
+            self.parent.table.clear_selection()
+        self.destroy()

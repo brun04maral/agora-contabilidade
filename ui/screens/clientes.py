@@ -377,6 +377,7 @@ class ClientesScreen(ctk.CTkFrame):
         # Reload if cliente was created
         if dialog.cliente_criado:
             self.carregar_clientes()
+            self.table.clear_selection()
 
     def editar_cliente(self, cliente_id: int):
         """Show dialog to edit cliente"""
@@ -387,6 +388,9 @@ class ClientesScreen(ctk.CTkFrame):
 
         dialog = FormularioClienteDialog(self, self.db_session, cliente=cliente)
         dialog.wait_window()
+
+        # Clear selection after closing dialog (whether updated or cancelled)
+        self.table.clear_selection()
 
         # Reload if cliente was updated
         if dialog.cliente_atualizado:

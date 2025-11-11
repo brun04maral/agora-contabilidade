@@ -250,9 +250,14 @@ class BoletinsScreen(ctk.CTkFrame):
         # Clear selection when filters change
         self.table.clear_selection()
 
+    def after_save_callback(self):
+        """Callback after saving - reload data and clear selection"""
+        self.carregar_boletins()
+        self.table.clear_selection()
+
     def abrir_formulario(self, boletim=None):
         """Open form dialog"""
-        FormularioBoletimDialog(self, self.manager, boletim, self.carregar_boletins)
+        FormularioBoletimDialog(self, self.manager, boletim, self.after_save_callback)
 
     def editar_boletim(self, data: dict):
         """Edit boletim (triggered by double-click)"""
@@ -364,6 +369,7 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
         self.manager = manager
         self.boletim = boletim
         self.callback = callback
+        self.parent = parent
 
         self.title("Emitir Boletim" if not boletim else f"Editar Boletim {boletim.numero}")
         self.geometry("500x500")
@@ -378,6 +384,9 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
         else:
             # Sugerir valores para novo boletim
             self.sugerir_valores()
+
+        # Handle window close to clear selection
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def create_form(self):
         """Create form fields"""
@@ -450,7 +459,7 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
         cancel_btn = ctk.CTkButton(
             btn_frame,
             text="Cancelar",
-            command=self.destroy,
+            command=self._on_close,
             width=120,
             fg_color="gray",
             hover_color="darkgray"
@@ -552,3 +561,9 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
             messagebox.showerror("Erro", f"Erro nos dados: {e}")
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
+
+    def _on_close(self):
+        """Handle window close - clear selection"""
+        if hasattr(self.parent, 'table'):
+            self.parent.table.clear_selection()
+        self.destroy()
