@@ -15,18 +15,20 @@ class SaldosScreen(ctk.CTkFrame):
     Tela de visualização de Saldos Pessoais dos sócios
     """
 
-    def __init__(self, parent, db_session: Session, **kwargs):
+    def __init__(self, parent, db_session: Session, main_window=None, **kwargs):
         """
         Initialize saldos screen
 
         Args:
             parent: Parent widget
             db_session: SQLAlchemy database session
+            main_window: Reference to MainWindow for navigation
         """
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
         self.calculator = SaldosCalculator(db_session)
+        self.main_window = main_window
 
         # Configure
         self.configure(fg_color="transparent")
@@ -229,7 +231,7 @@ class SaldosScreen(ctk.CTkFrame):
 
         return card
 
-    def create_saldo_item(self, parent, label: str, value: float, is_total: bool = False):
+    def create_saldo_item(self, parent, label: str, value: float, is_total: bool = False, clickable: bool = False, on_click: Optional[Callable] = None):
         """
         Create a saldo line item
 
@@ -238,17 +240,35 @@ class SaldosScreen(ctk.CTkFrame):
             label: Item label
             value: Item value
             is_total: If this is a total line (bold)
+            clickable: If true, makes the item clickable with hover effects
+            on_click: Callback function when item is clicked
         """
         item_frame = ctk.CTkFrame(parent, fg_color="transparent")
         item_frame.pack(fill="x", pady=3)
 
-        item_label = ctk.CTkLabel(
-            item_frame,
-            text=f"{'  ' if not is_total else ''}• {label}:",
-            font=ctk.CTkFont(size=14 if not is_total else 15, weight="bold" if is_total else "normal"),
-            anchor="w"
-        )
-        item_label.pack(side="left")
+        # Use button if clickable, otherwise label
+        if clickable and on_click:
+            # Create clickable button-like label
+            item_label = ctk.CTkButton(
+                item_frame,
+                text=f"{'  ' if not is_total else ''}• {label}:",
+                font=ctk.CTkFont(size=14 if not is_total else 15, weight="bold" if is_total else "normal"),
+                anchor="w",
+                fg_color="transparent",
+                hover_color=("#E3F2FD", "#1E3A5F"),
+                text_color=("#1976D2", "#64B5F6"),
+                command=on_click,
+                cursor="hand2"
+            )
+            item_label.pack(side="left", fill="x", expand=True)
+        else:
+            item_label = ctk.CTkLabel(
+                item_frame,
+                text=f"{'  ' if not is_total else ''}• {label}:",
+                font=ctk.CTkFont(size=14 if not is_total else 15, weight="bold" if is_total else "normal"),
+                anchor="w"
+            )
+            item_label.pack(side="left")
 
         item_value = ctk.CTkLabel(
             item_frame,
@@ -257,6 +277,16 @@ class SaldosScreen(ctk.CTkFrame):
             anchor="e"
         )
         item_value.pack(side="right")
+
+    def navegar_projetos_bruno(self):
+        """Navigate to Projetos screen with Bruno's personal projects filter"""
+        if self.main_window:
+            self.main_window.show_projetos(filtro_tipo="Pessoal BA")
+
+    def navegar_projetos_rafael(self):
+        """Navigate to Projetos screen with Rafael's personal projects filter"""
+        if self.main_window:
+            self.main_window.show_projetos(filtro_tipo="Pessoal RR")
 
     def carregar_saldos(self):
         """Load and display saldos"""
@@ -278,7 +308,9 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.bruno_ins_frame,
             "Projetos pessoais",
-            saldo_bruno['ins']['projetos_pessoais']
+            saldo_bruno['ins']['projetos_pessoais'],
+            clickable=True,
+            on_click=self.navegar_projetos_bruno
         )
         self.create_saldo_item(
             self.bruno_ins_frame,
@@ -346,7 +378,9 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.rafael_ins_frame,
             "Projetos pessoais",
-            saldo_rafael['ins']['projetos_pessoais']
+            saldo_rafael['ins']['projetos_pessoais'],
+            clickable=True,
+            on_click=self.navegar_projetos_rafael
         )
         self.create_saldo_item(
             self.rafael_ins_frame,

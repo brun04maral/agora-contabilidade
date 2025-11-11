@@ -21,7 +21,7 @@ class ProjetosScreen(ctk.CTkFrame):
     Tela de gestão de Projetos (CRUD completo)
     """
 
-    def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_cliente_id=None, **kwargs):
+    def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None, **kwargs):
         """
         Initialize projetos screen
 
@@ -30,6 +30,7 @@ class ProjetosScreen(ctk.CTkFrame):
             db_session: SQLAlchemy database session
             filtro_estado: Optional initial estado filter
             filtro_cliente_id: Optional initial cliente filter (cliente ID)
+            filtro_tipo: Optional initial tipo filter ("Pessoal BA", "Pessoal RR", "Empresa")
         """
         super().__init__(parent, **kwargs)
 
@@ -39,6 +40,7 @@ class ProjetosScreen(ctk.CTkFrame):
         self.projeto_editando = None
         self.filtro_inicial_estado = filtro_estado
         self.filtro_inicial_cliente_id = filtro_cliente_id
+        self.filtro_inicial_tipo = filtro_tipo
 
         # Configure
         self.configure(fg_color="transparent")
@@ -47,7 +49,7 @@ class ProjetosScreen(ctk.CTkFrame):
         self.create_widgets()
 
         # Apply initial filter if provided
-        if self.filtro_inicial_estado or self.filtro_inicial_cliente_id:
+        if self.filtro_inicial_estado or self.filtro_inicial_cliente_id or self.filtro_inicial_tipo:
             if self.filtro_inicial_estado:
                 self.estado_filter.set(self.filtro_inicial_estado)
             if self.filtro_inicial_cliente_id:
@@ -56,6 +58,8 @@ class ProjetosScreen(ctk.CTkFrame):
                     if cliente.id == self.filtro_inicial_cliente_id:
                         self.cliente_filter.set(cliente.nome)
                         break
+            if self.filtro_inicial_tipo:
+                self.tipo_filter.set(self.filtro_inicial_tipo)
             self.aplicar_filtros()
         else:
             # Load data

@@ -123,17 +123,18 @@ class MainWindow(ctk.CTkFrame):
         if hasattr(self, 'sidebar'):
             self.sidebar.update_selection("saldos")
 
-        screen = SaldosScreen(self.content_frame, self.db_session)
+        screen = SaldosScreen(self.content_frame, self.db_session, main_window=self)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_projetos(self, filtro_estado=None, filtro_cliente_id=None):
+    def show_projetos(self, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None):
         """
         Show projetos screen
 
         Args:
             filtro_estado: Optional estado filter ("Todos", "Recebido", "Faturado", "Não Faturado")
             filtro_cliente_id: Optional cliente ID to filter by
+            filtro_tipo: Optional tipo filter ("Pessoal BA", "Pessoal RR", "Empresa")
         """
         # Clear current screen if navigating programmatically
         if self.current_screen:
@@ -145,7 +146,7 @@ class MainWindow(ctk.CTkFrame):
             self.sidebar.update_selection("projetos")
 
         from ui.screens.projetos import ProjetosScreen
-        screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_cliente_id=filtro_cliente_id)
+        screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_cliente_id=filtro_cliente_id, filtro_tipo=filtro_tipo)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
