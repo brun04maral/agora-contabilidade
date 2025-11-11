@@ -228,13 +228,13 @@ class SaldosScreen(ctk.CTkFrame):
                 # Extract light/dark from tuple or use as single color
                 bg_light, bg_dark = button_color if isinstance(button_color, tuple) else (button_color, button_color)
             else:
-                bg_light, bg_dark = "#F9FBE7", "#3A4A2A"  # Green ultra pastel as default
+                bg_light, bg_dark = "#E8F5E0", "#4A7028"  # Green - match Recebido as default
 
             # Set border color (use custom if provided, otherwise default)
             if button_border_color:
                 border_color = button_border_color if isinstance(button_border_color, tuple) else (button_border_color, button_border_color)
             else:
-                border_color = ("#C5E1A5", "#AED581")  # Green ultra pastel border as default
+                border_color = ("#7CB342", "#9CCC65")  # Green border - match Recebido as default
 
             # Create a proper button-like card (clickable frame)
             button_card = ctk.CTkFrame(
@@ -393,8 +393,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['ins']['projetos_pessoais'],
             clickable=True,
             on_click=self.navegar_projetos_bruno,
-            button_color=("#F9FBE7", "#3A4A2A"),  # Green ultra pastel (INs = entradas)
-            button_border_color=("#C5E1A5", "#AED581")
+            button_color=("#E8F5E0", "#4A7028"),  # Green - match Recebido (INs = entradas)
+            button_border_color=("#7CB342", "#9CCC65")
         )
         self.create_saldo_item(
             self.bruno_ins_frame,
@@ -402,8 +402,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['ins']['premios'],
             clickable=True,
             on_click=self.navegar_premios_bruno,
-            button_color=("#F9FBE7", "#3A4A2A"),  # Green ultra pastel (INs = entradas)
-            button_border_color=("#C5E1A5", "#AED581")
+            button_color=("#E8F5E0", "#4A7028"),  # Green - match Recebido (INs = entradas)
+            button_border_color=("#7CB342", "#9CCC65")
         )
 
         # Separator line
@@ -427,8 +427,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['despesas_fixas'],
             clickable=True,
             on_click=self.navegar_despesas_fixas,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -436,8 +436,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['boletins_pendentes'],
             clickable=True,
             on_click=self.navegar_boletins_pendentes_bruno,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -445,8 +445,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['boletins_pagos'],
             clickable=True,
             on_click=self.navegar_boletins_pagos_bruno,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -454,8 +454,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['despesas_pessoais'],
             clickable=True,
             on_click=self.navegar_despesas_pessoais_bruno,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
 
         # Separator line
@@ -485,8 +485,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['ins']['projetos_pessoais'],
             clickable=True,
             on_click=self.navegar_projetos_rafael,
-            button_color=("#F9FBE7", "#3A4A2A"),  # Green ultra pastel (INs = entradas)
-            button_border_color=("#C5E1A5", "#AED581")
+            button_color=("#E8F5E0", "#4A7028"),  # Green - match Recebido (INs = entradas)
+            button_border_color=("#7CB342", "#9CCC65")
         )
         self.create_saldo_item(
             self.rafael_ins_frame,
@@ -494,8 +494,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['ins']['premios'],
             clickable=True,
             on_click=self.navegar_premios_rafael,
-            button_color=("#F9FBE7", "#3A4A2A"),  # Green ultra pastel (INs = entradas)
-            button_border_color=("#C5E1A5", "#AED581")
+            button_color=("#E8F5E0", "#4A7028"),  # Green - match Recebido (INs = entradas)
+            button_border_color=("#7CB342", "#9CCC65")
         )
 
         sep = ctk.CTkFrame(self.rafael_ins_frame, height=1, fg_color="gray")
@@ -518,8 +518,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['despesas_fixas'],
             clickable=True,
             on_click=self.navegar_despesas_fixas,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
@@ -527,8 +527,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['boletins_pendentes'],
             clickable=True,
             on_click=self.navegar_boletins_pendentes_rafael,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
@@ -536,8 +536,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['boletins_pagos'],
             clickable=True,
             on_click=self.navegar_boletins_pagos_rafael,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
@@ -545,8 +545,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['despesas_pessoais'],
             clickable=True,
             on_click=self.navegar_despesas_pessoais_rafael,
-            button_color=("#FFEBEE", "#4A2525"),  # Red ultra pastel (OUTs = saídas)
-            button_border_color=("#F8BBD0", "#F48FB1")
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
         )
 
         sep = ctk.CTkFrame(self.rafael_outs_frame, height=1, fg_color="gray")
