@@ -432,6 +432,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.manager = manager
         self.projeto = projeto
         self.callback = callback
+        self.parent = parent
 
         # Configure window
         self.title("Novo Projeto" if not projeto else f"Editar Projeto {projeto.numero}")
@@ -440,6 +441,9 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         # Make modal
         self.transient(parent)
         self.grab_set()
+
+        # Disable scrolling on parent table
+        self._disable_parent_scroll()
 
         # Create form
         self.create_form()
@@ -451,36 +455,11 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         # Focus on the dialog
         self.focus_set()
 
-        # Bind mousewheel events to prevent scroll propagation to parent list
-        # Only block if event originates from within this popup
-        def handle_scroll(event):
-            # Check if the event widget is part of this toplevel
-            widget = event.widget
-            try:
-                # Get the toplevel of the widget that generated the event
-                widget_toplevel = widget.winfo_toplevel()
+        # After window is mapped, configure it to stay on top and grab focus
+        self.after(10, lambda: self.lift())
 
-                # If the event comes from a widget in this popup, block propagation
-                if widget_toplevel == self:
-                    return "break"
-                # Otherwise, let it propagate (for parent list)
-                return None
-            except:
-                return None
-
-        self.bind_all("<MouseWheel>", handle_scroll, add="+")
-        self.bind_all("<Button-4>", handle_scroll, add="+")  # Linux scroll up
-        self.bind_all("<Button-5>", handle_scroll, add="+")  # Linux scroll down
-
-    def destroy(self):
-        """Override destroy to unbind scroll events"""
-        try:
-            self.unbind_all("<MouseWheel>")
-            self.unbind_all("<Button-4>")
-            self.unbind_all("<Button-5>")
-        except:
-            pass
-        super().destroy()
+        # Handle window close to re-enable parent scroll
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def create_form(self):
         """Create form fields"""
@@ -572,7 +551,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         cancel_btn = ctk.CTkButton(
             btn_frame,
             text="Cancelar",
-            command=self.destroy,
+            command=self._on_close,
             width=130,
             height=40,
             font=ctk.CTkFont(size=14),
@@ -740,6 +719,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
                 messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
+                self._enable_parent_scroll()
                 self.destroy()
             else:
                 messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
@@ -748,3 +728,26 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
             messagebox.showerror("Erro", f"Erro nos dados: {e}")
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
+
+    def _disable_parent_scroll(self):
+        """Disable scrolling on parent table"""
+        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
+            tree = self.parent.table.tree
+            # Unbind scroll events
+            tree.unbind("<MouseWheel>")
+            tree.unbind("<Button-4>")
+            tree.unbind("<Button-5>")
+
+    def _enable_parent_scroll(self):
+        """Re-enable scrolling on parent table"""
+        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
+            tree = self.parent.table.tree
+            # Rebind scroll events (standard tkinter treeview scrolling)
+            tree.bind("<MouseWheel>", lambda e: tree.yview_scroll(int(-1*(e.delta/120)), "units"))
+            tree.bind("<Button-4>", lambda e: tree.yview_scroll(-1, "units"))
+            tree.bind("<Button-5>", lambda e: tree.yview_scroll(1, "units"))
+
+    def _on_close(self):
+        """Handle window close"""
+        self._enable_parent_scroll()
+        self.destroy()
