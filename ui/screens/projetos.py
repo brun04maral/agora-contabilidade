@@ -340,9 +340,14 @@ class ProjetosScreen(ctk.CTkFrame):
         data = [self.projeto_to_dict(p) for p in projetos]
         self.table.set_data(data)
 
+    def after_save_callback(self):
+        """Callback after saving project - reload data and clear selection"""
+        self.carregar_projetos()
+        self.table.clear_selection()
+
     def abrir_formulario(self, projeto=None):
         """Open form dialog for create/edit"""
-        FormularioProjetoDialog(self, self.manager, projeto, self.carregar_projetos)
+        FormularioProjetoDialog(self, self.manager, projeto, self.after_save_callback)
 
     def editar_projeto(self, data: dict):
         """Edit project"""
@@ -750,4 +755,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
     def _on_close(self):
         """Handle window close"""
         self._enable_parent_scroll()
+        # Clear selection when closing (cancel or X button)
+        if hasattr(self.parent, 'table'):
+            self.parent.table.clear_selection()
         self.destroy()
