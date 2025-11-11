@@ -7,7 +7,7 @@ from typing import Callable, Optional
 from sqlalchemy.orm import Session
 from logic.saldos import SaldosCalculator
 from database.models import Socio
-from assets.resources import get_icon, SALDOSPESSOAIS
+from assets.resources import get_icon, SALDOSPESSOAIS, INS, OUTS
 
 
 class SaldosScreen(ctk.CTkFrame):
@@ -162,12 +162,31 @@ class SaldosScreen(ctk.CTkFrame):
         ins_frame = ctk.CTkFrame(card, fg_color="transparent")
         ins_frame.grid(row=3, column=0, sticky="ew", padx=20, pady=(0, 15))
 
-        ins_title = ctk.CTkLabel(
-            ins_frame,
-            text="📈 INs (Entradas)",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        ins_title.pack(anchor="w")
+        # INs title with icon
+        ins_title_frame = ctk.CTkFrame(ins_frame, fg_color="transparent")
+        ins_title_frame.pack(anchor="w")
+
+        ins_icon_pil = get_icon(INS, size=(20, 20))
+        if ins_icon_pil:
+            ins_icon_ctk = ctk.CTkImage(
+                light_image=ins_icon_pil,
+                dark_image=ins_icon_pil,
+                size=(20, 20)
+            )
+            ins_title = ctk.CTkLabel(
+                ins_title_frame,
+                image=ins_icon_ctk,
+                text=" INs",
+                compound="left",
+                font=ctk.CTkFont(size=16, weight="bold")
+            )
+        else:
+            ins_title = ctk.CTkLabel(
+                ins_title_frame,
+                text="INs",
+                font=ctk.CTkFont(size=16, weight="bold")
+            )
+        ins_title.pack(side="left")
 
         # INs items (will be filled later)
         ins_items_frame = ctk.CTkFrame(ins_frame, fg_color="transparent")
@@ -186,12 +205,31 @@ class SaldosScreen(ctk.CTkFrame):
         outs_frame = ctk.CTkFrame(card, fg_color="transparent")
         outs_frame.grid(row=5, column=0, sticky="ew", padx=20, pady=(0, 15))
 
-        outs_title = ctk.CTkLabel(
-            outs_frame,
-            text="📉 OUTs (Saídas)",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        outs_title.pack(anchor="w")
+        # OUTs title with icon
+        outs_title_frame = ctk.CTkFrame(outs_frame, fg_color="transparent")
+        outs_title_frame.pack(anchor="w")
+
+        outs_icon_pil = get_icon(OUTS, size=(20, 20))
+        if outs_icon_pil:
+            outs_icon_ctk = ctk.CTkImage(
+                light_image=outs_icon_pil,
+                dark_image=outs_icon_pil,
+                size=(20, 20)
+            )
+            outs_title = ctk.CTkLabel(
+                outs_title_frame,
+                image=outs_icon_ctk,
+                text=" OUTs",
+                compound="left",
+                font=ctk.CTkFont(size=16, weight="bold")
+            )
+        else:
+            outs_title = ctk.CTkLabel(
+                outs_title_frame,
+                text="OUTs",
+                font=ctk.CTkFont(size=16, weight="bold")
+            )
+        outs_title.pack(side="left")
 
         # OUTs items (will be filled later)
         outs_items_frame = ctk.CTkFrame(outs_frame, fg_color="transparent")
