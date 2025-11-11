@@ -202,34 +202,6 @@ class SaldosScreen(ctk.CTkFrame):
         else:
             self.rafael_outs_frame = outs_items_frame
 
-        # Separator
-        sep3 = ctk.CTkFrame(card, height=1, fg_color="gray")
-        sep3.grid(row=6, column=0, sticky="ew", padx=20, pady=(15, 20))
-
-        # Sugestão
-        sugestao_frame = ctk.CTkFrame(card, fg_color=("#FFF3E0", "#3E2723"), corner_radius=10)
-        sugestao_frame.grid(row=7, column=0, sticky="ew", padx=20, pady=(0, 20))
-
-        sugestao_label = ctk.CTkLabel(
-            sugestao_frame,
-            text="💡 Sugestão:",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-        sugestao_label.pack(anchor="w", padx=15, pady=(15, 5))
-
-        sugestao_text = ctk.CTkLabel(
-            sugestao_frame,
-            text="Emitir boletim de €0.00 para zerar saldo",
-            font=ctk.CTkFont(size=13),
-            wraplength=300
-        )
-        sugestao_text.pack(anchor="w", padx=15, pady=(0, 15))
-
-        if socio == Socio.BRUNO:
-            self.bruno_sugestao_label = sugestao_text
-        else:
-            self.rafael_sugestao_label = sugestao_text
-
         return card
 
     def create_saldo_item(self, parent, label: str, value: float, is_total: bool = False, clickable: bool = False, on_click: Optional[Callable] = None, button_color: str = None, button_border_color: str = None):
@@ -256,13 +228,13 @@ class SaldosScreen(ctk.CTkFrame):
                 # Extract light/dark from tuple or use as single color
                 bg_light, bg_dark = button_color if isinstance(button_color, tuple) else (button_color, button_color)
             else:
-                bg_light, bg_dark = "#E8F5E9", "#1B5E20"
+                bg_light, bg_dark = "#F1F8E9", "#2E4021"  # Green pastel as default
 
             # Set border color (use custom if provided, otherwise default)
             if button_border_color:
                 border_color = button_border_color if isinstance(button_border_color, tuple) else (button_border_color, button_border_color)
             else:
-                border_color = ("#66BB6A", "#2E7D32")  # Green border as default
+                border_color = ("#A5D6A7", "#66BB6A")  # Green pastel border as default
 
             # Create a proper button-like card (clickable frame)
             button_card = ctk.CTkFrame(
@@ -421,8 +393,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['ins']['projetos_pessoais'],
             clickable=True,
             on_click=self.navegar_projetos_bruno,
-            button_color=("#E8F5E9", "#1B5E20"),  # Green (INs = entradas)
-            button_border_color=("#66BB6A", "#2E7D32")
+            button_color=("#F1F8E9", "#2E4021"),  # Green pastel (INs = entradas)
+            button_border_color=("#A5D6A7", "#66BB6A")
         )
         self.create_saldo_item(
             self.bruno_ins_frame,
@@ -430,8 +402,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['ins']['premios'],
             clickable=True,
             on_click=self.navegar_premios_bruno,
-            button_color=("#E8F5E9", "#1B5E20"),  # Green (INs = entradas)
-            button_border_color=("#66BB6A", "#2E7D32")
+            button_color=("#F1F8E9", "#2E4021"),  # Green pastel (INs = entradas)
+            button_border_color=("#A5D6A7", "#66BB6A")
         )
 
         # Separator line
@@ -455,8 +427,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['despesas_fixas'],
             clickable=True,
             on_click=self.navegar_despesas_fixas,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -464,8 +436,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['boletins_pendentes'],
             clickable=True,
             on_click=self.navegar_boletins_pendentes_bruno,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -473,8 +445,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['boletins_pagos'],
             clickable=True,
             on_click=self.navegar_boletins_pagos_bruno,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -482,8 +454,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_bruno['outs']['despesas_pessoais'],
             clickable=True,
             on_click=self.navegar_despesas_pessoais_bruno,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
 
         # Separator line
@@ -495,11 +467,6 @@ class SaldosScreen(ctk.CTkFrame):
             "TOTAL OUTs",
             saldo_bruno['outs']['total'],
             is_total=True
-        )
-
-        # Update sugestão
-        self.bruno_sugestao_label.configure(
-            text=f"Emitir boletim de €{saldo_bruno['sugestao_boletim']:,.2f} para zerar saldo"
         )
 
         # Update RR (same logic)
@@ -518,8 +485,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['ins']['projetos_pessoais'],
             clickable=True,
             on_click=self.navegar_projetos_rafael,
-            button_color=("#E8F5E9", "#1B5E20"),  # Green (INs = entradas)
-            button_border_color=("#66BB6A", "#2E7D32")
+            button_color=("#F1F8E9", "#2E4021"),  # Green pastel (INs = entradas)
+            button_border_color=("#A5D6A7", "#66BB6A")
         )
         self.create_saldo_item(
             self.rafael_ins_frame,
@@ -527,8 +494,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['ins']['premios'],
             clickable=True,
             on_click=self.navegar_premios_rafael,
-            button_color=("#E8F5E9", "#1B5E20"),  # Green (INs = entradas)
-            button_border_color=("#66BB6A", "#2E7D32")
+            button_color=("#F1F8E9", "#2E4021"),  # Green pastel (INs = entradas)
+            button_border_color=("#A5D6A7", "#66BB6A")
         )
 
         sep = ctk.CTkFrame(self.rafael_ins_frame, height=1, fg_color="gray")
@@ -551,8 +518,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['despesas_fixas'],
             clickable=True,
             on_click=self.navegar_despesas_fixas,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
@@ -560,8 +527,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['boletins_pendentes'],
             clickable=True,
             on_click=self.navegar_boletins_pendentes_rafael,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
@@ -569,8 +536,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['boletins_pagos'],
             clickable=True,
             on_click=self.navegar_boletins_pagos_rafael,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
@@ -578,8 +545,8 @@ class SaldosScreen(ctk.CTkFrame):
             saldo_rafael['outs']['despesas_pessoais'],
             clickable=True,
             on_click=self.navegar_despesas_pessoais_rafael,
-            button_color=("#FFEBEE", "#B71C1C"),  # Red (OUTs = saídas)
-            button_border_color=("#E57373", "#C62828")
+            button_color=("#FFF5F5", "#4A1515"),  # Red pastel (OUTs = saídas)
+            button_border_color=("#FFCDD2", "#EF5350")
         )
 
         sep = ctk.CTkFrame(self.rafael_outs_frame, height=1, fg_color="gray")
@@ -590,9 +557,4 @@ class SaldosScreen(ctk.CTkFrame):
             "TOTAL OUTs",
             saldo_rafael['outs']['total'],
             is_total=True
-        )
-
-        # Update sugestão
-        self.rafael_sugestao_label.configure(
-            text=f"Emitir boletim de €{saldo_rafael['sugestao_boletim']:,.2f} para zerar saldo"
         )
