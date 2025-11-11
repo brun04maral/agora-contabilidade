@@ -116,8 +116,9 @@ class SaldosScreen(ctk.CTkFrame):
         card = ctk.CTkFrame(parent)
         card.grid_columnconfigure(0, weight=1)
 
-        # Header
-        header = ctk.CTkFrame(card, fg_color=("#2196F3", "#1565C0"), corner_radius=10)
+        # Header with Agora colors (matching dashboard)
+        header_color = "#C9941F" if socio == Socio.BRUNO else "#A67F1B"  # Agora yellow colors
+        header = ctk.CTkFrame(card, fg_color=header_color, corner_radius=10)
         header.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 0))
 
         header_label = ctk.CTkLabel(
@@ -231,7 +232,7 @@ class SaldosScreen(ctk.CTkFrame):
 
         return card
 
-    def create_saldo_item(self, parent, label: str, value: float, is_total: bool = False, clickable: bool = False, on_click: Optional[Callable] = None):
+    def create_saldo_item(self, parent, label: str, value: float, is_total: bool = False, clickable: bool = False, on_click: Optional[Callable] = None, button_color: str = None):
         """
         Create a saldo line item
 
@@ -242,25 +243,59 @@ class SaldosScreen(ctk.CTkFrame):
             is_total: If this is a total line (bold)
             clickable: If true, makes the item clickable with hover effects
             on_click: Callback function when item is clicked
+            button_color: Background color for clickable button (when clickable=True)
         """
         item_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        item_frame.pack(fill="x", pady=3)
+        item_frame.pack(fill="x", pady=5)
 
         # Use button if clickable, otherwise label
         if clickable and on_click:
-            # Create clickable button-like label
-            item_label = ctk.CTkButton(
+            # Determine colors based on button_color
+            if button_color:
+                # Extract light/dark from tuple or use as single color
+                bg_light, bg_dark = button_color if isinstance(button_color, tuple) else (button_color, button_color)
+                # Set border and text colors (golden/amber tones)
+                border_color = ("#C9941F", "#FFD54F")  # Golden border
+                text_color = ("#8B6914", "#FFD54F")  # Dark golden text (light) / Light golden (dark)
+            else:
+                bg_light, bg_dark = "#E8F5E9", "#1B5E20"
+                border_color = ("#66BB6A", "#2E7D32")
+                text_color = ("#2E7D32", "#A5D6A7")
+
+            # Create a proper button-like card
+            button_card = ctk.CTkFrame(
                 item_frame,
-                text=f"{'  ' if not is_total else ''}• {label}:",
-                font=ctk.CTkFont(size=14 if not is_total else 15, weight="bold" if is_total else "normal"),
+                fg_color=(bg_light, bg_dark),
+                corner_radius=10,
+                border_width=2,
+                border_color=border_color
+            )
+            button_card.pack(fill="x", pady=2)
+
+            # Create button that fills the card
+            item_button = ctk.CTkButton(
+                button_card,
+                text=f"➜  {label}",
+                font=ctk.CTkFont(size=14, weight="bold"),
                 anchor="w",
                 fg_color="transparent",
-                hover_color=("#E3F2FD", "#1E3A5F"),
-                text_color=("#1976D2", "#64B5F6"),
+                hover_color=("#FFFFFF40", "#FFFFFF20"),  # Subtle white overlay on hover
+                text_color=text_color,
                 command=on_click,
-                cursor="hand2"
+                cursor="hand2",
+                height=40
             )
-            item_label.pack(side="left", fill="x", expand=True)
+            item_button.pack(side="left", fill="both", expand=True, padx=2, pady=2)
+
+            # Value label on the right
+            value_label = ctk.CTkLabel(
+                button_card,
+                text=f"€{value:,.2f}",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                text_color=text_color,
+                anchor="e"
+            )
+            value_label.pack(side="right", padx=15, pady=2)
         else:
             item_label = ctk.CTkLabel(
                 item_frame,
@@ -270,13 +305,13 @@ class SaldosScreen(ctk.CTkFrame):
             )
             item_label.pack(side="left")
 
-        item_value = ctk.CTkLabel(
-            item_frame,
-            text=f"€{value:,.2f}",
-            font=ctk.CTkFont(size=14 if not is_total else 15, weight="bold" if is_total else "normal"),
-            anchor="e"
-        )
-        item_value.pack(side="right")
+            item_value = ctk.CTkLabel(
+                item_frame,
+                text=f"€{value:,.2f}",
+                font=ctk.CTkFont(size=14 if not is_total else 15, weight="bold" if is_total else "normal"),
+                anchor="e"
+            )
+            item_value.pack(side="right")
 
     def navegar_projetos_bruno(self):
         """Navigate to Projetos screen with Bruno's personal projects filter"""
@@ -310,7 +345,8 @@ class SaldosScreen(ctk.CTkFrame):
             "Projetos pessoais",
             saldo_bruno['ins']['projetos_pessoais'],
             clickable=True,
-            on_click=self.navegar_projetos_bruno
+            on_click=self.navegar_projetos_bruno,
+            button_color=("#FFF8E1", "#4A3C0F")  # Light yellow/golden (BA color)
         )
         self.create_saldo_item(
             self.bruno_ins_frame,
@@ -380,7 +416,8 @@ class SaldosScreen(ctk.CTkFrame):
             "Projetos pessoais",
             saldo_rafael['ins']['projetos_pessoais'],
             clickable=True,
-            on_click=self.navegar_projetos_rafael
+            on_click=self.navegar_projetos_rafael,
+            button_color=("#FFF3E0", "#3E2A0D")  # Light amber/orange (RR color)
         )
         self.create_saldo_item(
             self.rafael_ins_frame,
