@@ -173,12 +173,13 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_boletins(self, filtro_estado=None):
+    def show_boletins(self, filtro_estado=None, filtro_socio=None):
         """
         Show boletins screen
 
         Args:
             filtro_estado: Optional estado filter ("Todos", "Pendente", "Pago")
+            filtro_socio: Optional socio filter ("BA", "RR")
         """
         # Clear current screen if navigating programmatically
         if self.current_screen:
@@ -190,7 +191,7 @@ class MainWindow(ctk.CTkFrame):
             self.sidebar.update_selection("boletins")
 
         from ui.screens.boletins import BoletinsScreen
-        screen = BoletinsScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado)
+        screen = BoletinsScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_socio=filtro_socio)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 

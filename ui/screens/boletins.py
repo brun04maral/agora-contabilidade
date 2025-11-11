@@ -20,19 +20,23 @@ class BoletinsScreen(ctk.CTkFrame):
     Tela de gestão de Boletins (listar + emitir + marcar pago)
     """
 
-    def __init__(self, parent, db_session: Session, filtro_estado=None, **kwargs):
+    def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_socio=None, **kwargs):
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
         self.manager = BoletinsManager(db_session)
         self.filtro_inicial_estado = filtro_estado
+        self.filtro_inicial_socio = filtro_socio
 
         self.configure(fg_color="transparent")
         self.create_widgets()
 
         # Apply initial filter if provided
-        if self.filtro_inicial_estado:
-            self.estado_filter.set(self.filtro_inicial_estado)
+        if self.filtro_inicial_estado or self.filtro_inicial_socio:
+            if self.filtro_inicial_estado:
+                self.estado_filter.set(self.filtro_inicial_estado)
+            if self.filtro_inicial_socio:
+                self.socio_filter.set(self.filtro_inicial_socio)
             self.aplicar_filtros()
         else:
             self.carregar_boletins()

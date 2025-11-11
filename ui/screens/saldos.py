@@ -364,6 +364,16 @@ class SaldosScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_despesas(filtro_tipo="Fixa Mensal")
 
+    def navegar_boletins_bruno(self):
+        """Navigate to Boletins screen with Bruno's pending boletins"""
+        if self.main_window:
+            self.main_window.show_boletins(filtro_estado="Pendente", filtro_socio="BA")
+
+    def navegar_boletins_rafael(self):
+        """Navigate to Boletins screen with Rafael's pending boletins"""
+        if self.main_window:
+            self.main_window.show_boletins(filtro_estado="Pendente", filtro_socio="RR")
+
     def carregar_saldos(self):
         """Load and display saldos"""
 
@@ -424,7 +434,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.bruno_outs_frame,
             "Boletins emitidos",
-            saldo_bruno['outs']['boletins']
+            saldo_bruno['outs']['boletins'],
+            clickable=True,
+            on_click=self.navegar_boletins_bruno,
+            button_color=("#FFF8E1", "#4A3C0F")  # Light yellow/golden (matching BA)
         )
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -500,7 +513,10 @@ class SaldosScreen(ctk.CTkFrame):
         self.create_saldo_item(
             self.rafael_outs_frame,
             "Boletins emitidos",
-            saldo_rafael['outs']['boletins']
+            saldo_rafael['outs']['boletins'],
+            clickable=True,
+            on_click=self.navegar_boletins_rafael,
+            button_color=("#FFF3E0", "#3E2A0D")  # Light amber/orange (matching RR)
         )
         self.create_saldo_item(
             self.rafael_outs_frame,
