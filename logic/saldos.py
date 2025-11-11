@@ -216,8 +216,27 @@ class SaldosCalculator:
         despesas_fixas_total = query_despesas_fixas.scalar() or Decimal("0.00")
         despesas_fixas = despesas_fixas_total / Decimal("2.00")  # Divide por 2
 
-        # 2. Boletins PAGOS (apenas os que já foram pagos)
-        query_boletins = self.db_session.query(
+        # 2. Boletins PENDENTES (emitidos mas não pagos)
+        query_boletins_pendentes = self.db_session.query(
+            func.sum(Boletim.valor)
+        ).filter(
+            Boletim.socio == socio,
+            Boletim.estado == EstadoBoletim.PENDENTE
+        )
+
+        if data_inicio:
+            query_boletins_pendentes = query_boletins_pendentes.filter(
+                Boletim.data_emissao >= data_inicio
+            )
+        if data_fim:
+            query_boletins_pendentes = query_boletins_pendentes.filter(
+                Boletim.data_emissao <= data_fim
+            )
+
+        boletins_pendentes = query_boletins_pendentes.scalar() or Decimal("0.00")
+
+        # 3. Boletins PAGOS
+        query_boletins_pagos = self.db_session.query(
             func.sum(Boletim.valor)
         ).filter(
             Boletim.socio == socio,
@@ -225,15 +244,16 @@ class SaldosCalculator:
         )
 
         if data_inicio:
-            query_boletins = query_boletins.filter(
+            query_boletins_pagos = query_boletins_pagos.filter(
                 Boletim.data_emissao >= data_inicio
             )
         if data_fim:
-            query_boletins = query_boletins.filter(
+            query_boletins_pagos = query_boletins_pagos.filter(
                 Boletim.data_emissao <= data_fim
             )
 
-        boletins = query_boletins.scalar() or Decimal("0.00")
+        boletins_pagos = query_boletins_pagos.scalar() or Decimal("0.00")
+        boletins_total = boletins_pendentes + boletins_pagos
 
         # 3. Despesas pessoais excecionais
         # ✅ CORREÇÃO: Usar valor_sem_iva (coluna P do Excel)
@@ -255,7 +275,7 @@ class SaldosCalculator:
 
         despesas_pessoais = query_despesas_pessoais.scalar() or Decimal("0.00")
 
-        total_outs = despesas_fixas + boletins + despesas_pessoais
+        total_outs = despesas_fixas + boletins_total + despesas_pessoais
 
         # === CALCULAR SALDO FINAL ===
         saldo_total = total_ins - total_outs
@@ -271,7 +291,9 @@ class SaldosCalculator:
             },
             'outs': {
                 'despesas_fixas': float(despesas_fixas),
-                'boletins': float(boletins),
+                'boletins_pendentes': float(boletins_pendentes),
+                'boletins_pagos': float(boletins_pagos),
+                'boletins_total': float(boletins_total),
                 'despesas_pessoais': float(despesas_pessoais),
                 'total': float(total_outs)
             },
