@@ -451,6 +451,26 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         # Focus on the dialog
         self.focus_set()
 
+        # Bind mousewheel to prevent scroll propagation to parent list
+        # Events are processed by CTkScrollableFrame first, then we block propagation
+        def block_scroll(event):
+            # Let CTkScrollableFrame handle it, but prevent propagation to parent
+            return "break"
+
+        self.bind_all("<MouseWheel>", block_scroll, add="+")
+        self.bind_all("<Button-4>", block_scroll, add="+")  # Linux scroll up
+        self.bind_all("<Button-5>", block_scroll, add="+")  # Linux scroll down
+
+    def destroy(self):
+        """Override destroy to unbind scroll events"""
+        try:
+            self.unbind_all("<MouseWheel>")
+            self.unbind_all("<Button-4>")
+            self.unbind_all("<Button-5>")
+        except:
+            pass
+        super().destroy()
+
     def create_form(self):
         """Create form fields"""
 
