@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-09
-**Sessão:** claude/import-excel-20251108-011CUvZzMj9kRn2HWWgKpho5
+**Última atualização:** 2025-11-11
+**Sessão:** claude/merge-and-context-update-011CV2BcMQu7Tke4mi6EdUt7
 
 ---
 
@@ -43,7 +43,11 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 - ✅ CustomTkinter (tema moderno)
 - ✅ 10 screens funcionais + Info screen:
   - Dashboard (com ícones nas secções + navegação interativa em cards)
-  - Saldos Pessoais (CORE)
+  - Saldos Pessoais (CORE) - **Com navegação clicável completa**
+    - 10 botões clicáveis com filtros automáticos (Projetos, Prémios, Despesas, Boletins)
+    - Cores semânticas: Verde para INs, Laranja para OUTs
+    - Ícones PNG customizados (ins.png, outs.png)
+    - Boletins separados (Pendentes e Pagos)
   - Projetos
   - Orçamentos
   - Despesas
@@ -110,6 +114,16 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 ---
 
 ## 🐛 Problemas Conhecidos
+
+### Alta Prioridade
+- **Scroll em popup de Projetos propaga para lista**
+  - **Problema:** Ao fazer scroll no popup de edição/criação de projeto, a lista por trás também faz scroll
+  - **Comportamento esperado:** Scroll apenas no popup, lista não deve mover
+  - **Requerimento:** Trackpad deve funcionar normalmente
+  - **Tentativas:** bind_all, event detection, unbind parent (múltiplas abordagens testadas)
+  - **Status:** Código implementado mas ainda propaga eventos
+  - **Ficheiro:** `ui/screens/projetos.py` (FormularioProjetoDialog)
+  - **Ver:** `memory/TODO.md` para mais detalhes
 
 ### Baixa Prioridade
 - Logo SVG contém PNG embutido (não é vetorial verdadeiro)
