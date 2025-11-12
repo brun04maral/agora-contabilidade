@@ -183,6 +183,73 @@ class EquipamentoManager:
         tipos = self.db.query(Equipamento.tipo).distinct().filter(Equipamento.tipo.isnot(None)).all()
         return ["Todos"] + [t[0] for t in tipos if t[0]]
 
+    def calcular_amortizacao(self, equipamento_id: int) -> dict:
+        """
+        Calcula amortização de um equipamento
+
+        Amortização = valor_compra - total_já_alugado
+
+        Args:
+            equipamento_id: ID do equipamento
+
+        Returns:
+            Dicionário com:
+            - valor_compra: Valor de compra original
+            - total_alugado: Total já recuperado em alugueres
+            - amortizacao_restante: Quanto falta amortizar
+            - percentagem_amortizada: % já amortizada
+            - roi: Return on Investment (pode ser > 100% se já recuperou tudo)
+        """
+        from sqlalchemy import func
+        from database.models.equipamento import EquipamentoAluguer
+
+        equipamento = self.obter_equipamento(equipamento_id)
+        if not equipamento:
+            return None
+
+        valor_compra = equipamento.valor_compra or Decimal('0')
+
+        # Calcular total já alugado
+        total_alugado = self.db.query(func.sum(EquipamentoAluguer.valor_alugado))\
+            .filter(EquipamentoAluguer.equipamento_id == equipamento_id)\
+            .scalar() or Decimal('0')
+
+        # Calcular amortização restante
+        amortizacao_restante = valor_compra - total_alugado
+
+        # Calcular percentagens
+        if valor_compra > 0:
+            percentagem_amortizada = (total_alugado / valor_compra) * 100
+            roi = (total_alugado / valor_compra) * 100
+        else:
+            percentagem_amortizada = Decimal('0')
+            roi = Decimal('0')
+
+        return {
+            'valor_compra': float(valor_compra),
+            'total_alugado': float(total_alugado),
+            'amortizacao_restante': float(amortizacao_restante),
+            'percentagem_amortizada': float(percentagem_amortizada),
+            'roi': float(roi)
+        }
+
+    def obter_historico_alugueres(self, equipamento_id: int) -> List:
+        """
+        Obtém histórico de alugueres de um equipamento
+
+        Args:
+            equipamento_id: ID do equipamento
+
+        Returns:
+            Lista de alugueres ordenados por data (mais recente primeiro)
+        """
+        from database.models.equipamento import EquipamentoAluguer
+
+        return self.db.query(EquipamentoAluguer)\
+            .filter(EquipamentoAluguer.equipamento_id == equipamento_id)\
+            .order_by(EquipamentoAluguer.data_aluguer.desc())\
+            .all()
+
     def estatisticas(self) -> dict:
         """
         Retorna estatísticas de equipamento

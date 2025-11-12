@@ -19,7 +19,7 @@ class OrcamentoManager:
 
     def listar_orcamentos(
         self,
-        filtro_tipo: Optional[str] = None,  # 'frontend' ou 'backend'
+        filtro_tipo: Optional[str] = None,  # 'cliente' ou 'empresa'
         filtro_status: Optional[str] = None,
         filtro_cliente_id: Optional[int] = None,
         pesquisa: Optional[str] = None
@@ -28,7 +28,7 @@ class OrcamentoManager:
         Lista orçamentos com filtros opcionais
 
         Args:
-            filtro_tipo: Filtrar por tipo (frontend/backend)
+            filtro_tipo: Filtrar por tipo (cliente/empresa)
             filtro_status: Filtrar por status (rascunho, enviado, aprovado, rejeitado)
             filtro_cliente_id: Filtrar por cliente
             pesquisa: Termo de pesquisa (código, descrição)
@@ -81,6 +81,73 @@ class OrcamentoManager:
 
         return query.first()
 
+    def _criar_secoes_padrao(self, orcamento_id: int):
+        """
+        Cria secções padrão para um orçamento
+
+        Estrutura:
+        - Serviços
+        - Equipamento
+          - Vídeo
+          - Som
+          - Iluminação
+        - Despesas
+
+        Args:
+            orcamento_id: ID do orçamento
+        """
+        # 1. Serviços (ordem 1)
+        sucesso, secao_servicos, erro = self.adicionar_secao(
+            orcamento_id=orcamento_id,
+            tipo='servicos',
+            nome='Serviços',
+            ordem=1
+        )
+
+        # 2. Equipamento (ordem 2)
+        sucesso, secao_equipamento, erro = self.adicionar_secao(
+            orcamento_id=orcamento_id,
+            tipo='equipamento',
+            nome='Equipamento',
+            ordem=2
+        )
+
+        if secao_equipamento:
+            # 2.1 Vídeo (subsecção)
+            self.adicionar_secao(
+                orcamento_id=orcamento_id,
+                tipo='video',
+                nome='Vídeo',
+                ordem=1,
+                parent_id=secao_equipamento.id
+            )
+
+            # 2.2 Som (subsecção)
+            self.adicionar_secao(
+                orcamento_id=orcamento_id,
+                tipo='som',
+                nome='Som',
+                ordem=2,
+                parent_id=secao_equipamento.id
+            )
+
+            # 2.3 Iluminação (subsecção)
+            self.adicionar_secao(
+                orcamento_id=orcamento_id,
+                tipo='iluminacao',
+                nome='Iluminação',
+                ordem=3,
+                parent_id=secao_equipamento.id
+            )
+
+        # 3. Despesas (ordem 3)
+        self.adicionar_secao(
+            orcamento_id=orcamento_id,
+            tipo='despesas',
+            nome='Despesas',
+            ordem=3
+        )
+
     def criar_orcamento(
         self,
         codigo: str,
@@ -95,10 +162,10 @@ class OrcamentoManager:
 
         Args:
             codigo: Código único do orçamento
-            tipo: 'frontend' ou 'backend'
+            tipo: 'cliente' ou 'empresa'
             data_criacao: Data da criação do orçamento
             cliente_id: ID do cliente (opcional)
-            versao: Versão (V1, V2, etc.) para frontend, None para backend
+            versao: Versão (V1, V2, etc.) para Cliente, None para Empresa
             **kwargs: Outros campos opcionais
 
         Returns:
@@ -108,7 +175,7 @@ class OrcamentoManager:
             # Verificar se código+versão já existe
             existe = self.obter_por_codigo(codigo, versao)
             if existe:
-                return False, None, f"Orçamento {codigo} versão {versao or 'backend'} já existe"
+                return False, None, f"Orçamento {codigo} versão {versao or 'empresa'} já existe"
 
             # Criar orçamento
             orcamento = Orcamento(
@@ -123,6 +190,9 @@ class OrcamentoManager:
             self.db.add(orcamento)
             self.db.commit()
             self.db.refresh(orcamento)
+
+            # Criar secções automáticas
+            self._criar_secoes_padrao(orcamento.id)
 
             return True, orcamento, None
 
@@ -494,12 +564,12 @@ class OrcamentoManager:
         novo_tipo: Optional[str] = None
     ) -> Tuple[bool, Optional[Orcamento], Optional[str]]:
         """
-        Duplica um orçamento (útil para criar V2 a partir de V1, ou backend a partir de frontend)
+        Duplica um orçamento (útil para criar V2 a partir de V1, ou Empresa a partir de Cliente)
 
         Args:
             orcamento_id: ID do orçamento a duplicar
             nova_versao: Nova versão (ex: "V2") ou None
-            novo_tipo: Novo tipo (ex: "backend") ou None
+            novo_tipo: Novo tipo (ex: "empresa") ou None
 
         Returns:
             (sucesso, novo_orcamento, mensagem_erro)

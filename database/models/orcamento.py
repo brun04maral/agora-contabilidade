@@ -10,7 +10,7 @@ from database.models.base import Base
 class Orcamento(Base):
     """
     Modelo para Orçamentos (Budgets)
-    Representa tanto versões frontend (cliente) quanto backend (económico)
+    Representa tanto versões Cliente (apresentação) quanto Empresa (económico interno)
     """
     __tablename__ = 'orcamentos'
 
@@ -18,8 +18,8 @@ class Orcamento(Base):
 
     # Identificação
     codigo = Column(String(100), nullable=False, unique=True)  # Ex: "20250909_Orçamento-SGS_Conf"
-    versao = Column(String(10), nullable=True)  # Ex: "V1", "V2", null para backend ECO_
-    tipo = Column(String(20), nullable=False, default='frontend')  # 'frontend' ou 'backend'
+    versao = Column(String(10), nullable=True)  # Ex: "V1", "V2", null para Empresa ECO_
+    tipo = Column(String(20), nullable=False, default='cliente')  # 'cliente' ou 'empresa'
 
     # Dados do cliente
     cliente_id = Column(Integer, ForeignKey('clientes.id'), nullable=True)
@@ -109,7 +109,7 @@ class OrcamentoItem(Base):
     equipamento_id = Column(Integer, ForeignKey('equipamento.id'), nullable=True)
     equipamento = relationship("Equipamento")
 
-    # Campos exclusivos para orçamentos backend (ECO_)
+    # Campos exclusivos para orçamentos Empresa (ECO_)
     reparticao = Column(Numeric(5, 2), nullable=True)  # % de distribuição
     afetacao = Column(String(50), nullable=True)  # BA, RR, Agora, Freelancers, Despesa
     investimento = Column(Numeric(10, 2), nullable=True)
@@ -130,7 +130,7 @@ class OrcamentoItem(Base):
 class OrcamentoReparticao(Base):
     """
     Modelo para Repartição/Distribuição do Orçamento
-    Representa a secção "Contas finais" nos orçamentos backend (ECO_)
+    Representa a secção "Contas finais" nos orçamentos Empresa (ECO_)
     Mostra a distribuição por entidade: BA, RR, Agora, Freelancers, Despesas
     """
     __tablename__ = 'orcamento_reparticoes'

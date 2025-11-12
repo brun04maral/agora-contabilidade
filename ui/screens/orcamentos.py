@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tela de Orçamentos - Gestão de orçamentos (frontend e backend)
+Tela de Orçamentos - Gestão de orçamentos (Cliente e Empresa)
 """
 import customtkinter as ctk
 from sqlalchemy.orm import Session
@@ -134,7 +134,7 @@ class OrcamentosScreen(ctk.CTkFrame):
 
         self.tipo_combo = ctk.CTkComboBox(
             filters_frame,
-            values=["Todos", "frontend", "backend"],
+            values=["Todos", "cliente", "empresa"],
             width=150,
             height=35,
             command=lambda _: self.carregar_orcamentos()
@@ -644,17 +644,17 @@ class OrcamentoDialog(ctk.CTkToplevel):
         ctk.CTkLabel(tipo_col, text="Tipo *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
         self.tipo_combo = ctk.CTkComboBox(
             tipo_col,
-            values=["frontend", "backend"],
+            values=["cliente", "empresa"],
             height=35,
             command=self.on_tipo_change
         )
-        self.tipo_combo.set("frontend")
+        self.tipo_combo.set("cliente")
         self.tipo_combo.pack(fill="x")
 
-        # Versão (only for frontend)
+        # Versão (only for Cliente)
         versao_col = ctk.CTkFrame(tipo_versao_frame, fg_color="transparent")
         versao_col.pack(side="left", fill="x", expand=True)
-        ctk.CTkLabel(versao_col, text="Versão (Frontend)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        ctk.CTkLabel(versao_col, text="Versão (Cliente)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
         self.versao_entry = ctk.CTkEntry(versao_col, placeholder_text="Ex: V1, V2", height=35)
         self.versao_entry.pack(fill="x")
 
@@ -763,10 +763,10 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
     def on_tipo_change(self, value):
         """Handle tipo change"""
-        if value == "backend":
-            # Clear versao for backend
+        if value == "empresa":
+            # Clear versao for Empresa (económico interno)
             self.versao_entry.delete(0, "end")
-            self.versao_entry.configure(state="disabled", placeholder_text="N/A (Backend)")
+            self.versao_entry.configure(state="disabled", placeholder_text="N/A (Empresa)")
         else:
             self.versao_entry.configure(state="normal", placeholder_text="Ex: V1, V2")
 
@@ -777,14 +777,14 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
         # Basic fields
         self.codigo_entry.insert(0, self.orcamento.codigo or "")
-        self.tipo_combo.set(self.orcamento.tipo or "frontend")
+        self.tipo_combo.set(self.orcamento.tipo or "cliente")
 
         if self.orcamento.versao:
             self.versao_entry.delete(0, "end")
             self.versao_entry.insert(0, self.orcamento.versao)
 
         # Trigger tipo change to enable/disable versao
-        self.on_tipo_change(self.orcamento.tipo or "frontend")
+        self.on_tipo_change(self.orcamento.tipo or "cliente")
 
         # Cliente
         if self.orcamento.cliente:
@@ -834,9 +834,9 @@ class OrcamentoDialog(ctk.CTkToplevel):
             messagebox.showerror("Erro", "Data de criação inválida! Use o formato YYYY-MM-DD")
             return
 
-        # Get versao (only for frontend)
+        # Get versao (only for Cliente)
         versao = None
-        if tipo == "frontend":
+        if tipo == "cliente":
             versao = self.versao_entry.get().strip() or None
 
         # Get cliente_id

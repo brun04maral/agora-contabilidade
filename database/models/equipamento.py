@@ -3,7 +3,8 @@
 Modelo Equipamento - Inventário de equipamento da empresa
 """
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, Text
+from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, Text, ForeignKey
+from sqlalchemy.orm import relationship
 from database.models.base import Base
 
 
@@ -85,3 +86,40 @@ class Equipamento(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+
+class EquipamentoAluguer(Base):
+    """
+    Modelo para registo de alugueres de equipamento
+
+    Usado para:
+    - Calcular amortização real (valor_compra - soma(valores_alugados))
+    - Histórico de utilização do equipamento
+    - Tracking de ROI de equipamentos
+    """
+    __tablename__ = 'equipamento_alugueres'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Relações
+    equipamento_id = Column(Integer, ForeignKey('equipamento.id'), nullable=False, index=True)
+    equipamento = relationship("Equipamento", backref="alugueres")
+
+    orcamento_id = Column(Integer, ForeignKey('orcamentos.id'), nullable=True, index=True)
+    orcamento = relationship("Orcamento")
+
+    # Dados do aluguer
+    data_aluguer = Column(Date, nullable=False)  # Data em que foi alugado
+    dias_alugados = Column(Integer, nullable=False, default=1)  # Número de dias
+    valor_alugado = Column(Numeric(10, 2), nullable=False)  # Valor efetivamente cobrado
+
+    # Notas e metadata
+    descricao = Column(Text, nullable=True)  # Descrição do projeto/evento onde foi usado
+    notas = Column(Text, nullable=True)  # Notas adicionais
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<EquipamentoAluguer(equipamento_id={self.equipamento_id}, data={self.data_aluguer}, valor=€{self.valor_alugado})>"
