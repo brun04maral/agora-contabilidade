@@ -10,7 +10,7 @@ from ui.components.data_table_v2 import DataTableV2
 from typing import Optional
 from datetime import date, datetime
 from tkinter import messagebox
-from database.models.orcamento import Orcamento
+from database.models.orcamento import Orcamento, PropostaSecao, PropostaItem
 from assets.resources import get_icon, ORCAMENTOS
 
 
@@ -743,6 +743,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
         # Seção de Gestão de Itens (apenas quando editando)
         if self.orcamento:
             self.create_items_section(scroll)
+            self.create_proposta_items_section(scroll)
 
         # Buttons
         btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
@@ -775,8 +776,17 @@ class OrcamentoDialog(ctk.CTkToplevel):
         if self.tem_versao_cliente_var.get():
             # Show frame before info_label to maintain correct order
             self.versao_cliente_frame.pack(fill="x", pady=(0, 10), before=self.info_label)
+
+            # Show proposta items section if orcamento exists
+            if self.orcamento and hasattr(self, 'proposta_items_main_container'):
+                self.proposta_items_main_container.pack(fill="both", expand=True, pady=(0, 10))
+                self.carregar_itens_proposta()
         else:
             self.versao_cliente_frame.pack_forget()
+
+            # Hide proposta items section
+            if hasattr(self, 'proposta_items_main_container'):
+                self.proposta_items_main_container.pack_forget()
 
     def create_items_section(self, parent):
         """Cria seção para gestão de itens (apenas quando editando)"""
@@ -1107,6 +1117,253 @@ class OrcamentoDialog(ctk.CTkToplevel):
             self.orcamento = self.manager.obter_orcamento(self.orcamento.id)
         else:
             messagebox.showerror("Erro", f"Erro ao eliminar item: {erro}")
+
+    def create_proposta_items_section(self, parent):
+        """Cria seção para gestão de itens da proposta (versão cliente)"""
+
+        # Separador
+        separator = ctk.CTkFrame(parent, height=2, fg_color="gray")
+        separator.pack(fill="x", pady=(15, 15))
+
+        # Container principal (inicialmente oculto)
+        self.proposta_items_main_container = ctk.CTkFrame(parent, fg_color="transparent")
+        self.proposta_items_main_container.pack(fill="both", expand=True, pady=(0, 10))
+        self.proposta_items_main_container.pack_forget()  # Ocultar inicialmente
+
+        # Header da seção de itens da proposta
+        items_header_frame = ctk.CTkFrame(self.proposta_items_main_container, fg_color="transparent")
+        items_header_frame.pack(fill="x", pady=(0, 10))
+
+        items_title = ctk.CTkLabel(
+            items_header_frame,
+            text="📋 Itens da Proposta (Versão Cliente)",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#4CAF50"
+        )
+        items_title.pack(side="left")
+
+        # Botões da seção
+        items_buttons_frame = ctk.CTkFrame(items_header_frame, fg_color="transparent")
+        items_buttons_frame.pack(side="right")
+
+        add_item_btn = ctk.CTkButton(
+            items_buttons_frame,
+            text="➕ Adicionar Item",
+            command=self.adicionar_item_proposta,
+            width=140,
+            height=30,
+            font=ctk.CTkFont(size=12),
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        )
+        add_item_btn.pack(side="left", padx=(0, 5))
+
+        refresh_btn = ctk.CTkButton(
+            items_buttons_frame,
+            text="🔄",
+            command=self.carregar_itens_proposta,
+            width=30,
+            height=30,
+            fg_color="#2196F3",
+            hover_color="#1976D2"
+        )
+        refresh_btn.pack(side="left")
+
+        # Container scrollável para itens
+        self.proposta_items_container = ctk.CTkFrame(self.proposta_items_main_container)
+        self.proposta_items_container.pack(fill="both", expand=True, pady=(0, 10))
+
+        # Carregar itens se houver proposta
+        if self.orcamento and self.orcamento.tem_versao_cliente:
+            self.carregar_itens_proposta()
+
+    def carregar_itens_proposta(self):
+        """Carrega e renderiza itens da proposta"""
+        if not self.orcamento:
+            return
+
+        # Limpar container
+        for widget in self.proposta_items_container.winfo_children():
+            widget.destroy()
+
+        # Obter secções da proposta
+        proposta_secoes = self.db.query(PropostaSecao).filter(
+            PropostaSecao.orcamento_id == self.orcamento.id
+        ).order_by(PropostaSecao.ordem).all()
+
+        if not proposta_secoes:
+            no_items_label = ctk.CTkLabel(
+                self.proposta_items_container,
+                text="⚠️ Nenhum item de proposta ainda. Clique em '➕ Adicionar Item' para começar.",
+                font=ctk.CTkFont(size=12),
+                text_color="gray"
+            )
+            no_items_label.pack(pady=20)
+            return
+
+        # Criar scrollable frame
+        items_scroll = ctk.CTkScrollableFrame(self.proposta_items_container)
+        items_scroll.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Renderizar cada secção
+        for secao in proposta_secoes:
+            # Header da secção
+            secao_frame = ctk.CTkFrame(items_scroll, fg_color="#2b2b2b")
+            secao_frame.pack(fill="x", pady=(10, 5), padx=5)
+
+            secao_header = ctk.CTkFrame(secao_frame, fg_color="transparent")
+            secao_header.pack(fill="x", padx=10, pady=8)
+
+            secao_label = ctk.CTkLabel(
+                secao_header,
+                text=f"📁 {secao.nome}",
+                font=ctk.CTkFont(size=14, weight="bold"),
+                anchor="w"
+            )
+            secao_label.pack(side="left")
+
+            if secao.subtotal:
+                subtotal_label = ctk.CTkLabel(
+                    secao_header,
+                    text=f"{float(secao.subtotal):.2f}€",
+                    font=ctk.CTkFont(size=13, weight="bold"),
+                    text_color="#4CAF50"
+                )
+                subtotal_label.pack(side="right")
+
+            # Items da secção
+            itens = self.db.query(PropostaItem).filter(
+                PropostaItem.secao_id == secao.id
+            ).order_by(PropostaItem.ordem).all()
+
+            if itens:
+                items_container = ctk.CTkFrame(items_scroll, fg_color="transparent")
+                items_container.pack(fill="x", padx=15, pady=(0, 5))
+
+                for item in itens:
+                    self.render_item_proposta_compacto(items_container, item)
+
+    def render_item_proposta_compacto(self, parent, item):
+        """Renderiza item da proposta de forma compacta"""
+
+        item_frame = ctk.CTkFrame(parent, fg_color="#1e1e1e")
+        item_frame.pack(fill="x", padx=8, pady=2)
+
+        content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        content_frame.pack(side="left", fill="x", expand=True, padx=8, pady=5)
+
+        # Descrição
+        desc_label = ctk.CTkLabel(
+            content_frame,
+            text=f"• {item.descricao}",
+            font=ctk.CTkFont(size=12),
+            anchor="w"
+        )
+        desc_label.pack(anchor="w")
+
+        # Detalhes compactos
+        detalhes = f"Qtd:{item.quantidade} × {item.dias}d × {float(item.preco_unitario):.2f}€"
+        if item.desconto > 0:
+            detalhes += f" | -{float(item.desconto)*100:.0f}%"
+        detalhes += f" = {float(item.total):.2f}€"
+
+        detalhes_label = ctk.CTkLabel(
+            content_frame,
+            text=detalhes,
+            font=ctk.CTkFont(size=10),
+            text_color="gray",
+            anchor="w"
+        )
+        detalhes_label.pack(anchor="w")
+
+        # Botões de ação
+        actions_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        actions_frame.pack(side="right", padx=5)
+
+        edit_btn = ctk.CTkButton(
+            actions_frame,
+            text="✏️",
+            command=lambda i=item: self.editar_item_proposta(i),
+            width=28,
+            height=24,
+            font=ctk.CTkFont(size=11),
+            fg_color="#2196F3",
+            hover_color="#1976D2"
+        )
+        edit_btn.pack(side="left", padx=2)
+
+        delete_btn = ctk.CTkButton(
+            actions_frame,
+            text="🗑️",
+            command=lambda i=item: self.eliminar_item_proposta(i),
+            width=28,
+            height=24,
+            font=ctk.CTkFont(size=11),
+            fg_color="#f44336",
+            hover_color="#da190b"
+        )
+        delete_btn.pack(side="left", padx=2)
+
+    def adicionar_item_proposta(self):
+        """Abre diálogo para adicionar item à proposta"""
+        from ui.dialogs.proposta_item_dialog import PropostaItemDialog
+
+        dialog = PropostaItemDialog(
+            self,
+            self.db,
+            self.orcamento.id
+        )
+        self.wait_window(dialog)
+
+        # Refresh itens
+        self.carregar_itens_proposta()
+
+    def editar_item_proposta(self, item):
+        """Abre diálogo para editar item da proposta"""
+        from ui.dialogs.proposta_item_dialog import PropostaItemDialog
+
+        dialog = PropostaItemDialog(
+            self,
+            self.db,
+            self.orcamento.id,
+            item
+        )
+        self.wait_window(dialog)
+
+        # Refresh itens
+        self.carregar_itens_proposta()
+
+    def eliminar_item_proposta(self, item):
+        """Elimina item da proposta"""
+        from tkinter import messagebox
+
+        if not messagebox.askyesno(
+            "Confirmar Eliminação",
+            f"Tem a certeza que deseja eliminar o item '{item.descricao}' da proposta?"
+        ):
+            return
+
+        try:
+            self.db.delete(item)
+            self.db.commit()
+            messagebox.showinfo("Sucesso", "Item eliminado com sucesso!")
+            self.carregar_itens_proposta()
+
+            # Recalcular subtotais das secções
+            secoes = self.db.query(PropostaSecao).filter(
+                PropostaSecao.orcamento_id == self.orcamento.id
+            ).all()
+
+            for secao in secoes:
+                itens = self.db.query(PropostaItem).filter(
+                    PropostaItem.secao_id == secao.id
+                ).all()
+                secao.subtotal = sum(float(item.total) for item in itens)
+
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            messagebox.showerror("Erro", f"Erro ao eliminar item: {str(e)}")
 
     def load_data(self):
         """Load orcamento data into form"""
