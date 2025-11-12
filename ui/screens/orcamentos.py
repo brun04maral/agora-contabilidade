@@ -607,10 +607,23 @@ class OrcamentoDialog(ctk.CTkToplevel):
         scroll = ctk.CTkScrollableFrame(main_frame)
         scroll.pack(fill="both", expand=True)
 
-        # Código *
-        ctk.CTkLabel(scroll, text="Código do Orçamento *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.codigo_entry = ctk.CTkEntry(scroll, placeholder_text="Ex: 20250909_Orçamento-SGS_Conf", height=35)
+        # Código * (automático)
+        ctk.CTkLabel(scroll, text="Código do Orçamento (Automático)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.codigo_entry = ctk.CTkEntry(
+            scroll,
+            placeholder_text="Gerado automaticamente",
+            height=35,
+            state="readonly",
+            fg_color=("#F0F0F0", "#2b2b2b")
+        )
         self.codigo_entry.pack(fill="x", pady=(0, 10))
+
+        # Auto-gerar código se for novo orçamento
+        if not self.orcamento:
+            proximo_codigo = self.manager.gerar_proximo_codigo()
+            self.codigo_entry.configure(state="normal")
+            self.codigo_entry.insert(0, proximo_codigo)
+            self.codigo_entry.configure(state="readonly")
 
         # Cliente
         ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
@@ -1052,8 +1065,10 @@ class OrcamentoDialog(ctk.CTkToplevel):
         if not self.orcamento:
             return
 
-        # Basic fields
+        # Basic fields - código (readonly)
+        self.codigo_entry.configure(state="normal")
         self.codigo_entry.insert(0, self.orcamento.codigo or "")
+        self.codigo_entry.configure(state="readonly")
 
         # Cliente
         if self.orcamento.cliente:

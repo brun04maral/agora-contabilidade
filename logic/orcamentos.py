@@ -140,6 +140,41 @@ class OrcamentoManager:
             ordem=3
         )
 
+    def gerar_proximo_codigo(self) -> str:
+        """
+        Gera o próximo código de orçamento automaticamente
+        Formato: OR-00001, OR-00002, OR-00003...
+
+        Returns:
+            Próximo código disponível
+        """
+        # Obter último orçamento por código (ordenado alfabeticamente)
+        ultimo_orcamento = self.db.query(Orcamento)\
+            .filter(Orcamento.codigo.like('OR-%'))\
+            .order_by(Orcamento.codigo.desc())\
+            .first()
+
+        if not ultimo_orcamento:
+            # Primeiro orçamento
+            return "OR-00001"
+
+        # Extrair número do último código
+        try:
+            ultimo_codigo = ultimo_orcamento.codigo
+            # Formato esperado: OR-00001
+            if ultimo_codigo.startswith('OR-'):
+                numero_str = ultimo_codigo.split('-')[1]
+                numero = int(numero_str)
+                proximo_numero = numero + 1
+                # Formatar com 5 dígitos zero-padded
+                return f"OR-{proximo_numero:05d}"
+            else:
+                # Formato antigo, começar do 1
+                return "OR-00001"
+        except (ValueError, IndexError):
+            # Erro ao parsear, começar do 1
+            return "OR-00001"
+
     def criar_orcamento(
         self,
         codigo: str,
