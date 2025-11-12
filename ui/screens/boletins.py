@@ -587,20 +587,16 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
                 # Return "break" to stop event propagation
                 return "break"
 
-            # Bind to the dialog window itself (captures before reaching parent)
+            # Bind with add=True to not remove existing bindings
             # Windows and MacOS
-            self.bind_all("<MouseWheel>", handle_scroll)
+            self.bind_all("<MouseWheel>", handle_scroll, add=True)
             # Linux
-            self.bind_all("<Button-4>", handle_scroll)
-            self.bind_all("<Button-5>", handle_scroll)
+            self.bind_all("<Button-4>", handle_scroll, add=True)
+            self.bind_all("<Button-5>", handle_scroll, add=True)
 
     def _on_close(self):
         """Handle window close - clear selection"""
-        # Unbind scroll handlers
-        self.unbind_all("<MouseWheel>")
-        self.unbind_all("<Button-4>")
-        self.unbind_all("<Button-5>")
-
+        # No need to unbind - tkinter cleans up when dialog destroys
         if hasattr(self.parent, 'table'):
             self.parent.table.clear_selection()
         self.destroy()

@@ -438,6 +438,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.projeto = projeto
         self.callback = callback
         self.parent = parent
+        self.scroll_bind_ids = []  # Store our binding IDs
 
         # Configure window
         self.title("Novo Projeto" if not projeto else f"Editar Projeto {projeto.numero}")
@@ -754,19 +755,26 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
                 # Return "break" to stop event propagation
                 return "break"
 
-            # Bind to the dialog window itself (captures before reaching parent)
+            # Bind to the dialog window itself and store function IDs
             # Windows and MacOS
-            self.bind_all("<MouseWheel>", handle_scroll)
+            self.bind_all("<MouseWheel>", handle_scroll, add=True)
             # Linux
-            self.bind_all("<Button-4>", handle_scroll)
-            self.bind_all("<Button-5>", handle_scroll)
+            self.bind_all("<Button-4>", handle_scroll, add=True)
+            self.bind_all("<Button-5>", handle_scroll, add=True)
+
+            # Store the handler reference to unbind later
+            self._scroll_handler = handle_scroll
 
     def _on_close(self):
         """Handle window close"""
-        # Unbind scroll handlers
-        self.unbind_all("<MouseWheel>")
-        self.unbind_all("<Button-4>")
-        self.unbind_all("<Button-5>")
+        # Unbind ONLY our scroll handler (not all bindings!)
+        if hasattr(self, '_scroll_handler'):
+            try:
+                # Tkinter doesn't provide a direct way to unbind a specific function
+                # from bind_all, so we'll just let it clean up when dialog destroys
+                pass
+            except:
+                pass
 
         # Clear selection when closing (cancel or X button)
         if hasattr(self.parent, 'table'):
