@@ -438,7 +438,6 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.projeto = projeto
         self.callback = callback
         self.parent = parent
-        self.scroll_bind_ids = []  # Store our binding IDs
 
         # Configure window
         self.title("Novo Projeto" if not projeto else f"Editar Projeto {projeto.numero}")
@@ -448,11 +447,11 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
+        # Disable parent table scrolling by removing its bindtags
+        self._disable_parent_table()
+
         # Create form (needs to be created first to have scroll reference)
         self.create_form()
-
-        # Setup scroll event capture on this dialog window
-        self._setup_scroll_capture()
 
         # Load data if editing
         if projeto:
@@ -736,45 +735,27 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
-    def _setup_scroll_capture(self):
-        """Capture scroll events on this dialog and redirect only to internal scrollable frame"""
-        # Get the internal canvas from CTkScrollableFrame
-        if hasattr(self.scroll, '_parent_canvas'):
-            canvas = self.scroll._parent_canvas
+    def _disable_parent_table(self):
+        """Disable parent table by removing its bindtags - prevents ALL event handling"""
+        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
+            tree = self.parent.table.tree
+            # Save original bindtags
+            self._saved_bindtags = tree.bindtags()
+            # Set empty bindtags to disable ALL event processing
+            tree.bindtags(())
 
-            def handle_scroll(event):
-                """Handle scroll event - redirect to internal canvas and stop propagation"""
-                # Scroll the internal canvas
-                if event.num == 4 or event.delta > 0:
-                    # Scroll up
-                    canvas.yview_scroll(-1, "units")
-                elif event.num == 5 or event.delta < 0:
-                    # Scroll down
-                    canvas.yview_scroll(1, "units")
-
-                # Return "break" to stop event propagation
-                return "break"
-
-            # Bind to the dialog window itself and store function IDs
-            # Windows and MacOS
-            self.bind_all("<MouseWheel>", handle_scroll, add=True)
-            # Linux
-            self.bind_all("<Button-4>", handle_scroll, add=True)
-            self.bind_all("<Button-5>", handle_scroll, add=True)
-
-            # Store the handler reference to unbind later
-            self._scroll_handler = handle_scroll
+    def _enable_parent_table(self):
+        """Re-enable parent table by restoring its bindtags"""
+        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
+            tree = self.parent.table.tree
+            if hasattr(self, '_saved_bindtags'):
+                # Restore original bindtags
+                tree.bindtags(self._saved_bindtags)
 
     def _on_close(self):
         """Handle window close"""
-        # Unbind ONLY our scroll handler (not all bindings!)
-        if hasattr(self, '_scroll_handler'):
-            try:
-                # Tkinter doesn't provide a direct way to unbind a specific function
-                # from bind_all, so we'll just let it clean up when dialog destroys
-                pass
-            except:
-                pass
+        # Re-enable parent table
+        self._enable_parent_table()
 
         # Clear selection when closing (cancel or X button)
         if hasattr(self.parent, 'table'):
