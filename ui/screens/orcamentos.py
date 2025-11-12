@@ -23,7 +23,6 @@ class OrcamentosScreen(ctk.CTkFrame):
         self,
         parent,
         db_session: Session,
-        filtro_tipo: Optional[str] = None,
         filtro_status: Optional[str] = None,
         filtro_cliente_id: Optional[int] = None,
         **kwargs
@@ -32,7 +31,6 @@ class OrcamentosScreen(ctk.CTkFrame):
 
         self.db_session = db_session
         self.manager = OrcamentoManager(db_session)
-        self.filtro_tipo_inicial = filtro_tipo
         self.filtro_status_inicial = filtro_status
         self.filtro_cliente_id_inicial = filtro_cliente_id
 
@@ -124,24 +122,6 @@ class OrcamentosScreen(ctk.CTkFrame):
         self.search_entry.pack(side="left", padx=(0, 20))
         self.search_entry.bind("<KeyRelease>", lambda e: self.carregar_orcamentos())
 
-        # Tipo filter
-        tipo_label = ctk.CTkLabel(
-            filters_frame,
-            text="Tipo:",
-            font=ctk.CTkFont(size=13)
-        )
-        tipo_label.pack(side="left", padx=(0, 10))
-
-        self.tipo_combo = ctk.CTkComboBox(
-            filters_frame,
-            values=["Todos", "cliente", "empresa"],
-            width=150,
-            height=35,
-            command=lambda _: self.carregar_orcamentos()
-        )
-        self.tipo_combo.set(self.filtro_tipo_inicial or "Todos")
-        self.tipo_combo.pack(side="left", padx=(0, 20))
-
         # Status filter
         status_label = ctk.CTkLabel(
             filters_frame,
@@ -178,13 +158,12 @@ class OrcamentosScreen(ctk.CTkFrame):
 
         # Create table
         columns = [
-            {"key": "codigo", "label": "Código", "width": 250},
-            {"key": "versao", "label": "Versão", "width": 80},
-            {"key": "tipo", "label": "Tipo", "width": 100},
-            {"key": "cliente", "label": "Cliente", "width": 200},
+            {"key": "codigo", "label": "Código", "width": 280},
+            {"key": "cliente", "label": "Cliente", "width": 220},
             {"key": "data_criacao", "label": "Data Criação", "width": 120},
             {"key": "valor_total", "label": "Valor Total", "width": 120},
             {"key": "status", "label": "Status", "width": 120},
+            {"key": "versao_cliente", "label": "PDF Cliente", "width": 100},
         ]
 
         self.table = DataTableV2(
@@ -262,17 +241,12 @@ class OrcamentosScreen(ctk.CTkFrame):
         # Get filters
         pesquisa = self.search_entry.get().strip() or None
 
-        filtro_tipo = self.tipo_combo.get()
-        if filtro_tipo == "Todos":
-            filtro_tipo = None
-
         filtro_status = self.status_combo.get()
         if filtro_status == "Todos":
             filtro_status = None
 
         # Load orcamentos
         orcamentos = self.manager.listar_orcamentos(
-            filtro_tipo=filtro_tipo,
             filtro_status=filtro_status,
             filtro_cliente_id=self.filtro_cliente_id_inicial,
             pesquisa=pesquisa
@@ -284,16 +258,16 @@ class OrcamentosScreen(ctk.CTkFrame):
             cliente_nome = orc.cliente.nome if orc.cliente else "N/A"
             valor_str = f"{float(orc.valor_total or 0):.2f}€" if orc.valor_total else "0.00€"
             data_str = orc.data_criacao.strftime("%Y-%m-%d") if orc.data_criacao else "N/A"
+            versao_cliente = "✓" if orc.tem_versao_cliente else "-"
 
             data.append({
                 "id": orc.id,
                 "codigo": orc.codigo or "",
-                "versao": orc.versao or "-",
-                "tipo": orc.tipo or "",
                 "cliente": cliente_nome,
                 "data_criacao": data_str,
                 "valor_total": valor_str,
                 "status": orc.status or "rascunho",
+                "versao_cliente": versao_cliente,
             })
 
         # Update table
@@ -634,30 +608,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
         self.codigo_entry = ctk.CTkEntry(scroll, placeholder_text="Ex: 20250909_Orçamento-SGS_Conf", height=35)
         self.codigo_entry.pack(fill="x", pady=(0, 10))
 
-        # Tipo e Versão (2 columns)
-        tipo_versao_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        tipo_versao_frame.pack(fill="x", pady=(10, 10))
-
-        # Tipo *
-        tipo_col = ctk.CTkFrame(tipo_versao_frame, fg_color="transparent")
-        tipo_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
-        ctk.CTkLabel(tipo_col, text="Tipo *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.tipo_combo = ctk.CTkComboBox(
-            tipo_col,
-            values=["cliente", "empresa"],
-            height=35,
-            command=self.on_tipo_change
-        )
-        self.tipo_combo.set("cliente")
-        self.tipo_combo.pack(fill="x")
-
-        # Versão (only for Cliente)
-        versao_col = ctk.CTkFrame(tipo_versao_frame, fg_color="transparent")
-        versao_col.pack(side="left", fill="x", expand=True)
-        ctk.CTkLabel(versao_col, text="Versão (Cliente)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.versao_entry = ctk.CTkEntry(versao_col, placeholder_text="Ex: V1, V2", height=35)
-        self.versao_entry.pack(fill="x")
-
         # Cliente
         ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
 
@@ -726,6 +676,43 @@ class OrcamentoDialog(ctk.CTkToplevel):
         self.notas_textbox = ctk.CTkTextbox(scroll, height=80)
         self.notas_textbox.pack(fill="x", pady=(0, 10))
 
+        # Separador
+        separator = ctk.CTkFrame(scroll, height=2, fg_color="gray")
+        separator.pack(fill="x", pady=(20, 10))
+
+        # Versão Cliente (opcional)
+        ctk.CTkLabel(
+            scroll,
+            text="📄 Versão para Cliente (PDF)",
+            font=ctk.CTkFont(size=15, weight="bold")
+        ).pack(anchor="w", pady=(10, 10))
+
+        self.tem_versao_cliente_var = ctk.IntVar(value=0)
+        self.tem_versao_cliente_check = ctk.CTkCheckBox(
+            scroll,
+            text="Gerar versão PDF para cliente (sem campos económicos)",
+            variable=self.tem_versao_cliente_var,
+            command=self.toggle_versao_cliente_fields
+        )
+        self.tem_versao_cliente_check.pack(anchor="w", pady=(0, 10))
+
+        # Frame para campos condicionais
+        self.versao_cliente_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        self.versao_cliente_frame.pack(fill="x", pady=(0, 10))
+
+        # Título Cliente
+        ctk.CTkLabel(self.versao_cliente_frame, text="Título para Cliente", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.titulo_cliente_entry = ctk.CTkEntry(self.versao_cliente_frame, placeholder_text="Ex: Proposta de Vídeo - Evento SGS", height=35)
+        self.titulo_cliente_entry.pack(fill="x", pady=(0, 10))
+
+        # Descrição Cliente
+        ctk.CTkLabel(self.versao_cliente_frame, text="Descrição para Cliente", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.descricao_cliente_textbox = ctk.CTkTextbox(self.versao_cliente_frame, height=80)
+        self.descricao_cliente_textbox.pack(fill="x", pady=(0, 10))
+
+        # Inicialmente ocultar campos
+        self.versao_cliente_frame.pack_forget()
+
         # Info text
         info_label = ctk.CTkLabel(
             scroll,
@@ -761,14 +748,12 @@ class OrcamentoDialog(ctk.CTkToplevel):
         )
         save_btn.pack(side="left")
 
-    def on_tipo_change(self, value):
-        """Handle tipo change"""
-        if value == "empresa":
-            # Clear versao for Empresa (económico interno)
-            self.versao_entry.delete(0, "end")
-            self.versao_entry.configure(state="disabled", placeholder_text="N/A (Empresa)")
+    def toggle_versao_cliente_fields(self):
+        """Show/hide versao cliente fields based on checkbox"""
+        if self.tem_versao_cliente_var.get():
+            self.versao_cliente_frame.pack(fill="x", pady=(0, 10), before=self.tem_versao_cliente_check.master.children[list(self.tem_versao_cliente_check.master.children.keys())[-2]])
         else:
-            self.versao_entry.configure(state="normal", placeholder_text="Ex: V1, V2")
+            self.versao_cliente_frame.pack_forget()
 
     def load_data(self):
         """Load orcamento data into form"""
@@ -777,14 +762,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
         # Basic fields
         self.codigo_entry.insert(0, self.orcamento.codigo or "")
-        self.tipo_combo.set(self.orcamento.tipo or "cliente")
-
-        if self.orcamento.versao:
-            self.versao_entry.delete(0, "end")
-            self.versao_entry.insert(0, self.orcamento.versao)
-
-        # Trigger tipo change to enable/disable versao
-        self.on_tipo_change(self.orcamento.tipo or "cliente")
 
         # Cliente
         if self.orcamento.cliente:
@@ -812,6 +789,17 @@ class OrcamentoDialog(ctk.CTkToplevel):
         if self.orcamento.notas_contratuais:
             self.notas_textbox.insert("1.0", self.orcamento.notas_contratuais)
 
+        # Versão Cliente
+        if self.orcamento.tem_versao_cliente:
+            self.tem_versao_cliente_var.set(1)
+            self.toggle_versao_cliente_fields()
+
+            if self.orcamento.titulo_cliente:
+                self.titulo_cliente_entry.insert(0, self.orcamento.titulo_cliente)
+
+            if self.orcamento.descricao_cliente:
+                self.descricao_cliente_textbox.insert("1.0", self.orcamento.descricao_cliente)
+
     def save(self):
         """Save orcamento"""
         # Validate required fields
@@ -819,8 +807,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
         if not codigo:
             messagebox.showerror("Erro", "O código do orçamento é obrigatório!")
             return
-
-        tipo = self.tipo_combo.get()
 
         data_criacao_str = self.data_criacao_entry.get().strip()
         if not data_criacao_str:
@@ -834,11 +820,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
             messagebox.showerror("Erro", "Data de criação inválida! Use o formato YYYY-MM-DD")
             return
 
-        # Get versao (only for Cliente)
-        versao = None
-        if tipo == "cliente":
-            versao = self.versao_entry.get().strip() or None
-
         # Get cliente_id
         cliente_id = None
         cliente_value = self.cliente_combo.get()
@@ -848,8 +829,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
         # Prepare data
         data = {
             "codigo": codigo,
-            "tipo": tipo,
-            "versao": versao,
             "cliente_id": cliente_id,
             "data_criacao": data_criacao,
             "data_evento": self.data_evento_entry.get().strip() or None,
@@ -857,6 +836,9 @@ class OrcamentoDialog(ctk.CTkToplevel):
             "descricao_proposta": self.descricao_textbox.get("1.0", "end-1c").strip() or None,
             "status": self.status_combo.get(),
             "notas_contratuais": self.notas_textbox.get("1.0", "end-1c").strip() or None,
+            "tem_versao_cliente": bool(self.tem_versao_cliente_var.get()),
+            "titulo_cliente": self.titulo_cliente_entry.get().strip() or None,
+            "descricao_cliente": self.descricao_cliente_textbox.get("1.0", "end-1c").strip() or None,
         }
 
         # Create or update
