@@ -242,7 +242,7 @@ class DatePickerEntry(ctk.CTkFrame):
         """Seleciona um dia"""
         self.selected_date = date(self.current_year, self.current_month, day)
         self.entry.delete(0, "end")
-        self.entry.insert(0, self.selected_date.strftime("%Y-%m-%d"))
+        self.entry.insert(0, self.selected_date.strftime("%d/%m/%Y"))
         self.calendar_window.destroy()
 
     def select_today(self):
@@ -252,7 +252,7 @@ class DatePickerEntry(ctk.CTkFrame):
         self.current_year = today.year
         self.current_month = today.month
         self.entry.delete(0, "end")
-        self.entry.insert(0, today.strftime("%Y-%m-%d"))
+        self.entry.insert(0, today.strftime("%d/%m/%Y"))
         self.calendar_window.destroy()
 
     def clear_date(self):
@@ -280,7 +280,7 @@ class DatePickerEntry(ctk.CTkFrame):
         if value:
             self.selected_date = value
             self.entry.delete(0, "end")
-            self.entry.insert(0, value.strftime("%Y-%m-%d"))
+            self.entry.insert(0, value.strftime("%d/%m/%Y"))
 
     def clear(self):
         """Limpa entry"""
