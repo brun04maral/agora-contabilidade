@@ -1450,14 +1450,28 @@ class OrcamentoDialog(ctk.CTkToplevel):
             self.data_criacao_picker.set_date(self.orcamento.data_criacao)
 
         if self.orcamento.data_evento:
-            # Parse data_evento (pode ser "2025-05-29" ou "2025-05-29 | 2025-07-06")
+            # Parse data_evento (suporta múltiplos formatos)
             data_evento_str = self.orcamento.data_evento.strip()
-            if '|' in data_evento_str:
+
+            # Detectar separador (pipe ou traço)
+            separator = None
+            if ' | ' in data_evento_str:
+                separator = ' | '
+            elif ' - ' in data_evento_str:
+                separator = ' - '
+
+            if separator:
                 # Range de datas
-                parts = data_evento_str.split('|')
+                parts = data_evento_str.split(separator)
                 try:
-                    start_date = datetime.strptime(parts[0].strip(), '%Y-%m-%d').date()
-                    end_date = datetime.strptime(parts[1].strip(), '%Y-%m-%d').date()
+                    # Tentar formato DD/MM/YYYY primeiro
+                    try:
+                        start_date = datetime.strptime(parts[0].strip(), '%d/%m/%Y').date()
+                        end_date = datetime.strptime(parts[1].strip(), '%d/%m/%Y').date()
+                    except ValueError:
+                        # Fallback para formato YYYY-MM-DD
+                        start_date = datetime.strptime(parts[0].strip(), '%Y-%m-%d').date()
+                        end_date = datetime.strptime(parts[1].strip(), '%Y-%m-%d').date()
                     self.data_evento_picker.set_range(start_date, end_date)
                 except ValueError:
                     # Se não conseguir parsear, insere texto diretamente
@@ -1465,7 +1479,12 @@ class OrcamentoDialog(ctk.CTkToplevel):
             else:
                 # Data única
                 try:
-                    single_date = datetime.strptime(data_evento_str, '%Y-%m-%d').date()
+                    # Tentar formato DD/MM/YYYY primeiro
+                    try:
+                        single_date = datetime.strptime(data_evento_str, '%d/%m/%Y').date()
+                    except ValueError:
+                        # Fallback para formato YYYY-MM-DD
+                        single_date = datetime.strptime(data_evento_str, '%Y-%m-%d').date()
                     self.data_evento_picker.set_range(single_date)
                 except ValueError:
                     # Se não conseguir parsear, insere texto diretamente

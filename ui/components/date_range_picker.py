@@ -336,7 +336,7 @@ class DateRangePicker(ctk.CTkFrame):
         if self.start_date:
             if self.end_date and self.end_date != self.start_date:
                 # Range
-                text = f"{self.start_date.strftime('%d/%m/%Y')} | {self.end_date.strftime('%d/%m/%Y')}"
+                text = f"{self.start_date.strftime('%d/%m/%Y')} - {self.end_date.strftime('%d/%m/%Y')}"
             else:
                 # Data única
                 text = self.start_date.strftime('%d/%m/%Y')

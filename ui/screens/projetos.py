@@ -507,23 +507,24 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
         # Data início
         ctk.CTkLabel(datas_frame, text="Data Início", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 12))
-        self.data_inicio_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
-        self.data_inicio_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
+        from ui.components.date_picker_dropdown import DatePickerDropdown
+        self.data_inicio_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar data início...")
+        self.data_inicio_picker.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
 
         # Data fim
         ctk.CTkLabel(datas_frame, text="Data Fim", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=1, sticky="w")
-        self.data_fim_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
-        self.data_fim_entry.grid(row=1, column=1, sticky="ew", pady=(8, 12))
+        self.data_fim_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar data fim...")
+        self.data_fim_picker.grid(row=1, column=1, sticky="ew", pady=(8, 12))
 
         # Data faturação
         ctk.CTkLabel(datas_frame, text="Data Faturação", font=ctk.CTkFont(size=14, weight="bold")).grid(row=2, column=0, sticky="w", padx=(0, 12))
-        self.data_faturacao_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
-        self.data_faturacao_entry.grid(row=3, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
+        self.data_faturacao_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar data faturação...")
+        self.data_faturacao_picker.grid(row=3, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
 
         # Data vencimento
         ctk.CTkLabel(datas_frame, text="Data Vencimento", font=ctk.CTkFont(size=14, weight="bold")).grid(row=2, column=1, sticky="w")
-        self.data_vencimento_entry = ctk.CTkEntry(datas_frame, placeholder_text="AAAA-MM-DD", height=35)
-        self.data_vencimento_entry.grid(row=3, column=1, sticky="ew", pady=(8, 12))
+        self.data_vencimento_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar data vencimento...")
+        self.data_vencimento_picker.grid(row=3, column=1, sticky="ew", pady=(8, 12))
 
         # Estado
         ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
@@ -596,13 +597,13 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
         # Datas
         if p.data_inicio:
-            self.data_inicio_entry.insert(0, p.data_inicio.strftime("%Y-%m-%d"))
+            self.data_inicio_picker.set_date(p.data_inicio)
         if p.data_fim:
-            self.data_fim_entry.insert(0, p.data_fim.strftime("%Y-%m-%d"))
+            self.data_fim_picker.set_date(p.data_fim)
         if p.data_faturacao:
-            self.data_faturacao_entry.insert(0, p.data_faturacao.strftime("%Y-%m-%d"))
+            self.data_faturacao_picker.set_date(p.data_faturacao)
         if p.data_vencimento:
-            self.data_vencimento_entry.insert(0, p.data_vencimento.strftime("%Y-%m-%d"))
+            self.data_vencimento_picker.set_date(p.data_vencimento)
 
         # Estado
         estado_map = {
@@ -645,21 +646,10 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
             valor = Decimal(valor_str.replace(',', '.'))
 
             # Datas
-            data_inicio = None
-            if self.data_inicio_entry.get():
-                data_inicio = date.fromisoformat(self.data_inicio_entry.get())
-
-            data_fim = None
-            if self.data_fim_entry.get():
-                data_fim = date.fromisoformat(self.data_fim_entry.get())
-
-            data_faturacao = None
-            if self.data_faturacao_entry.get():
-                data_faturacao = date.fromisoformat(self.data_faturacao_entry.get())
-
-            data_vencimento = None
-            if self.data_vencimento_entry.get():
-                data_vencimento = date.fromisoformat(self.data_vencimento_entry.get())
+            data_inicio = self.data_inicio_picker.get_date() if self.data_inicio_picker.get() else None
+            data_fim = self.data_fim_picker.get_date() if self.data_fim_picker.get() else None
+            data_faturacao = self.data_faturacao_picker.get_date() if self.data_faturacao_picker.get() else None
+            data_vencimento = self.data_vencimento_picker.get_date() if self.data_vencimento_picker.get() else None
 
             # Estado
             estado_map = {
