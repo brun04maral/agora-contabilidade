@@ -34,21 +34,9 @@ class DatePickerEntry(ctk.CTkFrame):
             placeholder_text=placeholder,
             height=35
         )
-        self.entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.entry.pack(fill="x", expand=True)
         self.entry.bind("<Button-1>", lambda e: self.show_calendar())
         self.entry.bind("<FocusIn>", lambda e: self.show_calendar())
-
-        # Botão calendário
-        self.cal_button = ctk.CTkButton(
-            entry_frame,
-            text="📅",
-            width=40,
-            height=35,
-            command=self.show_calendar,
-            fg_color=("#3B8ED0", "#1F6AA5"),
-            hover_color=("#36719F", "#144870")
-        )
-        self.cal_button.pack(side="right")
 
         # Preencher com data padrão
         if default_date:
