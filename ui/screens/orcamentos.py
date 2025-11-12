@@ -642,6 +642,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
         self.cliente_autocomplete.pack(fill="x", pady=(0, 10))
 
         # Data de Criação e Data do Evento (2 columns)
+        from ui.components.date_picker import DatePickerEntry
         datas_frame = ctk.CTkFrame(scroll, fg_color="transparent")
         datas_frame.pack(fill="x", pady=(10, 10))
 
@@ -649,15 +650,14 @@ class OrcamentoDialog(ctk.CTkToplevel):
         data_criacao_col = ctk.CTkFrame(datas_frame, fg_color="transparent")
         data_criacao_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
         ctk.CTkLabel(data_criacao_col, text="Data de Criação *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.data_criacao_entry = ctk.CTkEntry(
+        self.data_criacao_picker = DatePickerEntry(
             data_criacao_col,
-            placeholder_text="YYYY-MM-DD",
-            height=35
+            default_date=date.today(),
+            placeholder="Selecionar data de criação..."
         )
-        self.data_criacao_entry.insert(0, date.today().strftime("%Y-%m-%d"))
-        self.data_criacao_entry.pack(fill="x")
+        self.data_criacao_picker.pack(fill="x")
 
-        # Data do Evento
+        # Data do Evento (mantém Entry para permitir ranges)
         data_evento_col = ctk.CTkFrame(datas_frame, fg_color="transparent")
         data_evento_col.pack(side="left", fill="x", expand=True)
         ctk.CTkLabel(data_evento_col, text="Data do Evento", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
@@ -1077,8 +1077,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
         # Dates
         if self.orcamento.data_criacao:
-            self.data_criacao_entry.delete(0, "end")
-            self.data_criacao_entry.insert(0, self.orcamento.data_criacao.strftime("%Y-%m-%d"))
+            self.data_criacao_picker.set_date(self.orcamento.data_criacao)
 
         if self.orcamento.data_evento:
             self.data_evento_entry.insert(0, self.orcamento.data_evento)
@@ -1115,16 +1114,10 @@ class OrcamentoDialog(ctk.CTkToplevel):
             messagebox.showerror("Erro", "O código do orçamento é obrigatório!")
             return
 
-        data_criacao_str = self.data_criacao_entry.get().strip()
-        if not data_criacao_str:
+        # Get data_criacao from picker
+        data_criacao = self.data_criacao_picker.get_date()
+        if not data_criacao:
             messagebox.showerror("Erro", "A data de criação é obrigatória!")
-            return
-
-        # Parse data_criacao
-        try:
-            data_criacao = datetime.strptime(data_criacao_str, "%Y-%m-%d").date()
-        except ValueError:
-            messagebox.showerror("Erro", "Data de criação inválida! Use o formato YYYY-MM-DD")
             return
 
         # Get cliente_id
