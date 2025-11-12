@@ -727,6 +727,18 @@ class OrcamentoDialog(ctk.CTkToplevel):
         self.descricao_cliente_textbox = ctk.CTkTextbox(self.versao_cliente_frame, height=80)
         self.descricao_cliente_textbox.pack(fill="x", pady=(0, 10))
 
+        # Botão Exportar PDF (apenas quando editando)
+        if self.orcamento:
+            export_pdf_btn = ctk.CTkButton(
+                self.versao_cliente_frame,
+                text="📄 Exportar Proposta para PDF",
+                command=self.exportar_proposta_pdf,
+                height=35,
+                fg_color="#2196F3",
+                hover_color="#1976D2"
+            )
+            export_pdf_btn.pack(fill="x", pady=(10, 10))
+
         # Inicialmente ocultar campos
         self.versao_cliente_frame.pack_forget()
 
@@ -1364,6 +1376,58 @@ class OrcamentoDialog(ctk.CTkToplevel):
         except Exception as e:
             self.db.rollback()
             messagebox.showerror("Erro", f"Erro ao eliminar item: {str(e)}")
+
+    def exportar_proposta_pdf(self):
+        """Exporta proposta para PDF"""
+        from tkinter import filedialog
+        from logic.proposta_exporter import PropostaExporter
+
+        if not self.orcamento:
+            messagebox.showerror("Erro", "Nenhum orçamento selecionado.")
+            return
+
+        if not self.orcamento.tem_versao_cliente:
+            messagebox.showerror("Erro", "Este orçamento não tem versão para cliente.")
+            return
+
+        # Verificar se tem itens da proposta
+        proposta_secoes = self.db.query(PropostaSecao).filter(
+            PropostaSecao.orcamento_id == self.orcamento.id
+        ).first()
+
+        if not proposta_secoes:
+            messagebox.showerror(
+                "Erro",
+                "Nenhum item de proposta encontrado.\nPor favor, adicione itens antes de exportar."
+            )
+            return
+
+        # Solicitar nome do arquivo
+        default_filename = f"Proposta_{self.orcamento.codigo.replace('/', '-')}_{datetime.now().strftime('%Y%m%d')}.pdf"
+
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialfile=default_filename,
+            title="Guardar Proposta como PDF"
+        )
+
+        if not filename:
+            return
+
+        try:
+            # Exportar PDF
+            exporter = PropostaExporter(self.db)
+            exporter.exportar_pdf(self.orcamento.id, filename)
+
+            messagebox.showinfo(
+                "Sucesso",
+                f"Proposta exportada com sucesso!\n\nFicheiro: {filename}"
+            )
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao exportar PDF: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     def load_data(self):
         """Load orcamento data into form"""
