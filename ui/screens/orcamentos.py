@@ -204,6 +204,20 @@ class OrcamentosScreen(ctk.CTkFrame):
         self.view_btn.pack(side="left", padx=(0, 10))
         self.view_btn.pack_forget()  # Hide initially
 
+        # Manage Items button (hidden by default)
+        self.manage_items_btn = ctk.CTkButton(
+            bottom_frame,
+            text="📋 Gerir Itens",
+            command=self.gerir_itens,
+            width=120,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color="#FF9800",
+            hover_color="#F57C00"
+        )
+        self.manage_items_btn.pack(side="left", padx=(0, 10))
+        self.manage_items_btn.pack_forget()  # Hide initially
+
         # Delete button (hidden by default)
         self.delete_btn = ctk.CTkButton(
             bottom_frame,
@@ -224,16 +238,19 @@ class OrcamentosScreen(ctk.CTkFrame):
             # Show all action buttons
             self.edit_btn.pack(side="left", padx=(0, 10))
             self.view_btn.pack(side="left", padx=(0, 10))
+            self.manage_items_btn.pack(side="left", padx=(0, 10))
             self.delete_btn.pack(side="left", padx=(0, 10))
         elif len(selected_rows) > 1:
-            # Hide edit and view, show delete only
+            # Hide edit, view, and manage items, show delete only
             self.edit_btn.pack_forget()
             self.view_btn.pack_forget()
+            self.manage_items_btn.pack_forget()
             self.delete_btn.pack(side="left", padx=(0, 10))
         else:
             # Hide all
             self.edit_btn.pack_forget()
             self.view_btn.pack_forget()
+            self.manage_items_btn.pack_forget()
             self.delete_btn.pack_forget()
 
     def carregar_orcamentos(self):
@@ -546,6 +563,26 @@ class OrcamentosScreen(ctk.CTkFrame):
                 messagebox.showinfo("Sucesso", f"{len(selected)} orçamentos eliminados com sucesso!")
 
         # Reload
+        self.carregar_orcamentos()
+
+    def gerir_itens(self):
+        """Abre dialog para gerir itens do orçamento"""
+        selected = self.table.get_selected_data()
+        if not selected or len(selected) != 1:
+            return
+
+        orcamento_id = selected[0]["id"]
+
+        # Abrir dialog de gestão de itens
+        dialog = GerirItensDialog(
+            self,
+            self.manager,
+            self.db_session,
+            orcamento_id
+        )
+        self.wait_window(dialog)
+
+        # Recarregar tabela (pode ter havido mudanças nos totais)
         self.carregar_orcamentos()
 
 
@@ -864,3 +901,885 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class ItemDialog(ctk.CTkToplevel):
+    """Dialog para adicionar/editar item do orçamento"""
+
+    def __init__(
+        self,
+        parent,
+        manager: OrcamentoManager,
+        db_session: Session,
+        orcamento_id: int,
+        secao_id: Optional[int] = None,
+        item: Optional = None
+    ):
+        super().__init__(parent)
+
+        self.manager = manager
+        self.db_session = db_session
+        from logic.equipamento import EquipamentoManager
+        self.equipamento_manager = EquipamentoManager(db_session)
+
+        self.orcamento_id = orcamento_id
+        self.secao_id_inicial = secao_id
+        self.item = item
+        self.item_salvo = False
+
+        # Window config
+        self.title("Editar Item" if item else "Novo Item")
+        self.geometry("700x800")
+        self.resizable(False, False)
+
+        # Make modal
+        self.transient(parent)
+        self.grab_set()
+
+        # Center window
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (700 // 2)
+        y = (self.winfo_screenheight() // 2) - (800 // 2)
+        self.geometry(f"700x800+{x}+{y}")
+
+        # Create widgets
+        self.create_widgets()
+
+        # Load data if editing
+        if self.item:
+            self.load_data()
+
+    def create_widgets(self):
+        """Create dialog widgets"""
+        from tkinter import messagebox
+        from decimal import Decimal
+
+        # Main container
+        main_frame = ctk.CTkFrame(self)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        title = ctk.CTkLabel(
+            main_frame,
+            text="✏️ Editar Item" if self.item else "➕ Novo Item",
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
+        title.pack(pady=(0, 20))
+
+        # Scrollable form
+        scroll = ctk.CTkScrollableFrame(main_frame)
+        scroll.pack(fill="both", expand=True)
+
+        # Secção *
+        ctk.CTkLabel(scroll, text="Secção *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+
+        # Carregar secções
+        secoes = self.manager.obter_secoes(self.orcamento_id)
+        secoes_list = []
+        self.secoes_map = {}
+
+        for secao in secoes:
+            # Incluir subsecções
+            if secao.parent_id is None:
+                secoes_list.append(secao.nome)
+                self.secoes_map[secao.nome] = secao.id
+
+                # Adicionar subsecções indentadas
+                for subsecao in secao.subsecoes:
+                    nome_subsecao = f"  → {subsecao.nome}"
+                    secoes_list.append(nome_subsecao)
+                    self.secoes_map[nome_subsecao] = subsecao.id
+
+        self.secao_combo = ctk.CTkComboBox(
+            scroll,
+            values=secoes_list if secoes_list else ["(Sem secções)"],
+            height=35,
+            state="readonly"
+        )
+        if secoes_list:
+            self.secao_combo.set(secoes_list[0])
+        self.secao_combo.pack(fill="x", pady=(0, 10))
+
+        # Se secao_id_inicial foi fornecido, selecionar essa secção
+        if self.secao_id_inicial:
+            for nome, sid in self.secoes_map.items():
+                if sid == self.secao_id_inicial:
+                    self.secao_combo.set(nome)
+                    break
+
+        # Separador
+        separator1 = ctk.CTkFrame(scroll, height=2, fg_color="gray")
+        separator1.pack(fill="x", pady=(10, 15))
+
+        # Tipo de Item
+        ctk.CTkLabel(
+            scroll,
+            text="🔧 Tipo de Item",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        self.tipo_item_var = ctk.StringVar(value="manual")
+
+        tipo_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        tipo_frame.pack(fill="x", pady=(0, 10))
+
+        manual_radio = ctk.CTkRadioButton(
+            tipo_frame,
+            text="Item Manual (Serviço/Despesa)",
+            variable=self.tipo_item_var,
+            value="manual",
+            command=self.toggle_tipo_item
+        )
+        manual_radio.pack(anchor="w", pady=2)
+
+        equipamento_radio = ctk.CTkRadioButton(
+            tipo_frame,
+            text="Equipamento (selecionar da lista)",
+            variable=self.tipo_item_var,
+            value="equipamento",
+            command=self.toggle_tipo_item
+        )
+        equipamento_radio.pack(anchor="w", pady=2)
+
+        # Frame para seleção de equipamento (inicialmente oculto)
+        self.equipamento_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+
+        ctk.CTkLabel(
+            self.equipamento_frame,
+            text="Selecionar Equipamento",
+            font=ctk.CTkFont(size=13)
+        ).pack(anchor="w", pady=(10, 5))
+
+        # Carregar equipamentos
+        equipamentos = self.equipamento_manager.listar_equipamentos()
+        equipamento_names = ["(Nenhum)"] + [
+            f"{eq.numero} - {eq.produto}" + (f" ({eq.tipo})" if eq.tipo else "")
+            for eq in equipamentos
+        ]
+        self.equipamentos_map = {
+            f"{eq.numero} - {eq.produto}" + (f" ({eq.tipo})" if eq.tipo else ""): eq.id
+            for eq in equipamentos
+        }
+        self.equipamentos_data = {eq.id: eq for eq in equipamentos}
+
+        self.equipamento_combo = ctk.CTkComboBox(
+            self.equipamento_frame,
+            values=equipamento_names,
+            height=35,
+            command=self.on_equipamento_selecionado
+        )
+        self.equipamento_combo.set("(Nenhum)")
+        self.equipamento_combo.pack(fill="x", pady=(0, 5))
+
+        info_eq = ctk.CTkLabel(
+            self.equipamento_frame,
+            text="💡 O preço do equipamento será preenchido automaticamente",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        )
+        info_eq.pack(anchor="w", pady=(0, 10))
+
+        # Descrição *
+        ctk.CTkLabel(scroll, text="Descrição *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.descricao_entry = ctk.CTkEntry(scroll, placeholder_text="Ex: Câmara Sony FX6", height=35)
+        self.descricao_entry.pack(fill="x", pady=(0, 10))
+
+        # Quantidade e Dias (2 columns)
+        qtd_dias_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        qtd_dias_frame.pack(fill="x", pady=(10, 10))
+
+        # Quantidade *
+        qtd_col = ctk.CTkFrame(qtd_dias_frame, fg_color="transparent")
+        qtd_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(qtd_col, text="Quantidade *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.quantidade_entry = ctk.CTkEntry(qtd_col, placeholder_text="1", height=35)
+        self.quantidade_entry.insert(0, "1")
+        self.quantidade_entry.pack(fill="x")
+        self.quantidade_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
+
+        # Dias *
+        dias_col = ctk.CTkFrame(qtd_dias_frame, fg_color="transparent")
+        dias_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(dias_col, text="Dias *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.dias_entry = ctk.CTkEntry(dias_col, placeholder_text="1", height=35)
+        self.dias_entry.insert(0, "1")
+        self.dias_entry.pack(fill="x")
+        self.dias_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
+
+        # Preço Unitário e Desconto (2 columns)
+        preco_desc_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        preco_desc_frame.pack(fill="x", pady=(10, 10))
+
+        # Preço Unitário *
+        preco_col = ctk.CTkFrame(preco_desc_frame, fg_color="transparent")
+        preco_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(preco_col, text="Preço Unitário (€) *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.preco_entry = ctk.CTkEntry(preco_col, placeholder_text="0.00", height=35)
+        self.preco_entry.insert(0, "0.00")
+        self.preco_entry.pack(fill="x")
+        self.preco_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
+
+        # Desconto (%)
+        desc_col = ctk.CTkFrame(preco_desc_frame, fg_color="transparent")
+        desc_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(desc_col, text="Desconto (%)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.desconto_entry = ctk.CTkEntry(desc_col, placeholder_text="0", height=35)
+        self.desconto_entry.insert(0, "0")
+        self.desconto_entry.pack(fill="x")
+        self.desconto_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
+
+        # Total (calculado)
+        total_frame = ctk.CTkFrame(scroll)
+        total_frame.pack(fill="x", pady=(15, 10))
+
+        ctk.CTkLabel(
+            total_frame,
+            text="💰 TOTAL",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(side="left", padx=10)
+
+        self.total_label = ctk.CTkLabel(
+            total_frame,
+            text="0.00€",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#4CAF50"
+        )
+        self.total_label.pack(side="right", padx=10, pady=10)
+
+        # Separador
+        separator2 = ctk.CTkFrame(scroll, height=2, fg_color="gray")
+        separator2.pack(fill="x", pady=(15, 15))
+
+        # Campos Económicos (opcionais)
+        ctk.CTkLabel(
+            scroll,
+            text="📊 Campos Económicos (Opcionais)",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        # Afetação
+        ctk.CTkLabel(scroll, text="Afetação", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(5, 5))
+        self.afetacao_combo = ctk.CTkComboBox(
+            scroll,
+            values=["(Nenhum)", "BA", "RR", "Agora", "Freelancers", "Despesa"],
+            height=35
+        )
+        self.afetacao_combo.set("(Nenhum)")
+        self.afetacao_combo.pack(fill="x", pady=(0, 10))
+
+        # Investimento e Amortização (2 columns)
+        inv_amort_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        inv_amort_frame.pack(fill="x", pady=(10, 10))
+
+        # Investimento
+        inv_col = ctk.CTkFrame(inv_amort_frame, fg_color="transparent")
+        inv_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ctk.CTkLabel(inv_col, text="Investimento (€)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.investimento_entry = ctk.CTkEntry(inv_col, placeholder_text="0.00", height=35)
+        self.investimento_entry.pack(fill="x")
+
+        # Amortização
+        amort_col = ctk.CTkFrame(inv_amort_frame, fg_color="transparent")
+        amort_col.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(amort_col, text="Amortização (€)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.amortizacao_entry = ctk.CTkEntry(amort_col, placeholder_text="0.00", height=35)
+        self.amortizacao_entry.pack(fill="x")
+
+        # Buttons
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        cancel_btn = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            height=35,
+            fg_color="gray",
+            hover_color="darkgray"
+        )
+        cancel_btn.pack(side="left", padx=(0, 10))
+
+        save_btn = ctk.CTkButton(
+            btn_frame,
+            text="💾 Guardar",
+            command=self.save,
+            width=120,
+            height=35,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        )
+        save_btn.pack(side="left")
+
+    def toggle_tipo_item(self):
+        """Show/hide equipamento frame based on tipo"""
+        if self.tipo_item_var.get() == "equipamento":
+            self.equipamento_frame.pack(fill="x", pady=(0, 10), after=self.equipamento_frame.master.children[list(self.equipamento_frame.master.children.keys())[5]])
+        else:
+            self.equipamento_frame.pack_forget()
+
+    def on_equipamento_selecionado(self, choice):
+        """Auto-preencher campos quando equipamento é selecionado"""
+        if choice == "(Nenhum)":
+            return
+
+        equipamento_id = self.equipamentos_map.get(choice)
+        if not equipamento_id:
+            return
+
+        equipamento = self.equipamentos_data.get(equipamento_id)
+        if not equipamento:
+            return
+
+        # Auto-preencher descrição
+        self.descricao_entry.delete(0, "end")
+        self.descricao_entry.insert(0, equipamento.produto or "")
+
+        # Auto-preencher preço de aluguer
+        if equipamento.preco_aluguer:
+            self.preco_entry.delete(0, "end")
+            self.preco_entry.insert(0, f"{float(equipamento.preco_aluguer):.2f}")
+
+        # Calcular total
+        self.calcular_total()
+
+    def calcular_total(self):
+        """Calcula o total do item baseado em qtd * dias * preço * (1 - desconto)"""
+        from decimal import Decimal, InvalidOperation
+
+        try:
+            quantidade = Decimal(self.quantidade_entry.get() or "1")
+            dias = Decimal(self.dias_entry.get() or "1")
+            preco = Decimal(self.preco_entry.get() or "0")
+            desconto_pct = Decimal(self.desconto_entry.get() or "0")
+
+            # Converter desconto de % para decimal (10% = 0.1)
+            desconto = desconto_pct / 100
+
+            # Calcular total
+            total = (quantidade * dias * preco) * (1 - desconto)
+
+            # Atualizar label
+            self.total_label.configure(text=f"{float(total):.2f}€")
+
+        except (InvalidOperation, ValueError):
+            self.total_label.configure(text="0.00€")
+
+    def load_data(self):
+        """Load item data into form"""
+        if not self.item:
+            return
+
+        # Secção
+        for nome, sid in self.secoes_map.items():
+            if sid == self.item.secao_id:
+                self.secao_combo.set(nome)
+                break
+
+        # Se tem equipamento, selecionar tipo equipamento
+        if self.item.equipamento_id:
+            self.tipo_item_var.set("equipamento")
+            self.toggle_tipo_item()
+
+            # Selecionar equipamento
+            for nome, eid in self.equipamentos_map.items():
+                if eid == self.item.equipamento_id:
+                    self.equipamento_combo.set(nome)
+                    break
+
+        # Descrição
+        if self.item.descricao:
+            self.descricao_entry.insert(0, self.item.descricao)
+
+        # Quantidade e dias
+        self.quantidade_entry.delete(0, "end")
+        self.quantidade_entry.insert(0, str(self.item.quantidade or 1))
+
+        self.dias_entry.delete(0, "end")
+        self.dias_entry.insert(0, str(self.item.dias or 1))
+
+        # Preço
+        self.preco_entry.delete(0, "end")
+        self.preco_entry.insert(0, f"{float(self.item.preco_unitario or 0):.2f}")
+
+        # Desconto (converter de 0.1 para 10%)
+        desconto_pct = float(self.item.desconto or 0) * 100
+        self.desconto_entry.delete(0, "end")
+        self.desconto_entry.insert(0, f"{desconto_pct:.0f}")
+
+        # Campos económicos
+        if self.item.afetacao:
+            self.afetacao_combo.set(self.item.afetacao)
+
+        if self.item.investimento:
+            self.investimento_entry.insert(0, f"{float(self.item.investimento):.2f}")
+
+        if self.item.amortizacao:
+            self.amortizacao_entry.insert(0, f"{float(self.item.amortizacao):.2f}")
+
+        # Calcular total
+        self.calcular_total()
+
+    def save(self):
+        """Save item"""
+        from tkinter import messagebox
+        from decimal import Decimal
+
+        # Validate
+        descricao = self.descricao_entry.get().strip()
+        if not descricao:
+            messagebox.showerror("Erro", "A descrição é obrigatória!")
+            return
+
+        secao_nome = self.secao_combo.get()
+        secao_id = self.secoes_map.get(secao_nome)
+        if not secao_id:
+            messagebox.showerror("Erro", "Selecione uma secção válida!")
+            return
+
+        try:
+            quantidade = int(self.quantidade_entry.get() or "1")
+            dias = int(self.dias_entry.get() or "1")
+            preco_unitario = Decimal(self.preco_entry.get() or "0")
+            desconto_pct = Decimal(self.desconto_entry.get() or "0")
+
+            # Converter desconto de % para decimal
+            desconto = desconto_pct / 100
+
+        except (ValueError, Exception) as e:
+            messagebox.showerror("Erro", f"Valores numéricos inválidos: {str(e)}")
+            return
+
+        # Get equipamento_id se selecionado
+        equipamento_id = None
+        if self.tipo_item_var.get() == "equipamento":
+            eq_choice = self.equipamento_combo.get()
+            if eq_choice != "(Nenhum)":
+                equipamento_id = self.equipamentos_map.get(eq_choice)
+
+        # Campos económicos
+        afetacao = self.afetacao_combo.get()
+        if afetacao == "(Nenhum)":
+            afetacao = None
+
+        investimento = None
+        amortizacao = None
+        try:
+            inv_val = self.investimento_entry.get().strip()
+            if inv_val:
+                investimento = Decimal(inv_val)
+
+            amort_val = self.amortizacao_entry.get().strip()
+            if amort_val:
+                amortizacao = Decimal(amort_val)
+        except:
+            pass
+
+        # Prepare data
+        data = {
+            "secao_id": secao_id,
+            "descricao": descricao,
+            "quantidade": quantidade,
+            "dias": dias,
+            "preco_unitario": preco_unitario,
+            "desconto": desconto,
+            "equipamento_id": equipamento_id,
+            "afetacao": afetacao,
+            "investimento": investimento,
+            "amortizacao": amortizacao,
+        }
+
+        # Create or update
+        try:
+            if self.item:
+                # Update
+                sucesso, _, erro = self.manager.atualizar_item(self.item.id, **data)
+                if sucesso:
+                    self.item_salvo = True
+                    messagebox.showinfo("Sucesso", "Item atualizado com sucesso!")
+                    self.destroy()
+                else:
+                    messagebox.showerror("Erro", f"Erro ao atualizar item: {erro}")
+            else:
+                # Create
+                sucesso, _, erro = self.manager.adicionar_item(
+                    orcamento_id=self.orcamento_id,
+                    **data
+                )
+                if sucesso:
+                    self.item_salvo = True
+                    messagebox.showinfo("Sucesso", "Item adicionado com sucesso!")
+                    self.destroy()
+                else:
+                    messagebox.showerror("Erro", f"Erro ao adicionar item: {erro}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class GerirItensDialog(ctk.CTkToplevel):
+    """Dialog para gerir itens do orçamento (adicionar, editar, eliminar)"""
+
+    def __init__(self, parent, manager: OrcamentoManager, db_session: Session, orcamento_id: int):
+        super().__init__(parent)
+
+        self.manager = manager
+        self.db_session = db_session
+        self.orcamento_id = orcamento_id
+        self.orcamento = self.manager.obter_orcamento(orcamento_id)
+
+        if not self.orcamento:
+            from tkinter import messagebox
+            messagebox.showerror("Erro", "Orçamento não encontrado!")
+            self.destroy()
+            return
+
+        # Window config
+        self.title(f"Gerir Itens - {self.orcamento.codigo}")
+        self.geometry("1200x800")
+
+        # Make modal
+        self.transient(parent)
+        self.grab_set()
+
+        # Center window
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (1200 // 2)
+        y = (self.winfo_screenheight() // 2) - (800 // 2)
+        self.geometry(f"1200x800+{x}+{y}")
+
+        # Create widgets
+        self.create_widgets()
+
+        # Load data
+        self.carregar_secoes_e_itens()
+
+    def create_widgets(self):
+        """Create dialog widgets"""
+
+        # Main container
+        main_frame = ctk.CTkFrame(self)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Header
+        header_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        header_frame.pack(fill="x", pady=(0, 10))
+
+        title = ctk.CTkLabel(
+            header_frame,
+            text=f"📋 Gerir Itens: {self.orcamento.codigo}",
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
+        title.pack(side="left")
+
+        # Buttons no header
+        btn_header_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        btn_header_frame.pack(side="right")
+
+        recalc_btn = ctk.CTkButton(
+            btn_header_frame,
+            text="🔄 Recalcular Totais",
+            command=self.recalcular_totais,
+            width=150,
+            height=32,
+            fg_color="#2196F3",
+            hover_color="#1976D2"
+        )
+        recalc_btn.pack(side="left", padx=(0, 10))
+
+        close_btn = ctk.CTkButton(
+            btn_header_frame,
+            text="✓ Fechar",
+            command=self.destroy,
+            width=100,
+            height=32
+        )
+        close_btn.pack(side="left")
+
+        # Info orçamento
+        info_frame = ctk.CTkFrame(main_frame)
+        info_frame.pack(fill="x", pady=(0, 15))
+
+        if self.orcamento.cliente:
+            cliente_label = ctk.CTkLabel(
+                info_frame,
+                text=f"Cliente: {self.orcamento.cliente.nome}",
+                font=ctk.CTkFont(size=13)
+            )
+            cliente_label.pack(side="left", padx=10, pady=8)
+
+        status_label = ctk.CTkLabel(
+            info_frame,
+            text=f"Status: {self.orcamento.status}",
+            font=ctk.CTkFont(size=13)
+        )
+        status_label.pack(side="left", padx=10, pady=8)
+
+        # Totais
+        self.totais_frame = ctk.CTkFrame(info_frame)
+        self.totais_frame.pack(side="right", padx=10, pady=8)
+
+        self.total_label = ctk.CTkLabel(
+            self.totais_frame,
+            text=f"Total: {float(self.orcamento.valor_total or 0):.2f}€",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color="#4CAF50"
+        )
+        self.total_label.pack(side="left", padx=10)
+
+        # Scrollable content
+        self.scroll_frame = ctk.CTkScrollableFrame(main_frame)
+        self.scroll_frame.pack(fill="both", expand=True)
+
+        # Bottom buttons
+        bottom_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        bottom_frame.pack(fill="x", pady=(10, 0))
+
+        add_item_btn = ctk.CTkButton(
+            bottom_frame,
+            text="➕ Adicionar Item",
+            command=self.adicionar_item,
+            width=150,
+            height=35,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        )
+        add_item_btn.pack(side="left")
+
+    def carregar_secoes_e_itens(self):
+        """Carrega secções e itens do orçamento"""
+
+        # Limpar scroll_frame
+        for widget in self.scroll_frame.winfo_children():
+            widget.destroy()
+
+        # Obter secções
+        secoes = self.manager.obter_secoes(self.orcamento_id)
+
+        if not secoes:
+            no_secoes_label = ctk.CTkLabel(
+                self.scroll_frame,
+                text="⚠️ Nenhuma secção encontrada. As secções padrão devem ter sido criadas automaticamente.",
+                font=ctk.CTkFont(size=13),
+                text_color="gray"
+            )
+            no_secoes_label.pack(pady=50)
+            return
+
+        # Mostrar cada secção
+        for secao in secoes:
+            if secao.parent_id is None:  # Apenas secções principais
+                self.render_secao(secao)
+
+    def render_secao(self, secao, level=0):
+        """Renderiza uma secção e suas subsecções"""
+
+        # Frame da secção
+        secao_frame = ctk.CTkFrame(self.scroll_frame)
+        secao_frame.pack(fill="x", pady=5, padx=(level * 20, 0))
+
+        # Header da secção
+        secao_header = ctk.CTkFrame(secao_frame, fg_color="#2b2b2b")
+        secao_header.pack(fill="x", padx=2, pady=2)
+
+        # Nome da secção
+        indent = "  " * level
+        icon = "📁" if secao.subsecoes else "📄"
+        secao_title = ctk.CTkLabel(
+            secao_header,
+            text=f"{indent}{icon} {secao.nome}",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            anchor="w"
+        )
+        secao_title.pack(side="left", padx=10, pady=8)
+
+        # Botão adicionar item
+        add_btn = ctk.CTkButton(
+            secao_header,
+            text="+ Item",
+            command=lambda s=secao: self.adicionar_item_em_secao(s.id),
+            width=80,
+            height=28,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        )
+        add_btn.pack(side="right", padx=10, pady=5)
+
+        # Items da secção
+        itens = self.manager.obter_itens(self.orcamento_id, secao.id)
+
+        if itens:
+            # Container de itens
+            itens_container = ctk.CTkFrame(secao_frame, fg_color="transparent")
+            itens_container.pack(fill="x", padx=10, pady=5)
+
+            for item in itens:
+                self.render_item(itens_container, item)
+        else:
+            # Mensagem de sem itens
+            no_items_label = ctk.CTkLabel(
+                secao_frame,
+                text="  (Sem itens)",
+                font=ctk.CTkFont(size=12),
+                text_color="gray",
+                anchor="w"
+            )
+            no_items_label.pack(fill="x", padx=20, pady=5)
+
+        # Renderizar subsecções
+        for subsecao in secao.subsecoes:
+            self.render_secao(subsecao, level + 1)
+
+    def render_item(self, container, item):
+        """Renderiza um item"""
+
+        # Frame do item
+        item_frame = ctk.CTkFrame(container)
+        item_frame.pack(fill="x", pady=2)
+
+        # Conteúdo do item
+        content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        content_frame.pack(side="left", fill="x", expand=True, padx=10, pady=8)
+
+        # Descrição e detalhes
+        desc_text = f"• {item.descricao}"
+        desc_label = ctk.CTkLabel(
+            content_frame,
+            text=desc_text,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            anchor="w"
+        )
+        desc_label.pack(anchor="w")
+
+        # Detalhes do item
+        detalhes = f"  Qtd: {item.quantidade} × {item.dias} dias × {float(item.preco_unitario):.2f}€"
+
+        if item.desconto > 0:
+            desconto_pct = float(item.desconto) * 100
+            detalhes += f" | Desconto: {desconto_pct:.0f}%"
+
+        detalhes += f" = {float(item.total):.2f}€"
+
+        # Adicionar info de equipamento se houver
+        if item.equipamento:
+            detalhes += f" | 🔧 {item.equipamento.numero}"
+
+        detalhes_label = ctk.CTkLabel(
+            content_frame,
+            text=detalhes,
+            font=ctk.CTkFont(size=11),
+            text_color="gray",
+            anchor="w"
+        )
+        detalhes_label.pack(anchor="w")
+
+        # Botões de ação
+        actions_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        actions_frame.pack(side="right", padx=10)
+
+        edit_btn = ctk.CTkButton(
+            actions_frame,
+            text="✏️",
+            command=lambda i=item: self.editar_item(i),
+            width=40,
+            height=28,
+            fg_color="#2196F3",
+            hover_color="#1976D2"
+        )
+        edit_btn.pack(side="left", padx=2)
+
+        delete_btn = ctk.CTkButton(
+            actions_frame,
+            text="🗑️",
+            command=lambda i=item: self.eliminar_item(i),
+            width=40,
+            height=28,
+            fg_color="#f44336",
+            hover_color="#d32f2f"
+        )
+        delete_btn.pack(side="left", padx=2)
+
+    def adicionar_item(self):
+        """Abre dialog para adicionar item"""
+        dialog = ItemDialog(
+            self,
+            self.manager,
+            self.db_session,
+            self.orcamento_id
+        )
+        self.wait_window(dialog)
+
+        if dialog.item_salvo:
+            self.carregar_secoes_e_itens()
+            self.atualizar_totais()
+
+    def adicionar_item_em_secao(self, secao_id):
+        """Abre dialog para adicionar item em secção específica"""
+        dialog = ItemDialog(
+            self,
+            self.manager,
+            self.db_session,
+            self.orcamento_id,
+            secao_id=secao_id
+        )
+        self.wait_window(dialog)
+
+        if dialog.item_salvo:
+            self.carregar_secoes_e_itens()
+            self.atualizar_totais()
+
+    def editar_item(self, item):
+        """Abre dialog para editar item"""
+        dialog = ItemDialog(
+            self,
+            self.manager,
+            self.db_session,
+            self.orcamento_id,
+            item=item
+        )
+        self.wait_window(dialog)
+
+        if dialog.item_salvo:
+            self.carregar_secoes_e_itens()
+            self.atualizar_totais()
+
+    def eliminar_item(self, item):
+        """Elimina item"""
+        from tkinter import messagebox
+
+        if not messagebox.askyesno(
+            "Confirmar Eliminação",
+            f"Tem a certeza que deseja eliminar o item '{item.descricao}'?"
+        ):
+            return
+
+        sucesso, erro = self.manager.eliminar_item(item.id)
+
+        if sucesso:
+            messagebox.showinfo("Sucesso", "Item eliminado com sucesso!")
+            self.carregar_secoes_e_itens()
+            self.atualizar_totais()
+        else:
+            messagebox.showerror("Erro", f"Erro ao eliminar item: {erro}")
+
+    def recalcular_totais(self):
+        """Recalcula totais do orçamento"""
+        sucesso, erro = self.manager.recalcular_totais(self.orcamento_id)
+
+        if sucesso:
+            from tkinter import messagebox
+            messagebox.showinfo("Sucesso", "Totais recalculados com sucesso!")
+            self.atualizar_totais()
+        else:
+            from tkinter import messagebox
+            messagebox.showerror("Erro", f"Erro ao recalcular totais: {erro}")
+
+    def atualizar_totais(self):
+        """Atualiza display de totais"""
+        # Recarregar orçamento
+        self.orcamento = self.manager.obter_orcamento(self.orcamento_id)
+
+        # Atualizar label
+        self.total_label.configure(
+            text=f"Total: {float(self.orcamento.valor_total or 0):.2f}€"
+        )
