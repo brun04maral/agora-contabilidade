@@ -750,14 +750,14 @@ class OrcamentoDialog(ctk.CTkToplevel):
         # Inicialmente ocultar campos
         self.versao_cliente_frame.pack_forget()
 
-        # Info text
-        info_label = ctk.CTkLabel(
+        # Info text (guardar referência para posicionamento do toggle)
+        self.info_label = ctk.CTkLabel(
             scroll,
             text="ℹ️ Após criar o orçamento, você poderá adicionar secções e items.",
             font=ctk.CTkFont(size=11),
             text_color="gray"
         )
-        info_label.pack(pady=(10, 10))
+        self.info_label.pack(pady=(10, 10))
 
         # Buttons
         btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
@@ -788,7 +788,8 @@ class OrcamentoDialog(ctk.CTkToplevel):
     def toggle_versao_cliente_fields(self):
         """Show/hide versao cliente fields based on checkbox"""
         if self.tem_versao_cliente_var.get():
-            self.versao_cliente_frame.pack(fill="x", pady=(0, 10), before=self.tem_versao_cliente_check.master.children[list(self.tem_versao_cliente_check.master.children.keys())[-2]])
+            # Show frame before info_label to maintain correct order
+            self.versao_cliente_frame.pack(fill="x", pady=(0, 10), before=self.info_label)
         else:
             self.versao_cliente_frame.pack_forget()
 
