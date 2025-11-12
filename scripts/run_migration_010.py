@@ -1,12 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Script para executar migration 010 - Refatorar orçamento para estrutura única
 """
-from __future__ import print_function
 import os
 import sys
-import imp
+import importlib.util
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
@@ -16,7 +15,7 @@ load_dotenv()
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Import migration module using imp (files starting with numbers can't be imported normally)
+# Import migration module using importlib (files starting with numbers can't be imported normally)
 migration_path = os.path.join(
     os.path.dirname(__file__),
     '..',
@@ -24,7 +23,9 @@ migration_path = os.path.join(
     'migrations',
     '010_refactor_orcamento_unico.py'
 )
-migration_010 = imp.load_source("migration_010", migration_path)
+spec = importlib.util.spec_from_file_location("migration_010", migration_path)
+migration_010 = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(migration_010)
 
 
 def run_migration_010():

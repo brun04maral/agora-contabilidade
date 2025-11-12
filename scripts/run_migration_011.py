@@ -1,13 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Script para executar migration 011
 - Migration 011: Criar tabelas proposta_secoes e proposta_itens
 """
-from __future__ import print_function
 import os
 import sys
-import imp
+import importlib.util
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
@@ -19,7 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 
 def import_migration(migration_file):
-    """Import migration module using imp"""
+    """Import migration module using importlib"""
     migration_path = os.path.join(
         os.path.dirname(__file__),
         '..',
@@ -28,7 +27,10 @@ def import_migration(migration_file):
         migration_file
     )
     module_name = "migration_{}".format(migration_file.replace('.py', '').replace('-', '_'))
-    return imp.load_source(module_name, migration_path)
+    spec = importlib.util.spec_from_file_location(module_name, migration_path)
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+    return migration
 
 
 def run_migration_011():
