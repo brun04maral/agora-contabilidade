@@ -861,6 +861,54 @@ class OrcamentoDialog(ctk.CTkToplevel):
             if secao.parent_id is None:  # Apenas secções principais
                 self.render_secao_compacta(items_scroll, secao)
 
+        # Separador antes dos totais
+        separator = ctk.CTkFrame(items_scroll, height=2, fg_color="gray")
+        separator.pack(fill="x", pady=(15, 10))
+
+        # Frame de totais
+        totais_frame = ctk.CTkFrame(items_scroll, fg_color="#1e1e1e")
+        totais_frame.pack(fill="x", pady=(0, 10), padx=5)
+
+        totais_title = ctk.CTkLabel(
+            totais_frame,
+            text="💰 Totais",
+            font=ctk.CTkFont(size=15, weight="bold")
+        )
+        totais_title.pack(pady=(10, 5))
+
+        # Total Parcial 1 (Serviços + Equipamento)
+        if self.orcamento.total_parcial_1:
+            parcial1_label = ctk.CTkLabel(
+                totais_frame,
+                text=f"Total Parcial 1 (Serviços + Equipamento): {float(self.orcamento.total_parcial_1):.2f}€",
+                font=ctk.CTkFont(size=13),
+                text_color="#90CAF9"
+            )
+            parcial1_label.pack(pady=2)
+
+        # Total Parcial 2 (Despesas)
+        if self.orcamento.total_parcial_2:
+            parcial2_label = ctk.CTkLabel(
+                totais_frame,
+                text=f"Total Parcial 2 (Despesas): {float(self.orcamento.total_parcial_2):.2f}€",
+                font=ctk.CTkFont(size=13),
+                text_color="#90CAF9"
+            )
+            parcial2_label.pack(pady=2)
+
+        # Separador antes do total geral
+        separator_total = ctk.CTkFrame(totais_frame, height=1, fg_color="gray")
+        separator_total.pack(fill="x", padx=20, pady=(10, 5))
+
+        # TOTAL GERAL
+        total_label = ctk.CTkLabel(
+            totais_frame,
+            text=f"TOTAL: {float(self.orcamento.valor_total or 0):.2f}€",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#4CAF50"
+        )
+        total_label.pack(pady=(5, 15))
+
     def render_secao_compacta(self, parent, secao, level=0):
         """Renderiza uma secção de forma compacta"""
 
