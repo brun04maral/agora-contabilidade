@@ -438,6 +438,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.projeto = projeto
         self.callback = callback
         self.parent = parent
+        self.parent_bindings = []  # Store binding IDs
 
         # Configure window
         self.title("Novo Projeto" if not projeto else f"Editar Projeto {projeto.numero}")
@@ -446,6 +447,9 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         # Make modal
         self.transient(parent)
         self.grab_set()
+
+        # Block scroll events on parent table
+        self._block_parent_scroll()
 
         # Create form
         self.create_form()
@@ -467,17 +471,8 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         """Create form fields"""
 
         # Scrollable container
-        self.scroll = ctk.CTkScrollableFrame(self)
-        self.scroll.pack(fill="both", expand=True, padx=25, pady=25)
-
-        # Setup mousewheel control to prevent parent scroll
-        self.scroll.bind("<Enter>", self._on_enter)
-        self.scroll.bind("<Leave>", self._on_leave)
-
-        # Unbind parent mousewheel initially
-        self.after(100, self._unbind_parent_mousewheel)
-
-        scroll = self.scroll
+        scroll = ctk.CTkScrollableFrame(self)
+        scroll.pack(fill="both", expand=True, padx=25, pady=25)
 
         # Tipo
         ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
@@ -730,6 +725,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
                 messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
+                self._unblock_parent_scroll()
                 self.destroy()
             else:
                 messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
@@ -739,36 +735,49 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
-    def _unbind_parent_mousewheel(self):
-        """Unbind mousewheel from parent to prevent scroll propagation"""
-        # Unbind all mousewheel events (cross-platform)
-        self.unbind_all("<MouseWheel>")  # Windows/Mac
-        self.unbind_all("<Button-4>")   # Linux scroll up
-        self.unbind_all("<Button-5>")   # Linux scroll down
+    def _block_parent_scroll(self):
+        """Block scroll events on parent table by binding handlers that return 'break'"""
+        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
+            tree = self.parent.table.tree
 
-    def _bind_dialog_mousewheel(self):
-        """Bind mousewheel to this dialog's scrollable frame"""
-        # Get the internal canvas from CTkScrollableFrame
-        if hasattr(self.scroll, '_parent_canvas'):
-            canvas = self.scroll._parent_canvas
+            # Create handler that returns "break" to stop event propagation
+            def block_scroll(event):
+                return "break"
+
+            # Bind to all scroll events and store binding IDs
             # Windows and MacOS
-            self.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
-            # Linux
-            self.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))
-            self.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))
+            bind_id1 = tree.bind("<MouseWheel>", block_scroll, add="+")
+            self.parent_bindings.append(("<MouseWheel>", bind_id1))
 
-    def _on_enter(self, event):
-        """Called when mouse enters the scrollable frame"""
-        self._bind_dialog_mousewheel()
+            # Linux scroll up
+            bind_id2 = tree.bind("<Button-4>", block_scroll, add="+")
+            self.parent_bindings.append(("<Button-4>", bind_id2))
 
-    def _on_leave(self, event):
-        """Called when mouse leaves the scrollable frame"""
-        self._unbind_parent_mousewheel()
+            # Linux scroll down
+            bind_id3 = tree.bind("<Button-5>", block_scroll, add="+")
+            self.parent_bindings.append(("<Button-5>", bind_id3))
+
+    def _unblock_parent_scroll(self):
+        """Unblock scroll events on parent table"""
+        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
+            tree = self.parent.table.tree
+
+            # Unbind all scroll blocking handlers
+            for sequence, bind_id in self.parent_bindings:
+                try:
+                    tree.unbind(sequence, bind_id)
+                except:
+                    pass  # Ignore if binding no longer exists
+
+            self.parent_bindings.clear()
 
     def _on_close(self):
         """Handle window close"""
-        # Re-enable parent mousewheel (will be rebound by parent's own handlers)
+        # Unblock parent scroll
+        self._unblock_parent_scroll()
+
         # Clear selection when closing (cancel or X button)
         if hasattr(self.parent, 'table'):
             self.parent.table.clear_selection()
+
         self.destroy()
