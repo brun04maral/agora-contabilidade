@@ -418,7 +418,11 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
+        # Create form (needs to be created first to have scroll reference)
         self.create_form()
+
+        # Setup scroll event capture
+        self._setup_scroll_capture()
 
         if despesa:
             self.carregar_dados()
@@ -429,8 +433,10 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
     def create_form(self):
         """Create form fields"""
 
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=20, pady=20)
+        self.scroll = ctk.CTkScrollableFrame(self)
+        self.scroll.pack(fill="both", expand=True, padx=20, pady=20)
+
+        scroll = self.scroll
 
         # Tipo
         ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
@@ -660,8 +666,39 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
+    def _setup_scroll_capture(self):
+        """Capture scroll events on this dialog and redirect only to internal scrollable frame"""
+        # Get the internal canvas from CTkScrollableFrame
+        if hasattr(self.scroll, '_parent_canvas'):
+            canvas = self.scroll._parent_canvas
+
+            def handle_scroll(event):
+                """Handle scroll event - redirect to internal canvas and stop propagation"""
+                # Scroll the internal canvas
+                if event.num == 4 or event.delta > 0:
+                    # Scroll up
+                    canvas.yview_scroll(-1, "units")
+                elif event.num == 5 or event.delta < 0:
+                    # Scroll down
+                    canvas.yview_scroll(1, "units")
+
+                # Return "break" to stop event propagation
+                return "break"
+
+            # Bind to the dialog window itself (captures before reaching parent)
+            # Windows and MacOS
+            self.bind_all("<MouseWheel>", handle_scroll)
+            # Linux
+            self.bind_all("<Button-4>", handle_scroll)
+            self.bind_all("<Button-5>", handle_scroll)
+
     def _on_close(self):
         """Handle window close - clear selection"""
+        # Unbind scroll handlers
+        self.unbind_all("<MouseWheel>")
+        self.unbind_all("<Button-4>")
+        self.unbind_all("<Button-5>")
+
         if hasattr(self.parent, 'table'):
             self.parent.table.clear_selection()
         self.destroy()
