@@ -116,14 +116,35 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 ## 🐛 Problemas Conhecidos
 
 ### Alta Prioridade
-- **Scroll em popup de Projetos propaga para lista**
-  - **Problema:** Ao fazer scroll no popup de edição/criação de projeto, a lista por trás também faz scroll
-  - **Comportamento esperado:** Scroll apenas no popup, lista não deve mover
-  - **Requerimento:** Trackpad deve funcionar normalmente
-  - **Tentativas:** bind_all, event detection, unbind parent (múltiplas abordagens testadas)
-  - **Status:** Código implementado mas ainda propaga eventos
-  - **Ficheiro:** `ui/screens/projetos.py` (FormularioProjetoDialog)
-  - **Ver:** `memory/TODO.md` para mais detalhes
+- **Scroll em popups modais propaga para lista de fundo** ⏸️ **POSTPONED**
+  - **Problema:** Ao fazer scroll em qualquer popup modal (edição/criação), a lista por trás também faz scroll
+  - **Comportamento esperado:** Scroll apenas dentro do popup, lista não deve mover
+  - **Requerimento crítico:** Trackpad deve funcionar normalmente no popup
+  - **Tentativas exaustivas (7+ abordagens testadas em 11/11/2025):**
+    1. **Unbind/rebind mousewheel events** - Bloqueou eventos do parent mas desabilitou trackpad no popup
+    2. **Smart detection com winfo_toplevel()** - Tentativa de redirecionar eventos para widget correto, mas lista continuou scrollando
+    3. **Enter/Leave bindings com bind_all/unbind_all** - Trackpad não funcionou no popup
+    4. **Manual scroll redirection com bind_all + "break"** - Quebrou bindings internos do DataTableV2 (TypeError: lambda missing argument)
+    5. **Corrigido com add=True em bind_all** - Resolveu erro do DataTableV2 mas lista continuou scrollando
+    6. **Bind com "break" diretamente no tree** - Lista continuou scrollando
+    7. **bindtags() save/disable/restore** - Desabilitou completamente bindtags do tree durante popup, mas lista continuou scrollando
+  - **Decisão final:** Issue postponed após múltiplas tentativas sem sucesso
+  - **Razão técnica:** Provável limitação do CustomTkinter/Tkinter com eventos de scroll em modal dialogs. CTkScrollableFrame usa canvas interno que pode estar capturando eventos antes do bind_all.
+  - **Ficheiros afetados:** Todos os dialogs modais da aplicação
+    - `ui/screens/projetos.py` (FormularioProjetoDialog)
+    - `ui/screens/despesas.py` (FormularioDespesaDialog)
+    - `ui/screens/boletins.py` (FormularioBoletimDialog)
+    - `ui/screens/clientes.py` (FormularioClienteDialog)
+    - `ui/screens/fornecedores.py` (FormularioFornecedorDialog)
+    - `ui/screens/equipamento.py` (FormularioEquipamentoDialog)
+    - `ui/screens/orcamentos.py` (FormularioOrcamentoDialog)
+  - **Impacto:** Issue de UX menor que não bloqueia funcionalidades críticas
+  - **Próximos passos possíveis:**
+    - Pesquisar soluções específicas na comunidade CustomTkinter
+    - Investigar eventos internos do CTkScrollableFrame
+    - Aguardar updates do framework que possam resolver
+    - Considerar implementação de modal overlay completo (solução complexa)
+  - **Ver:** `memory/TODO.md` linha 20 para mais detalhes técnicos
 
 ### Baixa Prioridade
 - Logo SVG contém PNG embutido (não é vetorial verdadeiro)

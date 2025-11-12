@@ -17,14 +17,23 @@
 
 ### 🔴 Alta Prioridade
 
-- [ ] 🐛 **Bug: Scroll em popup de Projetos propaga para lista**
-  - **Problema:** Ao fazer scroll no popup de edição/criação de projeto, a lista por trás também faz scroll
+- [ ] 🐛 **Bug: Scroll em popups modais propaga para lista de fundo** ⏸️ **POSTPONED**
+  - **Problema:** Ao fazer scroll em popups de edição/criação, a lista por trás também faz scroll
   - **Comportamento esperado:** Scroll apenas dentro do popup, lista não deve mover
-  - **Requerimento:** Trackpad deve funcionar normalmente no popup
-  - **Tentativas:** Múltiplas abordagens testadas (bind_all, event detection, unbind parent)
-  - **Status:** Código implementado em ui/screens/projetos.py (unbind/rebind), mas ainda propaga
-  - **Ficheiro:** `ui/screens/projetos.py` (FormularioProjetoDialog)
-  - **Notas:** Problema pode ser específico do CustomTkinter/Tkinter modal behavior
+  - **Requerimento crítico:** Trackpad deve funcionar normalmente no popup
+  - **Tentativas exaustivas realizadas (7+ abordagens):**
+    1. Unbind/rebind mousewheel events → Trackpad parou de funcionar
+    2. Smart detection com winfo_toplevel() → Lista continuou a scrollar
+    3. Enter/Leave bindings com bind_all/unbind_all → Trackpad não funcionou
+    4. Manual scroll redirection com bind_all + "break" → Quebrou DataTableV2 bindings
+    5. Corrigido com add=True em bind_all → Lista continuou a scrollar
+    6. Bind com "break" diretamente no tree → Lista continuou a scrollar
+    7. bindtags() save/disable/restore → Lista continuou a scrollar
+  - **Decisão:** Postponed após múltiplas tentativas sem sucesso (11/11/2025)
+  - **Razão:** Provável limitação do CustomTkinter/Tkinter modal behavior
+  - **Ficheiros afetados:** Todos os dialogs modais (Projetos, Despesas, Boletins, Clientes, Fornecedores, Equipamento, Orçamentos)
+  - **Impacto:** UX issue menor, não bloqueia funcionalidades
+  - **Próximos passos:** Pesquisar soluções na comunidade CustomTkinter ou aguardar updates do framework
 - [ ] 📦 Build executável para Windows (PyInstaller)
   - Testar em ambiente Windows limpo
   - Configurar inclusão de assets
@@ -121,6 +130,18 @@
 ## ✅ Concluído Recentemente
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
+
+- [x] 🎨 **11/11** - Clear selection after edit/cancel em todos os dialogs
+  - **Comportamento implementado:** Após editar, criar ou cancelar qualquer item, a seleção é automaticamente limpa
+  - **Padrão 1 (Callback):** Projetos, Despesas, Boletins
+    - Método `after_save_callback()` adicionado aos screens
+    - Callback passado aos dialogs via `self.parent`
+    - `_on_close()` limpa seleção ao fechar (Cancel ou X)
+  - **Padrão 2 (Wait Window):** Clientes, Fornecedores, Equipamento, Orçamentos
+    - `table.clear_selection()` chamado após `dialog.wait_window()`
+  - **7 screens atualizados:** Projetos, Despesas, Boletins, Clientes, Fornecedores, Equipamento, Orçamentos
+  - **Benefício UX:** Interface mais limpa, evita confusão com item ainda selecionado
+  - Ficheiros: ui/screens/*.py (7 screens CRUD)
 
 - [x] 🎨 **11/11** - Navegação clicável completa em Saldos Pessoais
   - **10 botões clicáveis** com navegação e filtros automáticos:
