@@ -657,16 +657,17 @@ class OrcamentoDialog(ctk.CTkToplevel):
         )
         self.data_criacao_picker.pack(fill="x")
 
-        # Data do Evento (mantém Entry para permitir ranges)
+        # Data do Evento (com range picker)
         data_evento_col = ctk.CTkFrame(datas_frame, fg_color="transparent")
         data_evento_col.pack(side="left", fill="x", expand=True)
         ctk.CTkLabel(data_evento_col, text="Data do Evento", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.data_evento_entry = ctk.CTkEntry(
+
+        from ui.components.date_range_picker import DateRangePicker
+        self.data_evento_picker = DateRangePicker(
             data_evento_col,
-            placeholder_text="Ex: 2025-05-29 | 2025-07-06",
-            height=35
+            placeholder="Selecionar período do evento..."
         )
-        self.data_evento_entry.pack(fill="x")
+        self.data_evento_picker.pack(fill="x")
 
         # Local do Evento
         ctk.CTkLabel(scroll, text="Local do Evento", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
@@ -1449,7 +1450,26 @@ class OrcamentoDialog(ctk.CTkToplevel):
             self.data_criacao_picker.set_date(self.orcamento.data_criacao)
 
         if self.orcamento.data_evento:
-            self.data_evento_entry.insert(0, self.orcamento.data_evento)
+            # Parse data_evento (pode ser "2025-05-29" ou "2025-05-29 | 2025-07-06")
+            data_evento_str = self.orcamento.data_evento.strip()
+            if '|' in data_evento_str:
+                # Range de datas
+                parts = data_evento_str.split('|')
+                try:
+                    start_date = datetime.strptime(parts[0].strip(), '%Y-%m-%d').date()
+                    end_date = datetime.strptime(parts[1].strip(), '%Y-%m-%d').date()
+                    self.data_evento_picker.set_range(start_date, end_date)
+                except ValueError:
+                    # Se não conseguir parsear, insere texto diretamente
+                    self.data_evento_picker.entry.insert(0, data_evento_str)
+            else:
+                # Data única
+                try:
+                    single_date = datetime.strptime(data_evento_str, '%Y-%m-%d').date()
+                    self.data_evento_picker.set_range(single_date)
+                except ValueError:
+                    # Se não conseguir parsear, insere texto diretamente
+                    self.data_evento_picker.entry.insert(0, data_evento_str)
 
         if self.orcamento.local_evento:
             self.local_evento_entry.insert(0, self.orcamento.local_evento)
@@ -1500,7 +1520,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
             "codigo": codigo,
             "cliente_id": cliente_id,
             "data_criacao": data_criacao,
-            "data_evento": self.data_evento_entry.get().strip() or None,
+            "data_evento": self.data_evento_picker.get().strip() or None,
             "local_evento": self.local_evento_entry.get().strip() or None,
             "descricao_proposta": self.descricao_textbox.get("1.0", "end-1c").strip() or None,
             "status": self.status_combo.get(),
