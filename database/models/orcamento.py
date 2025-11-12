@@ -51,6 +51,8 @@ class Orcamento(Base):
     secoes = relationship("OrcamentoSecao", back_populates="orcamento", cascade="all, delete-orphan")
     itens = relationship("OrcamentoItem", back_populates="orcamento", cascade="all, delete-orphan")
     reparticoes = relationship("OrcamentoReparticao", back_populates="orcamento", cascade="all, delete-orphan")
+    proposta_secoes = relationship("PropostaSecao", back_populates="orcamento", cascade="all, delete-orphan")
+    proposta_itens = relationship("PropostaItem", back_populates="orcamento", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Orcamento(codigo='{self.codigo}', versao='{self.versao}', cliente='{self.cliente.nome if self.cliente else 'N/A'}')>"
@@ -156,3 +158,62 @@ class OrcamentoReparticao(Base):
 
     def __repr__(self):
         return f"<OrcamentoReparticao(entidade='{self.entidade}', valor={self.valor})>"
+
+
+class PropostaSecao(Base):
+    """
+    Modelo para Secções da Proposta (versão cliente)
+    Estrutura simplificada sem hierarquia - apenas secções flat
+    """
+    __tablename__ = 'proposta_secoes'
+
+    id = Column(Integer, primary_key=True)
+    orcamento_id = Column(Integer, ForeignKey('orcamentos.id'), nullable=False)
+
+    # Dados da secção
+    nome = Column(String(100), nullable=False)  # Ex: "Equipamento", "Serviços", "Despesas"
+    ordem = Column(Integer, nullable=False, default=0)  # Ordem de apresentação
+
+    # Subtotal (calculado)
+    subtotal = Column(Numeric(10, 2), nullable=True)
+
+    # Relacionamentos
+    orcamento = relationship("Orcamento", back_populates="proposta_secoes")
+    itens = relationship("PropostaItem", back_populates="secao", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<PropostaSecao(nome='{self.nome}', subtotal={self.subtotal})>"
+
+
+class PropostaItem(Base):
+    """
+    Modelo para Items da Proposta (versão cliente)
+    Versão simplificada sem campos económicos internos (afetacao, investimento, etc.)
+    """
+    __tablename__ = 'proposta_itens'
+
+    id = Column(Integer, primary_key=True)
+    orcamento_id = Column(Integer, ForeignKey('orcamentos.id'), nullable=False)
+    secao_id = Column(Integer, ForeignKey('proposta_secoes.id'), nullable=False)
+
+    # Dados do item
+    descricao = Column(Text, nullable=False)
+    quantidade = Column(Integer, nullable=False, default=1)
+    dias = Column(Integer, nullable=False, default=1)
+    preco_unitario = Column(Numeric(10, 2), nullable=False)
+    desconto = Column(Numeric(5, 4), nullable=False, default=0)  # 0.1 = 10%
+    total = Column(Numeric(10, 2), nullable=False)  # Calculado: (quantidade * dias * preco_unitario) * (1 - desconto)
+
+    # Ordem
+    ordem = Column(Integer, nullable=False, default=0)
+
+    # Relacionamentos
+    orcamento = relationship("Orcamento", back_populates="proposta_itens")
+    secao = relationship("PropostaSecao", back_populates="itens")
+
+    def calcular_total(self):
+        """Calcula o total do item"""
+        return (self.quantidade * self.dias * self.preco_unitario) * (1 - self.desconto)
+
+    def __repr__(self):
+        return f"<PropostaItem(descricao='{self.descricao[:30]}...', total={self.total})>"
