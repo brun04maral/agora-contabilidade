@@ -19,18 +19,18 @@ class OrcamentoManager:
 
     def listar_orcamentos(
         self,
-        filtro_tipo: Optional[str] = None,  # 'cliente' ou 'empresa'
         filtro_status: Optional[str] = None,
         filtro_cliente_id: Optional[int] = None,
+        filtro_com_versao_cliente: Optional[bool] = None,
         pesquisa: Optional[str] = None
     ) -> List[Orcamento]:
         """
         Lista orçamentos com filtros opcionais
 
         Args:
-            filtro_tipo: Filtrar por tipo (cliente/empresa)
             filtro_status: Filtrar por status (rascunho, enviado, aprovado, rejeitado)
             filtro_cliente_id: Filtrar por cliente
+            filtro_com_versao_cliente: Filtrar orçamentos com versão cliente (True/False/None)
             pesquisa: Termo de pesquisa (código, descrição)
 
         Returns:
@@ -39,8 +39,8 @@ class OrcamentoManager:
         query = self.db.query(Orcamento)
 
         # Filtros
-        if filtro_tipo:
-            query = query.filter(Orcamento.tipo == filtro_tipo)
+        if filtro_com_versao_cliente is not None:
+            query = query.filter(Orcamento.tem_versao_cliente == filtro_com_versao_cliente)
 
         if filtro_status and filtro_status != "Todos":
             query = query.filter(Orcamento.status == filtro_status)
@@ -61,25 +61,17 @@ class OrcamentoManager:
         """Obtém orçamento por ID com todas as relações"""
         return self.db.query(Orcamento).filter(Orcamento.id == orcamento_id).first()
 
-    def obter_por_codigo(self, codigo: str, versao: Optional[str] = None) -> Optional[Orcamento]:
+    def obter_por_codigo(self, codigo: str) -> Optional[Orcamento]:
         """
-        Obtém orçamento por código e versão
+        Obtém orçamento por código
 
         Args:
             codigo: Código do orçamento (ex: "20250909_Orçamento-SGS_Conf")
-            versao: Versão (ex: "V1", "V2") ou None para backend
 
         Returns:
             Orçamento encontrado ou None
         """
-        query = self.db.query(Orcamento).filter(Orcamento.codigo == codigo)
-
-        if versao:
-            query = query.filter(Orcamento.versao == versao)
-        else:
-            query = query.filter(Orcamento.versao.is_(None))
-
-        return query.first()
+        return self.db.query(Orcamento).filter(Orcamento.codigo == codigo).first()
 
     def _criar_secoes_padrao(self, orcamento_id: int):
         """
@@ -151,37 +143,31 @@ class OrcamentoManager:
     def criar_orcamento(
         self,
         codigo: str,
-        tipo: str,
         data_criacao: date,
         cliente_id: Optional[int] = None,
-        versao: Optional[str] = None,
         **kwargs
     ) -> Tuple[bool, Optional[Orcamento], Optional[str]]:
         """
         Cria novo orçamento
 
         Args:
-            codigo: Código único do orçamento
-            tipo: 'cliente' ou 'empresa'
+            codigo: Código único do orçamento (ex: "20250909_Orçamento-SGS_Conf")
             data_criacao: Data da criação do orçamento
             cliente_id: ID do cliente (opcional)
-            versao: Versão (V1, V2, etc.) para Cliente, None para Empresa
-            **kwargs: Outros campos opcionais
+            **kwargs: Outros campos opcionais (tem_versao_cliente, titulo_cliente, etc.)
 
         Returns:
             (sucesso, orcamento, mensagem_erro)
         """
         try:
-            # Verificar se código+versão já existe
-            existe = self.obter_por_codigo(codigo, versao)
+            # Verificar se código já existe
+            existe = self.obter_por_codigo(codigo)
             if existe:
-                return False, None, f"Orçamento {codigo} versão {versao or 'empresa'} já existe"
+                return False, None, f"Orçamento {codigo} já existe"
 
             # Criar orçamento
             orcamento = Orcamento(
                 codigo=codigo,
-                tipo=tipo,
-                versao=versao,
                 data_criacao=data_criacao,
                 cliente_id=cliente_id,
                 **kwargs
@@ -517,7 +503,7 @@ class OrcamentoManager:
         ordem: int = 0
     ) -> Tuple[bool, Optional[OrcamentoReparticao], Optional[str]]:
         """
-        Adiciona repartição ao orçamento backend (Contas finais)
+        Adiciona repartição ao orçamento (Contas finais - económico interno)
 
         Args:
             orcamento_id: ID do orçamento
@@ -560,16 +546,14 @@ class OrcamentoManager:
     def duplicar_orcamento(
         self,
         orcamento_id: int,
-        nova_versao: Optional[str] = None,
-        novo_tipo: Optional[str] = None
+        novo_codigo: str
     ) -> Tuple[bool, Optional[Orcamento], Optional[str]]:
         """
-        Duplica um orçamento (útil para criar V2 a partir de V1, ou Empresa a partir de Cliente)
+        Duplica um orçamento com novo código
 
         Args:
             orcamento_id: ID do orçamento a duplicar
-            nova_versao: Nova versão (ex: "V2") ou None
-            novo_tipo: Novo tipo (ex: "empresa") ou None
+            novo_codigo: Novo código para o orçamento duplicado
 
         Returns:
             (sucesso, novo_orcamento, mensagem_erro)
@@ -579,17 +563,23 @@ class OrcamentoManager:
             if not orcamento_original:
                 return False, None, "Orçamento não encontrado"
 
+            # Verificar se novo código já existe
+            existe = self.obter_por_codigo(novo_codigo)
+            if existe:
+                return False, None, f"Orçamento {novo_codigo} já existe"
+
             # Criar novo orçamento com dados duplicados
             novo_orcamento = Orcamento(
-                codigo=orcamento_original.codigo,
-                versao=nova_versao or orcamento_original.versao,
-                tipo=novo_tipo or orcamento_original.tipo,
+                codigo=novo_codigo,
                 cliente_id=orcamento_original.cliente_id,
                 data_criacao=orcamento_original.data_criacao,
                 data_evento=orcamento_original.data_evento,
                 local_evento=orcamento_original.local_evento,
                 descricao_proposta=orcamento_original.descricao_proposta,
                 notas_contratuais=orcamento_original.notas_contratuais,
+                tem_versao_cliente=orcamento_original.tem_versao_cliente,
+                titulo_cliente=orcamento_original.titulo_cliente,
+                descricao_cliente=orcamento_original.descricao_cliente,
                 status='rascunho'
             )
 
@@ -688,19 +678,14 @@ class OrcamentoManager:
         for status, count in status_counts:
             por_status[status] = count
 
-        # Por tipo
-        por_tipo = {}
-        tipo_counts = self.db.query(
-            Orcamento.tipo,
-            func.count(Orcamento.id)
-        ).group_by(Orcamento.tipo).all()
-
-        for tipo, count in tipo_counts:
-            por_tipo[tipo] = count
+        # Com/sem versão cliente
+        com_versao_cliente = self.db.query(Orcamento)\
+            .filter(Orcamento.tem_versao_cliente == True)\
+            .count()
 
         return {
             'total': total,
             'valor_total_aprovado': float(valor_aprovado),
             'por_status': por_status,
-            'por_tipo': por_tipo
+            'com_versao_cliente': com_versao_cliente
         }

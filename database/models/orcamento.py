@@ -10,7 +10,7 @@ from database.models.base import Base
 class Orcamento(Base):
     """
     Modelo para Orçamentos (Budgets)
-    Representa tanto versões Cliente (apresentação) quanto Empresa (económico interno)
+    Orçamento único com dados económicos completos e versão cliente opcional
     """
     __tablename__ = 'orcamentos'
 
@@ -18,8 +18,6 @@ class Orcamento(Base):
 
     # Identificação
     codigo = Column(String(100), nullable=False, unique=True)  # Ex: "20250909_Orçamento-SGS_Conf"
-    versao = Column(String(10), nullable=True)  # Ex: "V1", "V2", null para Empresa ECO_
-    tipo = Column(String(20), nullable=False, default='cliente')  # 'cliente' ou 'empresa'
 
     # Dados do cliente
     cliente_id = Column(Integer, ForeignKey('clientes.id'), nullable=True)
@@ -39,6 +37,11 @@ class Orcamento(Base):
     # Notas e status
     notas_contratuais = Column(Text, nullable=True)
     status = Column(String(20), nullable=False, default='rascunho')  # rascunho, enviado, aprovado, rejeitado
+
+    # Versão Cliente (opcional - para exportação PDF)
+    tem_versao_cliente = Column(Boolean, nullable=False, default=False)
+    titulo_cliente = Column(String(255), nullable=True)  # Título bonito para PDF
+    descricao_cliente = Column(Text, nullable=True)  # Descrição simplificada para cliente
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.now)
@@ -109,7 +112,7 @@ class OrcamentoItem(Base):
     equipamento_id = Column(Integer, ForeignKey('equipamento.id'), nullable=True)
     equipamento = relationship("Equipamento")
 
-    # Campos exclusivos para orçamentos Empresa (ECO_)
+    # Campos económicos (internos - não mostrados na versão cliente)
     reparticao = Column(Numeric(5, 2), nullable=True)  # % de distribuição
     afetacao = Column(String(50), nullable=True)  # BA, RR, Agora, Freelancers, Despesa
     investimento = Column(Numeric(10, 2), nullable=True)
@@ -130,7 +133,7 @@ class OrcamentoItem(Base):
 class OrcamentoReparticao(Base):
     """
     Modelo para Repartição/Distribuição do Orçamento
-    Representa a secção "Contas finais" nos orçamentos Empresa (ECO_)
+    Representa a secção "Contas finais" (económico interno - não mostrado ao cliente)
     Mostra a distribuição por entidade: BA, RR, Agora, Freelancers, Despesas
     """
     __tablename__ = 'orcamento_reparticoes'
