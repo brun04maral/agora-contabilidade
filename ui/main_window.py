@@ -266,12 +266,11 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_orcamentos(self, filtro_tipo=None, filtro_status=None, filtro_cliente_id=None):
+    def show_orcamentos(self, filtro_status=None, filtro_cliente_id=None):
         """
         Show orcamentos screen
 
         Args:
-            filtro_tipo: Optional tipo filter ("frontend", "backend")
             filtro_status: Optional status filter ("rascunho", "enviado", "aprovado", "rejeitado")
             filtro_cliente_id: Optional cliente ID to filter by
         """
@@ -288,7 +287,6 @@ class MainWindow(ctk.CTkFrame):
         screen = OrcamentosScreen(
             self.content_frame,
             self.db_session,
-            filtro_tipo=filtro_tipo,
             filtro_status=filtro_status,
             filtro_cliente_id=filtro_cliente_id
         )
