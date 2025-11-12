@@ -468,6 +468,12 @@ class FormularioClienteDialog(ctk.CTkToplevel):
         # Create widgets
         self.create_widgets()
 
+        # Setup scroll event capture
+        self._setup_scroll_capture()
+
+        # Handle window close
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
         # Load data if editing
         if self.cliente:
             self.load_cliente_data()
@@ -488,8 +494,10 @@ class FormularioClienteDialog(ctk.CTkToplevel):
         title.pack(pady=(0, 20))
 
         # Scrollable form
-        form_frame = ctk.CTkScrollableFrame(main_frame)
-        form_frame.pack(fill="both", expand=True)
+        self.scroll_frame = ctk.CTkScrollableFrame(main_frame)
+        self.scroll_frame.pack(fill="both", expand=True)
+
+        form_frame = self.scroll_frame
 
         # Nome (required)
         ctk.CTkLabel(
@@ -722,6 +730,40 @@ class FormularioClienteDialog(ctk.CTkToplevel):
         """Show error message"""
         dialog = MessageDialog(self, title="Erro", message=message, type="error")
         dialog.wait_window()
+
+    def _setup_scroll_capture(self):
+        """Capture scroll events on this dialog and redirect only to internal scrollable frame"""
+        # Get the internal canvas from CTkScrollableFrame
+        if hasattr(self.scroll_frame, '_parent_canvas'):
+            canvas = self.scroll_frame._parent_canvas
+
+            def handle_scroll(event):
+                """Handle scroll event - redirect to internal canvas and stop propagation"""
+                # Scroll the internal canvas
+                if event.num == 4 or event.delta > 0:
+                    # Scroll up
+                    canvas.yview_scroll(-1, "units")
+                elif event.num == 5 or event.delta < 0:
+                    # Scroll down
+                    canvas.yview_scroll(1, "units")
+
+                # Return "break" to stop event propagation
+                return "break"
+
+            # Bind to the dialog window itself (captures before reaching parent)
+            # Windows and MacOS
+            self.bind_all("<MouseWheel>", handle_scroll)
+            # Linux
+            self.bind_all("<Button-4>", handle_scroll)
+            self.bind_all("<Button-5>", handle_scroll)
+
+    def _on_close(self):
+        """Handle window close"""
+        # Unbind scroll handlers
+        self.unbind_all("<MouseWheel>")
+        self.unbind_all("<Button-4>")
+        self.unbind_all("<Button-5>")
+        self.destroy()
 
 
 class MessageDialog(ctk.CTkToplevel):
