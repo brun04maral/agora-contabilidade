@@ -55,7 +55,7 @@ class Orcamento(Base):
     proposta_itens = relationship("PropostaItem", back_populates="orcamento", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Orcamento(codigo='{self.codigo}', versao='{self.versao}', cliente='{self.cliente.nome if self.cliente else 'N/A'}')>"
+        return f"<Orcamento(codigo='{self.codigo}', cliente='{self.cliente.nome if self.cliente else 'N/A'}')>"
 
 
 class OrcamentoSecao(Base):

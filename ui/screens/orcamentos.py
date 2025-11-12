@@ -370,7 +370,7 @@ class OrcamentosScreen(ctk.CTkFrame):
         # Title
         title = ctk.CTkLabel(
             scroll_frame,
-            text=f"📋 {orcamento.codigo} {orcamento.versao or ''}",
+            text=f"📋 {orcamento.codigo}",
             font=ctk.CTkFont(size=24, weight="bold")
         )
         title.pack(pady=(0, 20))
@@ -1199,7 +1199,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
             widget.destroy()
 
         # Obter secções da proposta
-        proposta_secoes = self.db.query(PropostaSecao).filter(
+        proposta_secoes = self.db_session.query(PropostaSecao).filter(
             PropostaSecao.orcamento_id == self.orcamento.id
         ).order_by(PropostaSecao.ordem).all()
 
@@ -1244,7 +1244,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
                 subtotal_label.pack(side="right")
 
             # Items da secção
-            itens = self.db.query(PropostaItem).filter(
+            itens = self.db_session.query(PropostaItem).filter(
                 PropostaItem.secao_id == secao.id
             ).order_by(PropostaItem.ordem).all()
 
@@ -1322,7 +1322,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
         dialog = PropostaItemDialog(
             self,
-            self.db,
+            self.db_session,
             self.orcamento.id
         )
         self.wait_window(dialog)
@@ -1336,7 +1336,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
         dialog = PropostaItemDialog(
             self,
-            self.db,
+            self.db_session,
             self.orcamento.id,
             item
         )
@@ -1356,25 +1356,25 @@ class OrcamentoDialog(ctk.CTkToplevel):
             return
 
         try:
-            self.db.delete(item)
-            self.db.commit()
+            self.db_session.delete(item)
+            self.db_session.commit()
             messagebox.showinfo("Sucesso", "Item eliminado com sucesso!")
             self.carregar_itens_proposta()
 
             # Recalcular subtotais das secções
-            secoes = self.db.query(PropostaSecao).filter(
+            secoes = self.db_session.query(PropostaSecao).filter(
                 PropostaSecao.orcamento_id == self.orcamento.id
             ).all()
 
             for secao in secoes:
-                itens = self.db.query(PropostaItem).filter(
+                itens = self.db_session.query(PropostaItem).filter(
                     PropostaItem.secao_id == secao.id
                 ).all()
                 secao.subtotal = sum(float(item.total) for item in itens)
 
-            self.db.commit()
+            self.db_session.commit()
         except Exception as e:
-            self.db.rollback()
+            self.db_session.rollback()
             messagebox.showerror("Erro", f"Erro ao eliminar item: {str(e)}")
 
     def exportar_proposta_pdf(self):
@@ -1391,7 +1391,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
             return
 
         # Verificar se tem itens da proposta
-        proposta_secoes = self.db.query(PropostaSecao).filter(
+        proposta_secoes = self.db_session.query(PropostaSecao).filter(
             PropostaSecao.orcamento_id == self.orcamento.id
         ).first()
 
