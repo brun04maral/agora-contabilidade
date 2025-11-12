@@ -57,6 +57,8 @@ class DateRangePickerDropdown(ctk.CTkFrame):
         # Criar dropdown frame
         self.dropdown_frame = ctk.CTkFrame(
             self.winfo_toplevel(),
+            width=350,
+            height=380,
             fg_color=("#f0f0f0", "#2b2b2b"),
             border_width=2,
             border_color=("gray70", "gray30")
@@ -67,7 +69,7 @@ class DateRangePickerDropdown(ctk.CTkFrame):
         x = self.entry.winfo_rootx() - self.winfo_toplevel().winfo_rootx()
         y = self.entry.winfo_rooty() - self.winfo_toplevel().winfo_rooty() + self.entry.winfo_height() + 2
 
-        self.dropdown_frame.place(x=x, y=y, width=350, height=380)
+        self.dropdown_frame.place(x=x, y=y)
         self.dropdown_frame.lift()
 
         # Data para mostrar
