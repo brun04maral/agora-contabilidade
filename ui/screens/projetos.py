@@ -447,9 +447,6 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
-        # Disable scrolling on parent table
-        self._disable_parent_scroll()
-
         # Create form
         self.create_form()
 
@@ -463,15 +460,24 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         # After window is mapped, configure it to stay on top and grab focus
         self.after(10, lambda: self.lift())
 
-        # Handle window close to re-enable parent scroll
+        # Handle window close
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def create_form(self):
         """Create form fields"""
 
         # Scrollable container
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=25, pady=25)
+        self.scroll = ctk.CTkScrollableFrame(self)
+        self.scroll.pack(fill="both", expand=True, padx=25, pady=25)
+
+        # Setup mousewheel control to prevent parent scroll
+        self.scroll.bind("<Enter>", self._on_enter)
+        self.scroll.bind("<Leave>", self._on_leave)
+
+        # Unbind parent mousewheel initially
+        self.after(100, self._unbind_parent_mousewheel)
+
+        scroll = self.scroll
 
         # Tipo
         ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
@@ -724,7 +730,6 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
                 messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
-                self._enable_parent_scroll()
                 self.destroy()
             else:
                 messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
@@ -734,27 +739,35 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
-    def _disable_parent_scroll(self):
-        """Disable scrolling on parent table"""
-        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
-            tree = self.parent.table.tree
-            # Unbind scroll events
-            tree.unbind("<MouseWheel>")
-            tree.unbind("<Button-4>")
-            tree.unbind("<Button-5>")
+    def _unbind_parent_mousewheel(self):
+        """Unbind mousewheel from parent to prevent scroll propagation"""
+        # Unbind all mousewheel events (cross-platform)
+        self.unbind_all("<MouseWheel>")  # Windows/Mac
+        self.unbind_all("<Button-4>")   # Linux scroll up
+        self.unbind_all("<Button-5>")   # Linux scroll down
 
-    def _enable_parent_scroll(self):
-        """Re-enable scrolling on parent table"""
-        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
-            tree = self.parent.table.tree
-            # Rebind scroll events (standard tkinter treeview scrolling)
-            tree.bind("<MouseWheel>", lambda e: tree.yview_scroll(int(-1*(e.delta/120)), "units"))
-            tree.bind("<Button-4>", lambda e: tree.yview_scroll(-1, "units"))
-            tree.bind("<Button-5>", lambda e: tree.yview_scroll(1, "units"))
+    def _bind_dialog_mousewheel(self):
+        """Bind mousewheel to this dialog's scrollable frame"""
+        # Get the internal canvas from CTkScrollableFrame
+        if hasattr(self.scroll, '_parent_canvas'):
+            canvas = self.scroll._parent_canvas
+            # Windows and MacOS
+            self.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+            # Linux
+            self.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))
+            self.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))
+
+    def _on_enter(self, event):
+        """Called when mouse enters the scrollable frame"""
+        self._bind_dialog_mousewheel()
+
+    def _on_leave(self, event):
+        """Called when mouse leaves the scrollable frame"""
+        self._unbind_parent_mousewheel()
 
     def _on_close(self):
         """Handle window close"""
-        self._enable_parent_scroll()
+        # Re-enable parent mousewheel (will be rebound by parent's own handlers)
         # Clear selection when closing (cancel or X button)
         if hasattr(self.parent, 'table'):
             self.parent.table.clear_selection()
