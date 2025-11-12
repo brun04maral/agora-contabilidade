@@ -625,21 +625,21 @@ class OrcamentoDialog(ctk.CTkToplevel):
             self.codigo_entry.insert(0, proximo_codigo)
             self.codigo_entry.configure(state="readonly")
 
-        # Cliente
+        # Cliente (com autocomplete)
         ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
 
         # Load clientes
+        from ui.components.autocomplete_entry import AutocompleteEntry
         clientes = self.clientes_manager.listar_todos()
-        cliente_names = ["(Nenhum)"] + [f"{c.numero} - {c.nome}" for c in clientes]
+        cliente_names = [f"{c.numero} - {c.nome}" for c in clientes]
         self.clientes_map = {f"{c.numero} - {c.nome}": c.id for c in clientes}
 
-        self.cliente_combo = ctk.CTkComboBox(
+        self.cliente_autocomplete = AutocompleteEntry(
             scroll,
-            values=cliente_names,
-            height=35
+            options=cliente_names,
+            placeholder="Começar a escrever o nome ou número do cliente..."
         )
-        self.cliente_combo.set("(Nenhum)")
-        self.cliente_combo.pack(fill="x", pady=(0, 10))
+        self.cliente_autocomplete.pack(fill="x", pady=(0, 10))
 
         # Data de Criação e Data do Evento (2 columns)
         datas_frame = ctk.CTkFrame(scroll, fg_color="transparent")
@@ -1073,7 +1073,7 @@ class OrcamentoDialog(ctk.CTkToplevel):
         # Cliente
         if self.orcamento.cliente:
             cliente_value = f"{self.orcamento.cliente.numero} - {self.orcamento.cliente.nome}"
-            self.cliente_combo.set(cliente_value)
+            self.cliente_autocomplete.set(cliente_value)
 
         # Dates
         if self.orcamento.data_criacao:
@@ -1129,8 +1129,8 @@ class OrcamentoDialog(ctk.CTkToplevel):
 
         # Get cliente_id
         cliente_id = None
-        cliente_value = self.cliente_combo.get()
-        if cliente_value != "(Nenhum)":
+        cliente_value = self.cliente_autocomplete.get().strip()
+        if cliente_value:
             cliente_id = self.clientes_map.get(cliente_value)
 
         # Prepare data
