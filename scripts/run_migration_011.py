@@ -26,7 +26,8 @@ def import_migration(migration_file):
         'migrations',
         migration_file
     )
-    spec = importlib.util.spec_from_file_location(f"migration_{migration_file}", migration_path)
+    module_name = "migration_{}".format(migration_file)
+    spec = importlib.util.spec_from_file_location(module_name, migration_path)
     migration = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(migration)
     return migration
@@ -55,7 +56,7 @@ def run_migration_011():
         print("✅ MIGRATION CONCLUÍDA COM SUCESSO")
         print("=" * 80)
     except Exception as e:
-        print(f"❌ Erro: {e}")
+        print("❌ Erro: {}".format(e))
         import traceback
         traceback.print_exc()
         return False
