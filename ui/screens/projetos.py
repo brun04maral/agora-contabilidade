@@ -438,7 +438,6 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.projeto = projeto
         self.callback = callback
         self.parent = parent
-        self.parent_bindings = []  # Store binding IDs
 
         # Configure window
         self.title("Novo Projeto" if not projeto else f"Editar Projeto {projeto.numero}")
@@ -448,11 +447,11 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
-        # Block scroll events on parent table
-        self._block_parent_scroll()
-
-        # Create form
+        # Create form (needs to be created first to have scroll reference)
         self.create_form()
+
+        # Setup scroll event capture on this dialog window
+        self._setup_scroll_capture()
 
         # Load data if editing
         if projeto:
@@ -471,8 +470,10 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         """Create form fields"""
 
         # Scrollable container
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=25, pady=25)
+        self.scroll = ctk.CTkScrollableFrame(self)
+        self.scroll.pack(fill="both", expand=True, padx=25, pady=25)
+
+        scroll = self.scroll
 
         # Tipo
         ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
@@ -725,7 +726,6 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
                 messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
-                self._unblock_parent_scroll()
                 self.destroy()
             else:
                 messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
@@ -735,46 +735,38 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
-    def _block_parent_scroll(self):
-        """Block scroll events on parent table by binding handlers that return 'break'"""
-        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
-            tree = self.parent.table.tree
+    def _setup_scroll_capture(self):
+        """Capture scroll events on this dialog and redirect only to internal scrollable frame"""
+        # Get the internal canvas from CTkScrollableFrame
+        if hasattr(self.scroll, '_parent_canvas'):
+            canvas = self.scroll._parent_canvas
 
-            # Create handler that returns "break" to stop event propagation
-            def block_scroll(event):
+            def handle_scroll(event):
+                """Handle scroll event - redirect to internal canvas and stop propagation"""
+                # Scroll the internal canvas
+                if event.num == 4 or event.delta > 0:
+                    # Scroll up
+                    canvas.yview_scroll(-1, "units")
+                elif event.num == 5 or event.delta < 0:
+                    # Scroll down
+                    canvas.yview_scroll(1, "units")
+
+                # Return "break" to stop event propagation
                 return "break"
 
-            # Bind to all scroll events and store binding IDs
+            # Bind to the dialog window itself (captures before reaching parent)
             # Windows and MacOS
-            bind_id1 = tree.bind("<MouseWheel>", block_scroll, add="+")
-            self.parent_bindings.append(("<MouseWheel>", bind_id1))
-
-            # Linux scroll up
-            bind_id2 = tree.bind("<Button-4>", block_scroll, add="+")
-            self.parent_bindings.append(("<Button-4>", bind_id2))
-
-            # Linux scroll down
-            bind_id3 = tree.bind("<Button-5>", block_scroll, add="+")
-            self.parent_bindings.append(("<Button-5>", bind_id3))
-
-    def _unblock_parent_scroll(self):
-        """Unblock scroll events on parent table"""
-        if hasattr(self.parent, 'table') and hasattr(self.parent.table, 'tree'):
-            tree = self.parent.table.tree
-
-            # Unbind all scroll blocking handlers
-            for sequence, bind_id in self.parent_bindings:
-                try:
-                    tree.unbind(sequence, bind_id)
-                except:
-                    pass  # Ignore if binding no longer exists
-
-            self.parent_bindings.clear()
+            self.bind_all("<MouseWheel>", handle_scroll)
+            # Linux
+            self.bind_all("<Button-4>", handle_scroll)
+            self.bind_all("<Button-5>", handle_scroll)
 
     def _on_close(self):
         """Handle window close"""
-        # Unblock parent scroll
-        self._unblock_parent_scroll()
+        # Unbind scroll handlers
+        self.unbind_all("<MouseWheel>")
+        self.unbind_all("<Button-4>")
+        self.unbind_all("<Button-5>")
 
         # Clear selection when closing (cancel or X button)
         if hasattr(self.parent, 'table'):
