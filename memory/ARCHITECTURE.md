@@ -38,15 +38,19 @@ database/
 │   ├── projeto.py
 │   ├── despesa.py
 │   ├── despesa_template.py        # Templates de despesas recorrentes
-│   ├── boletim.py                 # Boletim itinerário (SERÁ EXPANDIDO)
-│   ├── boletim_linha.py           # Linhas de deslocação (NOVO - Planeado)
-│   ├── boletim_template.py        # Templates de boletins (NOVO - Planeado)
-│   ├── valor_referencia_anual.py  # Config valores por ano (NOVO - Planeado)
+│   ├── boletim.py                 # Boletim itinerário (EXPANDIDO ✅)
+│   ├── boletim_linha.py           # Linhas de deslocação (NOVO ✅)
+│   ├── boletim_template.py        # Templates de boletins (NOVO ✅)
+│   ├── valor_referencia_anual.py  # Config valores por ano (NOVO ✅)
 │   ├── cliente.py
 │   ├── fornecedor.py
 │   ├── orcamento.py
 │   └── equipamento.py
 ├── migrations/       # Alembic (versões do schema)
+│   ├── 016_create_valores_referencia_anual.py
+│   ├── 017_create_boletim_linhas.py
+│   ├── 018_create_boletim_templates.py
+│   └── 019_expand_boletins.py
 └── seed.py          # Dados iniciais para desenvolvimento
 ```
 
@@ -62,10 +66,10 @@ logic/
 ├── projetos.py                  # ProjetosManager
 ├── despesas.py                  # DespesasManager
 ├── despesa_templates.py         # DespesaTemplatesManager
-├── boletins.py                  # BoletinsManager (SERÁ EXPANDIDO)
-├── boletim_linhas.py            # BoletimLinhasManager (NOVO - Planeado)
-├── boletim_templates.py         # BoletimTemplatesManager (NOVO - Planeado)
-├── valores_referencia.py        # ValoresReferenciaManager (NOVO - Planeado)
+├── boletins.py                  # BoletinsManager (EXPANDIDO ✅)
+├── boletim_linhas.py            # BoletimLinhasManager (NOVO ✅) - recalcular_totais_boletim()
+├── boletim_templates.py         # BoletimTemplatesManager (NOVO ✅) - gerar_boletins_recorrentes_mes()
+├── valores_referencia.py        # ValoresReferenciaManager (NOVO ✅) - obter_ou_default()
 ├── clientes.py                  # ClientesManager
 ├── fornecedores.py              # FornecedoresManager
 ├── orcamentos.py                # OrcamentoManager
@@ -102,17 +106,17 @@ class ProjetosManager:
 ### `/ui/` - Camada de Interface
 ```python
 ui/
-├── screens/                # Telas principais (14 planeadas)
+├── screens/                # Telas principais (14 completas)
 │   ├── dashboard.py
 │   ├── saldos.py
 │   ├── info.py
 │   ├── projetos.py
 │   ├── despesas.py
 │   ├── templates_despesas.py      # Templates de despesas recorrentes
-│   ├── boletins.py                # Lista de boletins (SERÁ ATUALIZADO)
-│   ├── boletim_form.py            # Editor completo de boletim (NOVO - Planeado)
-│   ├── templates_boletins.py      # Templates de boletins recorrentes (NOVO - Planeado)
-│   ├── valores_referencia.py      # Config valores por ano (NOVO - Planeado)
+│   ├── boletins.py                # Lista de boletins (ATUALIZADO ✅) + GerarRecorrentesDialog
+│   ├── boletim_form.py            # Editor completo de boletim (NOVO ✅) + LinhaDialog (850L)
+│   ├── templates_boletins.py      # Templates de boletins recorrentes (NOVO ✅) (340L)
+│   ├── valores_referencia.py      # Config valores por ano (NOVO ✅) (328L)
 │   ├── clientes.py
 │   ├── fornecedores.py
 │   ├── orcamentos.py

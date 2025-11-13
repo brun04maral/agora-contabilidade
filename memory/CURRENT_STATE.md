@@ -91,7 +91,20 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
   - Screen dedicado com CRUD completo (acesso via "📝 Editar Recorrentes")
   - Templates NÃO entram em cálculos financeiros
   - Link rastreável entre template e despesas geradas
-- ✅ Gestão de boletins (cálculos automáticos)
+- ✅ **Sistema Completo de Boletim Itinerário** (NOVO 13/11)
+  - **4 Tabelas:** valores_referencia_anual, boletim_linhas, boletim_templates, boletins (expandida)
+  - **Modelo expandido:** mes, ano, valores de referência por ano, totais calculados automaticamente
+  - **Deslocações múltiplas:** Cada boletim pode ter N linhas de deslocação
+  - **Valores de referência editáveis:** Por ano (72.65€/167.07€/0.40€)
+  - **Cálculos automáticos:** dias × val_dia + kms × val_km (NACIONAL/ESTRANGEIRO)
+  - **Templates recorrentes:** Geração automática mensal com verificação de duplicados
+  - **Relação com projetos:** FK opcional (SET NULL), dropdown em deslocações
+  - **4 Screens:**
+    1. `ValoresReferenciaScreen` - CRUD valores por ano (escondido, configurações)
+    2. `TemplatesBoletinsScreen` - CRUD templates recorrentes
+    3. `BoletimFormScreen` - Editor completo (header + tabela linhas CRUD inline)
+    4. `BoletinsScreen` - Atualizado (coluna "Linhas", botão "🔁 Gerar Recorrentes")
+  - **Total:** ~2600 linhas de código (4 DB + 3 logic + 4 UI)
 - ✅ Sistema de orçamentos (versões, aprovações)
 - ✅ Relatórios exportáveis (Excel)
 
@@ -122,7 +135,29 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 
 ## 🚧 Em Desenvolvimento
 
-**Nada atualmente** - Projeto em fase de manutenção e melhorias incrementais
+### 🧪 Fase 4: Testes & Ajustes - Sistema Boletim Itinerário
+- [ ] Executar migrações localmente: `python run_migrations_016_019.py`
+- [ ] Criar dados de teste:
+  - Valores de referência para anos 2024-2026
+  - 2 templates recorrentes (BA + RR)
+  - Boletins com múltiplas linhas de deslocação
+  - Testar linhas COM e SEM projeto associado
+- [ ] Validar cálculos automáticos:
+  - Ajudas nacionais (dias × 72.65€)
+  - Ajudas estrangeiro (dias × 167.07€)
+  - Kms (kms × 0.40€)
+  - Total = soma dos 3
+- [ ] Testar geração recorrente:
+  - Gerar boletins para mês atual
+  - Verificar prevenção de duplicados
+  - Testar meses sem 31 dias (fevereiro)
+- [ ] Edge cases:
+  - Valores zero (0 dias, 0 kms)
+  - Apagar projeto com linhas associadas (deve ficar NULL)
+  - Ano sem valores de referência (deve usar defaults)
+  - Boletim sem linhas (totais = 0)
+
+**Status:** Implementação completa (Fases 1-3) ✅ | Aguardando testes locais
 
 ---
 

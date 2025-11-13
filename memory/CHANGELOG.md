@@ -4,6 +4,156 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-13] Sistema de Boletim Itinerário (Implementação Completa)
+
+### ✨ Adicionado
+
+#### 🗄️ **Fase 1 - Modelo de Dados** (Commit: `8d14f0c`)
+- **3 Novas Tabelas:**
+  1. `valores_referencia_anual` - Valores de referência editáveis por ano
+     - Campos: ano (unique), val_dia_nacional, val_dia_estrangeiro, val_km
+     - Seed data: 2025 → 72.65€, 167.07€, 0.40€
+  2. `boletim_linhas` - Deslocações individuais de boletim
+     - 14 campos incluindo projeto_id (opcional, SET NULL), tipo (NACIONAL/ESTRANGEIRO)
+     - FK: boletim_id (CASCADE DELETE), projeto_id (SET NULL)
+  3. `boletim_templates` - Templates para geração recorrente
+     - Campos: numero (#TB000001), nome, socio, dia_mes, ativo
+- **1 Tabela Expandida:**
+  4. `boletins` - 9 novos campos adicionados
+     - Período: mes, ano
+     - Valores ref: val_dia_nacional, val_dia_estrangeiro, val_km
+     - Totais: total_ajudas_nacionais, total_ajudas_estrangeiro, total_kms, valor_total
+     - Relação: linhas (1:N com boletim_linhas, cascade delete)
+- **4 Migrações SQL:**
+  - `016_create_valores_referencia_anual.py`
+  - `017_create_boletim_linhas.py`
+  - `018_create_boletim_templates.py`
+  - `019_expand_boletins.py`
+  - Script único: `run_migrations_016_019.py`
+
+#### ⚙️ **Fase 2 - Business Logic** (Commit: `9616f7a`)
+- **3 Novos Managers:**
+  1. `logic/valores_referencia.py` (195 linhas)
+     - CRUD completo de valores de referência
+     - `obter_ou_default(ano)` → retorna defaults se ano não existe
+     - Defaults: 72.65€, 167.07€, 0.40€
+  2. `logic/boletim_linhas.py` (288 linhas)
+     - CRUD de linhas de deslocação
+     - **`recalcular_totais_boletim()`** - Calcula automaticamente:
+       * Soma dias por tipo × valores de referência
+       * Soma kms × val_km
+       * Atualiza todos os totais no boletim
+     - Chamado automaticamente após cada criar/atualizar/eliminar
+  3. `logic/boletim_templates.py` (309 linhas)
+     - CRUD de templates recorrentes
+     - **`gerar_boletins_recorrentes_mes(ano, mes)`** - Geração automática:
+       * Verifica templates ativos
+       * Previne duplicados (socio + mes + ano)
+       * Cria boletim com valores de referência do ano
+       * Opção pré-preencher projetos (nice-to-have implementado)
+- **1 Manager Expandido:**
+  4. `logic/boletins.py` - Métodos adicionados:
+     - `gerar_proximo_numero()` - Auto-increment de #B000001
+     - `criar()` - Novo método para modelo expandido (com valores ref)
+     - `emitir()` - DEPRECATED mas mantido para compatibilidade
+
+#### 🎨 **Fase 3 - UI Completa** (Commit: `fe1b032`)
+- **4 Novas/Atualizadas Telas:**
+  1. `ui/screens/valores_referencia.py` (328 linhas)
+     - CRUD de valores de referência por ano
+     - Validações: ano 2020-2100, valores > 0
+     - Ano bloqueado ao editar (unique constraint)
+     - Info label explicativo
+  2. `ui/screens/templates_boletins.py` (340 linhas)
+     - CRUD de templates recorrentes
+     - Tabela: numero, nome, socio, dia_mes, ativo
+     - Switch ativo/inativo
+     - Validação: dia_mes 1-31
+  3. `ui/screens/boletins.py` (atualizado, +140 linhas)
+     - **Nova coluna "Linhas"** - mostra count de deslocações
+     - **Botão "🔁 Gerar Recorrentes"** - abre dialog
+     - `GerarRecorrentesDialog` (195 linhas):
+       * Dropdown mês em português
+       * Validações ano/mês
+       * Integração com `BoletimTemplatesManager`
+       * Feedback de sucesso com count gerado
+  4. `ui/screens/boletim_form.py` (850 linhas) - **NOVO EDITOR COMPLETO**
+     - **Seção Header:**
+       * Sócio, Mês, Ano, Data Emissão
+       * Valores de referência (display read-only, auto-fetch por ano)
+       * Totais calculados (read-only, auto-atualizado)
+       * Descrição e Nota (opcionais)
+     - **Seção Deslocações:**
+       * Tabela 7 colunas: ordem, projeto, servico, localidade, tipo, dias, kms
+       * Botão "➕ Adicionar Deslocação"
+       * Double-click para editar
+       * Botão "🗑️ Apagar Linha Selecionada"
+     - **LinhaDialog** (300 linhas nested):
+       * Dropdown projetos (opcional, FK)
+       * Tipo: NACIONAL/ESTRANGEIRO
+       * Dias (Decimal), Kms (int)
+       * Data/Hora início/fim (informativas, opcionais)
+       * Auto-recalcula totais ao gravar
+
+### 🔧 Arquitetura e Fluxo de Dados
+
+**Cálculo de Totais (Automático):**
+```
+Adicionar/Editar/Apagar Linha
+  ↓
+BoletimLinhasManager.recalcular_totais_boletim()
+  ↓
+1. Soma linhas NACIONAIS: total_dias_nacionais × val_dia_nacional
+2. Soma linhas ESTRANGEIRO: total_dias_estrangeiro × val_dia_estrangeiro
+3. Soma todos kms: total_kms × val_km
+4. TOTAL = ajudas_nacionais + ajudas_estrangeiro + kms
+  ↓
+Atualiza boletim.valor_total (e boletim.valor para compatibilidade)
+  ↓
+UI refresh mostra novos totais
+```
+
+**Geração de Recorrentes:**
+```
+Botão "🔁 Gerar Recorrentes" → GerarRecorrentesDialog
+  ↓
+Seleciona Ano + Mês
+  ↓
+BoletimTemplatesManager.gerar_boletins_recorrentes_mes()
+  ↓
+Para cada template ativo:
+  1. Verifica duplicado (socio + mes + ano)
+  2. Obtém valores de referência do ano
+  3. Cria boletim com header vazio
+  4. Opcional: pré-preenche linhas com projetos do sócio
+  ↓
+Retorna (count_generated, erros)
+```
+
+### 📝 Decisões Técnicas
+1. **Valores de Referência por Ano** - Tabela separada editável (podem mudar anualmente)
+2. **Campo "Dias"** - Inserido manualmente (não calculado de horas)
+3. **Horas** - Informativas apenas (não usadas em cálculos)
+4. **Dados de Sócio** - Dicionário fixo em Python (não BD)
+5. **Dropdown Projetos** - Opcional em deslocações (pode ser genérico)
+6. **Templates** - Cabeçalho vazio (nice-to-have: pré-preencher com projetos)
+7. **Totais** - Calculados automaticamente via manager (não editáveis)
+
+### 📦 Commits
+- `8d14f0c` - 🗄️ Database: Fase 1 - Modelo de Dados Boletim Itinerário
+- `9616f7a` - ⚙️ Logic: Fase 2 - Business Logic Boletim Itinerário
+- `fe1b032` - ✨ Feature: Fase 3 - UI completa para Sistema de Boletim Itinerário
+
+### 📋 Próximos Passos
+- **Fase 4:** Testes & Ajustes
+  - Executar migrações localmente: `python run_migrations_016_019.py`
+  - Criar dados de teste (valores referência, templates, boletins)
+  - Testar cálculos automáticos
+  - Testar geração recorrente
+  - Validar edge cases
+
+---
+
 ## [2025-11-13] Melhorias UX + Planeamento Sistema Boletim Itinerário
 
 ### ✨ Adicionado
