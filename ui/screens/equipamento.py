@@ -472,8 +472,9 @@ class EquipamentoDialog(ctk.CTkToplevel):
         data_col = ctk.CTkFrame(fornecedor_data_frame, fg_color="transparent")
         data_col.pack(side="left", fill="x", expand=True)
         ctk.CTkLabel(data_col, text="Data Compra", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.data_compra_entry = ctk.CTkEntry(data_col, placeholder_text="AAAA-MM-DD", height=35)
-        self.data_compra_entry.pack(fill="x")
+        from ui.components.date_picker_dropdown import DatePickerDropdown
+        self.data_compra_picker = DatePickerDropdown(data_col, placeholder="Selecionar data de compra...")
+        self.data_compra_picker.pack(fill="x")
 
         # Especificações técnicas (3 columns)
         specs_frame = ctk.CTkFrame(scroll, fg_color="transparent")
@@ -596,7 +597,7 @@ class EquipamentoDialog(ctk.CTkToplevel):
         # Fornecedor e Data
         self.fornecedor_entry.insert(0, self.equipamento.fornecedor or "")
         if self.equipamento.data_compra:
-            self.data_compra_entry.insert(0, self.equipamento.data_compra.isoformat())
+            self.data_compra_picker.set_date(self.equipamento.data_compra)
 
         # Especificações técnicas
         self.numero_serie_entry.insert(0, self.equipamento.numero_serie or "")
@@ -635,14 +636,8 @@ class EquipamentoDialog(ctk.CTkToplevel):
 
         # Parse data de compra
         data_compra = None
-        data_compra_str = self.data_compra_entry.get().strip()
-        if data_compra_str:
-            try:
-                from datetime import datetime
-                data_compra = datetime.strptime(data_compra_str, "%Y-%m-%d").date()
-            except ValueError:
-                messagebox.showerror("Erro", "Data inválida. Use formato AAAA-MM-DD")
-                return
+        if self.data_compra_picker.get():
+            data_compra = self.data_compra_picker.get_date()
 
         # Prepare data
         data = {
