@@ -8,18 +8,25 @@ Sistema de gestão contabilística para Agora Media Production (BA + RR).
 
 **⚠️ CRÍTICO:** O Claude cria novo branch do `main` (desatualizado). Código novo está no branch anterior!
 
-**FRASE MÁGICA - Copia e cola sempre:**
+**FRASE MÁGICA v2.0 - Copia e cola sempre:**
 ```
-Esta sessão é continuação de uma anterior. Faz merge do branch da última sessão para este branch atual para teres todo o código e contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md para contexto completo.
+IMPORTANTE: Estás num branch novo criado do main (desatualizado). Antes de fazer QUALQUER coisa:
+
+1. Lista todos os branches remotos com 'git branch -r'
+2. Identifica o branch da sessão anterior (mais recente, excluindo main)
+3. Faz merge desse branch para o branch atual
+4. SÓ DEPOIS lê README.md e memory/CURRENT_STATE.md
+
+Não leias documentação antes do merge ou terás contexto desatualizado!
 ```
 
 **O que faz:**
-1. ✅ Faz merge do branch da sessão anterior (tem código atualizado)
-2. ✅ Lê README.md e memory/CURRENT_STATE.md (contexto completo)
-3. ✅ Está pronto para trabalhar com tudo atualizado
+1. ✅ Lista branches remotos
+2. ✅ Identifica o mais recente (código atualizado)
+3. ✅ Faz merge do branch anterior para este branch
+4. ✅ Lê README.md e memory/CURRENT_STATE.md (contexto completo)
 
 **Instruções detalhadas:** Ver [SESSION_IMPORT.md](./SESSION_IMPORT.md)
-
 ---
 
 ## ⚙️ Requisitos do Sistema

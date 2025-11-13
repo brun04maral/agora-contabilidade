@@ -1,85 +1,158 @@
 # 🔄 IMPORTAR SESSÃO ANTERIOR - Claude Code
 
-## ⚠️ IMPORTANTE - Ler PRIMEIRO em CADA Nova Sessão!
+## ⚠️ CRÍTICO - Ler PRIMEIRO em CADA Nova Sessão!
 
-O Claude Code cria um **novo branch** a cada sessão baseado no `main` (que pode estar desatualizado).
-A sessão anterior tem todo o código novo, mas está num branch diferente.
+O Claude Code cria um **novo branch** a cada sessão baseado no `main` (que está desatualizado).
+O branch da sessão anterior tem todo o código atualizado.
 
-**Solução:** Fazer merge do branch da sessão anterior para este novo branch.
+**ORDEM CORRETA:**
+```
+1. Fazer merge do branch anterior
+2. Ler README.md
+3. Ler memory/CURRENT_STATE.md
+```
+
+**❌ NUNCA:** Ler docs → Merge (contexto errado!)
+**✅ SEMPRE:** Merge → Ler docs (contexto certo!)
 
 ---
 
-## ✅ FRASE MÁGICA - Copia e Cola
-
-Quando iniciares uma nova sessão, **SEMPRE** usa esta frase:
-
+## ✅ FRASE MÁGICA v2.0 - Copia e Cola
 ```
-Esta sessão é continuação de uma anterior. Faz merge do branch da última sessão para este branch atual para teres todo o código e contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md para contexto completo.
-```
+IMPORTANTE: Estás num branch novo criado do main (desatualizado). Antes de fazer QUALQUER coisa:
 
----
+1. Lista todos os branches remotos com 'git branch -r'
+2. Identifica o branch da sessão anterior (mais recente, excluindo main)
+3. Faz merge desse branch para o branch atual
+4. SÓ DEPOIS lê README.md e memory/CURRENT_STATE.md
 
-## 📝 O Que o Claude Vai Fazer
-
-1. ✅ **Identificar** o branch da sessão anterior (mais recente)
-2. ✅ **Fazer merge** desse branch para o branch atual
-3. ✅ **Ler** README.md e documentação em `/memory/`
-4. ✅ **Ter contexto completo** de todo o código e decisões
-
----
-
-## 🔄 Fluxo Completo
-
-```
-Nova Sessão → Branch novo criado do main (desatualizado)
-     ↓
-Frase Mágica → Merge branch anterior + Ler docs
-     ↓
-Trabalhar → Código atualizado + Contexto completo
+Não leias documentação antes do merge ou terás contexto desatualizado!
 ```
 
 ---
 
-## 🚨 NÃO FAÇAS ISTO
-
-❌ **NÃO** inicies nova sessão sem fazer merge do branch anterior
-❌ **NÃO** assumes que tens o código mais recente (o main está desatualizado!)
-❌ **NÃO** expliques tudo manualmente ao Claude
+## 🔄 O Que o Claude Vai Fazer (Ordem Garantida)
+```
+┌─────────────────────────────────────┐
+│ 1. Listar branches remotos          │
+│    git branch -r                    │
+└────────────┬────────────────────────┘
+             │
+┌────────────▼────────────────────────┐
+│ 2. Identificar branch mais recente  │
+│    (ex: claude/feature-xyz-123)     │
+└────────────┬────────────────────────┘
+             │
+┌────────────▼────────────────────────┐
+│ 3. Fazer merge                      │
+│    git merge origin/claude/...      │
+└────────────┬────────────────────────┘
+             │
+┌────────────▼────────────────────────┐
+│ 4. Ler documentação                 │
+│    - README.md                      │
+│    - memory/CURRENT_STATE.md        │
+└─────────────────────────────────────┘
+```
 
 ---
 
-## 💡 Exemplo Prático
-
+## 📝 Exemplo Prático do Fluxo
 ```bash
-# O Claude vai fazer isto automaticamente quando usares a frase mágica:
+# Nova sessão inicia automaticamente
+# Claude Code cria: claude/nova-feature-20251113-abc123
+# Este branch vem do main (desatualizado!)
 
-# 1. Ver branches disponíveis
-git branch -a
+# ❌ ERRADO (ordem antiga):
+# 1. Ler README.md (contexto desatualizado!)
+# 2. Fazer merge (tarde demais)
 
-# 2. Identificar o branch mais recente (ex: claude/import-excel-20251108-*)
-git fetch origin
+# ✅ CORRETO (ordem nova):
+# 1. git branch -r  # Ver branches disponíveis
+origin/main
+origin/claude/implementar-xyz-20251112-xyz789  ← Mais recente!
+origin/claude/fix-bug-20251110-abc456
+origin/claude/old-feature-20251109-def123
 
-# 3. Fazer merge do branch anterior
-git merge origin/nome-do-branch-anterior
+# 2. Identificar mais recente (excluir main)
+BRANCH_ANTERIOR="origin/claude/implementar-xyz-20251112-xyz789"
 
-# 4. Ler documentação
-# README.md → Instruções gerais
-# memory/CURRENT_STATE.md → Estado atual do projeto
-# memory/TODO.md → Próximos passos
+# 3. Fazer merge
+git merge $BRANCH_ANTERIOR
+
+# 4. Agora sim, ler documentação
+cat README.md
+cat memory/CURRENT_STATE.md
 ```
 
 ---
 
-## 📚 Documentação Disponível
+## 🚨 AVISOS IMPORTANTES
 
-Após o merge, o Claude terá acesso a:
-- ✅ `README.md` - Overview e setup
-- ✅ `memory/CURRENT_STATE.md` - Features e estado atual
+### ❌ NÃO faças isto:
+- Ler documentação antes do merge
+- Assumir que tens código atualizado
+- Começar a trabalhar sem fazer merge
+
+### ✅ SEMPRE faz isto:
+1. **Merge primeiro** (git merge origin/...)
+2. **Docs depois** (README + CURRENT_STATE)
+3. **Trabalhar com contexto completo**
+
+---
+
+## 🎯 Como Identificar o Branch Correto
+
+O branch da sessão anterior é:
+- ✅ Começa com `origin/claude/`
+- ✅ Tem data recente (ex: 20251112)
+- ✅ NÃO é `origin/main`
+- ✅ É o mais recente (data maior)
+
+**Exemplo:**
+```bash
+origin/claude/implementar-xyz-20251112-xyz789  ← ESTE! (mais recente)
+origin/claude/fix-bug-20251110-abc456          ← Não (mais antigo)
+origin/main                                     ← NUNCA!
+```
+
+---
+
+## 💡 Troubleshooting
+
+### "Não vejo branches remotos"
+```bash
+git fetch origin  # Atualizar lista de branches
+git branch -r     # Listar novamente
+```
+
+### "Não sei qual é o mais recente"
+Procura pela **data maior** no nome do branch:
+- `20251113` > `20251112` > `20251110`
+
+### "Conflitos no merge"
+```bash
+# Aceitar versão do branch anterior (geralmente correto)
+git checkout --theirs <ficheiro-conflito>
+git add <ficheiro-conflito>
+git commit
+```
+
+---
+
+## 📚 Documentação Disponível (Após Merge)
+
+- ✅ `README.md` - Overview e instruções
+- ✅ `memory/CURRENT_STATE.md` - Estado atual do projeto
 - ✅ `memory/TODO.md` - Tarefas pendentes
 - ✅ `memory/ARCHITECTURE.md` - Arquitetura técnica
 - ✅ `memory/DATABASE_SCHEMA.md` - Estrutura da BD
-- ✅ Todo o código atualizado das sessões anteriores
+- ✅ Todo o código atualizado!
 
 ---
 
-**📍 Lembrete:** Guarda a frase mágica! Usa-a em TODAS as novas sessões.
+**📍 Lembrete Final:**
+
+# MERGE PRIMEIRO, DOCS DEPOIS! 🔄📖
+
+Sem o merge, estás a trabalhar com código e contexto desatualizados.
