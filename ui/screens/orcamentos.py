@@ -539,9 +539,6 @@ class OrcamentosScreen(ctk.CTkFrame):
                 "Erro",
                 f"Erro ao eliminar orçamentos:\n" + "\n".join(erros)
             )
-        else:
-            if len(selected) == 1:
-            else:
 
         # Reload
         self.carregar_orcamentos()
