@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-13
+**Última atualização:** 2025-11-13 (17:00)
 **Sessão:** claude/merge-context-update-011CV57sbRiu7taAq2DCiwhA
 
 ---
@@ -163,10 +163,15 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 
 ## 📝 Próximas Tarefas (ver `TODO.md`)
 
-1. Testes de integração completos
-2. Build para Windows (PyInstaller)
-3. Documentação de usuário final
-4. Backup automático de base de dados
+1. **UX/UI Improvements** - Orçamentos e Boletins (PRIORITY)
+   - Feedback: Ambos os screens são "muito maus e algo confusos"
+   - 18 melhorias específicas documentadas em TODO.md
+   - Orçamentos: Wizard multi-step, preview lateral, gráficos
+   - Boletins: Cards view, edição inline, calculadora visual
+2. Testes de integração completos
+3. Build para Windows (PyInstaller)
+4. Documentação de usuário final
+5. Backup automático de base de dados
 
 ---
 

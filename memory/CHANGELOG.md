@@ -4,6 +4,43 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-13] Planeamento UX: Orçamentos e Boletins
+
+### 📝 Documentado
+- 🎨 **Melhorias UX para Orçamentos e Boletins**
+  - **Feedback do utilizador:** Ambos os screens identificados como "muito maus e algo confusos"
+  - **Status:** Documentado em `memory/TODO.md` como tarefa prioritária (Média Prioridade)
+
+  **ORÇAMENTOS - 7 Propostas de Melhoria:**
+  1. **Wizard multi-step** - Dividir criação em 3 passos (info básica → secções/itens → repartições)
+  2. **Preview visual lateral** - Mostrar totais em tempo real (geral, subtotais, repartições BA/RR)
+  3. **Gráfico de repartições** - Pie chart ou barra horizontal para visualizar BA vs RR
+  4. **Botão "Duplicar Orçamento"** - Criar cópia completa (secções + itens + repartições)
+  5. **Simplificar formulário** - Agrupar campos em frames claramente separados (se não wizard)
+  6. **Validação em tempo real** - Mostrar erros inline, não apenas no save
+  7. **Tooltips informativos** - Explicar campos complexos (ex: "Repartição = divisão de prémios")
+
+  **BOLETINS - 11 Propostas de Melhoria:**
+  1. **Remover formulário legacy** - Apagar `FormularioBoletimDialog` completamente
+  2. **Simplificar buttons** - Reduzir de 4 para 2 botões (Novo + Config dropdown)
+  3. **Vista de cards** - Substituir tabela por cards visuais com badges de estado
+  4. **Edição inline de linhas** - Não abrir dialog, editar diretamente na tabela
+  5. **Auto-save de linhas** - Salvar automaticamente ao mudar foco
+  6. **Drag & drop** - Reordenar linhas arrastando
+  7. **Templates rápidos** - Botão "Adicionar Template" com dropdown
+  8. **Calculadora visual** - Breakdown em tempo real (dias × valor + kms × valor = total)
+  9. **Geração recorrente visível** - Dashboard ou notificação mensal
+  10. **Filtros rápidos** - Por sócio, estado, mês/ano
+  11. **Pesquisa** - Campo busca por número, projeto, nota
+
+  **Impacto esperado:** Reduzir significativamente tempo de operação e erros
+  **Prioridade:** Alta (afeta usabilidade diária)
+
+### 📦 Commits
+- `24a156b` - 📝 Docs: Document UX improvements for Orçamentos and Boletins
+
+---
+
 ## [2025-11-13] Sistema de Boletim Itinerário (Implementação Completa)
 
 ### ✨ Adicionado
