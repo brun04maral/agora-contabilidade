@@ -640,12 +640,12 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
             font=ctk.CTkFont(size=13, weight="bold")
         ).pack(anchor="w", pady=(0, 5))
 
-        self.seguro_entry = ctk.CTkEntry(
+        from ui.components.date_picker_dropdown import DatePickerDropdown
+        self.seguro_picker = DatePickerDropdown(
             form_frame,
-            placeholder_text="AAAA-MM-DD",
-            height=35
+            placeholder="Selecionar data de validade do seguro..."
         )
-        self.seguro_entry.pack(fill="x", pady=(0, 15))
+        self.seguro_picker.pack(fill="x", pady=(0, 15))
 
         # Nota
         ctk.CTkLabel(
@@ -721,7 +721,11 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
             self.email_entry.insert(0, self.fornecedor.email)
 
         if self.fornecedor.validade_seguro_trabalho:
-            self.seguro_entry.insert(0, self.fornecedor.validade_seguro_trabalho.strftime("%Y-%m-%d"))
+            # validade_seguro_trabalho é datetime, converter para date
+            if hasattr(self.fornecedor.validade_seguro_trabalho, 'date'):
+                self.seguro_picker.set_date(self.fornecedor.validade_seguro_trabalho.date())
+            else:
+                self.seguro_picker.set_date(self.fornecedor.validade_seguro_trabalho)
 
         if self.fornecedor.nota:
             self.nota_entry.insert("1.0", self.fornecedor.nota)
@@ -739,7 +743,6 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         morada = self.morada_entry.get("1.0", "end").strip()
         contacto = self.contacto_entry.get().strip()
         email = self.email_entry.get().strip()
-        seguro_str = self.seguro_entry.get().strip()
         nota = self.nota_entry.get("1.0", "end").strip()
 
         # Validate
@@ -756,12 +759,10 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
 
         # Parse seguro date
         validade_seguro = None
-        if seguro_str:
-            try:
-                validade_seguro = datetime.strptime(seguro_str, "%Y-%m-%d")
-            except:
-                self.show_error("Data de validade do seguro inválida (use AAAA-MM-DD)")
-                return
+        if self.seguro_picker.get():
+            # Converter date para datetime (BD espera datetime)
+            seguro_date = self.seguro_picker.get_date()
+            validade_seguro = datetime.combine(seguro_date, datetime.min.time())
 
         # Create or update
         if self.fornecedor:
