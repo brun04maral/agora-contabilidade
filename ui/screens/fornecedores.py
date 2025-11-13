@@ -475,6 +475,18 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         else:
             self.seguro_frame.pack_forget()
 
+    def _open_website(self):
+        """Abre o website no browser padrão"""
+        import webbrowser
+        website = self.website_entry.get().strip()
+        if website:
+            # Adicionar https:// se não tiver protocolo
+            if not website.startswith(('http://', 'https://')):
+                website = 'https://' + website
+            webbrowser.open(website)
+        else:
+            self.show_error("Nenhum website para abrir")
+
     def create_widgets(self):
         """Create dialog widgets"""
 
@@ -652,12 +664,26 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
             font=ctk.CTkFont(size=13, weight="bold")
         ).pack(anchor="w", pady=(0, 5))
 
+        website_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
+        website_frame.pack(fill="x", pady=(0, 15))
+
         self.website_entry = ctk.CTkEntry(
-            form_frame,
+            website_frame,
             placeholder_text="https://exemplo.pt",
             height=35
         )
-        self.website_entry.pack(fill="x", pady=(0, 15))
+        self.website_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+        self.website_btn = ctk.CTkButton(
+            website_frame,
+            text="🔗 Abrir",
+            width=80,
+            height=35,
+            command=self._open_website,
+            fg_color=("#2196F3", "#1565C0"),
+            hover_color=("#1976D2", "#0D47A1")
+        )
+        self.website_btn.pack(side="right")
 
         # Validade Seguro Trabalho (apenas para FREELANCER)
         self.seguro_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
