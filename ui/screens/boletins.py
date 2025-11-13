@@ -336,7 +336,6 @@ class BoletinsScreen(ctk.CTkFrame):
                     erros.append(f"{boletim.numero}: {erro}")
 
             if len(erros) == 0:
-                messagebox.showinfo("Sucesso", f"{len(unpaid_boletins)} boletim(ns) marcado(s) como pago(s)!")
                 self.carregar_boletins()
                 self.table.clear_selection()
             else:
@@ -550,10 +549,8 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
                     descricao=descricao,
                     nota=nota
                 )
-                msg = f"Boletim {boletim.numero} emitido com sucesso!"
 
             if sucesso:
-                messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
                 self.destroy()

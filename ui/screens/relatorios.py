@@ -1490,7 +1490,6 @@ class RelatoriosScreen(ctk.CTkFrame):
         if filename:
             try:
                 self.manager.exportar_pdf(self.current_report_data, filename)
-                messagebox.showinfo("Sucesso", f"Relatório exportado para:\n{filename}")
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao exportar PDF: {e}")
 
@@ -1513,6 +1512,5 @@ class RelatoriosScreen(ctk.CTkFrame):
         if filename:
             try:
                 self.manager.exportar_excel(self.current_report_data, filename)
-                messagebox.showinfo("Sucesso", f"Relatório exportado para:\n{filename}")
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao exportar Excel: {e}")

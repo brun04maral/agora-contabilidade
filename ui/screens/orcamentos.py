@@ -541,9 +541,7 @@ class OrcamentosScreen(ctk.CTkFrame):
             )
         else:
             if len(selected) == 1:
-                messagebox.showinfo("Sucesso", "Orçamento eliminado com sucesso!")
             else:
-                messagebox.showinfo("Sucesso", f"{len(selected)} orçamentos eliminados com sucesso!")
 
         # Reload
         self.carregar_orcamentos()
@@ -1123,7 +1121,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
         sucesso, erro = self.manager.eliminar_item(item.id)
 
         if sucesso:
-            messagebox.showinfo("Sucesso", "Item eliminado com sucesso!")
             self.carregar_itens()
             # Recalcular e atualizar campos de valor
             self.manager.recalcular_totais(self.orcamento.id)
@@ -1359,7 +1356,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
         try:
             self.db_session.delete(item)
             self.db_session.commit()
-            messagebox.showinfo("Sucesso", "Item eliminado com sucesso!")
             self.carregar_itens_proposta()
 
             # Recalcular subtotais das secções
@@ -1556,7 +1552,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
                 sucesso, _, erro = self.manager.atualizar_orcamento(self.orcamento.id, **data)
                 if sucesso:
                     self.orcamento_atualizado = True
-                    messagebox.showinfo("Sucesso", "Orçamento atualizado com sucesso!")
                     self.destroy()
                 else:
                     messagebox.showerror("Erro", f"Erro ao atualizar orçamento: {erro}")
@@ -1565,7 +1560,6 @@ class OrcamentoDialog(ctk.CTkToplevel):
                 sucesso, _, erro = self.manager.criar_orcamento(**data)
                 if sucesso:
                     self.orcamento_criado = True
-                    messagebox.showinfo("Sucesso", "Orçamento criado com sucesso!")
                     self.destroy()
                 else:
                     messagebox.showerror("Erro", f"Erro ao criar orçamento: {erro}")
@@ -2067,7 +2061,6 @@ class ItemDialog(ctk.CTkToplevel):
                 sucesso, _, erro = self.manager.atualizar_item(self.item.id, **data)
                 if sucesso:
                     self.item_salvo = True
-                    messagebox.showinfo("Sucesso", "Item atualizado com sucesso!")
                     self.destroy()
                 else:
                     messagebox.showerror("Erro", f"Erro ao atualizar item: {erro}")
@@ -2079,7 +2072,6 @@ class ItemDialog(ctk.CTkToplevel):
                 )
                 if sucesso:
                     self.item_salvo = True
-                    messagebox.showinfo("Sucesso", "Item adicionado com sucesso!")
                     self.destroy()
                 else:
                     messagebox.showerror("Erro", f"Erro ao adicionar item: {erro}")
@@ -2427,7 +2419,6 @@ class GerirItensDialog(ctk.CTkToplevel):
         sucesso, erro = self.manager.eliminar_item(item.id)
 
         if sucesso:
-            messagebox.showinfo("Sucesso", "Item eliminado com sucesso!")
             self.carregar_secoes_e_itens()
             self.atualizar_totais()
         else:
@@ -2439,7 +2430,6 @@ class GerirItensDialog(ctk.CTkToplevel):
 
         if sucesso:
             from tkinter import messagebox
-            messagebox.showinfo("Sucesso", "Totais recalculados com sucesso!")
             self.atualizar_totais()
         else:
             from tkinter import messagebox

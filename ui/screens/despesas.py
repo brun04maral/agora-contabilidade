@@ -353,13 +353,12 @@ class DespesasScreen(ctk.CTkFrame):
 
         # Mostrar resultado
         if geradas > 0:
-            msg = f"✅ {geradas} despesa(s) recorrente(s) gerada(s) com sucesso!"
+            self.carregar_despesas()  # Recarregar lista
             if erros:
-                msg += f"\n\n⚠️ {len(erros)} erro(s):\n" + "\n".join(erros[:3])
+                msg = f"⚠️ {len(erros)} erro(s) ao gerar despesas:\n" + "\n".join(erros[:3])
                 if len(erros) > 3:
                     msg += f"\n... e mais {len(erros) - 3} erro(s)"
-            messagebox.showinfo("Sucesso", msg)
-            self.carregar_despesas()  # Recarregar lista
+                messagebox.showwarning("Aviso", msg)
         elif erros:
             msg = f"❌ Nenhuma despesa gerada.\n\nErros:\n" + "\n".join(erros[:5])
             if len(erros) > 5:
@@ -417,7 +416,6 @@ class DespesasScreen(ctk.CTkFrame):
         if resposta:
             sucesso, erro = self.manager.apagar(despesa.id)
             if sucesso:
-                messagebox.showinfo("Sucesso", "Despesa apagada com sucesso!")
                 self.carregar_despesas()
             else:
                 messagebox.showerror("Erro", f"Erro ao apagar: {erro}")
@@ -543,7 +541,6 @@ class DespesasScreen(ctk.CTkFrame):
                     erros.append(f"{despesa.numero}: {erro}")
 
             if len(erros) == 0:
-                messagebox.showinfo("Sucesso", f"{len(unpaid_despesas)} despesa(s) marcada(s) como paga(s)!")
                 self.carregar_despesas()
                 self.table.clear_selection()
             else:
@@ -821,10 +818,8 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
                     data_pagamento=data_pagamento,
                     nota=nota
                 )
-                msg = f"Despesa {despesa.numero} criada com sucesso!"
 
             if sucesso:
-                messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
                 self.destroy()

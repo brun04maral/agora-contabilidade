@@ -378,7 +378,6 @@ class ProjetosScreen(ctk.CTkFrame):
         if resposta:
             sucesso, erro = self.manager.apagar(projeto.id)
             if sucesso:
-                messagebox.showinfo("Sucesso", "Projeto apagado com sucesso!")
                 self.carregar_projetos()
             else:
                 messagebox.showerror("Erro", f"Erro ao apagar projeto: {erro}")
@@ -707,10 +706,8 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
                     premio_rafael=premio_rafael,
                     nota=nota
                 )
-                msg = f"Projeto {projeto.numero} criado com sucesso!"
 
             if sucesso:
-                messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
                 self.destroy()

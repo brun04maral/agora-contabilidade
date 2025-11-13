@@ -177,7 +177,6 @@ class TemplatesDespesasScreen(ctk.CTkFrame):
         if resposta:
             sucesso, erro = self.manager.apagar(template.id)
             if sucesso:
-                messagebox.showinfo("Sucesso", "Template apagado com sucesso!")
                 self.carregar_templates()
             else:
                 messagebox.showerror("Erro", f"Erro ao apagar: {erro}")
@@ -469,10 +468,8 @@ class FormularioTemplateDialog(ctk.CTkToplevel):
                     projeto_id=projeto_id,
                     nota=nota
                 )
-                msg = f"Template {template.numero} criado com sucesso!"
 
             if sucesso:
-                messagebox.showinfo("Sucesso", msg)
                 if self.callback:
                     self.callback()
                 self.destroy()

@@ -314,8 +314,6 @@ class EquipamentoScreen(ctk.CTkFrame):
                 f"{len(selected) - erros} equipamento(s) eliminado(s)\n"
                 f"{erros} erro(s)"
             )
-        else:
-            messagebox.showinfo("Sucesso", f"{len(selected)} equipamento(s) eliminado(s)")
 
         self.carregar_equipamentos()
 
@@ -675,7 +673,6 @@ class EquipamentoDialog(ctk.CTkToplevel):
                 self.equipamento_criado = True
 
         if sucesso:
-            messagebox.showinfo("Sucesso", "Equipamento guardado com sucesso")
             self.destroy()
         else:
             messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
