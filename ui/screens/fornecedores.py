@@ -464,6 +464,17 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         if self.fornecedor:
             self.load_fornecedor_data()
 
+        # Set initial visibility of seguro field
+        self._toggle_seguro_field()
+
+    def _toggle_seguro_field(self):
+        """Mostra/oculta campo de seguro baseado no estatuto"""
+        estatuto = self.estatuto_var.get()
+        if estatuto == "FREELANCER":
+            self.seguro_frame.pack(fill="x", pady=(0, 15), before=self.nota_entry.master)
+        else:
+            self.seguro_frame.pack_forget()
+
     def create_widgets(self):
         """Create dialog widgets"""
 
@@ -513,7 +524,8 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
                 estatuto_frame,
                 text=estatuto,
                 variable=self.estatuto_var,
-                value=estatuto
+                value=estatuto,
+                command=self._toggle_seguro_field
             ).pack(side="left", padx=(0, 20))
 
         # Área
@@ -633,19 +645,36 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         )
         self.email_entry.pack(fill="x", pady=(0, 15))
 
-        # Validade Seguro Trabalho
+        # Website
         ctk.CTkLabel(
             form_frame,
+            text="Website",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.website_entry = ctk.CTkEntry(
+            form_frame,
+            placeholder_text="https://exemplo.pt",
+            height=35
+        )
+        self.website_entry.pack(fill="x", pady=(0, 15))
+
+        # Validade Seguro Trabalho (apenas para FREELANCER)
+        self.seguro_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
+        self.seguro_frame.pack(fill="x", pady=(0, 15))
+
+        ctk.CTkLabel(
+            self.seguro_frame,
             text="Validade Seguro Trabalho",
             font=ctk.CTkFont(size=13, weight="bold")
         ).pack(anchor="w", pady=(0, 5))
 
         from ui.components.date_picker_dropdown import DatePickerDropdown
         self.seguro_picker = DatePickerDropdown(
-            form_frame,
+            self.seguro_frame,
             placeholder="Selecionar data de validade do seguro..."
         )
-        self.seguro_picker.pack(fill="x", pady=(0, 15))
+        self.seguro_picker.pack(fill="x")
 
         # Nota
         ctk.CTkLabel(
@@ -720,6 +749,9 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         if self.fornecedor.email:
             self.email_entry.insert(0, self.fornecedor.email)
 
+        if self.fornecedor.website:
+            self.website_entry.insert(0, self.fornecedor.website)
+
         if self.fornecedor.validade_seguro_trabalho:
             # validade_seguro_trabalho é datetime, converter para date
             if hasattr(self.fornecedor.validade_seguro_trabalho, 'date'):
@@ -743,6 +775,7 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         morada = self.morada_entry.get("1.0", "end").strip()
         contacto = self.contacto_entry.get().strip()
         email = self.email_entry.get().strip()
+        website = self.website_entry.get().strip()
         nota = self.nota_entry.get("1.0", "end").strip()
 
         # Validate
@@ -779,6 +812,7 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
                 morada=morada if morada else None,
                 contacto=contacto if contacto else None,
                 email=email if email else None,
+                website=website if website else None,
                 validade_seguro_trabalho=validade_seguro,
                 nota=nota if nota else None
             )
@@ -802,6 +836,7 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
                 morada=morada if morada else None,
                 contacto=contacto if contacto else None,
                 email=email if email else None,
+                website=website if website else None,
                 validade_seguro_trabalho=validade_seguro,
                 nota=nota if nota else None
             )

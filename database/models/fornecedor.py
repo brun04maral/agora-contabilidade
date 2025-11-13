@@ -36,6 +36,7 @@ class Fornecedor(Base):
     pais = Column(String(100), nullable=True, default='Portugal')  # País para cálculo de IVA
     contacto = Column(String(50), nullable=True)
     email = Column(String(255), nullable=True)
+    website = Column(String(255), nullable=True)
     nota = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -63,6 +64,7 @@ class Fornecedor(Base):
             'pais': self.pais,
             'contacto': self.contacto,
             'email': self.email,
+            'website': self.website,
             'nota': self.nota,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
