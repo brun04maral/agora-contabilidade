@@ -16,18 +16,19 @@ Visão geral da estrutura da base de dados SQLite.
        ▼     ▼              ▼              ▼              ▼
  ┌─────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐ ┌──────────┐
  │ Projeto │ │ Despesa  │ │ Boletim │ │Orcamento │ │Equipment │
- └────┬────┘ └────┬─────┘ └─────────┘ └────┬─────┘ └──────────┘
-      │           │                         │
-      │           │                         │
-      ▼           ▼                         ▼
- ┌─────────┐ ┌──────────────────┐     ┌──────────┐
- │ Cliente │ │DespesaTemplate   │     │OrcLinhas │
- └─────────┘ │(Recorrentes)     │     └──────────┘
-             └──────────────────┘
+ └────┬────┘ └────┬─────┘ └────┬────┘ └────┬─────┘ └──────────┘
+      │           │             │           │
+      │           │             │           │
+      ▼           ▼             ▼           ▼
+ ┌─────────┐ ┌──────────────────┐ ┌──────────────┐ ┌──────────┐
+ │ Cliente │ │DespesaTemplate   │ │BoletimLinhas │ │OrcLinhas │
+ └─────────┘ │(Recorrentes)     │ │(Deslocações) │ └──────────┘
+             └──────────────────┘ └──────────────┘
 
- ┌────────────┐
- │Fornecedor  │ (independente)
- └────────────┘
+ ┌────────────┐  ┌─────────────────────┐  ┌───────────────────┐
+ │Fornecedor  │  │BoletimTemplates     │  │ValorRefAnual      │
+ │            │  │(Geração Recorrente) │  │(Config por Ano)   │
+ └────────────┘  └─────────────────────┘  └───────────────────┘
 ```
 
 ---
@@ -203,38 +204,174 @@ EstadoDespesa:
 
 ---
 
-### `boletins` - Boletins de Sócios (RVs)
+### `valores_referencia_anual` - Valores de Referência por Ano
 
 **Campos principais:**
 - `id` - PK
-- `socio_id` - FK → socios
-- `mes` - Integer (1-12)
-- `ano` - Integer
-- `vencimento_base` - Decimal
-- `subsidio_ferias` - Decimal
-- `subsidio_natal` - Decimal
-- `vencimento_total` - Decimal
-- `contribuicao_seg_social` - Decimal
-- `contribuicao_seg_social_fgct` - Decimal
-- `retencao_irs` - Decimal
-- `valor_liquido` - Decimal
-- `estado` - ENUM (pendente/pago)
+- `ano` - Integer (unique, indexed) - Ex: 2025, 2026
+- `val_dia_nacional` - Decimal - Ex: 72.65€
+- `val_dia_estrangeiro` - Decimal - Ex: 167.07€
+- `val_km` - Decimal - Ex: 0.40€
+- `created_at` - DateTime
+- `updated_at` - DateTime
+
+**Relações:**
+- Nenhuma (configuração global)
+
+**Regras de negócio:**
+- Um registo por ano
+- Editável via configurações (botão escondido)
+- Novos boletins copiam valores do ano vigente
+- Se ano não existe, usa defaults hard-coded
+
+**Acesso UI:**
+- Screen `valores_referencia.py` (configurações)
+- Botão "escondido" (pouco usado)
+
+---
+
+### `boletins` - Boletins Itinerário (Ajudas de Custo)
+
+**Campos principais:**
+- `id` - PK
+- `numero` - String única (#B0001, #B0002, etc.)
+- `socio` - ENUM (BRUNO/RAFAEL)
+- `mes` - Integer (1-12, indexed)
+- `ano` - Integer (ex: 2025, indexed)
+- `data_emissao` - Date (indexed)
+- `data_pagamento` - Date (nullable)
+- `estado` - ENUM (PENDENTE/PAGO, indexed)
+
+**Valores de Referência (copiados do ano):**
+- `val_dia_nacional` - Decimal - Ex: 72.65€
+- `val_dia_estrangeiro` - Decimal - Ex: 167.07€
+- `val_km` - Decimal - Ex: 0.40€
+
+**Totais Calculados Automaticamente:**
+- `total_ajudas_nacionais` - Decimal - Soma dias nacionais × val_dia_nacional
+- `total_ajudas_estrangeiro` - Decimal - Soma dias estrangeiro × val_dia_estrangeiro
+- `total_kms` - Decimal - Soma kms × val_km
+- `valor_total` - Decimal - Soma dos 3 totais
+
+**Metadata:**
+- `nota` - Text (nullable)
+- `created_at` - DateTime
+- `updated_at` - DateTime
 
 **Enums:**
 ```python
 EstadoBoletim:
-  - PENDENTE  # Emitido mas não pago (NÃO desconta do saldo)
+  - PENDENTE  # Emitido mas não pago (desconta do saldo imediatamente)
   - PAGO      # Pago (DESCONTA do saldo)
 ```
 
 **Relações:**
-- `socio` → Socio (many-to-one)
+- `linhas` → BoletimLinha (one-to-many) - Deslocações deste boletim
 
 **Regras de negócio:**
-- Único por sócio/mês/ano
-- Cálculos automáticos:
-  - `vencimento_total` = base + férias + natal
-  - `valor_liquido` = total - seg_social - irs - fgct
+- Totais calculados automaticamente ao editar linhas
+- Valores de referência copiados do ano vigente na criação
+- **IMPORTANTE:** Boletins descontam do saldo quando PAGOS (não quando emitidos)
+
+**Cálculos:**
+```python
+total_ajudas_nacionais = sum(linha.dias for linha in linhas if linha.tipo == NACIONAL) × val_dia_nacional
+total_ajudas_estrangeiro = sum(linha.dias for linha in linhas if linha.tipo == ESTRANGEIRO) × val_dia_estrangeiro
+total_kms = sum(linha.kms for linha in linhas) × val_km
+valor_total = total_ajudas_nacionais + total_ajudas_estrangeiro + total_kms
+```
+
+**Acesso UI:**
+- Screen `boletins.py` (lista) + coluna "Linhas" (contador)
+- Botão "🔁 Gerar Recorrentes"
+- Duplo-clique abre `BoletimForm` (editor completo)
+
+---
+
+### `boletim_linhas` - Linhas de Deslocação (NOVO - Planeado)
+
+**Campos principais:**
+- `id` - PK
+- `boletim_id` - FK → boletins (CASCADE DELETE, indexed)
+- `ordem` - Integer (ordenação: 1, 2, 3...)
+- `projeto_id` - FK → projetos (NULLABLE, SET NULL) - **Dropdown opcional**
+- `servico` - Text (not null) - Ex: "vMix Novobanco", "reunião com cliente"
+- `localidade` - String(100) - Ex: "Aguieira", "Lisboa", "Copenhaga"
+- `data_inicio` - Date
+- `hora_inicio` - Time (informativa)
+- `data_fim` - Date
+- `hora_fim` - Time (informativa)
+- `tipo` - ENUM (NACIONAL/ESTRANGEIRO)
+- `dias` - Decimal (inserido manualmente: 0, 0.5, 1, 6)
+- `kms` - Integer (ex: 400, 206)
+- `created_at` - DateTime
+- `updated_at` - DateTime
+
+**Enums:**
+```python
+TipoDeslocacao:
+  - NACIONAL      # Deslocação em Portugal
+  - ESTRANGEIRO   # Deslocação fora de Portugal
+```
+
+**Relações:**
+- `boletim` → Boletim (many-to-one)
+- `projeto` → Projeto (many-to-one, nullable)
+
+**Regras de negócio:**
+- Ordenação via campo `ordem`
+- Se `projeto_id` preenchido, `servico` auto-preenche mas é editável
+- Horas são informativas (não usadas em cálculo)
+- Dias inseridos manualmente (cálculo complexo, usuário decide)
+- Trigger recalcula totais do boletim ao adicionar/editar/remover
+
+**Comportamento ao apagar projeto:**
+- SET NULL: `projeto_id` = NULL (mantém texto em `servico`)
+
+---
+
+### `boletim_templates` - Templates de Boletins Recorrentes (NOVO - Planeado)
+
+**Campos principais:**
+- `id` - PK
+- `numero` - String única (#TB000001, #TB000002)
+- `nome` - String(200) - Ex: "Boletim Bruno Mensal"
+- `socio` - ENUM (BRUNO/RAFAEL)
+- `dia_mes` - Integer (1-31) - Dia para gerar automaticamente
+- `ativo` - Boolean (default=True)
+- `created_at` - DateTime
+- `updated_at` - DateTime
+
+**Relações:**
+- Nenhuma (não armazena linhas pré-definidas)
+
+**Regras de negócio:**
+- **NÃO armazena valores de referência** (usa ano vigente na geração)
+- **NÃO armazena linhas pré-definidas**
+- Geração cria boletim com cabeçalho vazio
+- **🎯 NICE-TO-HAVE:** Pré-preencher linhas com projetos do sócio no mês
+- Apenas 2 templates esperados: BA (#TB000001) e RR (#TB000002)
+
+**Comportamento geração:**
+```python
+def gerar_boletim(template, mes, ano):
+    # 1. Criar boletim com valores do ano vigente
+    boletim = Boletim(
+        socio=template.socio,
+        mes=mes,
+        ano=ano,
+        val_dia_nacional=get_valor_ano(ano, 'nacional'),
+        ...
+    )
+    # 2. (Opcional) Pré-preencher com projetos do mês
+    # projetos = query_projetos_socio_mes(template.socio, mes, ano)
+    # for projeto in projetos:
+    #     criar_linha_sugerida(boletim, projeto)
+```
+
+**Acesso UI:**
+- Screen `templates_boletins.py` (CRUD simples)
+- Similar a `templates_despesas.py`
 
 ---
 

@@ -9,7 +9,10 @@
 
 <!-- Máximo 3 tarefas. Apenas o que está a ser trabalhado AGORA -->
 
-*Nada no momento - aguardando próxima prioridade*
+- [ ] 🔁 **Sistema Completo de Boletim Itinerário** (Em planeamento)
+  - Substituir modelo simples por sistema completo com múltiplas deslocações
+  - **Próximo passo:** Implementar modelo de dados (4 tabelas novas/expandidas)
+  - Detalhes completos na secção "Média Prioridade" abaixo
 
 ---
 
@@ -49,15 +52,96 @@
 
 ### 🟡 Média Prioridade
 
-- [ ] 🔁 **Sistema de Templates para Boletins Recorrentes**
-  - Aplicar arquitetura semelhante ao sistema de Templates de Despesas
-  - Tabela separada `boletim_templates` para boletins mensais fixos
-  - **Apenas 2 templates necessários:** Template BA (#TB000001) e Template RR (#TB000002)
-  - Templates armazenam periodicidade (mensal) e sócio fixo
-  - Geração automática de boletins via botão "🔁 Gerar Recorrentes"
-  - Screen dedicado com CRUD completo (simples, max 2 templates)
-  - Indicador visual em boletins gerados de template
-  - **Motivação:** Boletins mensais fixos (ex: salário base BA/RR) atualmente precisam ser criados manualmente
+- [ ] 🔁 **Sistema Completo de Boletim Itinerário** ⬅️ **EM FOCO**
+  - **Visão:** Substituir modelo simples de boletim por sistema completo tipo "Boletim Itinerário"
+  - **Motivação:** Suportar múltiplas deslocações com cálculos automáticos de ajudas de custo
+  - **Baseado em:** Exemplo real (excel/2025_10-AjudasDeCusto_BA_Signed.xlsx e PDF)
+
+  **📊 Modelo de Dados (4 tabelas):**
+
+  1. **`valores_referencia_anual`** (NOVA)
+     - Armazena valores por ano: val_dia_nacional (72.65€), val_dia_estrangeiro (167.07€), val_km (0.40€)
+     - Editável via configurações (botão escondido)
+     - Um registo por ano (2025, 2026, etc.)
+
+  2. **`boletins`** (EXPANDIR TABELA EXISTENTE)
+     - Adicionar: mes (1-12), ano (2025)
+     - Adicionar: val_dia_nacional, val_dia_estrangeiro, val_km (copiados do ano)
+     - Adicionar totais calculados: total_ajudas_nacionais, total_ajudas_estrangeiro, total_kms, valor_total
+     - Remover: descricao (não necessário)
+
+  3. **`boletim_linhas`** (NOVA - Deslocações)
+     - boletim_id (FK → boletins, CASCADE DELETE)
+     - ordem (int para ordenação)
+     - **projeto_id (FK → projetos, NULLABLE)** - Dropdown opcional
+     - servico (texto: "vMix Novobanco" ou livre)
+     - localidade (texto: "Aguieira", "Lisboa")
+     - data_inicio, hora_inicio, data_fim, hora_fim (horas informativas)
+     - tipo (ENUM: NACIONAL/ESTRANGEIRO)
+     - **dias (Decimal - MANUAL):** Usuário insere (0, 0.5, 1, 6)
+     - kms (Integer: 400, 206)
+
+  4. **`boletim_templates`** (NOVA - Templates Recorrentes)
+     - numero (#TB000001, #TB000002), nome, socio, dia_mes, ativo
+     - NÃO armazena valores de referência (usa ano vigente)
+     - NÃO armazena linhas pré-definidas
+     - Geração cria cabeçalho vazio
+     - **🎯 NICE-TO-HAVE:** Pré-preencher com projetos do mês
+
+  **🎨 Interface (3 telas novas + 1 atualizada):**
+
+  1. **`ui/screens/valores_referencia.py`** (NOVA)
+     - Configurações globais de valores por ano
+     - Botão "escondido" (pouco usado)
+     - CRUD simples: Ano, Val Dia Nacional, Estrangeiro, Km
+
+  2. **`ui/screens/boletim_form.py`** (NOVA - Editor Completo)
+     - **Secção 1:** Cabeçalho (Socio, Mês/Ano, Valores Ref readonly, Totais readonly)
+     - **Secção 2:** Tabela de Linhas (CRUD completo)
+       - ➕ Adicionar: Dropdown Projeto (opcional), Servico, Localidade, Datas/Horas, Tipo, Dias, Kms
+       - 🗑️ Remover linha
+       - ⬆️⬇️ Reordenar
+     - Cálculo automático de totais em tempo real
+     - Botões: 💾 Gravar, ❌ Cancelar
+
+  3. **`ui/screens/templates_boletins.py`** (NOVA)
+     - Similar a templates_despesas.py
+     - CRUD de templates (apenas 2: BA + RR)
+     - Form: Nome, Socio, Dia Mês, Ativo
+
+  4. **`ui/screens/boletins.py`** (ATUALIZAR)
+     - Adicionar coluna "Linhas" (contador de deslocações)
+     - Adicionar botão "🔁 Gerar Recorrentes"
+     - Duplo-clique abre BoletimForm (não dialog simples)
+
+  **⚙️ Regras de Negócio:**
+  - Valores de referência: Editáveis por ano, novos boletins copiam do ano vigente
+  - Cálculos automáticos sempre que linhas mudam
+  - Relação com projetos: Opcional, SET NULL se projeto apagado
+  - Templates: Geração verifica dia do mês, pré-preenche (opcional) com projetos do sócio
+
+  **📋 Dados do Sócio (Fixos em Código):**
+  ```python
+  SOCIOS_CONFIG = {
+      Socio.BRUNO: {
+          'nome_completo': 'Bruno Miguel Carvalho Amaral',
+          'categoria': 'Gerente',
+          'contribuinte': '220,852,502',
+          'matricula': '79-RI-12'
+      },
+      Socio.RAFAEL: { ... }
+  }
+  ```
+  - Usado apenas na geração de PDF
+  - Não vai para BD
+
+  **🎯 Plano de Implementação:**
+  - **Fase 1:** Modelo de dados (4 migrations)
+  - **Fase 2:** Business Logic (CRUD + cálculos + geração)
+  - **Fase 3:** UI (3 telas novas + atualizar boletins.py)
+  - **Fase 4:** Testes & Ajustes
+
+  **⏱️ Estimativa:** 10-15h (sistema completo)
 - [ ] 📄 **Exportação de Boletins para PDF Assinados**
   - Sistema de exportação de boletins individuais para PDF
   - Template PDF profissional com informação fiscal completa
@@ -156,6 +240,30 @@
 ## ✅ Concluído Recentemente
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
+
+- [x] 📋 **13/11** - Planeamento completo do Sistema de Boletim Itinerário
+  - **Análise:** Estudado exemplo real de PDF + Excel (Boletim Itinerário)
+  - **Decisão:** Sistema completo (não simplificado) com múltiplas deslocações
+  - **Arquitetura definida:** 4 tabelas (valores_referencia_anual, boletins expandida, boletim_linhas, boletim_templates)
+  - **UI planeada:** 3 telas novas + 1 atualizada
+  - **Decisões tomadas:** Valores editáveis por ano, dropdown projetos opcional, horas informativas, dados sócio em código
+  - **Nice-to-have:** Pré-preencher linhas com projetos do mês
+  - **Estimativa:** 10-15h de implementação
+  - Próximo passo: Implementar Fase 1 (Modelo de Dados)
+
+- [x] 🎨 **13/11** - UX: Remover popups de sucesso em TODAS as gravações
+  - **Filosofia:** "Silent success" - apenas erros têm popup
+  - **Afetadas:** 7 screens (projetos, despesas, templates_despesas, boletins, equipamento, orcamentos, relatorios)
+  - **Total:** ~24 popups removidos
+  - **Benefício:** Workflow mais rápido, menos intrusivo, feedback visual via lista atualizada
+  - Ficheiros: ui/screens/*.py (7 screens)
+
+- [x] 🎨 **13/11** - Strikethrough em Projetos Anulados
+  - **Implementado:** Texto riscado em todos os campos exceto "Estado"
+  - **Técnica:** Parâmetro `_strikethrough_except` em DataTableV2
+  - **Visual:** Fundo cinza + texto riscado (overstrike)
+  - **Código:** ui/components/data_table_v2.py (suporte genérico), ui/screens/projetos.py (aplicação)
+  - Commit: 23381b1
 
 - [x] 🔁 **13/11** - Sistema de Templates de Despesas Recorrentes (COMPLETO)
   - **Arquitetura:** Tabela separada `despesa_templates` (não misturada com despesas)

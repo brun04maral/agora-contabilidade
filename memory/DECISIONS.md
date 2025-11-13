@@ -301,7 +301,139 @@ def test_criar_projeto():
 - Templates podem ser geridos independentemente
 - Indicador visual claro (asterisco) em despesas geradas
 
-**Aplicável a:** Boletins recorrentes no futuro (mesma arquitetura)
+**Aplicável a:** Boletins recorrentes (arquitetura idêntica aplicada)
+
+---
+
+## 🎨 UX: Silent Success vs Explicit Feedback
+
+### Popups de Sucesso vs Feedback Visual
+**Decisão:** Remover todos os popups de sucesso
+**Data:** 2025-11-13
+**Motivação:**
+- **Filosofia:** "Silent success, loud failure"
+- Popups de sucesso interrompem fluxo de trabalho
+- Usuário vê feedback imediato (lista atualizada)
+- Apenas erros precisam de atenção explícita
+
+**Implementação:**
+- ❌ Removidos: ~24 `messagebox.showinfo("Sucesso", ...)` em 7 screens
+- ✅ Mantidos: Todos `messagebox.showerror("Erro", ...)`
+- ✅ Feedback: Listas atualizam automaticamente após gravar
+
+**Trade-offs:**
+- ❌ Sem confirmação visual explícita de sucesso
+- ✅ Workflow 2-3 segundos mais rápido
+- ✅ Interface menos intrusiva
+- ✅ Mais profissional (padrão em apps modernas)
+
+**Screens afetados:**
+- projetos.py, despesas.py, templates_despesas.py, boletins.py
+- equipamento.py, orcamentos.py, relatorios.py
+
+---
+
+## 🎨 UI: Strikethrough Seletivo em Tabelas
+
+### Strikethrough via CTkFont vs CSS/Tags
+**Decisão:** CTkFont com `overstrike=True` + parâmetro de exclusão
+**Data:** 2025-11-13
+**Motivação:**
+- Projetos anulados precisam de indicação visual clara
+- Manter cores de fundo (cinza) + adicionar texto riscado
+- Permitir excluir colunas específicas (ex: "Estado")
+
+**Implementação:**
+```python
+# Row data
+data = {
+    'id': 1,
+    'campo1': 'valor',
+    '_strikethrough_except': ['estado']  # Lista de colunas a NÃO riscar
+}
+
+# DataTableV2 rendering
+should_strikethrough = ('_strikethrough_except' in data and
+                       col['key'] not in data['_strikethrough_except'])
+font = ctk.CTkFont(size=12, overstrike=should_strikethrough)
+```
+
+**Trade-offs:**
+- ✅ Controlo granular por coluna
+- ✅ Reutilizável em outras tabelas
+- ✅ Sem complicações com tags Tkinter
+- ❌ Parâmetro especial `_strikethrough_except` em dados
+
+**Aplicável a:** Qualquer tabela que precise de strikethrough condicional
+
+---
+
+## 📋 Boletim Itinerário: Sistema Completo vs Simplificado
+
+### Sistema Completo com Deslocações vs Template Simples
+**Decisão:** Sistema completo com múltiplas deslocações
+**Data:** 2025-11-13
+**Contexto:** Análise de PDF real revelou necessidade de boletim detalhado
+
+**Opções consideradas:**
+
+**OPÇÃO 1 (Descartada):** Template simples
+- Template armazena: socio, dia_mes, valor fixo mensal
+- Gera boletim com valor total único
+- ✅ Rápido (2-3h)
+- ❌ Não captura detalhes de deslocações
+- ❌ Não reflete realidade do negócio
+
+**OPÇÃO 2 (Escolhida):** Sistema completo de Boletim Itinerário
+- Suporte para múltiplas linhas de deslocação
+- Cálculos automáticos (ajudas nacional/estrangeiro + kms)
+- Dropdown de projetos opcional
+- Templates para geração recorrente
+- ✅ Reflete realidade do negócio
+- ✅ Cálculos automáticos evitam erros
+- ✅ Rastreabilidade (deslocação → projeto)
+- ❌ Mais complexo (10-15h)
+
+**Sub-decisões:**
+
+1. **Valores de referência (72.65€, 167.07€, 0.40€):**
+   - **Decisão:** Tabela separada editável por ano
+   - **Razão:** Valores podem mudar anualmente (leis laborais)
+   - **Localização:** Botão escondido em configurações
+
+2. **Campo "Dias":**
+   - **Decisão:** Inserido manualmente (Decimal)
+   - **Razão:** Cálculo complexo (horas trabalhadas, tipo de dia), usuário decide
+
+3. **Horas (início/fim):**
+   - **Decisão:** Informativas apenas (Type: Time)
+   - **Razão:** Documentação para auditorias, não para cálculo automático
+
+4. **Dados do Sócio (Matrícula, Contribuinte, Categoria):**
+   - **Decisão:** Dicionário fixo em Python
+   - **Razão:** Dados fixos, usados apenas em PDF, não precisam de BD
+
+5. **Templates - Linhas pré-definidas:**
+   - **Decisão:** Cabeçalho vazio (sem linhas)
+   - **Nice-to-have:** Pré-preencher com projetos do mês automaticamente
+   - **Razão:** Evita complexidade, cada mês é diferente
+
+6. **Relação com Projetos:**
+   - **Decisão:** Dropdown opcional em deslocações
+   - **Razão:** Maioria das deslocações são por projeto, mas nem todas (ex: reuniões)
+   - **FK:** projeto_id NULLABLE, SET NULL se projeto apagado
+
+**Arquitetura resultante:**
+- 4 tabelas: valores_referencia_anual, boletins (expandida), boletim_linhas, boletim_templates
+- 3 telas novas: valores_referencia.py, boletim_form.py, templates_boletins.py
+- 1 tela atualizada: boletins.py (adicionar coluna + botão)
+
+**Benefícios esperados:**
+- ✅ Conformidade com formato fiscal exigido
+- ✅ Cálculos automáticos (reduz erros)
+- ✅ Rastreabilidade projeto → deslocação
+- ✅ Templates para automação mensal
+- ✅ Escalável para novos requisitos
 
 ---
 

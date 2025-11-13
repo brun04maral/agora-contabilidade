@@ -37,8 +37,11 @@ database/
 │   ├── socio.py
 │   ├── projeto.py
 │   ├── despesa.py
-│   ├── despesa_template.py  # Templates de despesas recorrentes (NOVO)
-│   ├── boletim.py
+│   ├── despesa_template.py        # Templates de despesas recorrentes
+│   ├── boletim.py                 # Boletim itinerário (SERÁ EXPANDIDO)
+│   ├── boletim_linha.py           # Linhas de deslocação (NOVO - Planeado)
+│   ├── boletim_template.py        # Templates de boletins (NOVO - Planeado)
+│   ├── valor_referencia_anual.py  # Config valores por ano (NOVO - Planeado)
 │   ├── cliente.py
 │   ├── fornecedor.py
 │   ├── orcamento.py
@@ -55,16 +58,19 @@ database/
 ### `/logic/` - Camada de Lógica de Negócio
 ```python
 logic/
-├── saldos.py              # SaldosCalculator (CORE)
-├── projetos.py            # ProjetosManager
-├── despesas.py            # DespesasManager
-├── despesa_templates.py   # DespesaTemplatesManager (NOVO)
-├── boletins.py            # BoletinsManager
-├── clientes.py            # ClientesManager
-├── fornecedores.py        # FornecedoresManager
-├── orcamentos.py          # OrcamentoManager
-├── equipamento.py         # EquipamentoManager
-└── relatorios.py          # RelatoriosManager
+├── saldos.py                    # SaldosCalculator (CORE)
+├── projetos.py                  # ProjetosManager
+├── despesas.py                  # DespesasManager
+├── despesa_templates.py         # DespesaTemplatesManager
+├── boletins.py                  # BoletinsManager (SERÁ EXPANDIDO)
+├── boletim_linhas.py            # BoletimLinhasManager (NOVO - Planeado)
+├── boletim_templates.py         # BoletimTemplatesManager (NOVO - Planeado)
+├── valores_referencia.py        # ValoresReferenciaManager (NOVO - Planeado)
+├── clientes.py                  # ClientesManager
+├── fornecedores.py              # FornecedoresManager
+├── orcamentos.py                # OrcamentoManager
+├── equipamento.py               # EquipamentoManager
+└── relatorios.py                # RelatoriosManager
 ```
 
 **Responsabilidades:**
@@ -96,13 +102,17 @@ class ProjetosManager:
 ### `/ui/` - Camada de Interface
 ```python
 ui/
-├── screens/                # Telas principais (11)
+├── screens/                # Telas principais (14 planeadas)
 │   ├── dashboard.py
 │   ├── saldos.py
+│   ├── info.py
 │   ├── projetos.py
 │   ├── despesas.py
-│   ├── templates_despesas.py  # Templates de despesas recorrentes (NOVO)
-│   ├── boletins.py
+│   ├── templates_despesas.py      # Templates de despesas recorrentes
+│   ├── boletins.py                # Lista de boletins (SERÁ ATUALIZADO)
+│   ├── boletim_form.py            # Editor completo de boletim (NOVO - Planeado)
+│   ├── templates_boletins.py      # Templates de boletins recorrentes (NOVO - Planeado)
+│   ├── valores_referencia.py      # Config valores por ano (NOVO - Planeado)
 │   ├── clientes.py
 │   ├── fornecedores.py
 │   ├── orcamentos.py
@@ -110,7 +120,9 @@ ui/
 │   └── relatorios.py
 └── components/         # Componentes reutilizáveis
     ├── sidebar.py
-    ├── data_table_v2.py
+    ├── data_table_v2.py            # Suporte para strikethrough seletivo
+    ├── date_picker_dropdown.py     # Seletor de data único
+    ├── date_range_picker_dropdown.py  # Seletor de período
     └── forms/
 ```
 

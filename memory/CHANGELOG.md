@@ -4,6 +4,69 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-13] Melhorias UX + Planeamento Sistema Boletim Itinerário
+
+### ✨ Adicionado
+- 🎨 **Strikethrough em Projetos Anulados**
+  - Texto riscado (overstrike) em todos os campos exceto "Estado"
+  - Aplicado via parâmetro `_strikethrough_except` em DataTableV2
+  - Mantém cores existentes (cinza para anulado)
+  - Visual claro: fundo cinza + texto riscado
+- 📋 **Planeamento completo: Sistema de Boletim Itinerário**
+  - Arquitetura definida com 4 novas tabelas
+  - Modelo expandido de Boletim com suporte para múltiplas deslocações
+  - Templates recorrentes com geração automática
+  - Nice-to-have: Pré-preencher linhas com projetos do mês
+  - Documentação detalhada em memory/
+
+### 🔧 Alterado
+- 🎨 **UX: Removidos popups de sucesso em TODAS as gravações**
+  - Mantém apenas popups de erro
+  - Afeta 7 screens: projetos, despesas, templates_despesas, boletins, equipamento, orcamentos, relatorios
+  - Total: ~24 popups removidos
+  - Workflow mais rápido e menos intrusivo
+  - Feedback visual imediato via lista atualizada
+
+### 📝 Decisões Técnicas Tomadas
+1. **Strikethrough seletivo** via `_strikethrough_except` (lista de colunas)
+2. **Silent success** - Apenas erros têm popup
+3. **Boletim Itinerário** - Sistema completo (não simplificado):
+   - Valores de referência editáveis por ano (tabela separada)
+   - Dropdown de projetos opcional em deslocações
+   - Horas informativas (não para cálculo)
+   - Dados de sócio fixos em dicionário Python
+   - Templates criam cabeçalho vazio (opcionalmente pré-preenchido com projetos)
+   - Cálculos automáticos de totais
+
+### 📝 Ficheiros Modificados
+- `ui/components/data_table_v2.py` - Suporte para strikethrough seletivo
+- `ui/screens/projetos.py` - Strikethrough em anulados + remover popup
+- `ui/screens/despesas.py` - Remover 4 popups de sucesso
+- `ui/screens/templates_despesas.py` - Remover 2 popups
+- `ui/screens/boletins.py` - Remover 2 popups
+- `ui/screens/equipamento.py` - Remover 2 popups
+- `ui/screens/orcamentos.py` - Remover ~10 popups (sed)
+- `ui/screens/relatorios.py` - Remover 2 popups (sed)
+
+### 📋 Próxima Fase: Implementação Boletim Itinerário
+**Tabelas a criar:**
+1. `valores_referencia_anual` - Configuração de valores por ano
+2. `boletins` (expandir) - Adicionar mes, ano, valores_ref, totais calculados
+3. `boletim_linhas` - Deslocações individuais com projeto_id opcional
+4. `boletim_templates` - Templates para geração recorrente
+
+**UI a criar:**
+1. `ui/screens/valores_referencia.py` - Configurações (escondido)
+2. `ui/screens/boletim_form.py` - Editor completo de boletim
+3. `ui/screens/templates_boletins.py` - Gestão de templates
+4. Atualizar `ui/screens/boletins.py` - Adicionar coluna, botão gerar
+
+### 📦 Commits
+- `23381b1` - ✨ Feature: Strikethrough em projetos anulados
+- `76a9967` - 🎨 UI: Remover popups de sucesso ao gravar
+
+---
+
 ## [2025-11-13] Sistema de Templates de Despesas Recorrentes
 
 ### ✨ Adicionado
