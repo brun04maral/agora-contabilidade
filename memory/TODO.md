@@ -53,6 +53,57 @@
   - Notificação ao utilizador
 
 ### 🟡 Média Prioridade
+- [ ] 🎨 **Melhorar UX/UI de Orçamentos e Boletins** (PRIORITY)
+  - **Problema atual:** Ambos os screens são confusos e pouco intuitivos
+  - **User feedback:** "estão ambos muito maus e algo confusos"
+
+  **ORÇAMENTOS - Propostas de Melhoria:**
+  - [ ] **Wizard multi-step:** Dividir criação em 3 passos
+    1. Info básica (cliente, data, desconto geral)
+    2. Secções e itens (tabela interativa)
+    3. Repartições (BA/RR) com preview de totais
+    - Navegação: Botões "Anterior", "Próximo", "Concluir"
+    - Progresso visual (1/3, 2/3, 3/3)
+  - [ ] **Preview visual lateral:** Durante edição, mostrar:
+    - Total geral (grande e destacado)
+    - Subtotais por secção
+    - Total de repartições BA/RR (verde/azul)
+    - Alerta se repartições ≠ valor_total
+  - [ ] **Gráfico de repartições:** Pie chart ou barra horizontal BA vs RR
+  - [ ] **Botão "Duplicar Orçamento":** Criar cópia completa (secções + itens + repartições)
+  - [ ] **Simplificar formulário único:** Se não wizard, agrupar campos em frames claramente separados
+  - [ ] **Validação em tempo real:** Mostrar erros inline (não apenas no save)
+  - [ ] **Tooltips informativos:** Explicar campos complexos (ex: "Repartição = divisão de prémios")
+
+  **BOLETINS - Propostas de Melhoria:**
+  - [ ] **Remover formulário antigo:** Apagar completamente FormularioBoletimDialog (legacy)
+  - [ ] **Simplificar header buttons:** Reduzir de 4 para 2 botões:
+    - "➕ Novo Boletim" (abre BoletimFormScreen)
+    - "⚙️ Configurações" (dropdown: Templates, Valores Ref, Gerar Recorrentes)
+  - [ ] **Vista de cards:** Substituir tabela por cards visuais:
+    - Card grande por boletim (sombra, border)
+    - Info principal: Número, Sócio, Mês/Ano, Valor Total (destaque)
+    - Linhas resumidas: "3 deslocações (2 nacionais, 1 estrangeiro)"
+    - Botões: "✏️ Editar", "💰 Marcar Pago", "🗑️ Apagar"
+    - Badge de estado: PENDENTE (laranja) / PAGO (verde)
+  - [ ] **BoletimFormScreen - Melhorias:**
+    - [ ] **Edição inline de linhas:** Não abrir dialog, editar diretamente na tabela
+    - [ ] **Auto-save de linhas:** Salvar automaticamente ao mudar foco
+    - [ ] **Drag & drop:** Reordenar linhas arrastando
+    - [ ] **Templates rápidos:** Botão "Adicionar Template" (dropdown com templates)
+    - [ ] **Calculadora visual:** Mostrar em tempo real:
+      * Total Ajudas Nacionais = X dias × €72.65 = €XXX
+      * Total Ajudas Estrangeiro = Y dias × €167.07 = €YYY
+      * Total Kms = Z km × €0.40 = €ZZ
+      * **TOTAL = €XXXXX** (grande e verde)
+  - [ ] **Geração recorrente mais visível:** Dashboard ou notificação mensal
+  - [ ] **Filtros rápidos:** Por sócio, por estado, por mês/ano
+  - [ ] **Pesquisa:** Campo de busca por número, projeto, nota
+
+  **PRIORIDADE:** Alta (afeta usabilidade diária)
+  **IMPACTO:** Reduz significativamente tempo de operação e erros
+  **FICHEIROS:** ui/screens/orcamentos.py (~800L), ui/screens/boletins.py (~650L), ui/screens/boletim_form.py (~850L)
+
 - [ ] 📄 **Exportação de Boletins para PDF Assinados**
   - Sistema de exportação de boletins individuais para PDF
   - Template PDF profissional com informação fiscal completa
