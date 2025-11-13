@@ -66,6 +66,7 @@ class DatePickerDropdown(ctk.CTkFrame):
         x = self.entry.winfo_rootx() - self.winfo_toplevel().winfo_rootx()
         y = self.entry.winfo_rooty() - self.winfo_toplevel().winfo_rooty() + self.entry.winfo_height() + 2
 
+        # No CustomTkinter, width/height devem estar no construtor, não no place()
         self.dropdown_frame.place(x=x, y=y)
         self.dropdown_frame.lift()
 
