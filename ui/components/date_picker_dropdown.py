@@ -99,9 +99,18 @@ class DatePickerDropdown(ctk.CTkFrame):
         # Verificar se clique foi dentro do dropdown ou entry
         widget = event.widget
 
-        # Check if click is in entry
-        if widget == self.entry or self.entry in widget.winfo_children():
+        # Se widget for string (path), ignorar
+        if isinstance(widget, str):
             return
+
+        # Check if click is in entry
+        try:
+            if widget == self.entry:
+                return
+            if hasattr(widget, 'winfo_children') and self.entry in widget.winfo_children():
+                return
+        except:
+            pass
 
         # Check if click is in dropdown
         try:
