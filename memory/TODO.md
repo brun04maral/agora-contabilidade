@@ -52,12 +52,21 @@
 - [ ] 🔁 **Sistema de Templates para Boletins Recorrentes**
   - Aplicar arquitetura semelhante ao sistema de Templates de Despesas
   - Tabela separada `boletim_templates` para boletins mensais fixos
-  - Template ID único: formato #TB000001, #TB000002, etc.
-  - Templates armazenam periodicidade (mensal) e sócio
+  - **Apenas 2 templates necessários:** Template BA (#TB000001) e Template RR (#TB000002)
+  - Templates armazenam periodicidade (mensal) e sócio fixo
   - Geração automática de boletins via botão "🔁 Gerar Recorrentes"
-  - Screen dedicado com CRUD completo
+  - Screen dedicado com CRUD completo (simples, max 2 templates)
   - Indicador visual em boletins gerados de template
   - **Motivação:** Boletins mensais fixos (ex: salário base BA/RR) atualmente precisam ser criados manualmente
+- [ ] 📄 **Exportação de Boletins para PDF Assinados**
+  - Sistema de exportação de boletins individuais para PDF
+  - Template PDF profissional com informação fiscal completa
+  - **Assinatura digital:** Campo para assinatura ou espaço para assinatura manual
+  - Logo Agora Media Production no cabeçalho
+  - Dados completos: Sócio, Data, Valor, Descrição, etc.
+  - Botão "📄 Exportar PDF" no screen Boletins
+  - **Objetivo:** Enviar boletins assinados para contabilidade oficial
+  - Formato oficial compatível com requisitos fiscais portugueses
 - [ ] 📊 **Aprimorar Sistema de Relatórios**
   - Adicionar mais tipos de relatórios:
     - Relatório de Despesas por Tipo/Credor
