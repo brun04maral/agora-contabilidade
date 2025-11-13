@@ -260,6 +260,51 @@ def test_criar_projeto():
 
 ---
 
+## 🔁 Sistema de Recorrência
+
+### Templates Separados vs Campos na Tabela Principal
+**Decisão:** Tabela separada `despesa_templates`
+**Data:** 2025-11-13
+**Motivação:**
+- **Separação clara:** Templates não são despesas reais, não devem entrar em cálculos financeiros
+- **Rastreabilidade:** FK permite saber quais despesas vieram de qual template
+- **Flexibilidade:** Templates podem ser editados/deletados sem afetar histórico
+- **Arquitetura limpa:** Cada entidade tem propósito claro
+
+**Evolução:**
+1. **Tentativa inicial (Descartada):** Campos `is_recorrente` e `dia_recorrencia` na tabela `despesas`
+   - ❌ Mistura conceitos (template vs despesa real)
+   - ❌ Dificulta gestão de templates
+   - ❌ Confusão na UI (campos de recorrência no formulário de despesas)
+2. **Solução final:** Tabela separada `despesa_templates`
+   - ✅ Separação total entre moldes e despesas reais
+   - ✅ Templates não entram em saldo/relatórios
+   - ✅ UI dedicada para gestão de templates
+   - ✅ Link rastreável template→despesa via FK
+
+**Implementação:**
+- Migration 014: Criar `despesa_templates` (numero, tipo, credor, projeto, descricao, valores, dia_mes, nota)
+- Migration 015: Remover `is_recorrente` e `dia_recorrencia` de `despesas`
+- FK: `despesas.despesa_template_id` → `despesa_templates.id`
+- UI: Screen dedicado via botão "📝 Editar Recorrentes" (modal 1000x700)
+- Geração: Botão "🔁 Gerar Recorrentes" cria despesas do mês baseado em templates
+
+**Trade-offs:**
+- ❌ Adiciona tabela extra (complexidade schema)
+- ✅ Arquitetura mais correta e sustentável
+- ✅ Código mais limpo e manutenível
+- ✅ UI mais intuitiva
+
+**Benefícios comprovados:**
+- Removeu 100+ linhas de código confuso do FormularioDespesaDialog
+- Interface mais simples para criar despesas normais
+- Templates podem ser geridos independentemente
+- Indicador visual claro (asterisco) em despesas geradas
+
+**Aplicável a:** Boletins recorrentes no futuro (mesma arquitetura)
+
+---
+
 ## 📅 Datas e Timezone
 
 ### Timezone Awareness
@@ -278,4 +323,4 @@ def test_criar_projeto():
 
 **Mantido por:** Equipa Agora
 **Formato:** ADR simplificado (Architecture Decision Records)
-**Última atualização:** 2025-11-09
+**Última atualização:** 2025-11-13

@@ -16,13 +16,14 @@ Visão geral da estrutura da base de dados SQLite.
        ▼     ▼              ▼              ▼              ▼
  ┌─────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐ ┌──────────┐
  │ Projeto │ │ Despesa  │ │ Boletim │ │Orcamento │ │Equipment │
- └────┬────┘ └──────────┘ └─────────┘ └────┬─────┘ └──────────┘
-      │                                     │
-      │                                     │
-      ▼                                     ▼
- ┌─────────┐                          ┌──────────┐
- │ Cliente │                          │OrcLinhas │
- └─────────┘                          └──────────┘
+ └────┬────┘ └────┬─────┘ └─────────┘ └────┬─────┘ └──────────┘
+      │           │                         │
+      │           │                         │
+      ▼           ▼                         ▼
+ ┌─────────┐ ┌──────────────────┐     ┌──────────┐
+ │ Cliente │ │DespesaTemplate   │     │OrcLinhas │
+ └─────────┘ │(Recorrentes)     │     └──────────┘
+             └──────────────────┘
 
  ┌────────────┐
  │Fornecedor  │ (independente)
@@ -123,31 +124,82 @@ EstadoProjeto:
 
 **Campos principais:**
 - `id` - PK
-- `descricao` - Descrição
-- `tipo` - ENUM (fixa/variavel)
-- `valor` - Decimal
+- `numero` - String única (#D000001, #D000002, etc.)
+- `tipo` - ENUM (fixa_mensal, pessoal_bruno, pessoal_rafael, equipamento, projeto)
+- `credor_id` - FK → fornecedores (opcional)
+- `projeto_id` - FK → projetos (opcional)
+- `descricao` - Text
+- `valor_sem_iva` - Decimal
+- `valor_com_iva` - Decimal
 - `data` - Date
-- `estado` - ENUM (pendente/pago/cancelado)
-- `socio_responsavel_id` - FK → socios (quem pagou)
+- `estado` - ENUM (pendente, vencido, pago)
+- `data_pagamento` - Date (opcional)
+- `nota` - Text (opcional)
+- `despesa_template_id` - FK → despesa_templates (se foi gerada de template)
 
 **Enums:**
 ```python
 TipoDespesa:
-  - FIXA        # Recorrente (ex: software mensal)
-  - VARIAVEL    # Pontual (ex: equipamento)
+  - FIXA_MENSAL      # Despesas fixas mensais (ex: software, servidor)
+  - PESSOAL_BRUNO    # Despesas pessoais de Bruno
+  - PESSOAL_RAFAEL   # Despesas pessoais de Rafael
+  - EQUIPAMENTO      # Equipamento da empresa
+  - PROJETO          # Despesas específicas de projeto
 
 EstadoDespesa:
-  - PENDENTE
-  - PAGO
-  - CANCELADO
+  - PENDENTE         # Por pagar
+  - VENCIDO          # Atrasada
+  - PAGO             # Paga
 ```
 
 **Relações:**
-- `socio_responsavel` → Socio (many-to-one)
+- `credor` → Fornecedor (many-to-one, opcional)
+- `projeto` → Projeto (many-to-one, opcional)
+- `despesa_template` → DespesaTemplate (many-to-one, opcional - se gerada de template)
 
 **Regras de negócio:**
-- Despesas divididas 50/50 no cálculo de saldos
-- Independente de quem pagou inicialmente
+- **Fixas Mensais:** Divididas 50/50 no cálculo de saldos
+- **Pessoais:** Cada sócio paga as suas (não divididas)
+- **Equipamento e Projeto:** Divididas 50/50
+- **Templates:** Despesas podem ser geradas automaticamente de templates (ver despesa_templates)
+- **Indicador visual:** Tipo mostra "*" quando gerada de template (ex: "Fixa Mensal*")
+
+---
+
+### `despesa_templates` - Templates de Despesas Recorrentes (NOVO 13/11/2025)
+
+**Descrição:** Templates para geração automática de despesas fixas mensais. NÃO são despesas reais, são moldes.
+
+**Campos principais:**
+- `id` - PK
+- `numero` - String única (#TD000001, #TD000002, etc.)
+- `tipo` - ENUM (normalmente FIXA_MENSAL)
+- `credor_id` - FK → fornecedores (opcional)
+- `projeto_id` - FK → projetos (opcional)
+- `descricao` - Text
+- `valor_sem_iva` - Decimal
+- `valor_com_iva` - Decimal
+- `dia_mes` - Integer (1-31) - Dia do mês para gerar despesa
+- `nota` - Text (opcional)
+
+**Enums:**
+- Usa TipoDespesa (mesmo enum de despesas)
+
+**Relações:**
+- `credor` → Fornecedor (many-to-one, opcional)
+- `projeto` → Projeto (many-to-one, opcional)
+- `despesas_geradas` → Despesas (one-to-many) - Despesas geradas deste template
+
+**Regras de negócio:**
+- **NÃO entram em cálculos financeiros** (não são despesas reais)
+- Geram despesas automaticamente via botão "🔁 Gerar Recorrentes"
+- **dia_mes:** 1-31 - Se dia não existir no mês (ex: 31 Feb), usa último dia do mês
+- Templates podem ser editados/deletados sem afetar despesas já geradas
+- Despesas mantêm FK para template de origem (rastreabilidade)
+
+**Acesso UI:**
+- Screen dedicado via botão "📝 Editar Recorrentes" em Despesas
+- Modal 1000x700px com CRUD completo
 
 ---
 
