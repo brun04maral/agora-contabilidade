@@ -353,12 +353,21 @@ class DateRangePickerDropdown(ctk.CTkFrame):
         self._create_interface(display_date.year, display_date.month)
 
     def _update_entry(self):
-        """Atualiza texto do entry"""
+        """Atualiza texto do entry com formato inteligente"""
         self.entry.delete(0, "end")
         if self.start_date:
             if self.end_date and self.end_date != self.start_date:
-                # Range
-                text = f"{self.start_date.strftime('%d/%m/%Y')} - {self.end_date.strftime('%d/%m/%Y')}"
+                # Range - formato inteligente
+                if self.start_date.year == self.end_date.year:
+                    if self.start_date.month == self.end_date.month:
+                        # Mesmo mês: DD-DD/MM/AAAA
+                        text = f"{self.start_date.day}-{self.end_date.day}/{self.start_date.month:02d}/{self.start_date.year}"
+                    else:
+                        # Meses diferentes: DD/MM-DD/MM/AAAA
+                        text = f"{self.start_date.day:02d}/{self.start_date.month:02d}-{self.end_date.day:02d}/{self.end_date.month:02d}/{self.start_date.year}"
+                else:
+                    # Anos diferentes: DD/MM/AAAA-DD/MM/AAAA
+                    text = f"{self.start_date.strftime('%d/%m/%Y')}-{self.end_date.strftime('%d/%m/%Y')}"
             else:
                 # Data única
                 text = self.start_date.strftime('%d/%m/%Y')

@@ -505,19 +505,15 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
         datas_frame.pack(fill="x", pady=(5, 18))
         datas_frame.grid_columnconfigure((0, 1), weight=1)
 
-        # Data início
-        ctk.CTkLabel(datas_frame, text="Data Início", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 12))
-        from ui.components.date_picker_dropdown import DatePickerDropdown
-        self.data_inicio_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar data início...")
-        self.data_inicio_picker.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
-
-        # Data fim
-        ctk.CTkLabel(datas_frame, text="Data Fim", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=1, sticky="w")
-        self.data_fim_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar data fim...")
-        self.data_fim_picker.grid(row=1, column=1, sticky="ew", pady=(8, 12))
+        # Período do projeto (Data início - Data fim)
+        ctk.CTkLabel(datas_frame, text="Período do Projeto", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", columnspan=2)
+        from ui.components.date_range_picker_dropdown import DateRangePickerDropdown
+        self.periodo_picker = DateRangePickerDropdown(datas_frame, placeholder="Selecionar período...")
+        self.periodo_picker.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 12))
 
         # Data faturação
         ctk.CTkLabel(datas_frame, text="Data Faturação", font=ctk.CTkFont(size=14, weight="bold")).grid(row=2, column=0, sticky="w", padx=(0, 12))
+        from ui.components.date_picker_dropdown import DatePickerDropdown
         self.data_faturacao_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar data faturação...")
         self.data_faturacao_picker.grid(row=3, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
 
@@ -597,9 +593,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
         # Datas
         if p.data_inicio:
-            self.data_inicio_picker.set_date(p.data_inicio)
-        if p.data_fim:
-            self.data_fim_picker.set_date(p.data_fim)
+            self.periodo_picker.set_range(p.data_inicio, p.data_fim)
         if p.data_faturacao:
             self.data_faturacao_picker.set_date(p.data_faturacao)
         if p.data_vencimento:
@@ -646,8 +640,8 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
             valor = Decimal(valor_str.replace(',', '.'))
 
             # Datas
-            data_inicio = self.data_inicio_picker.get_date() if self.data_inicio_picker.get() else None
-            data_fim = self.data_fim_picker.get_date() if self.data_fim_picker.get() else None
+            data_inicio = self.periodo_picker.start_date if self.periodo_picker.get() else None
+            data_fim = self.periodo_picker.end_date if self.periodo_picker.get() else None
             data_faturacao = self.data_faturacao_picker.get_date() if self.data_faturacao_picker.get() else None
             data_vencimento = self.data_vencimento_picker.get_date() if self.data_vencimento_picker.get() else None
 
