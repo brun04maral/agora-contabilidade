@@ -127,19 +127,39 @@
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
 
-- [x] 🎨 **13/11** - Date Pickers profissionais com formato inteligente
+- [x] 🎨 **13/11** - Fornecedores: Website clicável + Seguro dinâmico
+  - **Campo Website com link clicável:**
+    - Campo de texto para URL do website
+    - Botão "🔗 Abrir" que abre URL no browser padrão
+    - Adiciona automaticamente `https://` se necessário
+    - Integrado com módulo `webbrowser` do Python
+  - **Seguro visível apenas para FREELANCER:**
+    - Campo "Validade Seguro Trabalho" só aparece se Estatuto = FREELANCER
+    - Toggle dinâmico ao mudar radio buttons de estatuto
+    - Método `_toggle_seguro_field()` com pack/pack_forget
+  - **Migration 012:**
+    - Adicionada coluna `website VARCHAR(255)` à tabela fornecedores
+    - Script `run_migration_012.py` criado e corrigido (ImportError fix)
+  - Ficheiros: ui/screens/fornecedores.py, database/models/fornecedor.py, database/migrations/012_add_website_to_fornecedor.py, run_migration_012.py
+
+- [x] 🎨 **13/11** - Date Pickers profissionais rollout completo
   - **DatePickerDropdown:** Seleção de data única com calendário inline
   - **DateRangePickerDropdown:** Seleção de período com formato inteligente
     - Mesmo mês: `15-20/11/2025`
     - Meses diferentes: `28/11-05/12/2025`
     - Anos diferentes: `28/12/2024-05/01/2025`
-  - **Projetos:** Substituído "Data Início" + "Data Fim" por campo único "Período do Projeto"
+  - **Implementado em 6 screens:**
+    - **Projetos:** Campo "Período do Projeto" único (DateRangePickerDropdown)
+    - **Despesas:** DatePickerDropdown para Data e Data Pagamento
+    - **Boletins:** DatePickerDropdown para Data Emissão (default=hoje)
+    - **Orçamentos:** Substituídos antigos DatePickerEntry e DateRangePicker
+    - **Equipamento:** DatePickerDropdown para Data Compra
+    - **Fornecedores:** DatePickerDropdown para Validade Seguro Trabalho
   - **Bugs corrigidos:**
     - AttributeError com widget string no _check_click_outside
     - ValueError com width/height no place() (CustomTkinter constraint)
-  - **Componentes:** DatePickerDropdown, DateRangePickerDropdown
-  - **Usado em:** Projetos (Período), Despesas, Boletins, Orçamentos
-  - Ficheiros: ui/components/date_picker_dropdown.py, ui/components/date_range_picker_dropdown.py, ui/screens/projetos.py
+    - ImportError em run_migration_012.py (engine import)
+  - Ficheiros: ui/components/*.py, ui/screens/projetos.py, ui/screens/despesas.py, ui/screens/boletins.py, ui/screens/orcamentos.py, ui/screens/equipamento.py, ui/screens/fornecedores.py
 
 - [x] 🎨 **11/11** - Clear selection after edit/cancel em todos os dialogs
   - **Comportamento implementado:** Após editar, criar ou cancelar qualquer item, a seleção é automaticamente limpa

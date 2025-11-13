@@ -64,9 +64,13 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
     - Mesmo mês: `15-20/11/2025`
     - Meses diferentes: `28/11-05/12/2025`
     - Anos diferentes: `28/12/2024-05/01/2025`
-  - Usado em Projetos (Período), Despesas, Boletins, Orçamentos
+  - Usado em **todos os 6 screens CRUD:** Projetos, Despesas, Boletins, Orçamentos, Equipamento, Fornecedores
   - Calendário visual com navegação mês/ano
   - Proteção contra bugs (widget string, CustomTkinter constraints)
+- ✅ **Fornecedores: Enhancements** (NOVO 13/11)
+  - **Website clicável:** Campo de texto + botão "🔗 Abrir" que abre URL no browser
+  - **Seguro dinâmico:** Campo "Validade Seguro Trabalho" só visível para FREELANCER
+  - Migration 012 aplicada (coluna `website` adicionada)
 - ✅ Sidebar com scroll vertical
   - Logo fixo no topo
   - Menus scrollable (27x27 icons)

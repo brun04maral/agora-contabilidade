@@ -19,10 +19,25 @@ Registo de mudanças significativas no projeto.
   - Seleção visual de início e fim
   - Range destacado visualmente no calendário
   - Botões "Limpar" e "Confirmar"
-- 🎨 **Projetos: Campo "Período do Projeto"**
-  - Substituído dois campos separados (Data Início + Data Fim) por um único DateRangePickerDropdown
-  - Layout mais limpo e intuitivo
-  - Formato inteligente no display
+- 🎨 **Date Pickers em TODOS os screens CRUD**
+  - **Projetos:** Campo "Período do Projeto" único (DateRangePickerDropdown)
+    - Substituído dois campos separados (Data Início + Data Fim)
+    - Layout mais limpo e intuitivo
+    - Formato inteligente no display
+  - **Despesas:** DatePickerDropdown para "Data" e "Data Pagamento"
+  - **Boletins:** DatePickerDropdown para "Data Emissão" (default=hoje)
+  - **Orçamentos:** Substituídos antigos DatePickerEntry e DateRangePicker
+  - **Equipamento:** DatePickerDropdown para "Data Compra"
+  - **Fornecedores:** DatePickerDropdown para "Validade Seguro Trabalho"
+- 🎨 **Fornecedores: Campo Website com Link Clicável**
+  - Campo de texto para URL do website
+  - Botão "🔗 Abrir" que abre URL no browser
+  - Adiciona automaticamente `https://` se necessário
+  - Integrado com módulo `webbrowser` do Python
+- 🎨 **Fornecedores: Seguro visível apenas para FREELANCER**
+  - Campo "Validade Seguro Trabalho" só aparece se Estatuto = FREELANCER
+  - Toggle dinâmico ao mudar radio buttons de estatuto
+  - Método `_toggle_seguro_field()` com pack/pack_forget
 
 ### 🐛 Corrigido
 - **AttributeError:** `'str' object has no attribute 'winfo_children'`
@@ -31,11 +46,23 @@ Registo de mudanças significativas no projeto.
 - **ValueError:** `'width' and 'height' must be passed to constructor`
   - Movido `width` e `height` do `place()` para o construtor do `CTkFrame`
   - Compliance com constraints do CustomTkinter
+- **ImportError:** `cannot import name 'engine' from 'database.models.base'`
+  - Script `run_migration_012.py` tentava importar engine não exportado
+  - Corrigido: engine criado localmente com `create_engine()`
+  - Carrega DATABASE_URL do .env com fallback
 
 ### 📝 Ficheiros Alterados
 - `ui/components/date_picker_dropdown.py` - Bug fixes e comentários
 - `ui/components/date_range_picker_dropdown.py` - Formato inteligente + bug fixes
 - `ui/screens/projetos.py` - Campo "Período do Projeto" único
+- `ui/screens/despesas.py` - DatePickerDropdown para Data e Data Pagamento
+- `ui/screens/boletins.py` - DatePickerDropdown para Data Emissão
+- `ui/screens/orcamentos.py` - Substituir antigos date pickers
+- `ui/screens/equipamento.py` - DatePickerDropdown para Data Compra
+- `ui/screens/fornecedores.py` - Website clicável + Seguro dinâmico + DatePickerDropdown
+- `database/models/fornecedor.py` - Adicionada coluna `website`
+- `database/migrations/012_add_website_to_fornecedor.py` - Migration criada
+- `run_migration_012.py` - Script de migration corrigido
 
 ### 🔧 Documentação
 - Atualizado `SESSION_IMPORT.md` - Workflow mais claro com fluxograma
