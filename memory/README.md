@@ -20,11 +20,9 @@ Esta pasta contém toda a **memória do projeto** - documentação de referênci
 
 ### 📝 Histórico
 - **`CHANGELOG.md`** - Registo de mudanças importantes
-- **`ISSUES_CONHECIDOS.md`** - Problemas conhecidos e suas soluções
 
 ### ⚙️ Setup & Deploy
 - **`DEV_SETUP.md`** - Como configurar ambiente de desenvolvimento
-- **`DEPLOY.md`** - Instruções para build e deploy
 
 ## 🎯 Como Usar
 
@@ -35,19 +33,55 @@ Esta pasta contém toda a **memória do projeto** - documentação de referênci
 
 ### Durante Desenvolvimento
 - Consultar guias específicos conforme necessário
-- Atualizar `CURRENT_STATE.md` quando completar features
-- Registar decisões importantes em `DECISIONS.md`
+- Quando completares trabalho importante, usa a **frase-chave** para atualizar docs
 
 ### Fim de Sessão
-1. Atualizar `CURRENT_STATE.md` com progresso
-2. Atualizar `TODO.md` com novas tarefas
-3. Adicionar entrada em `CHANGELOG.md` se relevante
+- Usa a **frase-chave** para atualizar documentação
+
+---
+
+## ⚡ Frase-Chave para Atualizar Documentação
+
+Quando quiseres que o Claude atualize a documentação do projeto, usa:
+```
+Atualiza CURRENT_STATE, TODO e CHANGELOG com o trabalho feito.
+```
+
+**O Claude vai:**
+1. ✅ Atualizar `memory/CURRENT_STATE.md` - Adicionar features completas
+2. ✅ Atualizar `memory/TODO.md` - Mover tarefas para ✅ Concluído
+3. ✅ Atualizar `memory/CHANGELOG.md` - Adicionar entrada com data
+
+**Quando usar:**
+- Após completar feature importante
+- No fim de sessão produtiva
+- Quando fizeres mudanças significativas
+- **Tu decides quando faz sentido!**
+
+### Variações Úteis
+```bash
+# Atualização completa (padrão)
+"Atualiza CURRENT_STATE, TODO e CHANGELOG com o trabalho feito."
+
+# Só marcar tarefa concluída
+"Marca esta tarefa como concluída no TODO."
+
+# Registar decisão técnica
+"Documenta esta decisão no DECISIONS.md"
+
+# Resumo rápido de sessão
+"Quick doc update - resume o que fizemos hoje."
+```
+
+---
 
 ## 💡 Filosofia
 
 > **"Context is King"** - Cada ficheiro aqui existe para dar contexto rápido e completo, permitindo retomar desenvolvimento em segundos, não horas.
 
+> **"Tu controlas quando documentar"** - Usa a frase-chave quando fizer sentido para ti.
+
 ---
 
 **Mantido por:** Equipa de desenvolvimento Agora Media
-**Última atualização:** 2025-11-09
+**Última atualização:** 2025-11-13

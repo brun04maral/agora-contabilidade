@@ -151,6 +151,20 @@ git commit
 
 ---
 
+## ⚡ Frase-Chave para Atualizar Documentação
+
+Quando o utilizador disser:
+```
+Atualiza CURRENT_STATE, TODO e CHANGELOG com o trabalho feito.
+```
+
+**Deves:**
+1. ✅ Atualizar `memory/CURRENT_STATE.md` com features completas
+2. ✅ Atualizar `memory/TODO.md` movendo tarefas para ✅ Concluído
+3. ✅ Atualizar `memory/CHANGELOG.md` com entrada datada
+
+**O utilizador decide quando esta atualização faz sentido!**
+
 **📍 Lembrete Final:**
 
 # MERGE PRIMEIRO, DOCS DEPOIS! 🔄📖
