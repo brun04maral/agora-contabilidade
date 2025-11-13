@@ -50,6 +50,14 @@ Registo de mudanças significativas no projeto.
   - Script `run_migration_012.py` tentava importar engine não exportado
   - Corrigido: engine criado localmente com `create_engine()`
   - Carrega DATABASE_URL do .env com fallback
+- **TypeError:** `FornecedoresManager.atualizar() got an unexpected keyword argument 'website'`
+  - Parâmetro `website` não estava nos métodos `criar()` e `atualizar()`
+  - Adicionado parâmetro em ambos os métodos
+  - Incluída lógica de criação e update do campo website
+- **TclError:** `window isn't packed` ao fazer toggle de seguro_frame
+  - Pack inicial do seguro_frame causava conflito com toggle
+  - Removido pack() inicial, agora controlado apenas por `_toggle_seguro_field()`
+  - Corrigido `before=self.nota_entry.master` para `before=self.nota_entry`
 
 ### 📝 Ficheiros Alterados
 - `ui/components/date_picker_dropdown.py` - Bug fixes e comentários
@@ -59,7 +67,8 @@ Registo de mudanças significativas no projeto.
 - `ui/screens/boletins.py` - DatePickerDropdown para Data Emissão
 - `ui/screens/orcamentos.py` - Substituir antigos date pickers
 - `ui/screens/equipamento.py` - DatePickerDropdown para Data Compra
-- `ui/screens/fornecedores.py` - Website clicável + Seguro dinâmico + DatePickerDropdown
+- `ui/screens/fornecedores.py` - Website clicável + Seguro dinâmico + Bug fixes
+- `logic/fornecedores.py` - Adicionado parâmetro website aos métodos criar/atualizar
 - `database/models/fornecedor.py` - Adicionada coluna `website`
 - `database/migrations/012_add_website_to_fornecedor.py` - Migration criada
 - `run_migration_012.py` - Script de migration corrigido
