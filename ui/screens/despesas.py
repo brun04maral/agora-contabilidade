@@ -191,6 +191,16 @@ class DespesasScreen(ctk.CTkFrame):
             width=160, height=35
         )
 
+        # Delete button
+        self.delete_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Apagar Selecionadas",
+            command=self.apagar_selecionadas,
+            width=160, height=35,
+            fg_color=("#F44336", "#C62828"),
+            hover_color=("#E57373", "#B71C1C")
+        )
+
         # Total label
         self.total_label = ctk.CTkLabel(
             self.selection_frame,
@@ -212,9 +222,6 @@ class DespesasScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             self,
             columns=columns,
-            show_actions=True,
-            on_edit=self.editar_despesa,
-            on_delete=self.apagar_despesa,
             on_row_double_click=self.editar_despesa,
             on_selection_change=self.on_selection_change,
             height=400
@@ -415,6 +422,51 @@ class DespesasScreen(ctk.CTkFrame):
             else:
                 messagebox.showerror("Erro", f"Erro ao apagar: {erro}")
 
+    def apagar_selecionadas(self):
+        """Apagar despesas selecionadas"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) == 0:
+            return
+
+        # Verificar quantas são geradas de templates
+        geradas_template = sum(
+            1 for item in selected_data
+            if item.get('_despesa') and item.get('_despesa').despesa_template_id
+        )
+
+        # Confirmar ação
+        msg = f"Apagar {len(selected_data)} despesa(s) selecionada(s)?"
+        if geradas_template > 0:
+            msg += f"\n\n⚠️ {geradas_template} despesa(s) foram geradas de templates."
+            msg += "\nAo apagar, elas não serão recriadas automaticamente."
+
+        resposta = messagebox.askyesno("Confirmar", msg)
+
+        if resposta:
+            sucesso_count = 0
+            erros = []
+
+            for item in selected_data:
+                despesa = item.get('_despesa')
+                if despesa:
+                    sucesso, erro = self.manager.apagar(despesa.id)
+                    if sucesso:
+                        sucesso_count += 1
+                    else:
+                        erros.append(f"{despesa.numero}: {erro}")
+
+            # Mostrar resultado
+            if sucesso_count > 0:
+                msg = f"✅ {sucesso_count} despesa(s) apagada(s) com sucesso!"
+                if erros:
+                    msg += f"\n\n⚠️ {len(erros)} erro(s):\n" + "\n".join(erros[:3])
+                messagebox.showinfo("Resultado", msg)
+            else:
+                messagebox.showerror("Erro", "Nenhuma despesa foi apagada:\n" + "\n".join(erros[:5]))
+
+            self.carregar_despesas()
+            self.table.clear_selection()
+
     def on_selection_change(self, selected_data: list):
         """Handle selection change in table"""
         num_selected = len(selected_data)
@@ -440,6 +492,7 @@ class DespesasScreen(ctk.CTkFrame):
                 self.marcar_pago_btn.pack(side="left", padx=5)
 
             self.report_btn.pack(side="left", padx=5)
+            self.delete_btn.pack(side="left", padx=5)
 
             # Calculate and show total
             total = sum(item.get('valor_com_iva', 0) for item in selected_data)

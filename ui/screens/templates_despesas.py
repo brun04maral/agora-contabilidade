@@ -76,6 +76,34 @@ class TemplatesDespesasScreen(ctk.CTkFrame):
             text_color="gray"
         ).pack(anchor="w")
 
+        # Selection actions bar (created but NOT packed - will be shown on selection)
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+
+        # Clear selection button
+        self.cancel_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Limpar Seleção",
+            command=self.cancelar_selecao,
+            width=150, height=35
+        )
+
+        # Selection count label
+        self.count_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="0 selecionados",
+            font=ctk.CTkFont(size=13)
+        )
+
+        # Delete button
+        self.delete_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Apagar Selecionados",
+            command=self.apagar_selecionados,
+            width=180, height=35,
+            fg_color=("#F44336", "#C62828"),
+            hover_color=("#E57373", "#B71C1C")
+        )
+
         # Table frame
         table_frame = ctk.CTkFrame(self)
         table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
@@ -93,10 +121,8 @@ class TemplatesDespesasScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             table_frame,
             columns=columns,
-            show_actions=True,
-            on_edit=self.editar_template,
-            on_delete=self.apagar_template,
-            on_row_double_click=self.editar_template
+            on_row_double_click=self.editar_template,
+            on_selection_change=self.on_selection_change
         )
         self.table.pack(fill="both", expand=True)
 
@@ -155,6 +181,70 @@ class TemplatesDespesasScreen(ctk.CTkFrame):
                 self.carregar_templates()
             else:
                 messagebox.showerror("Erro", f"Erro ao apagar: {erro}")
+
+    def apagar_selecionados(self):
+        """Apagar templates selecionados"""
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) == 0:
+            return
+
+        # Confirmar ação
+        resposta = messagebox.askyesno(
+            "Confirmar",
+            f"Apagar {len(selected_data)} template(s) selecionado(s)?\n\n"
+            f"As despesas já geradas mantêm-se, mas não serão geradas novas."
+        )
+
+        if resposta:
+            sucesso_count = 0
+            erros = []
+
+            for item in selected_data:
+                template = item.get('_template')
+                if template:
+                    sucesso, erro = self.manager.apagar(template.id)
+                    if sucesso:
+                        sucesso_count += 1
+                    else:
+                        erros.append(f"{template.numero}: {erro}")
+
+            # Mostrar resultado
+            if sucesso_count > 0:
+                msg = f"✅ {sucesso_count} template(s) apagado(s) com sucesso!"
+                if erros:
+                    msg += f"\n\n⚠️ {len(erros)} erro(s):\n" + "\n".join(erros[:3])
+                messagebox.showinfo("Resultado", msg)
+            else:
+                messagebox.showerror("Erro", "Nenhum template foi apagado:\n" + "\n".join(erros[:5]))
+
+            self.carregar_templates()
+            self.table.clear_selection()
+
+    def on_selection_change(self, selected_data: list):
+        """Handle selection change in table"""
+        num_selected = len(selected_data)
+
+        if num_selected > 0:
+            # Show selection frame
+            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+
+            # Show selection bar
+            self.cancel_btn.pack(side="left", padx=5)
+
+            # Show count
+            count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
+            self.count_label.configure(text=count_text)
+            self.count_label.pack(side="left", padx=15)
+
+            # Show delete button
+            self.delete_btn.pack(side="left", padx=5)
+        else:
+            # Hide entire selection frame when nothing is selected
+            self.selection_frame.pack_forget()
+
+    def cancelar_selecao(self):
+        """Cancel selection"""
+        self.table.clear_selection()
 
 
 class FormularioTemplateDialog(ctk.CTkToplevel):
