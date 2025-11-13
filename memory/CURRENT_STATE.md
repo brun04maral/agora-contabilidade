@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-11
-**Sessão:** claude/merge-and-context-update-011CV2BcMQu7Tke4mi6EdUt7
+**Última atualização:** 2025-11-13
+**Sessão:** claude/merge-context-update-011CV57sbRiu7taAq2DCiwhA
 
 ---
 
@@ -58,6 +58,15 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
   - Relatórios
   - Info (versão v0.0.1, créditos)
 - ✅ Componentes reutilizáveis (DataTableV2, forms)
+- ✅ **Date Pickers Profissionais** (NOVO 13/11)
+  - `DatePickerDropdown` - Seleção de data única com calendário inline
+  - `DateRangePickerDropdown` - Seleção de período com formato inteligente:
+    - Mesmo mês: `15-20/11/2025`
+    - Meses diferentes: `28/11-05/12/2025`
+    - Anos diferentes: `28/12/2024-05/01/2025`
+  - Usado em Projetos (Período), Despesas, Boletins, Orçamentos
+  - Calendário visual com navegação mês/ano
+  - Proteção contra bugs (widget string, CustomTkinter constraints)
 - ✅ Sidebar com scroll vertical
   - Logo fixo no topo
   - Menus scrollable (27x27 icons)

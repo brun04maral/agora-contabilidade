@@ -4,6 +4,46 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-13] Date Pickers Profissionais com Formato Inteligente
+
+### ✨ Adicionado
+- 🎨 **DatePickerDropdown** - Calendário inline para seleção de data única
+  - Calendário visual com navegação mês/ano
+  - Click outside para fechar
+  - Integração com CustomTkinter
+- 🎨 **DateRangePickerDropdown** - Seleção de período com formato inteligente
+  - Formato compacto baseado no contexto:
+    - Mesmo mês: `15-20/11/2025`
+    - Meses diferentes (mesmo ano): `28/11-05/12/2025`
+    - Anos diferentes: `28/12/2024-05/01/2025`
+  - Seleção visual de início e fim
+  - Range destacado visualmente no calendário
+  - Botões "Limpar" e "Confirmar"
+- 🎨 **Projetos: Campo "Período do Projeto"**
+  - Substituído dois campos separados (Data Início + Data Fim) por um único DateRangePickerDropdown
+  - Layout mais limpo e intuitivo
+  - Formato inteligente no display
+
+### 🐛 Corrigido
+- **AttributeError:** `'str' object has no attribute 'winfo_children'`
+  - Adicionado `isinstance(widget, str)` check no `_check_click_outside()`
+  - Proteção com `hasattr()` antes de chamar métodos de widget
+- **ValueError:** `'width' and 'height' must be passed to constructor`
+  - Movido `width` e `height` do `place()` para o construtor do `CTkFrame`
+  - Compliance com constraints do CustomTkinter
+
+### 📝 Ficheiros Alterados
+- `ui/components/date_picker_dropdown.py` - Bug fixes e comentários
+- `ui/components/date_range_picker_dropdown.py` - Formato inteligente + bug fixes
+- `ui/screens/projetos.py` - Campo "Período do Projeto" único
+
+### 🔧 Documentação
+- Atualizado `SESSION_IMPORT.md` - Workflow mais claro com fluxograma
+- Atualizado `memory/README.md` - Sistema de "frase-chave" para atualizar docs
+- Atualizado `README.md` - Frase Mágica v2.0 (ordem garantida)
+
+---
+
 ## [2025-11-11] Navegação Clicável em Saldos Pessoais
 
 ### ✨ Adicionado

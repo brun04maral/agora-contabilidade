@@ -1,6 +1,6 @@
 # 📝 TODO - Agora Contabilidade
 
-**Última atualização:** 11/11/2025
+**Última atualização:** 13/11/2025
 **Estado atual:** ✅ MVP Completo | Produção Ready | Melhorias incrementais
 
 ---
@@ -49,10 +49,6 @@
 
 ### 🟡 Média Prioridade
 
-- [ ] 🎨 Melhorar inputs de data
-  - Substituir Entry por Date Picker visual
-  - Validação de datas em tempo real
-  - Formatos PT (DD/MM/YYYY)
 - [ ] 📝 Documentação de utilizador final
   - Manual de utilização (PDF)
   - Screenshots de cada módulo
@@ -130,6 +126,20 @@
 ## ✅ Concluído Recentemente
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
+
+- [x] 🎨 **13/11** - Date Pickers profissionais com formato inteligente
+  - **DatePickerDropdown:** Seleção de data única com calendário inline
+  - **DateRangePickerDropdown:** Seleção de período com formato inteligente
+    - Mesmo mês: `15-20/11/2025`
+    - Meses diferentes: `28/11-05/12/2025`
+    - Anos diferentes: `28/12/2024-05/01/2025`
+  - **Projetos:** Substituído "Data Início" + "Data Fim" por campo único "Período do Projeto"
+  - **Bugs corrigidos:**
+    - AttributeError com widget string no _check_click_outside
+    - ValueError com width/height no place() (CustomTkinter constraint)
+  - **Componentes:** DatePickerDropdown, DateRangePickerDropdown
+  - **Usado em:** Projetos (Período), Despesas, Boletins, Orçamentos
+  - Ficheiros: ui/components/date_picker_dropdown.py, ui/components/date_range_picker_dropdown.py, ui/screens/projetos.py
 
 - [x] 🎨 **11/11** - Clear selection after edit/cancel em todos os dialogs
   - **Comportamento implementado:** Após editar, criar ou cancelar qualquer item, a seleção é automaticamente limpa
