@@ -426,10 +426,9 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
 
         # Data emissão
         ctk.CTkLabel(scroll, text="Data de Emissão *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.data_emissao_entry = ctk.CTkEntry(scroll, placeholder_text="AAAA-MM-DD")
-        self.data_emissao_entry.pack(fill="x", pady=(0, 10))
-        # Preencher com hoje
-        self.data_emissao_entry.insert(0, date.today().strftime("%Y-%m-%d"))
+        from ui.components.date_picker_dropdown import DatePickerDropdown
+        self.data_emissao_picker = DatePickerDropdown(scroll, default_date=date.today(), placeholder="Selecionar data de emissão...")
+        self.data_emissao_picker.pack(fill="x", pady=(0, 10))
 
         # Valor (com sugestão)
         valor_frame = ctk.CTkFrame(scroll, fg_color="transparent")
@@ -504,8 +503,7 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
         b = self.boletim
 
         self.socio_var.set(b.socio.value)
-        self.data_emissao_entry.delete(0, "end")
-        self.data_emissao_entry.insert(0, b.data_emissao.strftime("%Y-%m-%d"))
+        self.data_emissao_picker.set_date(b.data_emissao)
         self.valor_entry.insert(0, str(b.valor))
 
         if b.descricao:
@@ -518,11 +516,10 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
         try:
             socio = Socio.BRUNO if self.socio_var.get() == "BRUNO" else Socio.RAFAEL
 
-            data_emissao_str = self.data_emissao_entry.get().strip()
-            if not data_emissao_str:
+            if not self.data_emissao_picker.get():
                 messagebox.showerror("Erro", "Data de emissão é obrigatória")
                 return
-            data_emissao = date.fromisoformat(data_emissao_str)
+            data_emissao = self.data_emissao_picker.get_date()
 
             valor_str = self.valor_entry.get().strip()
             if not valor_str:
