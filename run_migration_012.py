@@ -3,11 +3,18 @@
 """
 Script para executar migration 012 - Adicionar website a fornecedores
 """
-from sqlalchemy import text
-from database.models.base import engine
+import os
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
 
 def run_migration():
     """Executar migration 012"""
+    load_dotenv()
+
+    # Get database URL from environment or use default
+    database_url = os.getenv("DATABASE_URL", "sqlite:///./agora_media.db")
+    engine = create_engine(database_url)
+
     with engine.connect() as conn:
         try:
             # Add website column
@@ -16,7 +23,8 @@ def run_migration():
             print("✅ Migration 012 aplicada com sucesso!")
             print("   - Adicionada coluna 'website' à tabela fornecedores")
         except Exception as e:
-            if "duplicate column name" in str(e).lower():
+            error_msg = str(e).lower()
+            if "duplicate column name" in error_msg or "already exists" in error_msg:
                 print("⚠️  Coluna 'website' já existe - migration já foi aplicada")
             else:
                 print(f"❌ Erro ao aplicar migration: {e}")
