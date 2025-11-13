@@ -462,8 +462,9 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
         # Data
         ctk.CTkLabel(scroll, text="Data *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.data_entry = ctk.CTkEntry(scroll, placeholder_text="AAAA-MM-DD")
-        self.data_entry.pack(fill="x", pady=(0, 10))
+        from ui.components.date_picker_dropdown import DatePickerDropdown
+        self.data_picker = DatePickerDropdown(scroll, placeholder="Selecionar data...")
+        self.data_picker.pack(fill="x", pady=(0, 10))
 
         # Credor/Fornecedor
         ctk.CTkLabel(scroll, text="Credor/Fornecedor", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
@@ -506,8 +507,8 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
         # Data pagamento
         ctk.CTkLabel(scroll, text="Data Pagamento (se pago)", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.data_pagamento_entry = ctk.CTkEntry(scroll, placeholder_text="AAAA-MM-DD")
-        self.data_pagamento_entry.pack(fill="x", pady=(0, 10))
+        self.data_pagamento_picker = DatePickerDropdown(scroll, placeholder="Selecionar data de pagamento...")
+        self.data_pagamento_picker.pack(fill="x", pady=(0, 10))
 
         # Nota
         ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
@@ -545,7 +546,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         self.tipo_var.set(d.tipo.value)
 
         if d.data:
-            self.data_entry.insert(0, d.data.strftime("%Y-%m-%d"))
+            self.data_picker.set_date(d.data)
 
         if d.credor:
             credor_str = f"{d.credor.numero} - {d.credor.nome}"
@@ -568,7 +569,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         self.estado_dropdown.set(estado_map[d.estado])
 
         if d.data_pagamento:
-            self.data_pagamento_entry.insert(0, d.data_pagamento.strftime("%Y-%m-%d"))
+            self.data_pagamento_picker.set_date(d.data_pagamento)
 
         if d.nota:
             self.nota_entry.insert("1.0", d.nota)
@@ -580,11 +581,10 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
             tipo_str = self.tipo_var.get()
             tipo = TipoDespesa[tipo_str]
 
-            data_str = self.data_entry.get().strip()
-            if not data_str:
+            if not self.data_picker.get():
                 messagebox.showerror("Erro", "Data é obrigatória")
                 return
-            data_despesa = date.fromisoformat(data_str)
+            data_despesa = self.data_picker.get_date()
 
             credor_str = self.credor_dropdown.get()
             credor_id = self.fornecedores_map.get(credor_str) if credor_str != "(Nenhum)" else None
@@ -617,8 +617,8 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
             estado = estado_map[self.estado_dropdown.get()]
 
             data_pagamento = None
-            if self.data_pagamento_entry.get():
-                data_pagamento = date.fromisoformat(self.data_pagamento_entry.get())
+            if self.data_pagamento_picker.get():
+                data_pagamento = self.data_pagamento_picker.get_date()
 
             nota = self.nota_entry.get("1.0", "end-1c").strip() or None
 
