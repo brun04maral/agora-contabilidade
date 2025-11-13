@@ -644,7 +644,8 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         """Mostra/oculta campos de recorrência baseado no tipo de despesa"""
         tipo = self.tipo_var.get()
         if tipo == "FIXA_MENSAL":
-            self.recorrencia_frame.pack(fill="x", pady=(0, 10), before=self.nota_entry.master.master)
+            # Pack antes do campo Nota (referência direta ao widget)
+            self.recorrencia_frame.pack(fill="x", pady=(0, 10), before=self.nota_entry)
             # Also update dia_frame visibility
             self._toggle_dia_recorrencia()
         else:
