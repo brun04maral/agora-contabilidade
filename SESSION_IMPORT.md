@@ -155,15 +155,25 @@ git commit
 
 Quando o utilizador disser:
 ```
-Atualiza CURRENT_STATE, TODO e CHANGELOG com o trabalho feito.
+Atualiza a documentação em memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG e outros relevantes).
 ```
 
-**Deves:**
-1. ✅ Atualizar `memory/CURRENT_STATE.md` com features completas
-2. ✅ Atualizar `memory/TODO.md` movendo tarefas para ✅ Concluído
-3. ✅ Atualizar `memory/CHANGELOG.md` com entrada datada
+**Deves avaliar e atualizar:**
+
+### Sempre atualizar:
+1. ✅ **CURRENT_STATE.md** - Features completas, problemas resolvidos
+2. ✅ **TODO.md** - Mover tarefas para ✅ Concluído Recentemente
+3. ✅ **CHANGELOG.md** - Adicionar entrada com data
+
+### Atualizar se aplicável ao trabalho feito:
+4. 📐 **ARCHITECTURE.md** - Se mudou estrutura/arquitetura
+5. 🎯 **DECISIONS.md** - Se houve decisão técnica importante
+6. 🗄️ **DATABASE_SCHEMA.md** - Se alterou models/migrations
+7. ⚙️ **DEV_SETUP.md** - Se mudou processo de setup
 
 **O utilizador decide quando esta atualização faz sentido!**
+
+---
 
 **📍 Lembrete Final:**
 

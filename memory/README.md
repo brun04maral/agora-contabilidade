@@ -44,13 +44,21 @@ Esta pasta contém toda a **memória do projeto** - documentação de referênci
 
 Quando quiseres que o Claude atualize a documentação do projeto, usa:
 ```
-Atualiza CURRENT_STATE, TODO e CHANGELOG com o trabalho feito.
+Atualiza a documentação em memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG e outros relevantes).
 ```
 
-**O Claude vai:**
-1. ✅ Atualizar `memory/CURRENT_STATE.md` - Adicionar features completas
-2. ✅ Atualizar `memory/TODO.md` - Mover tarefas para ✅ Concluído
-3. ✅ Atualizar `memory/CHANGELOG.md` - Adicionar entrada com data
+**O Claude vai avaliar e atualizar:**
+
+### Sempre atualizar:
+1. ✅ **CURRENT_STATE.md** - Adicionar features completas, problemas resolvidos
+2. ✅ **TODO.md** - Mover tarefas para ✅ Concluído Recentemente
+3. ✅ **CHANGELOG.md** - Adicionar entrada com data e descrição
+
+### Atualizar se aplicável ao trabalho feito:
+4. 📐 **ARCHITECTURE.md** - Se mudaste estrutura do código, pastas, ou arquitetura
+5. 🎯 **DECISIONS.md** - Se tomaste decisão técnica importante (porquê X e não Y)
+6. 🗄️ **DATABASE_SCHEMA.md** - Se criaste/alteraste models, migrations ou schema
+7. ⚙️ **DEV_SETUP.md** - Se mudaste processo de instalação ou configuração
 
 **Quando usar:**
 - Após completar feature importante
@@ -61,13 +69,16 @@ Atualiza CURRENT_STATE, TODO e CHANGELOG com o trabalho feito.
 ### Variações Úteis
 ```bash
 # Atualização completa (padrão)
-"Atualiza CURRENT_STATE, TODO e CHANGELOG com o trabalho feito."
+"Atualiza a documentação em memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG e outros relevantes)."
 
 # Só marcar tarefa concluída
 "Marca esta tarefa como concluída no TODO."
 
-# Registar decisão técnica
-"Documenta esta decisão no DECISIONS.md"
+# Registar decisão técnica específica
+"Documenta esta decisão no DECISIONS.md: [explicação da decisão]"
+
+# Atualizar schema após migration
+"Atualiza DATABASE_SCHEMA.md com as mudanças na BD."
 
 # Resumo rápido de sessão
 "Quick doc update - resume o que fizemos hoje."

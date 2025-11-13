@@ -21,12 +21,15 @@ Não leias documentação antes do merge ou terás contexto desatualizado!
 ```
 
 **O que faz:**
-1. ✅ Lista branches remotos
+1. ✅ Lista branches remotos (vê o que existe)
 2. ✅ Identifica o mais recente (código atualizado)
-3. ✅ Faz merge do branch anterior para este branch
+3. ✅ Faz merge para o branch atual
 4. ✅ Lê README.md e memory/CURRENT_STATE.md (contexto completo)
 
 **Instruções detalhadas:** Ver [SESSION_IMPORT.md](./SESSION_IMPORT.md)
+
+💡 **Dica:** Outras frases úteis no [Cheat Sheet](#-cheat-sheet---frases-mágicas) abaixo.
+
 ---
 
 ## ⚙️ Requisitos do Sistema
@@ -59,7 +62,6 @@ Não leias documentação antes do merge ou terás contexto desatualizado!
 - CustomTkinter moderno
 
 ## 🚀 Setup Rápido
-
 ```bash
 # 1. Criar ambiente virtual (recomendado)
 python3 -m venv venv
@@ -82,7 +84,6 @@ python main.py
 **Detalhes completos:** Consulta `memory/DEV_SETUP.md`
 
 ## 📂 Estrutura do Projeto
-
 ```
 agora-contabilidade/
 ├── main.py              # Entry point
@@ -219,6 +220,23 @@ Fecha todas as instâncias da app e remove `.db-journal`
 Verifica `media/logos/*.png` - devem existir 4 ficheiros
 
 **Mais ajuda:** Consulta `memory/DEV_SETUP.md`
+
+---
+
+## 🎯 Cheat Sheet - Frases Mágicas
+
+Usa estas frases para comandos rápidos durante desenvolvimento com Claude Code:
+
+| Situação | Frase Mágica | O que faz |
+|----------|--------------|-----------|
+| 🆕 **Nova sessão** | `IMPORTANTE: Estás num branch novo criado do main...` [(ver acima)](#-nova-sessão-claude-code--lê-isto-primeiro) | Importa branch anterior + lê contexto completo |
+| ✅ **Trabalho concluído** | `Atualiza a documentação em memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG e outros relevantes).` | Atualiza docs principais + outros se aplicável |
+| 📋 **Só marcar tarefa** | `Marca esta tarefa como concluída no TODO.` | Move tarefa específica para ✅ Concluído |
+| 🎯 **Decisão técnica** | `Documenta esta decisão no DECISIONS.md: [explicação]` | Regista decisão técnica importante |
+| 🗄️ **Schema alterado** | `Atualiza DATABASE_SCHEMA.md com as mudanças na BD.` | Atualiza documentação do schema |
+| 📝 **Resumo sessão** | `Quick doc update - resume o que fizemos hoje.` | Atualização rápida e sumária |
+
+📖 **Mais detalhes:** Ver [memory/README.md](./memory/README.md) para explicação completa do sistema de documentação.
 
 ---
 
