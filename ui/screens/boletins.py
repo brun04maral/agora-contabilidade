@@ -109,6 +109,31 @@ class BoletinsScreen(ctk.CTkFrame):
         )
         gerar_btn.pack(side="left", padx=5)
 
+        templates_btn = ctk.CTkButton(
+            btn_frame,
+            text="📝 Templates",
+            command=self.abrir_templates,
+            width=140,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#9C27B0", "#7B1FA2"),
+            hover_color=("#BA68C8", "#6A1B9A")
+        )
+        templates_btn.pack(side="left", padx=5)
+
+        # Config button (small, for values)
+        config_btn = ctk.CTkButton(
+            btn_frame,
+            text="⚙️",
+            command=self.abrir_valores_referencia,
+            width=35,
+            height=35,
+            font=ctk.CTkFont(size=16),
+            fg_color=("gray70", "gray30"),
+            hover_color=("gray60", "gray40")
+        )
+        config_btn.pack(side="left", padx=(0, 5))
+
         # Filters
         filters_frame = ctk.CTkFrame(self, fg_color="transparent")
         filters_frame.pack(fill="x", padx=30, pady=(0, 20))
@@ -273,8 +298,9 @@ class BoletinsScreen(ctk.CTkFrame):
         self.table.clear_selection()
 
     def abrir_formulario(self, boletim=None):
-        """Open form dialog"""
-        FormularioBoletimDialog(self, self.manager, boletim, self.after_save_callback)
+        """Open form editor (new BoletimFormScreen)"""
+        from ui.screens.boletim_form import BoletimFormScreen
+        dialog = BoletimFormScreen(self, self.db_session, boletim=boletim, callback=self.after_save_callback)
 
     def editar_boletim(self, data: dict):
         """Edit boletim (triggered by double-click)"""
@@ -385,6 +411,52 @@ class BoletinsScreen(ctk.CTkFrame):
         # Reload after generation
         self.carregar_boletins()
         self.table.clear_selection()
+
+    def abrir_templates(self):
+        """Open templates boletins screen"""
+        from ui.screens.templates_boletins import TemplatesBoletinsScreen
+
+        # Open in modal window
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Templates de Boletins Recorrentes")
+        dialog.geometry("1000x700")
+
+        # Center window
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (1000 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (700 // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        # Make modal
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Create screen inside dialog
+        screen = TemplatesBoletinsScreen(dialog, self.db_session)
+        screen.pack(fill="both", expand=True)
+
+    def abrir_valores_referencia(self):
+        """Open valores de referência screen (config)"""
+        from ui.screens.valores_referencia import ValoresReferenciaScreen
+
+        # Open in modal window
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Valores de Referência por Ano")
+        dialog.geometry("900x600")
+
+        # Center window
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (900 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (600 // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        # Make modal
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Create screen inside dialog
+        screen = ValoresReferenciaScreen(dialog, self.db_session)
+        screen.pack(fill="both", expand=True)
 
 
 class FormularioBoletimDialog(ctk.CTkToplevel):
