@@ -574,13 +574,18 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         ).pack(anchor="w", pady=(10, 5))
 
         self.is_recorrente_var = ctk.BooleanVar(value=False)
+
+        checkbox_frame = ctk.CTkFrame(self.recorrencia_frame, fg_color="transparent")
+        checkbox_frame.pack(fill="x", pady=(0, 10))
+
         self.recorrente_checkbox = ctk.CTkCheckBox(
-            self.recorrencia_frame,
+            checkbox_frame,
             text="Inserir automaticamente todos os meses",
             variable=self.is_recorrente_var,
-            command=self._toggle_dia_recorrencia
+            command=self._toggle_dia_recorrencia,
+            font=ctk.CTkFont(size=12)
         )
-        self.recorrente_checkbox.pack(anchor="w", pady=(0, 10))
+        self.recorrente_checkbox.pack(anchor="w")
 
         # Dia da recorrência (só aparece se checkbox marcado)
         self.dia_frame = ctk.CTkFrame(self.recorrencia_frame, fg_color="transparent")
@@ -642,13 +647,20 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
     def _toggle_recorrencia_fields(self):
         """Mostra/oculta campos de recorrência baseado no tipo de despesa"""
-        tipo = self.tipo_var.get()
-        if tipo == "FIXA_MENSAL":
-            # Pack antes do campo Nota (referência direta ao widget)
-            self.recorrencia_frame.pack(fill="x", pady=(0, 10), before=self.nota_entry)
-            # Also update dia_frame visibility
-            self._toggle_dia_recorrencia()
-        else:
+        try:
+            tipo = self.tipo_var.get()
+            if tipo == "FIXA_MENSAL":
+                # Pack antes do campo Nota (referência direta ao widget)
+                if not self.recorrencia_frame.winfo_ismapped():
+                    self.recorrencia_frame.pack(fill="x", pady=(0, 10), before=self.nota_entry)
+                # Also update dia_frame visibility
+                self._toggle_dia_recorrencia()
+            else:
+                # Esconder completamente o frame de recorrência
+                self.recorrencia_frame.pack_forget()
+                self.dia_frame.pack_forget()
+        except Exception:
+            # Se der erro, simplesmente esconde
             self.recorrencia_frame.pack_forget()
 
     def _toggle_dia_recorrencia(self):
