@@ -37,6 +37,7 @@ database/
 │   ├── socio.py
 │   ├── projeto.py
 │   ├── despesa.py
+│   ├── despesa_template.py  # Templates de despesas recorrentes (NOVO)
 │   ├── boletim.py
 │   ├── cliente.py
 │   ├── fornecedor.py
@@ -54,15 +55,16 @@ database/
 ### `/logic/` - Camada de Lógica de Negócio
 ```python
 logic/
-├── saldos.py         # SaldosCalculator (CORE)
-├── projetos.py       # ProjetosManager
-├── despesas.py       # DespesasManager
-├── boletins.py       # BoletinsManager
-├── clientes.py       # ClientesManager
-├── fornecedores.py   # FornecedoresManager
-├── orcamentos.py     # OrcamentoManager
-├── equipamento.py    # EquipamentoManager
-└── relatorios.py     # RelatoriosManager
+├── saldos.py              # SaldosCalculator (CORE)
+├── projetos.py            # ProjetosManager
+├── despesas.py            # DespesasManager
+├── despesa_templates.py   # DespesaTemplatesManager (NOVO)
+├── boletins.py            # BoletinsManager
+├── clientes.py            # ClientesManager
+├── fornecedores.py        # FornecedoresManager
+├── orcamentos.py          # OrcamentoManager
+├── equipamento.py         # EquipamentoManager
+└── relatorios.py          # RelatoriosManager
 ```
 
 **Responsabilidades:**
@@ -94,18 +96,19 @@ class ProjetosManager:
 ### `/ui/` - Camada de Interface
 ```python
 ui/
-├── screens/          # Telas principais (10)
+├── screens/                # Telas principais (11)
 │   ├── dashboard.py
 │   ├── saldos.py
 │   ├── projetos.py
 │   ├── despesas.py
+│   ├── templates_despesas.py  # Templates de despesas recorrentes (NOVO)
 │   ├── boletins.py
 │   ├── clientes.py
 │   ├── fornecedores.py
 │   ├── orcamentos.py
 │   ├── equipamento.py
 │   └── relatorios.py
-└── components/       # Componentes reutilizáveis
+└── components/         # Componentes reutilizáveis
     ├── sidebar.py
     ├── data_table_v2.py
     └── forms/
@@ -306,4 +309,4 @@ python-dateutil = "Datas"
 ---
 
 **Mantido por:** Equipa Agora
-**Última revisão:** 2025-11-09
+**Última revisão:** 2025-11-13
