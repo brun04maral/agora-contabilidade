@@ -3,7 +3,7 @@
 Modelo Despesa - Despesas da empresa e despesas pessoais dos sócios
 """
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, ForeignKey, Text, Enum as SQLEnum, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, ForeignKey, Text, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from database.models.base import Base
 import enum
@@ -72,11 +72,9 @@ class Despesa(Base):
     # Metadata
     nota = Column(Text, nullable=True)
 
-    # Recorrência (para despesas automáticas mensais)
-    is_recorrente = Column(Boolean, nullable=False, default=False)  # Se True, é um template de despesa recorrente
-    dia_recorrencia = Column(Integer, nullable=True)  # Dia do mês (1-31) para gerar automaticamente
-    despesa_template_id = Column(Integer, ForeignKey('despesas.id'), nullable=True)  # FK para o template que gerou esta despesa
-    despesa_template = relationship("Despesa", remote_side=[id], backref="despesas_geradas")
+    # Rastreamento de origem (se foi gerada de um template)
+    despesa_template_id = Column(Integer, ForeignKey('despesa_templates.id'), nullable=True)  # FK para o template que gerou esta despesa
+    despesa_template = relationship("DespesaTemplate", backref="despesas_geradas")
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -101,9 +99,8 @@ class Despesa(Base):
             'estado': self.estado.value if self.estado else None,
             'data_pagamento': self.data_pagamento.isoformat() if self.data_pagamento else None,
             'nota': self.nota,
-            'is_recorrente': self.is_recorrente,
-            'dia_recorrencia': self.dia_recorrencia,
             'despesa_template_id': self.despesa_template_id,
+            'despesa_template_numero': self.despesa_template.numero if self.despesa_template else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

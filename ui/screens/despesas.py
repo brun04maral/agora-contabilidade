@@ -563,60 +563,10 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         self.data_pagamento_picker = DatePickerDropdown(scroll, placeholder="Selecionar data de pagamento...")
         self.data_pagamento_picker.pack(fill="x", pady=(0, 10))
 
-        # Recorrência (apenas para FIXA_MENSAL)
-        self.recorrencia_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        # Pack será controlado por _toggle_recorrencia_fields()
-
-        ctk.CTkLabel(
-            self.recorrencia_frame,
-            text="🔄 Despesa Recorrente Mensal",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(10, 5))
-
-        self.is_recorrente_var = ctk.BooleanVar(value=False)
-
-        checkbox_frame = ctk.CTkFrame(self.recorrencia_frame, fg_color="transparent")
-        checkbox_frame.pack(fill="x", pady=(0, 10))
-
-        self.recorrente_checkbox = ctk.CTkCheckBox(
-            checkbox_frame,
-            text="Inserir automaticamente todos os meses",
-            variable=self.is_recorrente_var,
-            command=self._toggle_dia_recorrencia,
-            font=ctk.CTkFont(size=12)
-        )
-        self.recorrente_checkbox.pack(anchor="w")
-
-        # Dia da recorrência (só aparece se checkbox marcado)
-        self.dia_frame = ctk.CTkFrame(self.recorrencia_frame, fg_color="transparent")
-        # Pack controlado por _toggle_dia_recorrencia()
-
-        ctk.CTkLabel(
-            self.dia_frame,
-            text="Dia do Mês (1-31)",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        dia_container = ctk.CTkFrame(self.dia_frame, fg_color="transparent")
-        dia_container.pack(anchor="w", pady=(0, 10))
-
-        self.dia_recorrencia_entry = ctk.CTkEntry(dia_container, width=80, placeholder_text="27")
-        self.dia_recorrencia_entry.pack(side="left", padx=(0, 10))
-
-        ctk.CTkLabel(
-            dia_container,
-            text="(Ex: 27 para gerar sempre no dia 27 do mês)",
-            font=ctk.CTkFont(size=11),
-            text_color="gray"
-        ).pack(side="left")
-
         # Nota
         ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
         self.nota_entry = ctk.CTkTextbox(scroll, height=60)
         self.nota_entry.pack(fill="x", pady=(0, 10))
-
-        # Bind tipo change to toggle recorrência fields
-        self.tipo_var.trace_add("write", lambda *args: self._toggle_recorrencia_fields())
 
         # Buttons
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -641,34 +591,6 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
             hover_color=("#E57373", "#B71C1C")
         )
         save_btn.pack(side="right", padx=5)
-
-        # Initialize recorrência visibility
-        self._toggle_recorrencia_fields()
-
-    def _toggle_recorrencia_fields(self):
-        """Mostra/oculta campos de recorrência baseado no tipo de despesa"""
-        try:
-            tipo = self.tipo_var.get()
-            if tipo == "FIXA_MENSAL":
-                # Pack antes do campo Nota (referência direta ao widget)
-                if not self.recorrencia_frame.winfo_ismapped():
-                    self.recorrencia_frame.pack(fill="x", pady=(0, 10), before=self.nota_entry)
-                # Also update dia_frame visibility
-                self._toggle_dia_recorrencia()
-            else:
-                # Esconder completamente o frame de recorrência
-                self.recorrencia_frame.pack_forget()
-                self.dia_frame.pack_forget()
-        except Exception:
-            # Se der erro, simplesmente esconde
-            self.recorrencia_frame.pack_forget()
-
-    def _toggle_dia_recorrencia(self):
-        """Mostra/oculta campo de dia da recorrência baseado no checkbox"""
-        if self.is_recorrente_var.get():
-            self.dia_frame.pack(fill="x", pady=(0, 10))
-        else:
-            self.dia_frame.pack_forget()
 
     def carregar_dados(self):
         """Load despesa data into form"""
@@ -704,15 +626,6 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
         if d.nota:
             self.nota_entry.insert("1.0", d.nota)
-
-        # Carregar dados de recorrência
-        if d.is_recorrente:
-            self.is_recorrente_var.set(True)
-            if d.dia_recorrencia:
-                self.dia_recorrencia_entry.insert(0, str(d.dia_recorrencia))
-
-        # Update visibility
-        self._toggle_recorrencia_fields()
 
     def guardar(self):
         """Save despesa"""
@@ -762,25 +675,6 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
 
             nota = self.nota_entry.get("1.0", "end-1c").strip() or None
 
-            # Recorrência (apenas para FIXA_MENSAL)
-            is_recorrente = False
-            dia_recorrencia = None
-            if tipo == TipoDespesa.FIXA_MENSAL:
-                is_recorrente = self.is_recorrente_var.get()
-                if is_recorrente:
-                    dia_str = self.dia_recorrencia_entry.get().strip()
-                    if not dia_str:
-                        messagebox.showerror("Erro", "Dia do mês é obrigatório para despesas recorrentes")
-                        return
-                    try:
-                        dia_recorrencia = int(dia_str)
-                        if dia_recorrencia < 1 or dia_recorrencia > 31:
-                            messagebox.showerror("Erro", "Dia do mês deve estar entre 1 e 31")
-                            return
-                    except ValueError:
-                        messagebox.showerror("Erro", "Dia do mês deve ser um número")
-                        return
-
             # Create or update
             if self.despesa:
                 sucesso, erro = self.manager.atualizar(
@@ -794,9 +688,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
                     projeto_id=projeto_id,
                     estado=estado,
                     data_pagamento=data_pagamento,
-                    nota=nota,
-                    is_recorrente=is_recorrente,
-                    dia_recorrencia=dia_recorrencia
+                    nota=nota
                 )
                 msg = "Despesa atualizada com sucesso!"
             else:
@@ -810,9 +702,7 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
                     projeto_id=projeto_id,
                     estado=estado,
                     data_pagamento=data_pagamento,
-                    nota=nota,
-                    is_recorrente=is_recorrente,
-                    dia_recorrencia=dia_recorrencia
+                    nota=nota
                 )
                 msg = f"Despesa {despesa.numero} criada com sucesso!"
 
