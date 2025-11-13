@@ -9,7 +9,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from calendar import monthrange
 
-from database.models import Despesa, Fornecedor, Projeto, TipoDespesa, EstadoDespesa
+from database.models import Despesa, Fornecedor, Projeto, TipoDespesa, EstadoDespesa, DespesaTemplate
 
 
 class DespesasManager:
@@ -87,8 +87,6 @@ class DespesasManager:
         estado: EstadoDespesa = EstadoDespesa.PENDENTE,
         data_pagamento: Optional[date] = None,
         nota: Optional[str] = None,
-        is_recorrente: bool = False,
-        dia_recorrencia: Optional[int] = None,
         despesa_template_id: Optional[int] = None
     ) -> Tuple[bool, Optional[Despesa], Optional[str]]:
         """
@@ -105,8 +103,6 @@ class DespesasManager:
             estado: Estado da despesa
             data_pagamento: Data de pagamento (opcional)
             nota: Nota adicional (opcional)
-            is_recorrente: Se True, é template de despesa recorrente mensal (opcional)
-            dia_recorrencia: Dia do mês (1-31) para gerar automaticamente (opcional)
             despesa_template_id: ID do template que gerou esta despesa (opcional)
 
         Returns:
@@ -140,8 +136,6 @@ class DespesasManager:
                 estado=estado,
                 data_pagamento=data_pagamento,
                 nota=nota,
-                is_recorrente=is_recorrente,
-                dia_recorrencia=dia_recorrencia,
                 despesa_template_id=despesa_template_id
             )
 
@@ -167,9 +161,7 @@ class DespesasManager:
         projeto_id: Optional[int] = None,
         estado: Optional[EstadoDespesa] = None,
         data_pagamento: Optional[date] = None,
-        nota: Optional[str] = None,
-        is_recorrente: Optional[bool] = None,
-        dia_recorrencia: Optional[int] = None
+        nota: Optional[str] = None
     ) -> Tuple[bool, Optional[str]]:
         """
         Atualiza uma despesa existente
@@ -206,10 +198,6 @@ class DespesasManager:
                 despesa.data_pagamento = data_pagamento
             if nota is not None:
                 despesa.nota = nota
-            if is_recorrente is not None:
-                despesa.is_recorrente = is_recorrente
-            if dia_recorrencia is not None:
-                despesa.dia_recorrencia = dia_recorrencia
 
             self.db_session.commit()
             return True, None
@@ -259,22 +247,11 @@ class DespesasManager:
         """
         return self.db_session.query(Projeto).order_by(desc(Projeto.created_at)).all()
 
-    # ========== Métodos de Despesas Recorrentes ==========
-
-    def listar_despesas_recorrentes(self) -> List[Despesa]:
-        """
-        Lista todos os templates de despesas recorrentes
-
-        Returns:
-            Lista de despesas recorrentes (templates)
-        """
-        return self.db_session.query(Despesa).filter(
-            Despesa.is_recorrente == True
-        ).order_by(Despesa.dia_recorrencia).all()
+    # ========== Métodos de Despesas Recorrentes (usando Templates) ==========
 
     def gerar_despesas_recorrentes_mes(self, ano: int, mes: int) -> Tuple[int, List[str]]:
         """
-        Gera despesas recorrentes para um mês específico
+        Gera despesas recorrentes para um mês específico baseado em templates
 
         Args:
             ano: Ano (ex: 2025)
@@ -283,7 +260,8 @@ class DespesasManager:
         Returns:
             Tuple (quantidade_gerada, lista_de_erros)
         """
-        templates = self.listar_despesas_recorrentes()
+        # Buscar todos os templates ativos
+        templates = self.db_session.query(DespesaTemplate).all()
         geradas = 0
         erros = []
 
@@ -303,7 +281,7 @@ class DespesasManager:
 
                 # Calcular a data correta (ajustar se o dia não existir no mês)
                 ultimo_dia_mes = monthrange(ano, mes)[1]
-                dia = min(template.dia_recorrencia, ultimo_dia_mes)
+                dia = min(template.dia_mes, ultimo_dia_mes)
                 data_despesa = date(ano, mes, dia)
 
                 # Criar a despesa baseada no template
@@ -318,8 +296,6 @@ class DespesasManager:
                     estado=EstadoDespesa.PENDENTE,
                     data_pagamento=None,
                     nota=f"Gerada automaticamente do template {template.numero}",
-                    is_recorrente=False,  # A despesa gerada não é template
-                    dia_recorrencia=None,
                     despesa_template_id=template.id  # Rastrear o template
                 )
 
