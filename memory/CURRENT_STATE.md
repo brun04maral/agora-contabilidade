@@ -82,6 +82,15 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 - ✅ Cálculo de saldos pessoais (50/50)
 - ✅ Gestão de projetos (tipos, estados, prémios)
 - ✅ Gestão de despesas (tipos, pagamentos)
+- ✅ **Sistema de Templates de Despesas Recorrentes** (NOVO 13/11)
+  - Tabela separada `despesa_templates` para moldes de despesas fixas mensais
+  - Template ID único: #TD000001, #TD000002, etc.
+  - Templates armazenam dia do mês (1-31) em vez de data completa
+  - Geração automática mensal via botão "🔁 Gerar Recorrentes"
+  - Indicador visual: asterisco (*) em despesas geradas (ex: "Fixa Mensal*")
+  - Screen dedicado com CRUD completo (acesso via "📝 Editar Recorrentes")
+  - Templates NÃO entram em cálculos financeiros
+  - Link rastreável entre template e despesas geradas
 - ✅ Gestão de boletins (cálculos automáticos)
 - ✅ Sistema de orçamentos (versões, aprovações)
 - ✅ Relatórios exportáveis (Excel)

@@ -4,6 +4,87 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-13] Sistema de Templates de Despesas Recorrentes
+
+### ✨ Adicionado
+- 🔁 **Sistema de Templates de Despesas Recorrentes**
+  - Tabela separada `despesa_templates` para moldes de despesas fixas mensais
+  - Template ID único: formato #TD000001, #TD000002, etc.
+  - Templates armazenam dia do mês (1-31) em vez de data completa
+  - Templates NÃO entram em cálculos financeiros
+  - Geração automática de despesas mensais a partir de templates
+  - Link entre despesas geradas e template de origem (FK)
+- 🎨 **UI para Templates de Despesas**
+  - Screen dedicado `TemplatesDespesasScreen` com CRUD completo
+  - Botão "📝 Editar Recorrentes" no screen Despesas
+  - Janela modal para gestão de templates (1000x700px)
+  - FormularioTemplateDialog com validação de dia do mês (1-31)
+  - Barra de seleção com botão "Apagar Selecionados"
+  - Info text explicando que templates não são despesas reais
+- ✨ **Indicadores Visuais**
+  - Asterisco (*) no tipo quando despesa foi gerada de template (ex: "Fixa Mensal*")
+  - Botão "🗑️ Apagar Selecionadas" em Despesas e Templates
+  - Confirmação especial ao apagar despesas geradas de templates
+  - Aviso: despesas apagadas não serão recriadas automaticamente
+- 🔄 **Lógica de Geração Automática**
+  - Botão "🔁 Gerar Recorrentes" gera despesas do mês atual
+  - Verifica se despesa já foi gerada para evitar duplicados
+  - Tratamento inteligente de meses com diferentes dias (Feb 31 → Feb 28/29)
+  - Mantém link template-despesa via `despesa_template_id`
+
+### 🐛 Corrigido
+- **ValueError:** `['show_actions', 'on_edit', 'on_delete'] are not supported arguments`
+  - DataTableV2 não suporta parâmetros show_actions, on_edit, on_delete
+  - Solução: Botão "Apagar Selecionadas" na barra de seleção
+  - Mantido double-click para editar (on_row_double_click)
+  - Interface consistente entre Despesas e Templates
+
+### ♻️ Refatorado
+- **Migração do sistema de recorrência**
+  - ANTES: Campos `is_recorrente` e `dia_recorrencia` na tabela despesas
+  - DEPOIS: Tabela separada `despesa_templates` (arquitetura mais limpa)
+  - Separação clara: Templates vs Despesas Reais
+  - Migration 014: Criar tabela despesa_templates
+  - Migration 015: Remover campos obsoletos de recorrência de despesas
+- **DespesasManager refatorado**
+  - Método `gerar_despesas_recorrentes_mes()` agora usa DespesaTemplate
+  - Removidos parâmetros is_recorrente/dia_recorrencia de criar() e atualizar()
+  - FK despesa_template_id agora aponta para despesa_templates.id
+- **UI de Despesas limpa**
+  - Removidos 100+ linhas de código de recorrência do FormularioDespesaDialog
+  - Removidos campos checkbox e dia_recorrencia do formulário
+  - Interface mais simples e focada
+
+### 📦 Commits
+- `dcf5a9c` - 🔄 Refactor: Sistema de Templates de Despesas Recorrentes (Parte 1/2)
+- `898a18d` - ♻️ Refactor: Atualizar DespesasManager para usar templates (Parte 2a)
+- `04f333c` - ♻️ Refactor: Remover campos obsoletos de recorrência (Parte 2b)
+- `48ae2ca` - ✨ Feature: UI completa para Templates de Despesas Recorrentes
+- `f6d1a7f` - 🐛 Fix: Corrigir parâmetros inválidos do DataTableV2
+
+### 📝 Ficheiros Criados
+- `database/models/despesa_template.py` - Model DespesaTemplate
+- `database/migrations/014_create_despesa_templates.py` - Criar tabela templates
+- `database/migrations/015_remove_recorrencia_from_despesas.py` - Limpar despesas
+- `logic/despesa_templates.py` - DespesaTemplatesManager com CRUD
+- `ui/screens/templates_despesas.py` - Screen e dialog de templates (450+ linhas)
+- `run_migration_014.py` - Script para aplicar migration 014
+- `run_migration_015.py` - Script para aplicar migration 015
+
+### 📝 Ficheiros Alterados
+- `database/models/despesa.py` - FK agora aponta para despesa_templates
+- `logic/despesas.py` - Refatorado para usar templates
+- `ui/screens/despesas.py` - UI limpa + botões de gestão
+
+### 🎯 Benefícios
+- ✅ Separação clara entre templates e despesas reais
+- ✅ Templates podem ser editados/deletados sem afetar despesas já geradas
+- ✅ Rastreabilidade: despesas sabem de qual template vieram
+- ✅ Não há duplicação de lógica de recorrência
+- ✅ Interface intuitiva e profissional
+
+---
+
 ## [2025-11-13] Date Pickers Profissionais com Formato Inteligente
 
 ### ✨ Adicionado

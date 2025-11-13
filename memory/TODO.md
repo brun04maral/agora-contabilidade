@@ -49,6 +49,27 @@
 
 ### 🟡 Média Prioridade
 
+- [ ] 🔁 **Sistema de Templates para Boletins Recorrentes**
+  - Aplicar arquitetura semelhante ao sistema de Templates de Despesas
+  - Tabela separada `boletim_templates` para boletins mensais fixos
+  - Template ID único: formato #TB000001, #TB000002, etc.
+  - Templates armazenam periodicidade (mensal) e sócio
+  - Geração automática de boletins via botão "🔁 Gerar Recorrentes"
+  - Screen dedicado com CRUD completo
+  - Indicador visual em boletins gerados de template
+  - **Motivação:** Boletins mensais fixos (ex: salário base BA/RR) atualmente precisam ser criados manualmente
+- [ ] 📊 **Aprimorar Sistema de Relatórios**
+  - Adicionar mais tipos de relatórios:
+    - Relatório de Despesas por Tipo/Credor
+    - Relatório de Evolução Mensal de Saldos
+    - Relatório Anual Fiscal (resumo para impostos)
+  - Melhorar UI do screen Relatórios:
+    - Seleção de tipo de relatório (dropdown)
+    - Preview antes de exportar
+    - Mais opções de filtros (período, sócio, tipo)
+  - Adicionar exportação para PDF (além de Excel)
+  - Templates profissionais para relatórios
+  - Gráficos e visualizações nos relatórios exportados
 - [ ] 📝 Documentação de utilizador final
   - Manual de utilização (PDF)
   - Screenshots de cada módulo
@@ -126,6 +147,34 @@
 ## ✅ Concluído Recentemente
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
+
+- [x] 🔁 **13/11** - Sistema de Templates de Despesas Recorrentes (COMPLETO)
+  - **Arquitetura:** Tabela separada `despesa_templates` (não misturada com despesas)
+  - **Template ID:** Formato #TD000001, #TD000002, etc.
+  - **Campos:** Armazena dia do mês (1-31) em vez de data completa
+  - **UI Completa:**
+    - Screen dedicado `TemplatesDespesasScreen` com CRUD
+    - Botão "📝 Editar Recorrentes" no screen Despesas (janela modal 1000x700)
+    - FormularioTemplateDialog com validação (dia 1-31)
+    - Barra de seleção com "🗑️ Apagar Selecionados"
+  - **Geração Automática:**
+    - Botão "🔁 Gerar Recorrentes" no screen Despesas
+    - Gera despesas para mês atual baseado em templates
+    - Evita duplicados (verifica se já gerado)
+    - Trata meses com dias diferentes (Feb 31 → Feb 28/29)
+  - **Indicadores Visuais:**
+    - Asterisco (*) no tipo quando gerada de template: "Fixa Mensal*"
+    - Confirmação especial ao apagar despesas geradas
+    - Info sobre não recriação automática
+  - **Refatorações:**
+    - Migration 014: Criar despesa_templates
+    - Migration 015: Remover is_recorrente/dia_recorrencia de despesas
+    - DespesasManager usa DespesaTemplate (não campos de recorrência)
+    - FK despesa_template_id aponta para despesa_templates.id
+    - UI limpa: removidos 100+ linhas de código de recorrência
+  - **Bug Fix:** DataTableV2 não suportava show_actions/on_edit/on_delete → Solução com barra de seleção
+  - Ficheiros: database/models/despesa_template.py, logic/despesa_templates.py, ui/screens/templates_despesas.py (450+ linhas), migrations 014/015, refactor em despesas.py e logic/despesas.py
+  - Commits: dcf5a9c, 898a18d, 04f333c, 48ae2ca, f6d1a7f
 
 - [x] 🎨 **13/11** - Fornecedores: Website clicável + Seguro dinâmico
   - **Campo Website com link clicável:**
