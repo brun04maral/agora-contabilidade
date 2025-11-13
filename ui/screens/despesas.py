@@ -97,6 +97,18 @@ class DespesasScreen(ctk.CTkFrame):
         )
         gerar_recorrentes_btn.pack(side="left", padx=5)
 
+        editar_templates_btn = ctk.CTkButton(
+            btn_frame,
+            text="📝 Editar Recorrentes",
+            command=self.abrir_templates,
+            width=170,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#9C27B0", "#7B1FA2"),
+            hover_color=("#BA68C8", "#6A1B9A")
+        )
+        editar_templates_btn.pack(side="left", padx=5)
+
         nova_btn = ctk.CTkButton(
             btn_frame,
             text="➕ Nova Despesa",
@@ -200,6 +212,9 @@ class DespesasScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             self,
             columns=columns,
+            show_actions=True,
+            on_edit=self.editar_despesa,
+            on_delete=self.apagar_despesa,
             on_row_double_click=self.editar_despesa,
             on_selection_change=self.on_selection_change,
             height=400
@@ -217,11 +232,16 @@ class DespesasScreen(ctk.CTkFrame):
         # Determine color based on estado
         color = self.get_estado_color(despesa.estado)
 
+        # Add asterisk to tipo if generated from template
+        tipo_label = self.tipo_to_label(despesa.tipo)
+        if despesa.despesa_template_id:
+            tipo_label += "*"
+
         return {
             'id': despesa.id,
             'numero': despesa.numero,
             'data': despesa.data.strftime("%Y-%m-%d") if despesa.data else '-',
-            'tipo': self.tipo_to_label(despesa.tipo),
+            'tipo': tipo_label,
             'credor_nome': despesa.credor.nome if despesa.credor else '-',
             'descricao': despesa.descricao,
             'valor_com_iva': float(despesa.valor_com_iva),
@@ -345,11 +365,55 @@ class DespesasScreen(ctk.CTkFrame):
                 f"As despesas deste mês já foram geradas ou não há templates configurados."
             )
 
+    def abrir_templates(self):
+        """Abre janela de gestão de templates de despesas recorrentes"""
+        from ui.screens.templates_despesas import TemplatesDespesasScreen
+
+        # Criar janela modal
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Templates de Despesas Recorrentes")
+        dialog.geometry("1000x700")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Adicionar screen de templates
+        templates_screen = TemplatesDespesasScreen(dialog, self.db_session)
+        templates_screen.pack(fill="both", expand=True)
+
+        # Ao fechar, atualizar lista de despesas
+        def on_close():
+            dialog.destroy()
+            self.carregar_despesas()
+
+        dialog.protocol("WM_DELETE_WINDOW", on_close)
+
     def editar_despesa(self, data: dict):
         """Edit despesa (triggered by double-click)"""
         despesa = data.get('_despesa')
         if despesa:
             self.abrir_formulario(despesa)
+
+    def apagar_despesa(self, data: dict):
+        """Apagar despesa individual"""
+        despesa = data.get('_despesa')
+        if not despesa:
+            return
+
+        # Mostrar informação se foi gerada de template
+        msg = f"Apagar despesa {despesa.numero}?"
+        if despesa.despesa_template_id:
+            msg += f"\n\n⚠️ Esta despesa foi gerada automaticamente do template {despesa.despesa_template.numero}."
+            msg += "\nAo apagar, ela não será recriada automaticamente."
+
+        resposta = messagebox.askyesno("Confirmar", msg)
+
+        if resposta:
+            sucesso, erro = self.manager.apagar(despesa.id)
+            if sucesso:
+                messagebox.showinfo("Sucesso", "Despesa apagada com sucesso!")
+                self.carregar_despesas()
+            else:
+                messagebox.showerror("Erro", f"Erro ao apagar: {erro}")
 
     def on_selection_change(self, selected_data: list):
         """Handle selection change in table"""
