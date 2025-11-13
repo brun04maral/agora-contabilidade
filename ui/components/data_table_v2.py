@@ -605,10 +605,15 @@ class DataTableV2(ctk.CTkFrame):
                     col.get('width', 100)
                 )
 
+            # Check if strikethrough should be applied
+            # _strikethrough_except contains keys that should NOT have strikethrough
+            strikethrough_except = data.get('_strikethrough_except', [])
+            should_strikethrough = '_strikethrough_except' in data and col['key'] not in strikethrough_except
+
             label = ctk.CTkLabel(
                 row_frame,
                 text=displayed_value,
-                font=ctk.CTkFont(size=12),
+                font=ctk.CTkFont(size=12, overstrike=should_strikethrough),
                 width=col.get('width', 100),
                 anchor="w"
             )

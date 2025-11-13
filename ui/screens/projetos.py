@@ -251,7 +251,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
     def projeto_to_dict(self, projeto) -> dict:
         """Convert project to dict for table"""
-        return {
+        data = {
             'id': projeto.id,
             'numero': projeto.numero,
             'tipo': self.tipo_to_label(projeto.tipo),
@@ -262,6 +262,12 @@ class ProjetosScreen(ctk.CTkFrame):
             '_bg_color': self.estado_to_color(projeto.estado),  # Color by estado
             '_projeto': projeto  # Keep reference
         }
+
+        # Add strikethrough for cancelled projects (except 'estado' column)
+        if projeto.estado == EstadoProjeto.ANULADO:
+            data['_strikethrough_except'] = ['estado']
+
+        return data
 
     def tipo_to_label(self, tipo: TipoProjeto) -> str:
         """Convert tipo enum to label"""
