@@ -128,6 +128,7 @@ class FornecedoresManager:
         pais: str = None,
         contacto: str = None,
         email: str = None,
+        website: str = None,
         nota: str = None
     ) -> Tuple[bool, Optional[Fornecedor], str]:
         """
@@ -146,6 +147,7 @@ class FornecedoresManager:
             pais: País (para cálculo de IVA)
             contacto: Contacto telefónico
             email: Email address
+            website: Website URL
             nota: Notas adicionais
 
         Returns:
@@ -180,6 +182,7 @@ class FornecedoresManager:
                 pais=pais.strip() if pais else 'Portugal',
                 contacto=contacto.strip() if contacto else None,
                 email=email.strip() if email else None,
+                website=website.strip() if website else None,
                 nota=nota.strip() if nota else None
             )
 
@@ -207,6 +210,7 @@ class FornecedoresManager:
         morada: str = None,
         contacto: str = None,
         email: str = None,
+        website: str = None,
         nota: str = None
     ) -> Tuple[bool, Optional[Fornecedor], str]:
         """
@@ -225,6 +229,7 @@ class FornecedoresManager:
             morada: Morada
             contacto: Contacto
             email: Email
+            website: Website URL
             nota: Nota
 
         Returns:
@@ -272,6 +277,9 @@ class FornecedoresManager:
 
             if email is not None:
                 fornecedor.email = email.strip() if email.strip() else None
+
+            if website is not None:
+                fornecedor.website = website.strip() if website.strip() else None
 
             if nota is not None:
                 fornecedor.nota = nota.strip() if nota.strip() else None

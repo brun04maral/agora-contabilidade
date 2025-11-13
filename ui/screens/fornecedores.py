@@ -471,7 +471,8 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         """Mostra/oculta campo de seguro baseado no estatuto"""
         estatuto = self.estatuto_var.get()
         if estatuto == "FREELANCER":
-            self.seguro_frame.pack(fill="x", pady=(0, 15), before=self.nota_entry.master)
+            # Pack antes do campo Nota (que está depois na ordem de criação)
+            self.seguro_frame.pack(fill="x", pady=(0, 15), before=self.nota_entry)
         else:
             self.seguro_frame.pack_forget()
 
@@ -687,7 +688,7 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
 
         # Validade Seguro Trabalho (apenas para FREELANCER)
         self.seguro_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        self.seguro_frame.pack(fill="x", pady=(0, 15))
+        # Pack será controlado por _toggle_seguro_field()
 
         ctk.CTkLabel(
             self.seguro_frame,
