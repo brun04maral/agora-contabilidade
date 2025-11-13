@@ -621,7 +621,7 @@ class LinhaDialog(ctk.CTkToplevel):
 
         # Get projetos
         projetos = self.projetos_manager.listar_todos()
-        projeto_options = ["- Nenhum -"] + [f"{p.numero} - {p.nome}" for p in projetos]
+        projeto_options = ["- Nenhum -"] + [f"{p.numero} - {p.descricao[:50]}" for p in projetos]
 
         self.projeto_dropdown = ctk.CTkOptionMenu(
             scroll,
@@ -632,7 +632,7 @@ class LinhaDialog(ctk.CTkToplevel):
         self.projeto_dropdown.pack(fill="x", pady=(0, 10))
 
         # Store projeto mapping
-        self.projeto_map = {f"{p.numero} - {p.nome}": p.id for p in projetos}
+        self.projeto_map = {f"{p.numero} - {p.descricao[:50]}": p.id for p in projetos}
 
         # Serviço
         ctk.CTkLabel(scroll, text="Serviço/Descrição *:", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
@@ -719,7 +719,7 @@ class LinhaDialog(ctk.CTkToplevel):
         """Fill form with existing linha data"""
         # Projeto
         if linha.projeto_id and linha.projeto:
-            projeto_key = f"{linha.projeto.numero} - {linha.projeto.nome}"
+            projeto_key = f"{linha.projeto.numero} - {linha.projeto.descricao[:50]}"
             self.projeto_dropdown.set(projeto_key)
 
         # Serviço
