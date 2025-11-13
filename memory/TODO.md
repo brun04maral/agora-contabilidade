@@ -62,6 +62,27 @@
   - Botão "📄 Exportar PDF" no screen Boletins
   - **Objetivo:** Enviar boletins assinados para contabilidade oficial
   - Formato oficial compatível com requisitos fiscais portugueses
+- [ ] 🔄 **Converter Orçamento Aprovado → Projeto** (Automação)
+  - **Contexto:** Atualmente o processo é totalmente manual
+  - **Problema:** Quando orçamento é aprovado, tem que criar projeto manualmente e copiar:
+    * Cliente
+    * Valor total
+    * Prémios BA/RR (soma das repartições)
+  - **Solução escolhida:** Botão "🔄 Converter em Projeto"
+    * Visível apenas quando status = "aprovado"
+    * Cria projeto automaticamente:
+      - Tipo: EMPRESA
+      - Cliente: mesmo do orçamento
+      - Valor: valor_total do orçamento
+      - **Prémio BA:** soma de todas repartições com entidade='BA'
+      - **Prémio RR:** soma de todas repartições com entidade='RR'
+      - Descrição: "Projeto criado a partir do orçamento [código]"
+      - Data início: data aprovação do orçamento
+    * Mostra notificação: "✅ Projeto #P0123 criado!"
+    * Opcional: Link bidirecional (projeto.orcamento_id, orcamento.projeto_id)
+  - **Alternativa rejeitada:** Conversão automática ao aprovar (menos controlo)
+  - **Benefício:** Elimina trabalho manual repetitivo + previne erros de cópia
+  - **Ficheiros:** logic/orcamentos.py (novo método), ui/screens/orcamentos.py (botão)
 - [ ] 📊 **Aprimorar Sistema de Relatórios**
   - Adicionar mais tipos de relatórios:
     - Relatório de Despesas por Tipo/Credor

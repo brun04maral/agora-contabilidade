@@ -437,6 +437,101 @@ font = ctk.CTkFont(size=12, overstrike=should_strikethrough)
 
 ---
 
+## 💼 Orçamentos → Projetos
+
+### Conversão de Orçamento Aprovado em Projeto
+**Decisão:** Botão manual "🔄 Converter em Projeto" (não automático)
+**Data:** 13/11/2025
+**Status:** 📋 Planeado (não implementado)
+
+**Contexto:**
+- Atualmente: Processo totalmente manual
+- Quando orçamento é aprovado → criar projeto manualmente copiando dados
+- Propenso a erros (esquecer prémios, copiar valores errados)
+- Trabalho repetitivo
+
+**Problema a resolver:**
+- Repartições de orçamento (BA: €1,500, RR: €800) devem virar prémios do projeto
+- Cliente, valor total, descrição devem ser copiados
+- Processo atual: ~5 minutos por orçamento, com risco de erro
+
+**Opções consideradas:**
+
+**OPÇÃO 1 (Escolhida):** Botão "🔄 Converter em Projeto"
+- **Como funciona:**
+  * Botão visível apenas quando `status = 'aprovado'`
+  * Click abre dialog de confirmação com preview dos dados
+  * Sistema cria projeto automaticamente:
+    - Tipo: EMPRESA
+    - Cliente: `orcamento.cliente_id`
+    - Valor: `orcamento.valor_total`
+    - **Prémio BA:** `SUM(reparticoes.valor WHERE entidade='BA')`
+    - **Prémio RR:** `SUM(reparticoes.valor WHERE entidade='RR')`
+    - Descrição: "Projeto criado a partir do orçamento {codigo}"
+    - Data início: data aprovação do orçamento
+  * Mostra notificação: "✅ Projeto #P0123 criado com sucesso!"
+  * Opcional: Link bidirecional (projeto.orcamento_id ↔ orcamento.projeto_id)
+- ✅ Controlo manual (usuário decide quando converter)
+- ✅ Preview dos dados antes de criar
+- ✅ Evita duplicações acidentais
+- ✅ Permite ajustes manuais depois se necessário
+- ❌ Requer click extra (mas é intencional)
+
+**OPÇÃO 2 (Rejeitada):** Conversão automática ao aprovar
+- Ao mudar status para "aprovado" → cria projeto automaticamente
+- ✅ Zero clicks (mais rápido)
+- ❌ Menos controlo (pode criar projetos indesejados)
+- ❌ Difícil de desfazer se houver erro
+- ❌ Usuário pode não estar pronto para criar projeto
+
+**OPÇÃO 3 (Rejeitada):** Manter processo manual
+- Sem automação, apenas helper/reminder
+- ✅ Controlo total
+- ❌ Não resolve problema de erros de cópia
+- ❌ Não economiza tempo
+
+**Implementação planeada:**
+```python
+# logic/orcamentos.py
+def converter_em_projeto(self, orcamento_id: int) -> Tuple[bool, Optional[Projeto], Optional[str]]:
+    """
+    Converte orçamento aprovado em projeto
+
+    1. Verifica se orçamento está aprovado
+    2. Verifica se já foi convertido (evitar duplicados)
+    3. Calcula prémios somando repartições BA/RR
+    4. Cria projeto com dados do orçamento
+    5. Opcional: cria link bidirecional
+    """
+    pass
+
+# ui/screens/orcamentos.py
+# Botão visível apenas para status='aprovado'
+if orcamento.status == 'aprovado':
+    converter_btn = ctk.CTkButton(
+        text="🔄 Converter em Projeto",
+        command=self.converter_em_projeto
+    )
+```
+
+**Benefícios esperados:**
+- ✅ Reduz tempo de 5min → 10seg
+- ✅ Elimina erros de cópia manual
+- ✅ Garante prémios calculados corretamente
+- ✅ Rastreabilidade (projeto.orcamento_id)
+- ✅ Workflow mais profissional
+
+**Ficheiros afetados:**
+- `logic/orcamentos.py` - novo método `converter_em_projeto()`
+- `logic/projetos.py` - pode precisar de `criar_de_orcamento()`
+- `ui/screens/orcamentos.py` - botão + dialog de confirmação
+- `database/models/projeto.py` - opcional: adicionar campo `orcamento_id`
+- `database/models/orcamento.py` - opcional: adicionar campo `projeto_id`
+
+**Prioridade:** 🟡 Média (TODO.md)
+
+---
+
 ## 📅 Datas e Timezone
 
 ### Timezone Awareness
