@@ -11,6 +11,9 @@ from database.models.projeto import Projeto, TipoProjeto, EstadoProjeto
 from database.models.despesa import Despesa, TipoDespesa, EstadoDespesa
 from database.models.despesa_template import DespesaTemplate
 from database.models.boletim import Boletim, Socio, EstadoBoletim
+from database.models.boletim_linha import BoletimLinha, TipoDeslocacao
+from database.models.boletim_template import BoletimTemplate
+from database.models.valor_referencia_anual import ValorReferenciaAnual
 from database.models.equipamento import Equipamento
 from database.models.orcamento import Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
 
@@ -30,6 +33,10 @@ __all__ = [
     'Boletim',
     'Socio',
     'EstadoBoletim',
+    'BoletimLinha',
+    'TipoDeslocacao',
+    'BoletimTemplate',
+    'ValorReferenciaAnual',
     'Equipamento',
     'Orcamento',
     'OrcamentoSecao',
