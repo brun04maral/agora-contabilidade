@@ -97,6 +97,18 @@ class BoletinsScreen(ctk.CTkFrame):
         )
         emitir_btn.pack(side="left", padx=5)
 
+        gerar_btn = ctk.CTkButton(
+            btn_frame,
+            text="🔁 Gerar Recorrentes",
+            command=self.gerar_recorrentes,
+            width=180,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#2196F3", "#1976D2"),
+            hover_color=("#64B5F6", "#1565C0")
+        )
+        gerar_btn.pack(side="left", padx=5)
+
         # Filters
         filters_frame = ctk.CTkFrame(self, fg_color="transparent")
         filters_frame.pack(fill="x", padx=30, pady=(0, 20))
@@ -179,8 +191,9 @@ class BoletinsScreen(ctk.CTkFrame):
             {'key': 'numero', 'label': 'ID', 'width': 80, 'sortable': True},
             {'key': 'socio', 'label': 'Sócio', 'width': 120, 'sortable': True},
             {'key': 'data_emissao', 'label': 'Data Emissão', 'width': 120, 'sortable': True},
+            {'key': 'linhas', 'label': 'Linhas', 'width': 80, 'sortable': True},
             {'key': 'valor_fmt', 'label': 'Valor', 'width': 110, 'sortable': True},
-            {'key': 'descricao', 'label': 'Descrição', 'width': 260, 'sortable': False},
+            {'key': 'descricao', 'label': 'Descrição', 'width': 220, 'sortable': False},
             {'key': 'estado', 'label': 'Estado', 'width': 100, 'sortable': True},
             {'key': 'data_pagamento', 'label': 'Data Pagamento', 'width': 130, 'sortable': True},
         ]
@@ -205,11 +218,15 @@ class BoletinsScreen(ctk.CTkFrame):
         # Determine color based on estado
         color = self.get_estado_color(boletim.estado)
 
+        # Count linhas (deslocações)
+        num_linhas = len(boletim.linhas) if hasattr(boletim, 'linhas') and boletim.linhas else 0
+
         return {
             'id': boletim.id,
             'numero': boletim.numero,
             'socio': "BA" if boletim.socio == Socio.BRUNO else "RR",
             'data_emissao': boletim.data_emissao.strftime("%Y-%m-%d") if boletim.data_emissao else '-',
+            'linhas': str(num_linhas),
             'valor': float(boletim.valor),
             'valor_fmt': f"€{float(boletim.valor):,.2f}",
             'descricao': boletim.descricao or '-',
@@ -355,6 +372,19 @@ class BoletinsScreen(ctk.CTkFrame):
                 main_window.show_relatorios(boletim_ids=boletim_ids)
             else:
                 messagebox.showerror("Erro", "Não foi possível navegar para a aba de Relatórios")
+
+    def gerar_recorrentes(self):
+        """Generate recurring boletins for a given month/year"""
+        from datetime import datetime
+        from logic.boletim_templates import BoletimTemplatesManager
+
+        # Open dialog to ask for ano/mes
+        dialog = GerarRecorrentesDialog(self, self.db_session)
+        dialog.wait_window()
+
+        # Reload after generation
+        self.carregar_boletins()
+        self.table.clear_selection()
 
 
 class FormularioBoletimDialog(ctk.CTkToplevel):
@@ -594,3 +624,170 @@ class FormularioBoletimDialog(ctk.CTkToplevel):
         if hasattr(self.parent, 'table'):
             self.parent.table.clear_selection()
         self.destroy()
+
+
+class GerarRecorrentesDialog(ctk.CTkToplevel):
+    """
+    Dialog para gerar boletins recorrentes de um mês
+    """
+
+    def __init__(self, parent, db_session: Session):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        from logic.boletim_templates import BoletimTemplatesManager
+        self.templates_manager = BoletimTemplatesManager(db_session)
+
+        # Window config
+        self.title("Gerar Boletins Recorrentes")
+        self.geometry("450x350")
+        self.resizable(False, False)
+
+        # Center window
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (450 // 2)
+        y = (self.winfo_screenheight() // 2) - (350 // 2)
+        self.geometry(f"+{x}+{y}")
+
+        # Make modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_layout()
+
+    def create_layout(self):
+        """Create dialog layout"""
+        from datetime import datetime
+
+        # Title
+        title_frame = ctk.CTkFrame(self, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+
+        ctk.CTkLabel(
+            title_frame,
+            text="🔁 Gerar Boletins Recorrentes",
+            font=ctk.CTkFont(size=20, weight="bold")
+        ).pack(anchor="w")
+
+        # Info text
+        info_label = ctk.CTkLabel(
+            title_frame,
+            text="Gera automaticamente boletins baseados em templates ativos.",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        )
+        info_label.pack(anchor="w", pady=(5, 0))
+
+        # Form frame
+        form_frame = ctk.CTkFrame(self, fg_color="transparent")
+        form_frame.pack(fill="both", expand=True, padx=30, pady=(0, 20))
+
+        # Ano
+        ctk.CTkLabel(form_frame, text="Ano:", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.ano_entry = ctk.CTkEntry(form_frame, height=35, font=ctk.CTkFont(size=13))
+        self.ano_entry.pack(fill="x", pady=(0, 10))
+        self.ano_entry.insert(0, str(datetime.now().year))
+
+        # Mês
+        ctk.CTkLabel(form_frame, text="Mês:", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
+        self.mes_dropdown = ctk.CTkOptionMenu(
+            form_frame,
+            values=[
+                "1 - Janeiro", "2 - Fevereiro", "3 - Março", "4 - Abril",
+                "5 - Maio", "6 - Junho", "7 - Julho", "8 - Agosto",
+                "9 - Setembro", "10 - Outubro", "11 - Novembro", "12 - Dezembro"
+            ],
+            height=35,
+            font=ctk.CTkFont(size=13)
+        )
+        self.mes_dropdown.pack(fill="x", pady=(0, 10))
+        # Set current month
+        current_month = datetime.now().month
+        self.mes_dropdown.set(f"{current_month} - {self._get_month_name(current_month)}")
+
+        # Buttons
+        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=30, pady=(0, 30))
+
+        cancel_btn = ctk.CTkButton(
+            btn_frame,
+            text="❌ Cancelar",
+            command=self.destroy,
+            width=140,
+            height=40,
+            font=ctk.CTkFont(size=14),
+            fg_color="gray",
+            hover_color="darkgray"
+        )
+        cancel_btn.pack(side="left", padx=(0, 10))
+
+        generate_btn = ctk.CTkButton(
+            btn_frame,
+            text="🔁 Gerar",
+            command=self.gerar,
+            width=140,
+            height=40,
+            font=ctk.CTkFont(size=14),
+            fg_color=("#2196F3", "#1976D2"),
+            hover_color=("#64B5F6", "#1565C0")
+        )
+        generate_btn.pack(side="left")
+
+    def _get_month_name(self, mes: int) -> str:
+        """Get month name in Portuguese"""
+        months = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ]
+        return months[mes - 1] if 1 <= mes <= 12 else ""
+
+    def gerar(self):
+        """Generate recurring boletins"""
+        try:
+            # Get values
+            ano_str = self.ano_entry.get().strip()
+            mes_str = self.mes_dropdown.get().split(" - ")[0]  # Extract number
+
+            # Validations
+            if not ano_str:
+                messagebox.showerror("Erro", "Ano é obrigatório")
+                return
+
+            # Convert
+            try:
+                ano = int(ano_str)
+                mes = int(mes_str)
+            except ValueError:
+                messagebox.showerror("Erro", "Ano/Mês inválidos")
+                return
+
+            if ano < 2020 or ano > 2100:
+                messagebox.showerror("Erro", "Ano deve estar entre 2020 e 2100")
+                return
+
+            if mes < 1 or mes > 12:
+                messagebox.showerror("Erro", "Mês deve estar entre 1 e 12")
+                return
+
+            # Generate
+            count_generated, erros = self.templates_manager.gerar_boletins_recorrentes_mes(
+                ano=ano,
+                mes=mes,
+                preencher_projetos=False  # Don't pre-fill projects (nice-to-have skipped)
+            )
+
+            # Show result
+            if count_generated > 0:
+                msg = f"✅ {count_generated} boletim(ns) gerado(s) com sucesso!"
+                if erros:
+                    msg += f"\n\n⚠️ Erros:\n" + "\n".join(erros)
+                messagebox.showinfo("Sucesso", msg)
+                self.destroy()
+            elif erros:
+                messagebox.showerror("Erro", "Erros ao gerar boletins:\n" + "\n".join(erros))
+            else:
+                messagebox.showinfo("Info", "Nenhum boletim gerado (templates já existem ou não há templates ativos).")
+                self.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
