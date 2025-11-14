@@ -4,7 +4,41 @@ Registo de mudanças significativas no projeto.
 
 ---
 
-## [2025-11-14 - Tarde] Script de Verificação de Migrations & Execução 009-011
+## [2025-11-14 - Tarde 16:00] Correção Estados de Despesas (Coluna ATIVO do Excel)
+
+### 🐛 Problema Identificado
+- **Sintoma:** Despesas que já foram pagas no Excel apareciam como PENDENTE na DB (e vice-versa)
+- **Causa:** Script de importação ignorava coluna 21 (ATIVO) do Excel
+- **Lógica antiga:** Marcava automaticamente como PAGO se data < hoje (para FIXA_MENSAL/PESSOAL)
+- **Problema:** Não respeitava o estado real marcado pelo utilizador no Excel
+
+### ✨ Solução Implementada
+- 📊 **Leitura da coluna ATIVO (coluna 21):**
+  - `0.0` = INATIVO → Despesa foi PAGA
+  - `1.0` = ATIVO → Despesa está PENDENTE
+- 🔄 **Atualização de estados existentes:**
+  - Compara estado da DB com estado do Excel
+  - Atualiza `estado` e `data_pagamento` se diferente
+  - Adiciona contador `updated` nas estatísticas
+- 🔧 **Fallback:** Se coluna não existir, usa lógica antiga
+- 🛠️ **Fix técnico:** Adiciona `sys.path.insert` para imports funcionarem do diretório scripts/
+
+### 📊 Resultado
+- ✅ **91 despesas corrigidas** (90 via importação automática + 1 manual)
+- ✅ **Estado final:** 165 despesas PENDENTE (100%) - reflete corretamente o Excel
+- ✅ **Teste:** `--dry-run` mostra preview correto das mudanças antes de aplicar
+
+### 📦 Commits
+- `ec26b42` - ✨ Feature: Importação agora lê coluna ATIVO do Excel
+
+### 🎯 Impacto
+- ✅ Sistema agora respeita completamente o Excel como fonte da verdade
+- ✅ Utilizador pode controlar estado PAGO/PENDENTE manualmente no Excel
+- ✅ Importações futuras manterão estados sincronizados automaticamente
+
+---
+
+## [2025-11-14 - Tarde 15:00] Script de Verificação de Migrations & Execução 009-011
 
 ### ✨ Adicionado
 - 🔍 **Script de Verificação de Migrations** (`check_migrations.py`, ~200 linhas)
