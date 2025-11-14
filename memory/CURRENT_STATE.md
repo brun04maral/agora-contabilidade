@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-13 (17:00)
-**Sessão:** claude/merge-context-update-011CV57sbRiu7taAq2DCiwhA
+**Última atualização:** 2025-11-14 (11:00)
+**Sessão:** claude/sync-with-latest-branch-01FczApmzspmkD8yFYwa3cP4
 
 ---
 
@@ -108,11 +108,22 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 - ✅ Sistema de orçamentos (versões, aprovações)
 - ✅ Relatórios exportáveis (Excel)
 
-### 📦 Importação de Dados (COMPLETO)
-- ✅ Script de importação Excel → SQLite
-- ✅ Mapeamento de dados antigos
-- ✅ Validações e limpeza
-- ✅ Documentação em `memory/archive/importacao/`
+### 📦 Sistema de Importação Incremental (COMPLETO)
+- ✅ **Script otimizado:** `scripts/import_from_excel.py`
+- ✅ **Modo incremental:** Skip automático de registos existentes (preserva alterações locais)
+- ✅ **Flags:**
+  - `--dry-run` - Preview sem gravar nada
+  - `--excel PATH` - Ficheiro Excel custom
+  - `--clear-all` - Limpar DB (com confirmação)
+- ✅ **Matching inteligente:** Por número (#C001, #P001, etc.)
+- ✅ **Update seletivo:** Prémios de projetos podem ser atualizados
+- ✅ **Validações robustas:** Skip de despesas sem data, etc.
+- ✅ **Estatísticas detalhadas:** NEW/SKIP/UPDATED/ERROR
+- ✅ **Última importação:** 14/11/2025 (CONTABILIDADE_FINAL_20251114.xlsx)
+  - 1 cliente novo, 3 despesas novas, 2 prémios atualizados
+  - Total: 19 clientes, 44 fornecedores, 75 projetos, 165 despesas, 34 boletins
+- ✅ **Documentação:** `IMPORT_GUIDE.md` (guia completo de uso)
+- ✅ **Histórico:** Documentação antiga em `memory/archive/importacao/`
 
 ### 🧠 Sistema de Documentação e Organização (COMPLETO)
 - ✅ Pasta `memory/` com documentação estruturada:
@@ -136,7 +147,7 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 ## 🚧 Em Desenvolvimento
 
 ### 🧪 Fase 4: Testes & Ajustes - Sistema Boletim Itinerário
-- [ ] Executar migrações localmente: `python run_migrations_016_019.py`
+- [x] ✅ Migrations 012-019 executadas (14/11/2025)
 - [ ] Criar dados de teste:
   - Valores de referência para anos 2024-2026
   - 2 templates recorrentes (BA + RR)

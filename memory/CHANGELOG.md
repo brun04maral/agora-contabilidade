@@ -4,6 +4,68 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-14] Sistema de Importação Incremental & Migrations
+
+### ✨ Adicionado
+- 🔄 **Sistema de Importação Incremental Completo**
+  - Script reescrito (`scripts/import_from_excel.py`, ~1.000 linhas)
+  - **Modo incremental:** Skip automático de registos existentes (preserva alterações locais)
+  - **Flags:** `--dry-run` (preview), `--excel PATH`, `--clear-all`
+  - **Matching inteligente:** Por número único (#C001, #P001, #D001, etc.)
+  - **Update seletivo:** Prémios de projetos podem ser atualizados se mudarem
+  - **Validações robustas:** Skip de despesas sem data, validação de campos obrigatórios
+  - **Estatísticas detalhadas:** NEW/SKIP/UPDATED/ERROR para cada entidade
+  - **Guia completo:** `IMPORT_GUIDE.md` (311 linhas, 4 cenários práticos)
+
+### 🗄️ Database
+- ✅ **Migrations 012-019 Executadas** (14/11/2025)
+  - 012: Campo `website` em fornecedores
+  - 013-015: Sistema de despesas recorrentes (templates)
+  - 016-019: Sistema completo de Boletim Itinerário
+    - Valores de referência editáveis por ano
+    - Linhas de deslocação múltiplas com cálculos automáticos
+    - Templates recorrentes com geração mensal
+- ✅ **Importação Real Concluída** (Excel: CONTABILIDADE_FINAL_20251114.xlsx)
+  - 1 cliente novo (#C0020: RD LIGHT LDA)
+  - 3 despesas novas (#D000239, #D000242, #D000243)
+  - 2 prémios atualizados (#P0061, #P0053)
+  - **Total na DB:** 19 clientes, 44 fornecedores, 75 projetos, 165 despesas, 34 boletins
+
+### 🗑️ Removido
+- ❌ Processo de importação via JSON obsoleto
+  - Apagado `scripts/import_excel.py` (522 linhas)
+  - Apagado `memory/archive/importacao/INSTRUCOES_IMPORTACAO.md` (358 linhas)
+  - Apagado `dados_excel.json` (138KB)
+  - Limpeza total: ~6.000 linhas de código/docs obsoletos
+
+### 🐛 Bugs Corrigidos
+1. **Maps guardavam objetos em vez de IDs**
+   - Afetava: clientes_map, fornecedores_map, projetos_map
+   - Erro: `AttributeError: 'int' object has no attribute 'id'` e `type 'Projeto' is not supported`
+   - Fix: Guardar IDs diretamente nos maps (linhas 432, 467, 598, 603, 609, 614)
+2. **Despesas sem data causavam crash**
+   - Erro: `NOT NULL constraint failed: despesas.data`
+   - Fix: Skip com aviso para despesas sem data (linhas 558-562)
+3. **Processamento de prémios esperava objetos**
+   - Erro após fix anterior nos maps
+   - Fix: Buscar objeto Projeto a partir do ID (linhas 676-677)
+
+### 📦 Commits
+- `9bd9e76` - 🗑️ Cleanup: Remover processo via JSON
+- `6396a90` - ✨ Feature: Importação incremental com --dry-run
+- `777ded7` - 📝 Docs: Guia completo de importação
+- `3e0edea` - 🐛 Fix: Bugs no script + migrations 012-019
+- `4336038` - 🐛 Fix: Bugs críticos na importação de despesas
+- `5e4e573` - 🐛 Fix: Processamento de prémios
+- `944e65d` - 📊 DB: Importação incremental (14/11/2025)
+
+### 🎯 Status
+- ✅ **Sistema incremental 100% funcional e testado**
+- ✅ **Pronto para produção**
+- ✅ **Documentação completa**
+
+---
+
 ## [2025-11-13] Planeamento UX: Orçamentos e Boletins
 
 ### 📝 Documentado
