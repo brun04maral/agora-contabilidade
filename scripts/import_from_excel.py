@@ -672,7 +672,9 @@ class ExcelImporter:
             # Buscar projeto (pode já existir ou ter sido criado agora)
             projeto = None
             if projeto_numero in self.projetos_map:
-                projeto = self.projetos_map[projeto_numero]
+                # Map guarda ID, preciso buscar o objeto
+                projeto_id = self.projetos_map[projeto_numero]
+                projeto = self.session.query(Projeto).filter(Projeto.id == projeto_id).first()
             else:
                 projeto = self._exists_projeto(projeto_numero)
 
