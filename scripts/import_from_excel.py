@@ -413,12 +413,12 @@ class ExcelImporter:
 
             cliente_id = None
             if cliente_nome and cliente_nome in self.clientes_map:
-                cliente_id = self.clientes_map[cliente_nome].id
+                cliente_id = self.clientes_map[cliente_nome]
             elif cliente_nome:
                 cliente = self.session.query(Cliente).filter(Cliente.nome == cliente_nome).first()
                 if cliente:
                     cliente_id = cliente.id
-                    self.clientes_map[cliente_nome] = cliente
+                    self.clientes_map[cliente_nome] = cliente.id
 
             # Prémios (do Excel, inicialmente 0)
             premio_bruno = Decimal('0')
@@ -595,23 +595,23 @@ class ExcelImporter:
             credor_id = None
             if credor_nome:
                 if credor_nome in self.fornecedores_map:
-                    credor_id = self.fornecedores_map[credor_nome].id
+                    credor_id = self.fornecedores_map[credor_nome]
                 else:
                     credor = self.session.query(Fornecedor).filter(Fornecedor.nome == credor_nome).first()
                     if credor:
                         credor_id = credor.id
-                        self.fornecedores_map[credor_nome] = credor
+                        self.fornecedores_map[credor_nome] = credor.id
 
             # Projeto ID
             projeto_id = None
             if projeto_numero:
                 if projeto_numero in self.projetos_map:
-                    projeto_id = self.projetos_map[projeto_numero].id
+                    projeto_id = self.projetos_map[projeto_numero]
                 else:
                     projeto = self.session.query(Projeto).filter(Projeto.numero == projeto_numero).first()
                     if projeto:
                         projeto_id = projeto.id
-                        self.projetos_map[projeto_numero] = projeto
+                        self.projetos_map[projeto_numero] = projeto.id
 
             try:
                 success, despesa, msg = self.despesas_manager.criar(
