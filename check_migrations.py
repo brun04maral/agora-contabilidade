@@ -71,15 +71,15 @@ migrations = {
         ("skip", None, None, "008_rename_orcamento_tipo (verificação manual)")
     ],
     "009": [
-        ("coluna", "equipamento", "aluguer_mensal", "009_create_equipamento_aluguer")
+        ("tabela", "equipamento_alugueres", "009_create_equipamento_aluguer")
     ],
     "010": [
         ("coluna", "orcamentos", "tem_versao_cliente", "010_refactor_orcamento_unico"),
         ("coluna", "orcamentos", "titulo_cliente", "010_refactor_orcamento_unico"),
     ],
     "011": [
-        # Remove tabelas antigas, adiciona novas colunas
-        ("coluna", "orcamento_secoes", "proposta_cliente", "011_create_proposta_tables"),
+        ("tabela", "proposta_secoes", "011_create_proposta_tables"),
+        ("tabela", "proposta_itens", "011_create_proposta_tables"),
     ],
     "012": [
         ("coluna", "fornecedores", "website", "012_add_website_to_fornecedor")
