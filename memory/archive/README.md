@@ -19,7 +19,6 @@ archive/
 Documentação da importação única de dados do Excel para a base de dados SQLite (08/11/2025):
 
 - `IMPORTACAO_20251108.md` - Registo completo da importação de 08/11/2025
-- `INSTRUCOES_IMPORTACAO.md` - Instruções de como importar
 - `INSTRUCOES_FINAIS.md` - Instruções pós-importação (29/10/2025)
 - `RESULTADO_IMPORTACAO.md` - Resultados da importação
 - `RESULTADO_FINAL.md` - Resultados finais
@@ -27,6 +26,8 @@ Documentação da importação única de dados do Excel para a base de dados SQL
 - `validate_import.py` - Script de validação de dados importados
 
 **Contexto:** Estes ficheiros documentam a migração inicial de dados do Excel para o sistema. A importação foi feita uma única vez e não será repetida (os dados agora são geridos pela aplicação).
+
+**Script atual:** O script de importação ativo é `scripts/import_from_excel.py`, que lê diretamente do Excel usando pandas.
 
 ### `setup_antigo/`
 Guias de setup antigos que foram substituídos por `memory/DEV_SETUP.md`:
