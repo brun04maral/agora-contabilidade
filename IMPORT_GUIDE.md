@@ -103,6 +103,57 @@ O script identifica registos existentes pelo **número do Excel**:
 
 ---
 
+## 📑 Lógica do Excel - DESPESAS (IMPORTANTE!)
+
+### Estados PAGO vs PENDENTE
+
+O estado da despesa é determinado pela **Coluna T (DATA DE VENCIMENTO)**:
+
+| Coluna T | Estado | Importado como |
+|----------|--------|----------------|
+| **Preenchida** | Despesa foi paga | `PAGO` (data_pagamento = data_vencimento) |
+| **Vazia (NaT)** | Despesa pendente | `PENDENTE` (data_pagamento = None) |
+
+#### ✅ Exemplos CORRETOS:
+
+```
+#D000002: Contabilidade empresa
+  Coluna T: 2024-10-25   → Estado: PAGO
+
+#D000175: Renovação domínio
+  Coluna T: (vazia)      → Estado: PENDENTE
+```
+
+### Prémios e Comissões
+
+**Despesas que são PRÉMIOS não são importadas como despesas!**
+
+- **Identificação:** Coluna G (TIPO) contém "Prémio" ou "Comissão venda"
+- **Processamento:** Via `processar_premios()` - atualiza prémios nos projetos
+- **Pagamento:** Através de boletins, não como despesas diretas
+
+#### ⚠️ NOTA SOBRE COLUNA V (ATIVO):
+
+**A Coluna V NÃO é usada para determinar estado PAGO/PENDENTE!**
+
+A coluna V serve apenas para **filtrar prémios** internamente no Excel.
+O script de importação ignora esta coluna para estados.
+
+### Resumo Visual
+
+```
+Excel DESPESAS:
+┌─────────────┬──────────┬───────────┬────────────┐
+│ Nº DESPESAS │ TIPO (G) │ DATA (T)  │ Estado DB  │
+├─────────────┼──────────┼───────────┼────────────┤
+│ #D000002    │ Admin    │ 2024-10   │ ✅ PAGO    │
+│ #D000009    │ Prémio   │ (vazia)   │ ⏭️ SKIP    │
+│ #D000175    │ Projeto  │ (vazia)   │ 🟡 PENDENTE│
+└─────────────┴──────────┴───────────┴────────────┘
+```
+
+---
+
 ## 📊 Output Detalhado
 
 Durante importação vês:

@@ -542,14 +542,11 @@ class ExcelImporter:
                 except:
                     data_vencimento = None
 
+            # Tentar ler DATA DE VENCIMENTO da coluna T (índice 19)
+            # Se coluna T está preenchida → despesa PAGA
+            # Se coluna T está vazia → despesa PENDENTE
             if not data_vencimento and len(row) > 19:
                 data_vencimento = self.parse_date(row.iloc[19])
-
-            # Skip despesas sem data (inválidas)
-            if not data_vencimento:
-                self.stats['despesas']['error'] += 1
-                print(f"  ⚠️  {numero}: {descricao[:40]} (sem data - ignorado)")
-                continue
 
             projeto_numero = self.safe_str(row.iloc[5])
             periodicidade = self.safe_str(row.iloc[8])
@@ -579,28 +576,26 @@ class ExcelImporter:
             else:
                 tipo = TipoDespesa.PROJETO
 
-            # Estado - LER DA COLUNA 21 DO EXCEL ("ATIVO")
-            # 0.0 = INATIVO (PAGO), 1.0 = ATIVO (PENDENTE)
-            ativo_valor = self.safe_decimal(row.iloc[21]) if len(row) > 21 else None
-
-            estado = EstadoDespesa.PENDENTE
-            data_pagamento = None
-
-            if ativo_valor is not None:
-                # Se coluna ATIVO existe, usar o valor do Excel
-                if ativo_valor == 0.0:
-                    # INATIVO no Excel = despesa já foi PAGA
-                    estado = EstadoDespesa.PAGO
-                    data_pagamento = data_vencimento
-                else:
-                    # ATIVO no Excel = despesa PENDENTE
-                    estado = EstadoDespesa.PENDENTE
-                    data_pagamento = None
+            # ✅ LÓGICA DE ESTADO CORRETA
+            #
+            # A coluna T (DATA DE VENCIMENTO) determina o estado da despesa:
+            # - Se PREENCHIDA → despesa foi PAGA (data_pagamento = data_vencimento)
+            # - Se VAZIA → despesa está PENDENTE (data_pagamento = None)
+            #
+            # NOTAS IMPORTANTES:
+            # 1. Coluna V (ATIVO) NÃO é usada para determinar estado PAGO/PENDENTE
+            # 2. Despesas do tipo PRÉMIO ou COMISSÃO são filtradas antes (linhas 507-522)
+            #    e processadas separadamente em processar_premios()
+            # 3. Prémios são pagos através de boletins, não como despesas diretas
+            #
+            if data_vencimento:
+                # Coluna T preenchida → PAGO
+                estado = EstadoDespesa.PAGO
+                data_pagamento = data_vencimento
             else:
-                # Fallback: lógica antiga se coluna não existir
-                if tipo in [TipoDespesa.FIXA_MENSAL, TipoDespesa.PESSOAL_BRUNO, TipoDespesa.PESSOAL_RAFAEL] and data_vencimento and data_vencimento <= self.hoje:
-                    estado = EstadoDespesa.PAGO
-                    data_pagamento = data_vencimento
+                # Coluna T vazia → PENDENTE
+                estado = EstadoDespesa.PENDENTE
+                data_pagamento = None
 
             # Credor ID
             credor_id = None
