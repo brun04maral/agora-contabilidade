@@ -429,7 +429,7 @@ class ExcelImporter:
             if existing:
                 # Projeto existe → verificar se prémios mudaram (serão atualizados depois em processar_premios)
                 self.stats['projetos']['skip'] += 1
-                self.projetos_map[numero] = existing
+                self.projetos_map[numero] = existing.id
                 print(f"  ⏭️  {numero}: {descricao[:40]} (já existe)")
                 continue
 
@@ -464,7 +464,7 @@ class ExcelImporter:
                     self.session.commit()
 
                     self.stats['projetos']['new'] += 1
-                    self.projetos_map[numero] = projeto
+                    self.projetos_map[numero] = projeto.id
                     tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else ("👤B" if tipo == TipoProjeto.PESSOAL_BRUNO else "👤R")
                     estado_icon = "✅" if estado == EstadoProjeto.RECEBIDO else ("📄" if estado == EstadoProjeto.FATURADO else "⏳")
                     print(f"  {estado_icon} {numero}: {tipo_icon} {descricao[:40]} (criado)")
@@ -554,6 +554,12 @@ class ExcelImporter:
 
             if not data_vencimento and len(row) > 19:
                 data_vencimento = self.parse_date(row.iloc[19])
+
+            # Skip despesas sem data (inválidas)
+            if not data_vencimento:
+                self.stats['despesas']['error'] += 1
+                print(f"  ⚠️  {numero}: {descricao[:40]} (sem data - ignorado)")
+                continue
 
             projeto_numero = self.safe_str(row.iloc[5])
             periodicidade = self.safe_str(row.iloc[8])
