@@ -4,7 +4,53 @@ Registo de mudanças significativas no projeto.
 
 ---
 
-## [2025-11-14] Sistema de Importação Incremental & Migrations
+## [2025-11-14 - Tarde] Script de Verificação de Migrations & Execução 009-011
+
+### ✨ Adicionado
+- 🔍 **Script de Verificação de Migrations** (`check_migrations.py`, ~200 linhas)
+  - Verifica automaticamente todas as migrations 001-019
+  - Detecta tabelas e colunas existentes via `PRAGMA table_info`
+  - Lista migrations **aplicadas** ✅ e **pendentes** ❌
+  - Mostra comandos exatos para executar migrations pendentes
+  - Reconhece scripts combinados (009+010, 016-019)
+  - Uso simples: `python3 check_migrations.py`
+
+### 🗄️ Database
+- ✅ **Migrations 009-011 Executadas** (14/11/2025)
+  - 009: Tabela `equipamento_alugueres` para registo de alugueres
+  - 010: Refatoração da tabela `orcamentos` para estrutura única (tem_versao_cliente, titulo_cliente, etc.)
+  - 011: Tabelas `proposta_secoes` e `proposta_itens` para versão cliente
+- ✅ **Todas as migrations 001-019 agora aplicadas e verificadas**
+
+### 🐛 Bugs Corrigidos
+1. **Script check_migrations.py: ValueError no unpack**
+   - Erro: `not enough values to unpack (expected 4, got 3)`
+   - Causa: Tabelas têm 3 elementos, colunas têm 4
+   - Fix: Verificar `len(check)` antes de fazer unpack
+2. **Verificações incorretas para migrations 009 e 011**
+   - Migration 009: Verificava coluna `equipamento.aluguer_mensal` (errado) → Corrigido para tabela `equipamento_alugueres`
+   - Migration 011: Verificava coluna `orcamento_secoes.proposta_cliente` (errado) → Corrigido para tabelas `proposta_secoes` e `proposta_itens`
+
+### 🐞 Bug Resolvido (Usuário)
+- **Erro ao clicar em Orçamentos:** `no such column: orcamentos.tem_versao_cliente`
+  - Causa: Migration 010 não estava aplicada na DB local do usuário
+  - Resolução: Execução de `scripts/run_migrations_009_010.py` + `scripts/run_migration_011.py`
+  - Status: ✅ Resolvido com script de verificação
+
+### 📦 Commits
+- `1682321` - 🔧 Tools: Script para verificar migrations pendentes na DB local
+- `5ae262a` - 🐛 Fix: Corrigir bug no unpack de migrations (tabelas têm 3 elementos)
+- `1fc2786` - 🔧 Fix: Script reconhece que migrations 009 e 010 são o mesmo comando
+- `0db2dac` - 🐛 Fix: Corrigir verificações das migrations 009 e 011
+
+### 🎯 Status
+- ✅ **Todas migrations 001-019 aplicadas em dev e user local**
+- ✅ **Script de verificação funcional e pronto para uso futuro**
+- ✅ **Erro de Orçamentos resolvido**
+
+---
+
+## [2025-11-14 - Manhã] Sistema de Importação Incremental & Migrations
 
 ### ✨ Adicionado
 - 🔄 **Sistema de Importação Incremental Completo**

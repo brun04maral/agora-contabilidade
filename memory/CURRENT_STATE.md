@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-14 (11:00)
+**Última atualização:** 2025-11-14 (15:30)
 **Sessão:** claude/sync-with-latest-branch-01FczApmzspmkD8yFYwa3cP4
 
 ---
@@ -125,6 +125,18 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 - ✅ **Documentação:** `IMPORT_GUIDE.md` (guia completo de uso)
 - ✅ **Histórico:** Documentação antiga em `memory/archive/importacao/`
 
+### 🔍 Sistema de Verificação de Migrations (COMPLETO)
+- ✅ **Script de diagnóstico:** `check_migrations.py` (~200 linhas)
+- ✅ **Funcionalidades:**
+  - Verifica todas as migrations 001-019
+  - Lista migrations aplicadas ✅ e pendentes ❌
+  - Detecta tabelas e colunas existentes via PRAGMA
+  - Mostra comandos exatos para executar migrations pendentes
+  - Reconhece scripts combinados (009+010, 016-019)
+- ✅ **Uso:** `python3 check_migrations.py` (sem argumentos)
+- ✅ **Output:** Relatório visual com instruções step-by-step
+- ✅ **Status:** Todas migrations 001-019 aplicadas e verificadas ✅
+
 ### 🧠 Sistema de Documentação e Organização (COMPLETO)
 - ✅ Pasta `memory/` com documentação estruturada:
   - CURRENT_STATE.md (estado atual)
@@ -147,7 +159,10 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 ## 🚧 Em Desenvolvimento
 
 ### 🧪 Fase 4: Testes & Ajustes - Sistema Boletim Itinerário
-- [x] ✅ Migrations 012-019 executadas (14/11/2025)
+- [x] ✅ Migrations 009-019 executadas e verificadas (14/11/2025)
+  - 009-010: Equipamento alugueres + Orçamento único (scripts/run_migrations_009_010.py)
+  - 011: Tabelas proposta_secoes e proposta_itens (scripts/run_migration_011.py)
+  - 012-019: Website + Despesas recorrentes + Boletim Itinerário
 - [ ] Criar dados de teste:
   - Valores de referência para anos 2024-2026
   - 2 templates recorrentes (BA + RR)
