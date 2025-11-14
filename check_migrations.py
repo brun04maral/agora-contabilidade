@@ -173,12 +173,18 @@ if pendentes:
 
     primeira_pendente = min(pendente_nums)
 
-    print(f"Começar pela migration {primeira_pendente:03d}:")
+    # Verificar quais migrations estão pendentes
+    tem_009_ou_010 = 9 in pendente_nums or 10 in pendente_nums
+    tem_011 = 11 in pendente_nums
+
+    print(f"Executar na seguinte ordem:")
     print()
 
-    if primeira_pendente == 10:
-        print("  python3 scripts/run_migration_010.py")
-    elif primeira_pendente == 11:
+    if tem_009_ou_010:
+        print("  1️⃣ python3 scripts/run_migrations_009_010.py")
+        if tem_011:
+            print("  2️⃣ python3 scripts/run_migration_011.py")
+    elif tem_011:
         print("  python3 scripts/run_migration_011.py")
     elif primeira_pendente == 12:
         print("  python3 run_migration_012.py")
