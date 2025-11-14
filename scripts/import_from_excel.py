@@ -531,22 +531,30 @@ class ExcelImporter:
             self.stats['despesas']['total'] += 1
 
             # PROCESSAR DADOS DA LINHA (para criar OU atualizar)
-            ano = self.safe_int(row.iloc[1])
-            mes = self.safe_int(row.iloc[2])
-            dia = self.safe_int(row.iloc[3])
+            #
+            # LÓGICA CORRETA:
+            # 1. LER APENAS coluna T (DATA DE VENCIMENTO) para determinar estado
+            # 2. Se coluna T preenchida → PAGO
+            # 3. Se coluna T vazia → PENDENTE (pode usar B/C/D para campo 'data' informativo)
+            #
 
+            # Ler DATA DE VENCIMENTO da coluna T (índice 19) - FONTE DA VERDADE
             data_vencimento = None
-            if ano and mes and dia:
-                try:
-                    data_vencimento = date(ano, mes, dia)
-                except:
-                    data_vencimento = None
-
-            # Tentar ler DATA DE VENCIMENTO da coluna T (índice 19)
-            # Se coluna T está preenchida → despesa PAGA
-            # Se coluna T está vazia → despesa PENDENTE
-            if not data_vencimento and len(row) > 19:
+            if len(row) > 19:
                 data_vencimento = self.parse_date(row.iloc[19])
+
+            # Se coluna T vazia, tentar usar colunas B/C/D para campo 'data' (informativo)
+            data_despesa = data_vencimento  # Preferir coluna T
+            if not data_despesa:
+                ano = self.safe_int(row.iloc[1])
+                mes = self.safe_int(row.iloc[2])
+                dia = self.safe_int(row.iloc[3])
+
+                if ano and mes and dia:
+                    try:
+                        data_despesa = date(ano, mes, dia)
+                    except:
+                        data_despesa = None
 
             projeto_numero = self.safe_str(row.iloc[5])
             periodicidade = self.safe_str(row.iloc[8])
@@ -659,7 +667,7 @@ class ExcelImporter:
             try:
                 success, despesa, msg = self.despesas_manager.criar(
                     tipo=tipo,
-                    data=data_vencimento,
+                    data=data_despesa,  # Usar data_despesa (pode vir de T ou B/C/D)
                     credor_id=credor_id,
                     projeto_id=projeto_id,
                     descricao=descricao,
