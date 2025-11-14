@@ -120,7 +120,12 @@ for migration_num, checks in migrations.items():
             aplicadas.append(f"  {migration_num}: {check[3]} (⚠️  verificação manual)")
             continue
 
-        check_type, target, field, migration_file = check
+        # Unpack correto: tabelas têm 3 elementos, colunas têm 4
+        if len(check) == 3:
+            check_type, target, migration_file = check
+            field = None
+        else:
+            check_type, target, field, migration_file = check
 
         if check_type == "tabela":
             if check_table_exists(cursor, target):
