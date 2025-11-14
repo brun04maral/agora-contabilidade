@@ -34,6 +34,9 @@ from dotenv import load_dotenv
 # Load environment
 load_dotenv()
 
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Import models
 from database.models import (
     Cliente, Fornecedor, Projeto, Despesa, Boletim,
@@ -76,7 +79,7 @@ class ExcelImporter:
             'clientes': {'total': 0, 'new': 0, 'skip': 0, 'error': 0},
             'fornecedores': {'total': 0, 'new': 0, 'skip': 0, 'error': 0},
             'projetos': {'total': 0, 'new': 0, 'skip': 0, 'updated': 0, 'error': 0},
-            'despesas': {'total': 0, 'new': 0, 'skip': 0, 'error': 0},
+            'despesas': {'total': 0, 'new': 0, 'skip': 0, 'updated': 0, 'error': 0},
             'boletins': {'total': 0, 'new': 0, 'skip': 0, 'error': 0},
             'premios': {'bruno': Decimal('0'), 'rafael': Decimal('0')},
         }
@@ -527,20 +530,7 @@ class ExcelImporter:
 
             self.stats['despesas']['total'] += 1
 
-            # ✅ VERIFICAR SE JÁ EXISTE
-            existing = self._exists_despesa(numero)
-            if existing:
-                self.stats['despesas']['skip'] += 1
-                print(f"  ⏭️  {numero}: {descricao[:40]} (já existe)")
-                continue
-
-            # DRY RUN: Não gravar
-            if self.dry_run:
-                self.stats['despesas']['new'] += 1
-                print(f"  🔍 {numero}: {descricao[:40]} (seria criado)")
-                continue
-
-            # CRIAR NOVO
+            # PROCESSAR DADOS DA LINHA (para criar OU atualizar)
             ano = self.safe_int(row.iloc[1])
             mes = self.safe_int(row.iloc[2])
             dia = self.safe_int(row.iloc[3])
@@ -589,13 +579,28 @@ class ExcelImporter:
             else:
                 tipo = TipoDespesa.PROJETO
 
-            # Estado
+            # Estado - LER DA COLUNA 21 DO EXCEL ("ATIVO")
+            # 0.0 = INATIVO (PAGO), 1.0 = ATIVO (PENDENTE)
+            ativo_valor = self.safe_decimal(row.iloc[21]) if len(row) > 21 else None
+
             estado = EstadoDespesa.PENDENTE
             data_pagamento = None
 
-            if tipo in [TipoDespesa.FIXA_MENSAL, TipoDespesa.PESSOAL_BRUNO, TipoDespesa.PESSOAL_RAFAEL] and data_vencimento and data_vencimento <= self.hoje:
-                estado = EstadoDespesa.PAGO
-                data_pagamento = data_vencimento
+            if ativo_valor is not None:
+                # Se coluna ATIVO existe, usar o valor do Excel
+                if ativo_valor == 0.0:
+                    # INATIVO no Excel = despesa já foi PAGA
+                    estado = EstadoDespesa.PAGO
+                    data_pagamento = data_vencimento
+                else:
+                    # ATIVO no Excel = despesa PENDENTE
+                    estado = EstadoDespesa.PENDENTE
+                    data_pagamento = None
+            else:
+                # Fallback: lógica antiga se coluna não existir
+                if tipo in [TipoDespesa.FIXA_MENSAL, TipoDespesa.PESSOAL_BRUNO, TipoDespesa.PESSOAL_RAFAEL] and data_vencimento and data_vencimento <= self.hoje:
+                    estado = EstadoDespesa.PAGO
+                    data_pagamento = data_vencimento
 
             # Credor ID
             credor_id = None
@@ -619,6 +624,43 @@ class ExcelImporter:
                         projeto_id = projeto.id
                         self.projetos_map[projeto_numero] = projeto.id
 
+            # ✅ VERIFICAR SE JÁ EXISTE (após processar dados)
+            existing = self._exists_despesa(numero)
+            if existing:
+                # Verificar se estado mudou no Excel
+                if existing.estado != estado:
+                    # Estado mudou → ATUALIZAR
+                    if self.dry_run:
+                        old_estado = existing.estado.value
+                        new_estado = estado.value
+                        print(f"  🔄 {numero}: {descricao[:40]} (estado: {old_estado} → {new_estado})")
+                        self.stats['despesas']['updated'] += 1
+                    else:
+                        try:
+                            existing.estado = estado
+                            existing.data_pagamento = data_pagamento
+                            self.session.commit()
+
+                            old_estado = existing.estado.value if hasattr(existing.estado, 'value') else existing.estado
+                            new_estado = estado.value
+                            print(f"  🔄 {numero}: {descricao[:40]} (estado atualizado: {new_estado})")
+                            self.stats['despesas']['updated'] += 1
+                        except Exception as e:
+                            print(f"  ❌ {numero}: Erro ao atualizar - {e}")
+                            self.stats['despesas']['error'] += 1
+                else:
+                    # Estado igual → SKIP
+                    self.stats['despesas']['skip'] += 1
+                    # print(f"  ⏭️  {numero}: {descricao[:40]} (já existe)")
+                continue
+
+            # DRY RUN: Não gravar
+            if self.dry_run:
+                self.stats['despesas']['new'] += 1
+                print(f"  🔍 {numero}: {descricao[:40]} (seria criado)")
+                continue
+
+            # CRIAR NOVA DESPESA
             try:
                 success, despesa, msg = self.despesas_manager.criar(
                     tipo=tipo,
