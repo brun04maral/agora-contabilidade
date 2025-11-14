@@ -4,37 +4,65 @@ Registo de mudanças significativas no projeto.
 
 ---
 
-## [2025-11-14 - Tarde 16:00] Correção Estados de Despesas (Coluna ATIVO do Excel)
+## [2025-11-14 - Tarde 17:00] CORREÇÃO CRÍTICA: Lógica de Estados de Despesas
 
 ### 🐛 Problema Identificado
-- **Sintoma:** Despesas que já foram pagas no Excel apareciam como PENDENTE na DB (e vice-versa)
-- **Causa:** Script de importação ignorava coluna 21 (ATIVO) do Excel
-- **Lógica antiga:** Marcava automaticamente como PAGO se data < hoje (para FIXA_MENSAL/PESSOAL)
-- **Problema:** Não respeitava o estado real marcado pelo utilizador no Excel
+- **Sintoma:** Despesas fixas mensais **desapareceram da vista** (todas marcadas como PENDENTE)
+- **Causa RAIZ:** Implementação ERRADA usando coluna V (ATIVO) para determinar estados
+- **Erro de interpretação:** Coluna V serve para **filtrar prémios**, não para estados PAGO/PENDENTE!
 
-### ✨ Solução Implementada
-- 📊 **Leitura da coluna ATIVO (coluna 21):**
-  - `0.0` = INATIVO → Despesa foi PAGA
-  - `1.0` = ATIVO → Despesa está PENDENTE
-- 🔄 **Atualização de estados existentes:**
-  - Compara estado da DB com estado do Excel
-  - Atualiza `estado` e `data_pagamento` se diferente
-  - Adiciona contador `updated` nas estatísticas
-- 🔧 **Fallback:** Se coluna não existir, usa lógica antiga
-- 🛠️ **Fix técnico:** Adiciona `sys.path.insert` para imports funcionarem do diretório scripts/
+### ✅ LÓGICA CORRETA (Implementada)
 
-### 📊 Resultado
-- ✅ **91 despesas corrigidas** (90 via importação automática + 1 manual)
-- ✅ **Estado final:** 165 despesas PENDENTE (100%) - reflete corretamente o Excel
-- ✅ **Teste:** `--dry-run` mostra preview correto das mudanças antes de aplicar
+**Coluna T (DATA DE VENCIMENTO) determina o estado:**
+
+| Coluna T | Estado | Importado como |
+|----------|--------|----------------|
+| **Preenchida** | Despesa paga | `PAGO` (data_pagamento = data_vencimento) |
+| **Vazia (NaT)** | Despesa pendente | `PENDENTE` (data_pagamento = None) |
+
+**Coluna G (TIPO) para filtrar prémios:**
+- Se contém "Prémio" ou "Comissão venda" → **SKIP** (processado em `processar_premios()`)
+- Prémios são pagos através de boletins, não como despesas diretas
+
+**Coluna V (ATIVO):**
+- ⚠️ **NÃO é usada** para determinar estados PAGO/PENDENTE
+- Serve apenas para filtros internos do Excel
+
+### 🔧 Mudanças no Código
+- ✅ Removida lógica errada da coluna V (ATIVO)
+- ✅ Implementada lógica correta baseada em coluna T (DATA DE VENCIMENTO)
+- ✅ Removido skip de despesas sem data (podem ser PENDENTES)
+- ✅ Adicionados comentários detalhados explicando a lógica
+- ✅ Documentação completa em `IMPORT_GUIDE.md`
+
+### 📊 Resultado Final
+- ✅ **162 despesas PAGO** (98.2%) - têm DATA VENC preenchida no Excel
+- ✅ **3 despesas PENDENTE** (1.8%) - sem DATA VENC no Excel
+  - #D000166: AGO2025 (Deslocação)
+  - #D000175: Comissão montagem LED Wall
+  - #D000197: vMix license
+- ✅ **Distribuição por tipo:**
+  - FIXA_MENSAL: 87 PAGO
+  - PROJETO: 59 PAGO
+  - EQUIPAMENTO: 13 PAGO
+  - PESSOAL_RAFAEL: 3 PAGO
 
 ### 📦 Commits
-- `ec26b42` - ✨ Feature: Importação agora lê coluna ATIVO do Excel
+- `ec26b42` - ❌ Implementação ERRADA (revertida)
+- `eac79e2` - ❌ Documentação ERRADA (revertida)
+- `51541f8` - ❌ DB com estados ERRADOS (revertida)
+- `18e6099` - ✅ Fix: Corrigir lógica usando coluna T (DATA VENC)
+- `c53992c` - ✅ DB: Estados corrigidos (162 PAGO, 3 PENDENTE)
 
-### 🎯 Impacto
-- ✅ Sistema agora respeita completamente o Excel como fonte da verdade
-- ✅ Utilizador pode controlar estado PAGO/PENDENTE manualmente no Excel
-- ✅ Importações futuras manterão estados sincronizados automaticamente
+### 📖 Documentação
+- ✅ `IMPORT_GUIDE.md` atualizado com seção "Lógica do Excel - DESPESAS"
+- ✅ Exemplos visuais e tabelas explicativas
+- ✅ Comentários detalhados no código (`scripts/import_from_excel.py:579-598`)
+
+### 🎯 Lições Aprendidas
+- ⚠️ **Sempre confirmar lógica com utilizador antes de implementar**
+- ⚠️ **Coluna ATIVO não significa estado PAGO/PENDENTE**
+- ✅ **DATA DE VENCIMENTO é a fonte da verdade** para estados
 
 ---
 
