@@ -4,6 +4,58 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-14 - Tarde 18:00] BUGFIX: Ordem de Leitura das Colunas (B/C/D vs T)
+
+### 🐛 Bug Identificado
+- **Sintoma:** Despesas #D000238-243 apareciam como PAGO mas não estavam pagas
+- **Causa:** Script lia **colunas B/C/D antes de T** para determinar estado
+- **Resultado:** Despesas com B/C/D preenchidas mas T vazia = PAGO ❌
+
+**Exemplo do bug:**
+```
+#D000239: Locução + tradução
+  Colunas B/C/D: 2025/11/10  ← Lida PRIMEIRO
+  Coluna T: (vazia)          ← Ignorada!
+  Estado: PAGO ❌ (ERRADO - deveria ser PENDENTE)
+```
+
+### ✅ Correção Implementada
+
+**Ordem CORRETA de leitura:**
+1. **LER coluna T (DATA DE VENCIMENTO)** - FONTE DA VERDADE
+2. **Se T vazia**, usar B/C/D para campo `data` (informativo apenas)
+3. **Estado baseado APENAS em T**, nunca em B/C/D
+
+**Código corrigido (linhas 541-557):**
+```python
+# 1. Ler coluna T primeiro - FONTE DA VERDADE
+data_vencimento = self.parse_date(row.iloc[19])  # Coluna T
+
+# 2. Se T vazia, usar B/C/D para campo 'data' (informativo)
+data_despesa = data_vencimento or criar_de_BCD()
+
+# 3. Estado baseado APENAS em coluna T
+if data_vencimento:  # T preenchida
+    estado = PAGO
+else:  # T vazia
+    estado = PENDENTE
+```
+
+### 📊 Resultado
+- ✅ **8 despesas corrigidas:** #D000239, 242, 243 (e outras)
+- ✅ **Estado final:** 154 PAGO (93.3%), 11 PENDENTE (6.7%)
+- ✅ **Despesas com T vazia agora aparecem corretamente como PENDENTE**
+
+### 📦 Commits
+- `495078a` - 🐛 Fix: Ordem correta de leitura (T antes de B/C/D)
+- `657775c` - 📊 DB: Estados atualizados (154 PAGO, 11 PENDENTE)
+
+### 🎯 Lição Aprendida
+- ⚠️ **Ordem de leitura importa!** Ler fonte da verdade (T) PRIMEIRO
+- ⚠️ **B/C/D são informativos**, nunca devem determinar estados
+
+---
+
 ## [2025-11-14 - Tarde 17:00] CORREÇÃO CRÍTICA: Lógica de Estados de Despesas
 
 ### 🐛 Problema Identificado
