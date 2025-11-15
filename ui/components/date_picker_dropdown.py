@@ -268,9 +268,11 @@ class DatePickerDropdown(ctk.CTkFrame):
         return self.selected_date
 
     def set_date(self, new_date):
-        """Define data"""
+        """Define data e atualiza visualmente"""
         self.selected_date = new_date
         self._update_entry()
+        # Forçar atualização visual imediata
+        self.entry.update_idletasks()
 
     def clear(self):
         """Limpa entry"""
