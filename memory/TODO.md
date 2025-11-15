@@ -1,6 +1,6 @@
 # 📝 TODO - Agora Contabilidade
 
-**Última atualização:** 13/11/2025 (17:00)
+**Última atualização:** 15/11/2025 (23:00)
 **Estado atual:** ✅ MVP Completo | Produção Ready | Melhorias incrementais
 
 ---
@@ -398,6 +398,14 @@
 
 <!-- Ideias não comprometidas, para discussão -->
 
+- 📅 **DateRangePicker Visual Unificado**
+  - Componente único para seleção de períodos (data início + data fim)
+  - Calendário visual com seleção de range (arrastar no calendário)
+  - Alternativa aos dois campos separados (Data Início + Data Fim)
+  - Mais intuitivo para períodos de projetos/deslocações
+  - Preview visual do período selecionado
+  - Aplicável em: Boletim Linhas, Projetos, Relatórios
+  - **Prioridade:** Baixa (campos separados funcionam bem)
 - 💰 **Screen de Financeiro**
   - Consulta de saldo bancário (integração/manual)
   - Visualização de lucros (mensal/anual)
@@ -430,6 +438,32 @@
 ## ✅ Concluído Recentemente
 
 <!-- Últimas 10 tarefas - manter histórico curto para contexto -->
+
+- [x] 🎨 **15/11** - Auto-preenchimento de datas de projeto em Boletim Linhas
+  - **Funcionalidade:** Quando utilizador seleciona projeto numa linha, campos data_inicio e data_fim preenchem automaticamente
+  - **Comportamento inteligente:**
+    - Só preenche se campos estiverem vazios (não sobrescreve edições)
+    - Usa data_inicio e data_fim do modelo Projeto
+    - Projetos sem datas → nada acontece
+    - Datas aparecem **visualmente imediatamente** após seleção
+  - **Fix crítico no DatePickerDropdown:**
+    - Componente inicializava com `date.today()` quando `default_date=None`
+    - Mudado para: `self.selected_date = None` (aceita None como valor válido)
+    - `get_date()` agora retorna None quando campo vazio
+    - `set_date()` força atualização visual com `update_idletasks()`
+  - **Commits:** ebbf8d1 (feature), 88d0fa0 (fix None), ad548c6 (fix visual)
+  - Ficheiros: ui/screens/boletim_form.py (+10L), ui/components/date_picker_dropdown.py (3 fixes)
+
+- [x] 🐛 **15/11** - Fix: Right-click context menu funciona sempre
+  - **Problema:** Menu só aparecia quando 7+ itens selecionados
+  - **Causa:** Right-click bound apenas ao row_frame, labels não propagavam eventos
+  - **Solução:** Adicionar binding de right-click a TODAS as labels dentro da row
+  - **Técnica:** Similar a Button-1 e Double-Button-1, propagar eventos das labels
+  - **Resultado:** Menu funciona independentemente de:
+    - Número de itens selecionados (0, 1, 7, 100...)
+    - Onde utilizador clica (texto, espaço vazio, bordas)
+  - Commit: 697f71a
+  - Ficheiro: ui/components/data_table_v2.py (+6L)
 
 - [x] 🔁 **13/11** - Sistema Completo de Boletim Itinerário (3 Fases - COMPLETO)
   - **Fase 1 - Modelo de Dados (Commit: 8d14f0c):**

@@ -4,6 +4,120 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-15 - Noite 23:00] UX Melhorias - Boletim Linhas
+
+### ✨ Auto-preenchimento de Datas do Projeto
+
+**Feature:** Quando utilizador seleciona projeto numa linha de boletim, campos de data preenchem automaticamente.
+
+**Implementação:**
+- Modificado `projeto_selecionado()` em `ui/screens/boletim_form.py`
+- Preenche `data_inicio` se projeto tem data_inicio E campo está vazio
+- Preenche `data_fim` se projeto tem data_fim E campo está vazio
+- NÃO sobrescreve se utilizador já preencheu manualmente
+
+**Benefício:**
+- Menos trabalho manual ao criar linhas de deslocação
+- Datas do projeto aparecem automaticamente
+- Utilizador sempre pode editar após auto-fill
+
+**Commits:**
+- `ebbf8d1` - ✨ Feature: Auto-preencher datas da linha com datas do projeto
+
+---
+
+### 🐛 Fix: DatePickerDropdown Aceita None
+
+**Problema:** DatePickerDropdown sempre inicializava com `date.today()` quando `default_date=None`
+
+**Impacto:**
+- `get_date()` nunca retornava `None`
+- Auto-preenchimento não funcionava (sempre achava que campo tinha data)
+- Verificação "se campo vazio" sempre falhava
+
+**Solução:**
+```python
+# Antes:
+self.selected_date = default_date or date.today()  # ❌ Sempre hoje se None
+
+# Depois:
+self.selected_date = default_date if default_date is not None else None  # ✅ Aceita None
+```
+
+**Outras mudanças:**
+- `_show_dropdown()` usa `date.today()` como REFERÊNCIA (não altera selected_date)
+- `get_date()` pode retornar `None` quando campo vazio
+- Auto-preenchimento funciona corretamente
+
+**Commits:**
+- `88d0fa0` - 🐛 Fix: DatePickerDropdown agora aceita None como valor válido
+
+---
+
+### 🐛 Fix: Atualização Visual Imediata
+
+**Problema:** Datas auto-preenchidas só apareciam visualmente após gravar a linha.
+
+**Solução:**
+- Adicionado `update_idletasks()` em `set_date()` do DatePickerDropdown
+- Força refresh visual do entry imediatamente
+
+**Resultado:**
+- Datas aparecem **instantaneamente** quando projeto selecionado
+- Feedback visual imediato para o utilizador
+
+**Commits:**
+- `ad548c6` - 🐛 Fix: Forçar atualização visual imediata no set_date()
+
+---
+
+### 🐛 Fix: Right-click Context Menu
+
+**Problema:** Menu de contexto (right-click) só funcionava quando 7+ itens estavam selecionados.
+
+**Causa:**
+- Right-click estava bound apenas ao `row_frame`
+- Labels dentro da row NÃO tinham binding de right-click
+- Quando utilizador clicava numa label (texto), evento não propagava
+
+**Solução:**
+- Adicionar binding de right-click a TODAS as labels dentro de cada row
+- Similar ao comportamento de Button-1 e Double-Button-1
+- Eventos agora propagam das labels para o handler do row
+
+**Código (ui/components/data_table_v2.py:643-647):**
+```python
+# Bind right-click for context menu (propagate from label to row handler)
+if self.is_mac:
+    label.bind("<Button-2>", lambda e, d=data: self._on_row_right_click(e, d))
+else:
+    label.bind("<Button-3>", lambda e, d=data: self._on_row_right_click(e, d))
+```
+
+**Resultado:**
+- Menu funciona **sempre**, independentemente de:
+  - Número de itens selecionados (0, 1, 7, 100...)
+  - Onde utilizador clica (texto, espaço vazio, bordas da row)
+
+**Commits:**
+- `697f71a` - 🐛 Fix: Right-click context menu agora funciona sempre
+
+---
+
+### 📝 Documentação Atualizada
+
+**Ficheiros atualizados:**
+- `memory/TODO.md` - Adicionada ideia de DateRangePicker visual unificado
+- `memory/CURRENT_STATE.md` - Secção "UX Melhorias - Boletim Linhas"
+- `memory/CHANGELOG.md` - Esta entrada
+
+**Commits anteriores incluídos no branch:**
+- Duplicar Boletim (ebbf8d1 anterior)
+- Auto-fill descrição com projeto (já existente)
+- Context menu right-click (697f71a anterior)
+
+---
+
 ## [2025-11-15] Nova Importação - CONTABILIDADE_FINAL_20251115
 
 ### 📊 Importação Incremental

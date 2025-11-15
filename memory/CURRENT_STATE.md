@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-15 (Noite)
+**Última atualização:** 2025-11-15 (23:00)
 **Sessão:** claude/sync-with-latest-branch-0149iW3euEsQJp1R2oQ7ZmxX
 
 ---
@@ -105,6 +105,18 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
     3. `BoletimFormScreen` - Editor completo (header + tabela linhas CRUD inline)
     4. `BoletinsScreen` - Atualizado (coluna "Linhas", botão "🔁 Gerar Recorrentes")
   - **Total:** ~2600 linhas de código (4 DB + 3 logic + 4 UI)
+  - **UX Melhorias - Boletim Linhas** (NOVO 15/11):
+    - **Auto-preenchimento de datas:** Quando projeto selecionado, data_inicio e data_fim preenchem automaticamente
+    - **Auto-preenchimento de descrição:** Campo serviço preenche com projeto.descricao (se vazio)
+    - **Datas visíveis imediatamente:** Atualização visual instantânea (não só após gravar)
+    - **Duplicar Boletim:** Botão "📋 Duplicar" no form e na lista (copia header + todas linhas)
+    - **Context menu (right-click):** Menu popup com Editar, Duplicar, Marcar Pago/Pendente, Apagar
+    - **Fixes no DatePickerDropdown:** Aceita None como valor, força atualização visual
+  - **Commits desta sessão:**
+    - 697f71a - Right-click context menu funciona sempre
+    - ebbf8d1 - Auto-preencher datas da linha com datas do projeto
+    - 88d0fa0 - DatePickerDropdown aceita None como valor válido
+    - ad548c6 - Forçar atualização visual imediata no set_date()
 - ✅ **Migration 020 - Orçamentos e Projetos Completo** (NOVO 15/11)
   - **Tabela orcamentos:** Coluna `owner` VARCHAR(2) NOT NULL (default 'BA')
   - **Tabela projetos:** 6 novas colunas
