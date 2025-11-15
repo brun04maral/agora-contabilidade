@@ -11,12 +11,17 @@ from database.models.base import Base
 class Cliente(Base):
     """
     Modelo para armazenar informações de clientes
+
+    Campos de Nome:
+    - nome: Nome curto/informal usado em listagens e referências rápidas (max 120 chars)
+    - nome_formal: Nome completo/formal da empresa (ex: "Empresa X, Lda.") usado em documentos oficiais (max 255 chars)
     """
     __tablename__ = 'clientes'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     numero = Column(String(20), unique=True, nullable=False, index=True)  # Ex: #C0001
-    nome = Column(String(255), nullable=False)
+    nome = Column(String(120), nullable=False)  # Nome curto para listagens
+    nome_formal = Column(String(255), nullable=False)  # Nome completo/formal
     nif = Column(String(20), nullable=True)
     morada = Column(Text, nullable=True)
     pais = Column(String(100), nullable=True, default='Portugal')
@@ -40,6 +45,7 @@ class Cliente(Base):
             'id': self.id,
             'numero': self.numero,
             'nome': self.nome,
+            'nome_formal': self.nome_formal,
             'nif': self.nif,
             'morada': self.morada,
             'pais': self.pais,

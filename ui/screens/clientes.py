@@ -506,12 +506,40 @@ class FormularioClienteDialog(ctk.CTkToplevel):
             font=ctk.CTkFont(size=13, weight="bold")
         ).pack(anchor="w", pady=(10, 5))
 
+        ctk.CTkLabel(
+            form_frame,
+            text="Nome curto para listagens (max 120 caracteres)",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).pack(anchor="w", pady=(0, 5))
+
         self.nome_entry = ctk.CTkEntry(
             form_frame,
-            placeholder_text="Nome do cliente...",
+            placeholder_text="Ex: Farmácia do Povo",
             height=35
         )
         self.nome_entry.pack(fill="x", pady=(0, 15))
+
+        # Nome Formal
+        ctk.CTkLabel(
+            form_frame,
+            text="Nome Formal",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        ctk.CTkLabel(
+            form_frame,
+            text="Nome completo/formal da empresa (opcional, max 255 caracteres)",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.nome_formal_entry = ctk.CTkEntry(
+            form_frame,
+            placeholder_text="Ex: Farmácia Popular do Centro, Lda.",
+            height=35
+        )
+        self.nome_formal_entry.pack(fill="x", pady=(0, 15))
 
         # NIF
         ctk.CTkLabel(
@@ -642,6 +670,9 @@ class FormularioClienteDialog(ctk.CTkToplevel):
 
         self.nome_entry.insert(0, self.cliente.nome)
 
+        if self.cliente.nome_formal:
+            self.nome_formal_entry.insert(0, self.cliente.nome_formal)
+
         if self.cliente.nif:
             self.nif_entry.insert(0, self.cliente.nif)
 
@@ -667,6 +698,7 @@ class FormularioClienteDialog(ctk.CTkToplevel):
         """Save cliente"""
         # Get values
         nome = self.nome_entry.get().strip()
+        nome_formal = self.nome_formal_entry.get().strip()
         nif = self.nif_entry.get().strip()
         pais = self.pais_entry.get().strip() or "Portugal"
         morada = self.morada_entry.get("1.0", "end").strip()
@@ -686,6 +718,7 @@ class FormularioClienteDialog(ctk.CTkToplevel):
             success, cliente, message = self.manager.atualizar(
                 self.cliente.id,
                 nome=nome,
+                nome_formal=nome_formal if nome_formal else None,
                 nif=nif if nif else None,
                 pais=pais,
                 morada=morada if morada else None,
@@ -705,6 +738,7 @@ class FormularioClienteDialog(ctk.CTkToplevel):
             # Create
             success, cliente, message = self.manager.criar(
                 nome=nome,
+                nome_formal=nome_formal if nome_formal else None,
                 nif=nif if nif else None,
                 pais=pais,
                 morada=morada if morada else None,

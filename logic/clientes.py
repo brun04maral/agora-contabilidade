@@ -69,7 +69,7 @@ class ClientesManager:
 
     def pesquisar(self, termo: str) -> List[Cliente]:
         """
-        Search clientes by nome, NIF, or email
+        Search clientes by nome, nome_formal, NIF, or email
 
         Args:
             termo: Search term
@@ -80,6 +80,7 @@ class ClientesManager:
         termo_like = f"%{termo}%"
         return self.db.query(Cliente).filter(
             (Cliente.nome.ilike(termo_like)) |
+            (Cliente.nome_formal.ilike(termo_like)) |
             (Cliente.nif.ilike(termo_like)) |
             (Cliente.email.ilike(termo_like))
         ).order_by(Cliente.nome).all()
@@ -106,6 +107,7 @@ class ClientesManager:
     def criar(
         self,
         nome: str,
+        nome_formal: str = None,
         nif: str = None,
         morada: str = None,
         pais: str = "Portugal",
@@ -118,7 +120,8 @@ class ClientesManager:
         Create new cliente
 
         Args:
-            nome: Nome do cliente (required)
+            nome: Nome curto do cliente para listagens (required, max 120 chars)
+            nome_formal: Nome completo/formal da empresa (opcional, max 255 chars)
             nif: NIF/Tax ID
             morada: Morada completa
             pais: País (default: Portugal)
@@ -135,6 +138,10 @@ class ClientesManager:
             if not nome or nome.strip() == "":
                 return False, None, "Nome é obrigatório"
 
+            # Se nome_formal não fornecido, usar o nome
+            if not nome_formal or nome_formal.strip() == "":
+                nome_formal = nome
+
             # Generate numero
             numero = self.gerar_proximo_numero()
 
@@ -142,6 +149,7 @@ class ClientesManager:
             cliente = Cliente(
                 numero=numero,
                 nome=nome.strip(),
+                nome_formal=nome_formal.strip(),
                 nif=nif.strip() if nif else None,
                 morada=morada.strip() if morada else None,
                 pais=pais.strip() if pais else "Portugal",
@@ -165,6 +173,7 @@ class ClientesManager:
         self,
         cliente_id: int,
         nome: str = None,
+        nome_formal: str = None,
         nif: str = None,
         morada: str = None,
         pais: str = None,
@@ -178,7 +187,8 @@ class ClientesManager:
 
         Args:
             cliente_id: Cliente ID
-            nome: Nome do cliente
+            nome: Nome curto do cliente para listagens (max 120 chars)
+            nome_formal: Nome completo/formal da empresa (max 255 chars)
             nif: NIF/Tax ID
             morada: Morada completa
             pais: País
@@ -200,6 +210,13 @@ class ClientesManager:
                 if nome.strip() == "":
                     return False, None, "Nome não pode estar vazio"
                 cliente.nome = nome.strip()
+
+            if nome_formal is not None:
+                if nome_formal.strip() == "":
+                    # Se nome_formal vazio, usar o nome
+                    cliente.nome_formal = cliente.nome
+                else:
+                    cliente.nome_formal = nome_formal.strip()
 
             if nif is not None:
                 cliente.nif = nif.strip() if nif.strip() else None
