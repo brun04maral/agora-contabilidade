@@ -108,12 +108,24 @@ EstadoProjeto:
 
 **Campos principais:**
 - `id` - PK
-- `nome` - Nome do cliente
+- `numero` - String única (#C0001, #C0002, etc.)
+- `nome` - **VARCHAR(120)** - Nome curto para listagens e referências rápidas
+- `nome_formal` - **VARCHAR(255)** - Nome completo/formal da empresa (usado em documentos oficiais)
 - `nif` - NIF (opcional)
+- `pais` - País (default: "Portugal")
+- `morada` - Morada completa (opcional, TEXT)
+- `contacto` - Telefone/contacto (opcional)
 - `email` - Email (opcional)
-- `telefone` - Telefone (opcional)
-- `morada` - Morada (opcional)
-- `ativo` - Boolean
+- `angariacao` - Informação sobre origem/angariação (opcional)
+- `nota` - Notas adicionais (opcional, TEXT)
+- `created_at` - Timestamp de criação
+- `updated_at` - Timestamp de última atualização
+
+**Campos de Nome (desde Migration 021):**
+- **nome:** Nome curto usado em listagens, tabelas, dropdowns (ex: "Farmácia do Povo")
+- **nome_formal:** Nome completo/legal usado em documentos formais e PDFs (ex: "Farmácia Popular do Centro, Lda.")
+- **Comportamento:** Se nome_formal não fornecido, usa automaticamente o valor de nome
+- **Pesquisa:** Ambos os campos são pesquisáveis (ILIKE case-insensitive)
 
 **Relações:**
 - `projetos` → Lista de projetos (one-to-many)

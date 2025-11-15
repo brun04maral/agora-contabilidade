@@ -4,6 +4,175 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-15 - Noite 21:30] Session 011Nxway2rBVpU2mvorwQDGJ
+
+### ✨ Migration 021 - Cliente Nome e Nome Formal
+
+**Motivação:** Separar nome curto (para listagens) de nome formal (para documentos oficiais).
+
+**Exemplo de uso:**
+- **Listagem:** "Farmácia do Povo" (nome curto, fácil de ler)
+- **Proposta PDF:** "Farmácia Popular do Centro, Lda." (nome formal/legal)
+
+**Alterações na Base de Dados:**
+```sql
+-- 1. Renomear coluna existente
+ALTER TABLE clientes RENAME COLUMN nome TO nome_formal;
+
+-- 2. Adicionar novo campo nome
+ALTER TABLE clientes ADD COLUMN nome VARCHAR(120) NOT NULL DEFAULT '';
+
+-- 3. Copiar dados
+UPDATE clientes SET nome = nome_formal WHERE nome = '' OR nome IS NULL;
+```
+
+**Estrutura final:**
+- `nome` (VARCHAR 120) - Nome curto para listagens
+- `nome_formal` (VARCHAR 255) - Nome completo/legal
+
+**Lógica de Negócio:**
+- `ClientesManager.criar(nome, nome_formal=None)` - Se nome_formal não fornecido, usa nome
+- `ClientesManager.atualizar(id, nome=..., nome_formal=...)` - Permite atualizar separadamente
+- `ClientesManager.pesquisar(termo)` - Busca em AMBOS os campos
+
+**Interface:**
+- Tabela de clientes: apenas coluna "Nome" (campo curto)
+- Formulário: dois campos separados com placeholders explicativos
+- PDFs de propostas: usam `cliente.nome_formal`
+
+**Dados Migrados:**
+- 20 clientes atualizados
+- Valores copiados do nome original para ambos os campos
+- Utilizador pode agora editar para diferenciar
+
+**Ficheiros alterados:**
+- `database/migrations/021_cliente_nome_e_nome_formal.py` (novo)
+- `database/models/cliente.py` (modelo atualizado)
+- `logic/clientes.py` (criar, atualizar, pesquisar)
+- `ui/screens/clientes.py` (formulário com 2 campos)
+- `logic/proposta_exporter.py` (PDF usa nome_formal)
+- `tests/verificar_cliente_schema.py` (novo)
+- `tests/testar_cliente_nome_formal.py` (novo)
+
+**Commits:**
+- `4126e67` - ✨ Feature: Adicionar campo 'nome_formal' ao modelo Cliente
+- `f1695fd` - 🗄️ Database: Aplicar migration 021 - campos nome e nome_formal
+
+---
+
+### ✨ Menu de Contexto (Right-Click) em Clientes
+
+**Feature:** Menu popup ao clicar com botão direito em qualquer linha da tabela de clientes.
+
+**Ações disponíveis:**
+- ✏️ **Editar** - Abre formulário de edição do cliente
+- 🗑️ **Apagar** - Remove cliente (com diálogo de confirmação)
+
+**Implementação:**
+```python
+def show_context_menu(self, event, data: dict):
+    cliente = data.get('_cliente')
+    menu = tk.Menu(self, tearoff=0)
+
+    menu.add_command(label="✏️ Editar", command=lambda: self._editar_from_context(cliente))
+    menu.add_separator()
+    menu.add_command(label="🗑️ Apagar", command=lambda: self._apagar_from_context(cliente))
+
+    menu.tk_popup(event.x_root, event.y_root)
+    menu.grab_release()
+```
+
+**Suporte Multi-plataforma:**
+- Mac: `<Button-2>` (Command+Click ou botão direito)
+- Windows/Linux: `<Button-3>` (botão direito)
+
+**Ficheiros alterados:**
+- `ui/screens/clientes.py` (método show_context_menu + helpers)
+
+**Commits:**
+- `37688a5` - ✨ Feature: Adicionar menu de contexto (right-click) à tabela de Clientes
+
+---
+
+### 🐛 Fix: Event Bindings no DataTableV2
+
+**Problema:** Aplicação crashava ao clicar em linhas da tabela.
+
+**Erro:**
+```
+TypeError: DataTableV2.add_row.<locals>.<lambda>() missing 1 required positional argument: 'e'
+```
+
+**Causa:** Lambdas tinham parâmetro com default `e=None`, mas tkinter sempre passa evento como argumento posicional obrigatório.
+
+**Código problemático:**
+```python
+# ❌ ERRADO - tkinter não sabe que 'e' tem default
+row_frame.bind("<Button-1>", lambda e=None, rf=row_frame: self._on_row_click(e, rf))
+```
+
+**Solução:**
+```python
+# ✅ CORRETO - tkinter passa 'e' como primeiro argumento
+row_frame.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
+```
+
+**Eventos corrigidos:**
+- `<Button-1>` - Click simples (seleção)
+- `<Double-Button-1>` - Double-click (editar)
+- `<Enter>` - Mouse entra na row (hover)
+- `<Leave>` - Mouse sai da row
+
+**Total:** 8 lambdas corrigidos (4 no row_frame + 4 nas labels)
+
+**Ficheiros alterados:**
+- `ui/components/data_table_v2.py` (linhas 581-582, 585-586, 636-637, 640-641)
+
+**Commits:**
+- `7640087` - 🐛 Fix: Corrigir lambdas com e=None em event bindings do DataTableV2
+
+---
+
+### 🐛 Fix: Toggle Tipo Item em Orçamentos
+
+**Problema:** Aplicação crashava ao alternar entre "Item Manual" e "Equipamento" no diálogo de adicionar item.
+
+**Erro:**
+```
+_tkinter.TclError: window ".!ctkframe...!ctkframe3" isn't packed
+```
+
+**Causa:** Código usava índice frágil de children para posicionar `equipamento_frame`:
+```python
+# ❌ ERRADO - assume que children[5] existe e está packed
+self.equipamento_frame.pack(after=self.equipamento_frame.master.children[list(...).keys()][5])
+```
+
+**Problema:**
+- Índice `[5]` pode não existir
+- Widget nessa posição pode não estar packed
+- Ordem de children pode mudar
+
+**Solução:**
+```python
+# ✅ CORRETO - referência explícita ao widget anterior
+self.tipo_frame = ctk.CTkFrame(...)  # Guardar referência
+self.equipamento_frame.pack(after=self.tipo_frame)  # Usar referência
+```
+
+**Mudanças:**
+- `tipo_frame` agora é `self.tipo_frame` (atributo da instância)
+- `toggle_tipo_item()` usa `after=self.tipo_frame` (robusto)
+- Código funciona independentemente de número de widgets ou ordem
+
+**Ficheiros alterados:**
+- `ui/screens/orcamentos.py` (linhas 1685-1704, 1876-1882)
+
+**Commits:**
+- `2053cdd` - 🐛 Fix: Corrigir erro de pack no toggle_tipo_item em Orçamentos
+
+---
+
 ## [2025-11-15 - Noite 23:00] UX Melhorias - Boletim Linhas
 
 ### ✨ Auto-preenchimento de Datas do Projeto

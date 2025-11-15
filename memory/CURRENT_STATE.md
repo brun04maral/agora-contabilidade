@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-15 (23:00)
-**Sessão:** claude/sync-with-latest-branch-0149iW3euEsQJp1R2oQ7ZmxX
+**Última atualização:** 2025-11-15 (21:30)
+**Sessão:** claude/sync-with-latest-branch-011Nxway2rBVpU2mvorwQDGJ
 
 ---
 
@@ -138,6 +138,55 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
   - **Logging:** Todas as transições registadas com detalhes
   - **Testes:** 4 cenários validados (vencido, sem data, futuro, já pago)
   - **Ficheiros alterados:** 16 ficheiros (logic, UI, scripts, testes) com referências corrigidas
+- ✅ **Migration 021 - Cliente Nome e Nome Formal** (NOVO 15/11 - Sessão 011Nxway2rBVpU2mvorwQDGJ)
+  - **Reestruturação dos campos de nome:** Distinção entre nome curto e nome formal
+  - **Tabela clientes:**
+    - Campo `nome` (existente) renomeado para `nome_formal` (VARCHAR 255)
+    - Novo campo `nome` (VARCHAR 120) para nome curto usado em listagens
+    - Dados migrados: 20 clientes (valores copiados de nome original para ambos os campos)
+  - **Lógica de negócio:**
+    - `ClientesManager.criar()` aceita ambos os parâmetros (nome_formal opcional, default=nome)
+    - `ClientesManager.atualizar()` aceita ambos os parâmetros
+    - `ClientesManager.pesquisar()` busca em AMBOS os campos simultaneamente (ILIKE)
+  - **Interface:**
+    - Listagem de clientes: mostra apenas coluna "Nome" (campo curto)
+    - Formulário: campos separados com labels descritivos
+    - Dropdowns/referências: usam nome curto
+  - **Documentos formais:**
+    - `logic/proposta_exporter.py`: PDFs de orçamentos usam `nome_formal`
+  - **Scripts de teste:**
+    - `tests/verificar_cliente_schema.py`: Verificação de schema (sqlite3)
+    - `tests/testar_cliente_nome_formal.py`: Testes funcionais (requer SQLAlchemy)
+  - **Commits:**
+    - 4126e67 - ✨ Feature: Adicionar campo 'nome_formal' ao modelo Cliente
+    - f1695fd - 🗄️ Database: Aplicar migration 021 - campos nome e nome_formal
+- ✅ **Menu de Contexto (Right-Click) em Clientes** (NOVO 15/11)
+  - **Feature:** Menu popup ao clicar com botão direito na tabela de clientes
+  - **Ações disponíveis:**
+    - ✏️ Editar - Abre formulário de edição
+    - 🗑️ Apagar - Remove cliente (com confirmação)
+  - **Implementação:**
+    - `DataTableV2` já suportava `on_row_right_click` callback
+    - Método `show_context_menu()` cria menu nativo tk.Menu
+    - Suporte Mac (Button-2) e Windows/Linux (Button-3)
+  - **Commit:**
+    - 37688a5 - ✨ Feature: Adicionar menu de contexto (right-click) à tabela de Clientes
+- ✅ **Correção: Event Bindings no DataTableV2** (NOVO 15/11)
+  - **Problema:** `TypeError: lambda() missing 1 required positional argument: 'e'`
+  - **Causa:** Lambdas com `e=None` (default) não recebem evento do tkinter corretamente
+  - **Solução:** Remover default, usar `lambda e, ...` (sem =None)
+  - **Eventos corrigidos:** `<Button-1>`, `<Double-Button-1>`, `<Enter>`, `<Leave>`
+  - **Total:** 8 lambdas corrigidos em `ui/components/data_table_v2.py`
+  - **Commit:**
+    - 7640087 - 🐛 Fix: Corrigir lambdas com e=None em event bindings do DataTableV2
+- ✅ **Correção: Toggle Tipo Item em Orçamentos** (NOVO 15/11)
+  - **Problema:** `TclError: window isn't packed` ao alternar tipo de item
+  - **Causa:** Código frágil usando índice de children `[5]` para posicionar frame
+  - **Solução:**
+    - Guardar referência `self.tipo_frame` ao criar widget
+    - Usar `after=self.tipo_frame` (robusto) em vez de índice
+  - **Commit:**
+    - 2053cdd - 🐛 Fix: Corrigir erro de pack no toggle_tipo_item em Orçamentos
 - ✅ Sistema de orçamentos (versões, aprovações)
 - ✅ Relatórios exportáveis (Excel)
 
