@@ -241,6 +241,38 @@ class ProjetosManager:
             self.db_session.rollback()
             return False, str(e)
 
+    def filtrar_por_texto(self, search_text: str) -> List[Projeto]:
+        """
+        Filtra projetos por texto de pesquisa (nome cliente ou descrição)
+
+        Busca case-insensitive e com substring matching em:
+        - Nome do cliente
+        - Descrição do projeto
+
+        Args:
+            search_text: Texto a pesquisar (mínimo 1 caracter)
+
+        Returns:
+            Lista de projetos que correspondem à pesquisa
+        """
+        if not search_text or len(search_text.strip()) == 0:
+            return self.listar_todos()
+
+        # Normalize search text (lowercase, strip whitespace)
+        search_term = f"%{search_text.strip().lower()}%"
+
+        # Query with JOIN to Cliente table
+        projetos = self.db_session.query(Projeto).outerjoin(
+            Cliente, Projeto.cliente_id == Cliente.id
+        ).filter(
+            # Search in cliente.nome OR projeto.descricao (case-insensitive)
+            # Use func.lower() for case-insensitive LIKE
+            (Cliente.nome.ilike(search_term)) |
+            (Projeto.descricao.ilike(search_term))
+        ).order_by(desc(Projeto.created_at)).all()
+
+        return projetos
+
     def obter_clientes(self) -> List[Cliente]:
         """
         Obtém lista de todos os clientes

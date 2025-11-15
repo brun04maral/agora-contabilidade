@@ -123,6 +123,43 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         novo_btn.pack(side="left", padx=5)
 
+        # Search bar (search-as-you-type)
+        search_frame = ctk.CTkFrame(self, fg_color="transparent")
+        search_frame.pack(fill="x", padx=30, pady=(0, 15))
+
+        ctk.CTkLabel(
+            search_frame,
+            text="🔍 Pesquisar:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(side="left", padx=(0, 10))
+
+        # Search entry with StringVar for reactive tracking
+        self.search_var = ctk.StringVar()
+        self.search_var.trace_add("write", self.on_search_change)
+
+        self.search_entry = ctk.CTkEntry(
+            search_frame,
+            textvariable=self.search_var,
+            placeholder_text="Digite para pesquisar por cliente ou descrição...",
+            width=500,
+            height=35,
+            font=ctk.CTkFont(size=13)
+        )
+        self.search_entry.pack(side="left", padx=(0, 10))
+
+        # Clear search button
+        clear_search_btn = ctk.CTkButton(
+            search_frame,
+            text="✖",
+            command=self.limpar_pesquisa,
+            width=35,
+            height=35,
+            font=ctk.CTkFont(size=14),
+            fg_color=("#E0E0E0", "#404040"),
+            hover_color=("#BDBDBD", "#606060")
+        )
+        clear_search_btn.pack(side="left")
+
         # Filters
         filters_frame = ctk.CTkFrame(self, fg_color="transparent")
         filters_frame.pack(fill="x", padx=30, pady=(0, 20))
@@ -252,14 +289,39 @@ class ProjetosScreen(ctk.CTkFrame):
             data = [self.projeto_to_dict(p) for p in projetos]
             self.table.set_data(data)
 
-    def projeto_to_dict(self, projeto) -> dict:
-        """Convert project to dict for table"""
+    def projeto_to_dict(self, projeto, search_text: Optional[str] = None) -> dict:
+        """
+        Convert project to dict for table
+
+        Args:
+            projeto: Projeto object
+            search_text: Optional search text to highlight in results
+
+        Returns:
+            Dictionary with project data for table display
+        """
+        cliente_nome = projeto.cliente.nome if projeto.cliente else '-'
+        descricao = projeto.descricao or ''
+        numero = projeto.numero
+
+        # Apply visual highlighting if search text is provided
+        if search_text and search_text.strip():
+            search_lower = search_text.strip().lower()
+
+            # Check if cliente_nome or descricao match
+            if search_lower in cliente_nome.lower():
+                # Add highlight marker to numero to indicate match
+                numero = f"➤ {numero}"
+            elif search_lower in descricao.lower():
+                # Add highlight marker to numero to indicate match
+                numero = f"➤ {numero}"
+
         data = {
             'id': projeto.id,
-            'numero': projeto.numero,
+            'numero': numero,
             'tipo': self.tipo_to_label(projeto.tipo),
-            'cliente_nome': projeto.cliente.nome if projeto.cliente else '-',
-            'descricao': projeto.descricao,  # DataTableV2 will truncate automatically with tooltip
+            'cliente_nome': cliente_nome,
+            'descricao': descricao,  # DataTableV2 will truncate automatically with tooltip
             'valor_sem_iva': float(projeto.valor_sem_iva),
             'estado': self.estado_to_label(projeto.estado),
             '_bg_color': self.estado_to_color(projeto.estado),  # Color by estado
@@ -301,18 +363,28 @@ class ProjetosScreen(ctk.CTkFrame):
         }
         return mapping.get(estado, ("#f8f8f8", "#252525"))
 
-    def aplicar_filtros(self, *args):
-        """Apply filters"""
+    def on_search_change(self, *args):
+        """
+        Reactive search handler - called on every keystroke
+        Filters projects dynamically as user types
+        """
+        search_text = self.search_var.get()
+
+        # Get base projects from search
+        if search_text and search_text.strip():
+            # Use backend search method
+            projetos = self.manager.filtrar_por_texto(search_text)
+        else:
+            # No search text, get all
+            projetos = self.manager.listar_todos()
+
+        # Apply existing filters on top of search results
         cliente = self.cliente_filter.get()
         tipo = self.tipo_filter.get()
         estado = self.estado_filter.get()
 
-        # Get all projects
-        projetos = self.manager.listar_todos()
-
         # Filter by cliente
         if cliente != "Todos":
-            # Find cliente by name
             cliente_obj = next((c for c in self.clientes_list if c.nome == cliente), None)
             if cliente_obj:
                 projetos = [p for p in projetos if p.cliente_id == cliente_obj.id]
@@ -345,9 +417,20 @@ class ProjetosScreen(ctk.CTkFrame):
             elif self.filtro_premio_socio == "RR":
                 projetos = [p for p in projetos if p.premio_rafael and p.premio_rafael > 0]
 
-        # Update table
-        data = [self.projeto_to_dict(p) for p in projetos]
+        # Update table with highlighting (pass search_text for visual markers)
+        search_term = search_text.strip() if search_text and search_text.strip() else None
+        data = [self.projeto_to_dict(p, search_text=search_term) for p in projetos]
         self.table.set_data(data)
+
+    def limpar_pesquisa(self):
+        """Clear search field and refresh results"""
+        self.search_var.set("")
+        self.search_entry.focus()
+
+    def aplicar_filtros(self, *args):
+        """Apply filters (dropdown filters trigger this, search triggers on_search_change)"""
+        # Trigger search which will also apply filters
+        self.on_search_change()
 
     def after_save_callback(self):
         """Callback after saving project - reload data and clear selection"""
