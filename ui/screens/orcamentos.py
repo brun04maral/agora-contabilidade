@@ -1682,11 +1682,11 @@ class ItemDialog(ctk.CTkToplevel):
 
         self.tipo_item_var = ctk.StringVar(value="manual")
 
-        tipo_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        tipo_frame.pack(fill="x", pady=(0, 10))
+        self.tipo_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        self.tipo_frame.pack(fill="x", pady=(0, 10))
 
         manual_radio = ctk.CTkRadioButton(
-            tipo_frame,
+            self.tipo_frame,
             text="Item Manual (Serviço/Despesa)",
             variable=self.tipo_item_var,
             value="manual",
@@ -1695,7 +1695,7 @@ class ItemDialog(ctk.CTkToplevel):
         manual_radio.pack(anchor="w", pady=2)
 
         equipamento_radio = ctk.CTkRadioButton(
-            tipo_frame,
+            self.tipo_frame,
             text="Equipamento (selecionar da lista)",
             variable=self.tipo_item_var,
             value="equipamento",
@@ -1876,7 +1876,8 @@ class ItemDialog(ctk.CTkToplevel):
     def toggle_tipo_item(self):
         """Show/hide equipamento frame based on tipo"""
         if self.tipo_item_var.get() == "equipamento":
-            self.equipamento_frame.pack(fill="x", pady=(0, 10), after=self.equipamento_frame.master.children[list(self.equipamento_frame.master.children.keys())[5]])
+            # Pack after tipo_frame
+            self.equipamento_frame.pack(fill="x", pady=(0, 10), after=self.tipo_frame)
         else:
             self.equipamento_frame.pack_forget()
 
