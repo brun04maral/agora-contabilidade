@@ -578,12 +578,12 @@ class DataTableV2(ctk.CTkFrame):
         self.row_data_map[row_frame] = (data, index)
 
         # Propagate scroll events from row to canvas
-        row_frame.bind("<Enter>", lambda e=None, rf=row_frame: self._on_row_enter(e, rf))
-        row_frame.bind("<Leave>", lambda e=None, rf=row_frame: self._on_row_leave(e, rf))
+        row_frame.bind("<Enter>", lambda e, rf=row_frame: self._on_row_enter(e, rf))
+        row_frame.bind("<Leave>", lambda e, rf=row_frame: self._on_row_leave(e, rf))
 
         # Bind click for selection and double-click for edit
-        row_frame.bind("<Button-1>", lambda e=None, rf=row_frame: self._on_row_click(e, rf))
-        row_frame.bind("<Double-Button-1>", lambda e=None, d=data: self._on_row_double_click(d))
+        row_frame.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
+        row_frame.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
 
         # Bind right-click for context menu (Button-3 on Linux/Windows, Button-2 on Mac)
         if self.is_mac:
@@ -633,12 +633,12 @@ class DataTableV2(ctk.CTkFrame):
                 ToolTip(label, original_value)
 
             # Propagate scroll events and hover from labels to canvas/row
-            label.bind("<Enter>", lambda e=None, rf=row_frame: self._on_row_enter(e, rf))
-            label.bind("<Leave>", lambda e=None, rf=row_frame: self._on_row_leave(e, rf))
+            label.bind("<Enter>", lambda e, rf=row_frame: self._on_row_enter(e, rf))
+            label.bind("<Leave>", lambda e, rf=row_frame: self._on_row_leave(e, rf))
 
             # Bind click for selection and double-click for edit
-            label.bind("<Button-1>", lambda e=None, rf=row_frame: self._on_row_click(e, rf))
-            label.bind("<Double-Button-1>", lambda e=None, d=data: self._on_row_double_click(d))
+            label.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
+            label.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
 
             # Bind right-click for context menu (propagate from label to row handler)
             if self.is_mac:
