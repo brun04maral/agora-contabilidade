@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-14 (15:30)
+**Última atualização:** 2025-11-15 (Tarde)
 **Sessão:** claude/sync-with-latest-branch-01FczApmzspmkD8yFYwa3cP4
 
 ---
@@ -119,9 +119,10 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
 - ✅ **Update seletivo:** Prémios de projetos podem ser atualizados
 - ✅ **Validações robustas:** Skip de despesas sem data, etc.
 - ✅ **Estatísticas detalhadas:** NEW/SKIP/UPDATED/ERROR
-- ✅ **Última importação:** 14/11/2025 (CONTABILIDADE_FINAL_20251114.xlsx)
-  - 1 cliente novo, 3 despesas novas, 2 prémios atualizados
-  - Total: 19 clientes, 44 fornecedores, 75 projetos, 165 despesas, 34 boletins
+- ✅ **Última importação:** 15/11/2025 (CONTABILIDADE_FINAL_20251115.xlsx)
+  - 3 despesas novas (#D000244, #D000245, #D000246)
+  - Total: 19 clientes, 44 fornecedores, 75 projetos, 168 despesas, 34 boletins
+  - Estados finais: 157 PAGO (93.5%), 11 PENDENTE (6.5%)
 - ✅ **Documentação:** `IMPORT_GUIDE.md` (guia completo de uso)
 - ✅ **Histórico:** Documentação antiga em `memory/archive/importacao/`
 

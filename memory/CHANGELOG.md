@@ -4,6 +4,48 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-15] Nova Importação - CONTABILIDADE_FINAL_20251115
+
+### 📊 Importação Incremental
+- **Ficheiro:** CONTABILIDADE_FINAL_20251115.xlsx
+- **Data:** 15/11/2025
+- **Modo:** Incremental (skip de registos existentes)
+
+### 📦 Novos Dados
+- ✅ **3 despesas novas:**
+  - #D000244: Despesa importada
+  - #D000245: Despesa importada
+  - #D000246: Despesa importada
+- ✅ **Estados finais:**
+  - 157 PAGO (93.5%)
+  - 11 PENDENTE (6.5%)
+  - Total: 168 despesas
+
+### 📊 Totais na Base de Dados
+- 19 clientes
+- 44 fornecedores
+- 75 projetos
+- **168 despesas** (era 165)
+- 34 boletins
+
+### 🔍 Lógica de Estados Validada
+- ✅ Coluna T (DATA DE VENCIMENTO) determina estado PAGO/PENDENTE
+- ✅ Ordem de leitura correta (T antes de B/C/D)
+- ✅ Prémios filtrados corretamente (coluna G = "Prémio" ou "Comissão venda")
+
+### 📦 Commits
+- `bebb743` - 📊 DB: Nova importação incremental (15/11/2025)
+
+### 🎓 Documentação
+- **Questão levantada:** Porque migrations precisam ser executadas manualmente localmente?
+- **Resposta documentada:** Existem duas bases de dados separadas (dev no repo vs local no Mac)
+  - Ficheiros SQLite são binários (Git não transfere)
+  - Git transfere apenas scripts Python das migrations (código)
+  - Cada ambiente precisa executar migrations contra a sua própria base de dados
+  - Abordagem manual garante controlo e segurança
+
+---
+
 ## [2025-11-14 - Tarde 18:00] BUGFIX: Ordem de Leitura das Colunas (B/C/D vs T)
 
 ### 🐛 Bug Identificado
