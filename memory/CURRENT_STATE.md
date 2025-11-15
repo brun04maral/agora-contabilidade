@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-15 (Tarde)
-**Sessão:** claude/sync-with-latest-branch-01FczApmzspmkD8yFYwa3cP4
+**Última atualização:** 2025-11-15 (Noite)
+**Sessão:** claude/sync-with-latest-branch-0149iW3euEsQJp1R2oQ7ZmxX
 
 ---
 
@@ -105,6 +105,27 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
     3. `BoletimFormScreen` - Editor completo (header + tabela linhas CRUD inline)
     4. `BoletinsScreen` - Atualizado (coluna "Linhas", botão "🔁 Gerar Recorrentes")
   - **Total:** ~2600 linhas de código (4 DB + 3 logic + 4 UI)
+- ✅ **Migration 020 - Orçamentos e Projetos Completo** (NOVO 15/11)
+  - **Tabela orcamentos:** Coluna `owner` VARCHAR(2) NOT NULL (default 'BA')
+  - **Tabela projetos:** 6 novas colunas
+    - `owner` VARCHAR(2) NOT NULL (inferido de tipo)
+    - Rastreabilidade financeira: `valor_empresa`, `valor_fornecedores`, `valor_equipamento`, `valor_despesas`
+    - `data_pagamento` DATE NULL
+    - Estados atualizados: ATIVO, FINALIZADO, PAGO, ANULADO (de NAO_FATURADO, FATURADO, RECEBIDO)
+  - **Tabela orcamento_reparticoes:** 3 novas colunas
+    - `tipo` VARCHAR(20) (mapeado de entidade)
+    - `fornecedor_id` INTEGER NULL (FK)
+    - `equipamento_id` INTEGER NULL (FK)
+  - **Tabela equipamento:** `rendimento_acumulado` DECIMAL(10,2) DEFAULT 0
+  - **Script de migração de dados:** `fix_estados_projetos.py`
+    - Migrou 121 projetos (17 ATIVO, 12 FINALIZADO, 46 PAGO)
+- ✅ **Transição Automática de Projetos** (NOVO 15/11)
+  - **Método automático:** Projetos ATIVO com data_fim < hoje → FINALIZADO
+  - **Ativação:** Ao iniciar app + ao carregar/atualizar screen Projetos
+  - **Validação:** Apenas ATIVO são afetados, requer data_fim definida
+  - **Logging:** Todas as transições registadas com detalhes
+  - **Testes:** 4 cenários validados (vencido, sem data, futuro, já pago)
+  - **Ficheiros alterados:** 16 ficheiros (logic, UI, scripts, testes) com referências corrigidas
 - ✅ Sistema de orçamentos (versões, aprovações)
 - ✅ Relatórios exportáveis (Excel)
 
