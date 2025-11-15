@@ -640,6 +640,12 @@ class DataTableV2(ctk.CTkFrame):
             label.bind("<Button-1>", lambda e=None, rf=row_frame: self._on_row_click(e, rf))
             label.bind("<Double-Button-1>", lambda e=None, d=data: self._on_row_double_click(d))
 
+            # Bind right-click for context menu (propagate from label to row handler)
+            if self.is_mac:
+                label.bind("<Button-2>", lambda e, d=data: self._on_row_right_click(e, d))
+            else:
+                label.bind("<Button-3>", lambda e, d=data: self._on_row_right_click(e, d))
+
             # Bind keyboard shortcuts
             self._bind_shortcuts_to_widget(label)
 
