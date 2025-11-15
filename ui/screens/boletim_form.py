@@ -303,6 +303,20 @@ class BoletimFormScreen(ctk.CTkToplevel):
         )
         save_btn.pack(side="left")
 
+        # Duplicate button (only when editing existing boletim)
+        if self.boletim:
+            duplicate_btn = ctk.CTkButton(
+                btn_frame,
+                text="📋 Duplicar",
+                command=self.duplicar_boletim,
+                width=140,
+                height=40,
+                font=ctk.CTkFont(size=14),
+                fg_color=("#2196F3", "#1976D2"),
+                hover_color=("#64B5F6", "#1565C0")
+            )
+            duplicate_btn.pack(side="left", padx=(10, 0))
+
         # Delete button (only when editing)
         if self.boletim:
             delete_linha_btn = ctk.CTkButton(
@@ -567,6 +581,59 @@ class BoletimFormScreen(ctk.CTkToplevel):
             messagebox.showerror("Erro", f"Valores inválidos: {str(e)}")
         except Exception as e:
             messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+    def duplicar_boletim(self):
+        """
+        Duplica o boletim atual (header + todas as linhas)
+
+        Conforme BUSINESS_LOGIC.md Secção 2.3:
+        - Duplica boletim completo
+        - Abre novo boletim em modo edição
+        - Permite editar antes de gravar
+        """
+        try:
+            if not self.boletim:
+                messagebox.showerror("Erro", "Nenhum boletim para duplicar")
+                return
+
+            # Confirm duplication
+            resposta = messagebox.askyesno(
+                "Duplicar Boletim",
+                f"Duplicar boletim {self.boletim.numero}?\n\n"
+                f"Todas as deslocações serão copiadas.\n"
+                f"Você poderá editar o novo boletim antes de gravar."
+            )
+
+            if not resposta:
+                return
+
+            # Duplicate using manager
+            sucesso, novo_boletim, erro = self.boletins_manager.duplicar_boletim(self.boletim.id)
+
+            if sucesso:
+                # Close current window
+                if self.callback:
+                    self.callback()
+
+                # Open new window with duplicated boletim
+                from ui.screens.boletim_form import BoletimFormScreen
+                novo_form = BoletimFormScreen(
+                    self.master,
+                    self.db_session,
+                    boletim=novo_boletim,
+                    callback=self.callback
+                )
+
+                # Update title to indicate it's a duplicate
+                novo_form.title(f"Novo Boletim {novo_boletim.numero} (duplicado de {self.boletim.numero})")
+
+                self.destroy()
+
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao duplicar boletim")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao duplicar boletim: {str(e)}")
 
 
 class LinhaDialog(ctk.CTkToplevel):

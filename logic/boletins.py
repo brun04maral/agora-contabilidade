@@ -8,7 +8,7 @@ from sqlalchemy import desc
 from datetime import date, datetime
 from decimal import Decimal
 
-from database.models import Boletim, Socio, EstadoBoletim
+from database.models import Boletim, Socio, EstadoBoletim, BoletimLinha
 from logic.saldos import SaldosCalculator
 
 
@@ -361,6 +361,95 @@ class BoletinsManager:
         except Exception as e:
             self.db_session.rollback()
             return False, str(e)
+
+    def duplicar_boletim(self, boletim_id: int) -> Tuple[bool, Optional[Boletim], Optional[str]]:
+        """
+        Duplica um boletim completo (header + todas as linhas)
+
+        Conforme BUSINESS_LOGIC.md Secção 2.3 e DECISIONS.md:
+        - Substitui sistema de templates por funcionalidade simples de duplicar
+        - Copia header completo + todas as linhas
+        - Gera novo número automático
+        - Estado sempre PENDENTE
+        - Descrição indica que é cópia (se houver descricao antiga)
+        - Retorna novo boletim AINDA NÃO GRAVADO (permite editar antes de gravar)
+
+        Args:
+            boletim_id: ID do boletim original a duplicar
+
+        Returns:
+            Tuple (sucesso, boletim_novo, mensagem_erro)
+        """
+        try:
+            # Buscar original
+            original = self.obter_por_id(boletim_id)
+            if not original:
+                return False, None, f"Boletim #{boletim_id} não encontrado"
+
+            # Gerar novo número
+            novo_numero = self.gerar_proximo_numero()
+
+            # Copiar header
+            novo = Boletim(
+                numero=novo_numero,
+                socio=original.socio,
+                mes=original.mes,
+                ano=original.ano,
+                data_emissao=date.today(),  # Data de hoje por padrão
+                val_dia_nacional=original.val_dia_nacional,
+                val_dia_estrangeiro=original.val_dia_estrangeiro,
+                val_km=original.val_km,
+                total_ajudas_nacionais=Decimal('0'),  # Será recalculado
+                total_ajudas_estrangeiro=Decimal('0'),  # Será recalculado
+                total_kms=Decimal('0'),  # Será recalculado
+                valor_total=Decimal('0'),  # Será recalculado
+                valor=Decimal('0'),  # Compatibilidade
+                estado=EstadoBoletim.PENDENTE,  # Sempre PENDENTE
+                descricao=f"{original.descricao} (cópia)" if original.descricao else None,
+                nota=original.nota,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+
+            # Copiar todas as linhas
+            if hasattr(original, 'linhas') and original.linhas:
+                for idx, linha_original in enumerate(original.linhas, start=1):
+                    linha_nova = BoletimLinha(
+                        boletim=novo,
+                        ordem=idx,
+                        projeto_id=linha_original.projeto_id,
+                        servico=linha_original.servico,
+                        localidade=linha_original.localidade,
+                        data_inicio=linha_original.data_inicio,
+                        hora_inicio=linha_original.hora_inicio,
+                        data_fim=linha_original.data_fim,
+                        hora_fim=linha_original.hora_fim,
+                        tipo=linha_original.tipo,
+                        dias=linha_original.dias,
+                        kms=linha_original.kms,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    # Adicionar linha ao boletim (será persistida quando gravar)
+                    if not hasattr(novo, 'linhas'):
+                        novo.linhas = []
+                    novo.linhas.append(linha_nova)
+
+            # Gravar boletim + linhas
+            self.db_session.add(novo)
+            self.db_session.commit()
+            self.db_session.refresh(novo)
+
+            # Recalcular totais (se o boletim tem método para isso)
+            if hasattr(novo, 'recalcular_totais'):
+                novo.recalcular_totais()
+                self.db_session.commit()
+
+            return True, novo, None
+
+        except Exception as e:
+            self.db_session.rollback()
+            return False, None, f"Erro ao duplicar boletim: {str(e)}"
 
     def apagar(self, boletim_id: int) -> Tuple[bool, Optional[str]]:
         """

@@ -170,6 +170,16 @@ class BoletinsScreen(ctk.CTkFrame):
             hover_color=("#66BB6A", "#2E7D32")
         )
 
+        # Duplicate button (only for single selection)
+        self.duplicar_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="📋 Duplicar",
+            command=self.duplicar_boletim_selecionado,
+            width=140, height=35,
+            fg_color=("#2196F3", "#1976D2"),
+            hover_color=("#64B5F6", "#1565C0")
+        )
+
         # Report button
         self.report_btn = ctk.CTkButton(
             self.selection_frame,
@@ -306,6 +316,10 @@ class BoletinsScreen(ctk.CTkFrame):
             if has_unpaid:
                 self.marcar_pago_btn.pack(side="left", padx=5)
 
+            # Show "Duplicar" only if exactly 1 boletim is selected
+            if num_selected == 1:
+                self.duplicar_btn.pack(side="left", padx=5)
+
             self.report_btn.pack(side="left", padx=5)
 
             # Calculate and show total
@@ -372,6 +386,53 @@ class BoletinsScreen(ctk.CTkFrame):
                 main_window.show_relatorios(boletim_ids=boletim_ids)
             else:
                 messagebox.showerror("Erro", "Não foi possível navegar para a aba de Relatórios")
+
+    def duplicar_boletim_selecionado(self):
+        """
+        Duplica o boletim selecionado na lista
+
+        Conforme BUSINESS_LOGIC.md Secção 2.3:
+        - Duplica boletim completo (header + linhas)
+        - Abre novo boletim em modo edição
+        """
+        selected_data = self.table.get_selected_data()
+        if len(selected_data) != 1:
+            messagebox.showerror("Erro", "Selecione exatamente 1 boletim para duplicar")
+            return
+
+        boletim_original = selected_data[0].get('_boletim')
+        if not boletim_original:
+            messagebox.showerror("Erro", "Boletim não encontrado")
+            return
+
+        try:
+            # Confirm duplication
+            resposta = messagebox.askyesno(
+                "Duplicar Boletim",
+                f"Duplicar boletim {boletim_original.numero}?\n\n"
+                f"Todas as deslocações serão copiadas.\n"
+                f"O novo boletim abrirá em modo edição."
+            )
+
+            if not resposta:
+                return
+
+            # Duplicate
+            sucesso, novo_boletim, erro = self.manager.duplicar_boletim(boletim_original.id)
+
+            if sucesso:
+                # Reload list
+                self.carregar_boletins()
+                self.table.clear_selection()
+
+                # Open new boletim for editing
+                self.abrir_formulario(novo_boletim)
+
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao duplicar boletim")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao duplicar boletim: {str(e)}")
 
     def abrir_valores_referencia(self):
         """Open valores de referência screen (config)"""
