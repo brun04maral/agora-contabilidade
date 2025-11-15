@@ -3,6 +3,7 @@
 Tela de gestão de Boletins
 """
 import customtkinter as ctk
+import tkinter as tk
 from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import date
@@ -212,6 +213,7 @@ class BoletinsScreen(ctk.CTkFrame):
             columns=columns,
             on_row_double_click=self.editar_boletim,
             on_selection_change=self.on_selection_change,
+            on_row_right_click=self.show_context_menu,
             height=400
         )
         self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
@@ -456,5 +458,164 @@ class BoletinsScreen(ctk.CTkFrame):
         # Create screen inside dialog
         screen = ValoresReferenciaScreen(dialog, self.db_session)
         screen.pack(fill="both", expand=True)
+
+    def show_context_menu(self, event, data: dict):
+        """
+        Mostra menu de contexto (right-click) para um boletim
+
+        Args:
+            event: Evento do clique (para posição)
+            data: Dados da linha clicada
+        """
+        boletim = data.get('_boletim')
+        if not boletim:
+            return
+
+        # Criar menu
+        menu = tk.Menu(self, tearoff=0)
+
+        # ✏️ Editar
+        menu.add_command(
+            label="✏️ Editar",
+            command=lambda: self.editar_boletim(data)
+        )
+
+        # 📋 Duplicar
+        menu.add_command(
+            label="📋 Duplicar",
+            command=lambda: self._duplicar_from_context(boletim)
+        )
+
+        menu.add_separator()
+
+        # Ação depende do estado
+        if boletim.estado == EstadoBoletim.PENDENTE:
+            menu.add_command(
+                label="✅ Marcar como Pago",
+                command=lambda: self._marcar_pago_from_context(boletim)
+            )
+        else:  # PAGO
+            menu.add_command(
+                label="⏪ Voltar a Pendente",
+                command=lambda: self._marcar_pendente_from_context(boletim)
+            )
+
+        menu.add_separator()
+
+        # 🗑️ Apagar
+        menu.add_command(
+            label="🗑️ Apagar",
+            command=lambda: self._apagar_from_context(boletim)
+        )
+
+        # Mostrar menu na posição do cursor
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _duplicar_from_context(self, boletim):
+        """Duplica boletim a partir do menu de contexto"""
+        try:
+            # Confirm duplication
+            resposta = messagebox.askyesno(
+                "Duplicar Boletim",
+                f"Duplicar boletim {boletim.numero}?\n\n"
+                f"Todas as deslocações serão copiadas.\n"
+                f"O novo boletim abrirá em modo edição."
+            )
+
+            if not resposta:
+                return
+
+            # Duplicate
+            sucesso, novo_boletim, erro = self.manager.duplicar_boletim(boletim.id)
+
+            if sucesso:
+                # Reload list
+                self.carregar_boletins()
+                self.table.clear_selection()
+
+                # Open new boletim for editing
+                self.abrir_formulario(novo_boletim)
+
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao duplicar boletim")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao duplicar boletim: {str(e)}")
+
+    def _marcar_pago_from_context(self, boletim):
+        """Marca boletim como pago a partir do menu de contexto"""
+        try:
+            # Confirm action
+            resposta = messagebox.askyesno(
+                "Marcar como Pago",
+                f"Marcar boletim {boletim.numero} como pago?\n\n"
+                f"Data de pagamento será definida como hoje ({date.today().strftime('%Y-%m-%d')})."
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.marcar_como_pago(boletim.id)
+
+            if sucesso:
+                self.carregar_boletins()
+                self.table.clear_selection()
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao marcar como pago")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao marcar como pago: {str(e)}")
+
+    def _marcar_pendente_from_context(self, boletim):
+        """Marca boletim como pendente a partir do menu de contexto"""
+        try:
+            # Confirm action
+            resposta = messagebox.askyesno(
+                "Voltar a Pendente",
+                f"Marcar boletim {boletim.numero} como pendente?\n\n"
+                f"Data de pagamento será removida."
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.marcar_como_pendente(boletim.id)
+
+            if sucesso:
+                self.carregar_boletins()
+                self.table.clear_selection()
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao marcar como pendente")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao marcar como pendente: {str(e)}")
+
+    def _apagar_from_context(self, boletim):
+        """Apaga boletim a partir do menu de contexto"""
+        try:
+            # Confirm deletion
+            resposta = messagebox.askyesno(
+                "Confirmar Exclusão",
+                f"Tem certeza que deseja apagar o boletim {boletim.numero}?\n\n"
+                f"Esta ação não pode ser desfeita."
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.apagar(boletim.id)
+
+            if sucesso:
+                self.carregar_boletins()
+                self.table.clear_selection()
+                messagebox.showinfo("Sucesso", f"Boletim {boletim.numero} apagado com sucesso")
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao apagar boletim")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao apagar boletim: {str(e)}")
 
 

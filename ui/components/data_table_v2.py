@@ -66,6 +66,7 @@ class DataTableV2(ctk.CTkFrame):
         height: int = 400,
         on_row_double_click: Optional[Callable] = None,
         on_selection_change: Optional[Callable] = None,
+        on_row_right_click: Optional[Callable] = None,
         **kwargs
     ):
         """
@@ -83,6 +84,7 @@ class DataTableV2(ctk.CTkFrame):
             height: Table height in pixels
             on_row_double_click: Optional callback when row is double-clicked (receives row data)
             on_selection_change: Optional callback when selection changes (receives list of selected data)
+            on_row_right_click: Optional callback when row is right-clicked (receives event and row data)
         """
         super().__init__(parent, **kwargs)
 
@@ -100,6 +102,7 @@ class DataTableV2(ctk.CTkFrame):
         # Callbacks
         self.on_row_double_click = on_row_double_click
         self.on_selection_change = on_selection_change
+        self.on_row_right_click = on_row_right_click
 
         # Selection state
         self.selected_rows = set()  # Set of row indices
@@ -582,6 +585,12 @@ class DataTableV2(ctk.CTkFrame):
         row_frame.bind("<Button-1>", lambda e=None, rf=row_frame: self._on_row_click(e, rf))
         row_frame.bind("<Double-Button-1>", lambda e=None, d=data: self._on_row_double_click(d))
 
+        # Bind right-click for context menu (Button-3 on Linux/Windows, Button-2 on Mac)
+        if self.is_mac:
+            row_frame.bind("<Button-2>", lambda e, d=data: self._on_row_right_click(e, d))
+        else:
+            row_frame.bind("<Button-3>", lambda e, d=data: self._on_row_right_click(e, d))
+
         # Bind keyboard shortcuts
         self._bind_shortcuts_to_widget(row_frame)
 
@@ -721,6 +730,11 @@ class DataTableV2(ctk.CTkFrame):
         """Handle double click - open for edit"""
         if self.on_row_double_click:
             self.on_row_double_click(data)
+
+    def _on_row_right_click(self, event, data: Dict):
+        """Handle right click - show context menu"""
+        if self.on_row_right_click:
+            self.on_row_right_click(event, data)
 
     def _update_row_color(self, row_frame, is_selected: bool, is_hovered: bool = False):
         """Update row color based on selection and hover state"""
