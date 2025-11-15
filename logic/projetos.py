@@ -282,6 +282,109 @@ class ProjetosManager:
         """
         return self.db_session.query(Cliente).order_by(Cliente.nome).all()
 
+    def duplicar_projeto(self, projeto_id: int) -> Tuple[bool, Optional[Projeto], Optional[str]]:
+        """
+        Duplica um projeto existente
+
+        Args:
+            projeto_id: ID do projeto a duplicar
+
+        Returns:
+            Tuple (sucesso, novo_projeto, mensagem_erro)
+        """
+        try:
+            projeto_original = self.obter_por_id(projeto_id)
+            if not projeto_original:
+                return False, None, "Projeto não encontrado"
+
+            # Gerar novo número
+            ultimo_projeto = self.db_session.query(Projeto).order_by(
+                desc(Projeto.id)
+            ).first()
+
+            if ultimo_projeto:
+                ultimo_num = int(ultimo_projeto.numero.replace('#P', ''))
+                novo_num = ultimo_num + 1
+            else:
+                novo_num = 1
+
+            numero = f"#P{novo_num:04d}"
+
+            # Criar cópia do projeto
+            novo_projeto = Projeto(
+                numero=numero,
+                tipo=projeto_original.tipo,
+                cliente_id=projeto_original.cliente_id,
+                descricao=f"{projeto_original.descricao} (Cópia)",
+                valor_sem_iva=projeto_original.valor_sem_iva,
+                data_inicio=None,  # Resetar datas
+                data_fim=None,
+                data_faturacao=None,
+                data_vencimento=None,
+                data_pagamento=None,
+                estado=EstadoProjeto.ATIVO,  # Sempre começa como ATIVO
+                premio_bruno=projeto_original.premio_bruno,
+                premio_rafael=projeto_original.premio_rafael,
+                nota=projeto_original.nota
+            )
+
+            self.db_session.add(novo_projeto)
+            self.db_session.commit()
+            self.db_session.refresh(novo_projeto)
+
+            logger.info(f"Projeto {projeto_original.numero} duplicado como {numero}")
+            return True, novo_projeto, None
+
+        except Exception as e:
+            self.db_session.rollback()
+            logger.error(f"Erro ao duplicar projeto: {e}")
+            return False, None, str(e)
+
+    def mudar_estado(
+        self,
+        projeto_id: int,
+        novo_estado: EstadoProjeto,
+        data_pagamento: Optional[date] = None
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Muda o estado de um projeto
+
+        Args:
+            projeto_id: ID do projeto
+            novo_estado: Novo estado do projeto
+            data_pagamento: Data de pagamento (opcional, apenas para PAGO)
+
+        Returns:
+            Tuple (sucesso, mensagem_erro)
+        """
+        try:
+            projeto = self.obter_por_id(projeto_id)
+            if not projeto:
+                return False, "Projeto não encontrado"
+
+            estado_anterior = projeto.estado
+            projeto.estado = novo_estado
+
+            # Se marcar como PAGO, definir data_pagamento
+            if novo_estado == EstadoProjeto.PAGO and data_pagamento:
+                projeto.data_pagamento = data_pagamento
+            elif novo_estado != EstadoProjeto.PAGO:
+                # Se não for PAGO, limpar data_pagamento
+                projeto.data_pagamento = None
+
+            self.db_session.commit()
+
+            logger.info(
+                f"Projeto {projeto.numero}: estado alterado de "
+                f"{estado_anterior.value} para {novo_estado.value}"
+            )
+            return True, None
+
+        except Exception as e:
+            self.db_session.rollback()
+            logger.error(f"Erro ao mudar estado do projeto: {e}")
+            return False, str(e)
+
     def atualizar_estados_projetos(self) -> int:
         """
         Atualiza projetos ATIVO para FINALIZADO quando data_fim < hoje

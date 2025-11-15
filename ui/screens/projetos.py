@@ -3,6 +3,7 @@
 Tela de gestão de Projetos
 """
 import customtkinter as ctk
+import tkinter as tk
 from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import date
@@ -271,7 +272,8 @@ class ProjetosScreen(ctk.CTkFrame):
             columns=columns,
             height=400,
             on_row_double_click=self.editar_projeto,
-            on_selection_change=self.on_selection_change
+            on_selection_change=self.on_selection_change,
+            on_row_right_click=self.show_context_menu
         )
         self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
@@ -515,6 +517,263 @@ class ProjetosScreen(ctk.CTkFrame):
                     "Erro",
                     "Não foi possível navegar para a aba de Relatórios"
                 )
+
+    def show_context_menu(self, event, data: dict):
+        """
+        Mostra menu de contexto (right-click) para um projeto
+
+        Args:
+            event: Evento do clique (para posição)
+            data: Dados da linha clicada
+        """
+        projeto = data.get('_projeto')
+        if not projeto:
+            return
+
+        # Criar menu
+        menu = tk.Menu(self, tearoff=0)
+
+        # ✏️ Editar
+        menu.add_command(
+            label="✏️ Editar",
+            command=lambda: self.editar_projeto(data)
+        )
+
+        # 📋 Duplicar
+        menu.add_command(
+            label="📋 Duplicar",
+            command=lambda: self._duplicar_from_context(projeto)
+        )
+
+        menu.add_separator()
+
+        # Ações dependem do estado atual
+        if projeto.estado == EstadoProjeto.ATIVO:
+            menu.add_command(
+                label="✅ Marcar como Finalizado",
+                command=lambda: self._marcar_finalizado_from_context(projeto)
+            )
+        elif projeto.estado == EstadoProjeto.FINALIZADO:
+            menu.add_command(
+                label="✅ Marcar como Pago",
+                command=lambda: self._marcar_pago_from_context(projeto)
+            )
+            menu.add_command(
+                label="⏪ Voltar a Ativo",
+                command=lambda: self._marcar_ativo_from_context(projeto)
+            )
+        elif projeto.estado == EstadoProjeto.PAGO:
+            menu.add_command(
+                label="⏪ Voltar a Finalizado",
+                command=lambda: self._marcar_finalizado_from_context(projeto)
+            )
+
+        # Anular (se não estiver já anulado)
+        if projeto.estado != EstadoProjeto.ANULADO:
+            menu.add_separator()
+            menu.add_command(
+                label="⛔ Anular Projeto",
+                command=lambda: self._anular_from_context(projeto)
+            )
+
+        menu.add_separator()
+
+        # 🗑️ Apagar
+        menu.add_command(
+            label="🗑️ Apagar",
+            command=lambda: self._apagar_from_context(projeto)
+        )
+
+        # Mostrar menu na posição do cursor
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _duplicar_from_context(self, projeto):
+        """Duplica projeto a partir do menu de contexto"""
+        try:
+            # Confirmar duplicação
+            resposta = messagebox.askyesno(
+                "Duplicar Projeto",
+                f"Duplicar projeto {projeto.numero}?\n\n"
+                f"Cliente: {projeto.cliente.nome if projeto.cliente else '-'}\n"
+                f"Descrição: {projeto.descricao[:50]}...\n\n"
+                f"O novo projeto será criado com estado ATIVO\n"
+                f"e datas resetadas."
+            )
+
+            if not resposta:
+                return
+
+            # Duplicar
+            sucesso, novo_projeto, erro = self.manager.duplicar_projeto(projeto.id)
+
+            if sucesso:
+                # Recarregar lista
+                self.carregar_projetos()
+                self.table.clear_selection()
+
+                # Abrir novo projeto para edição
+                messagebox.showinfo(
+                    "Sucesso",
+                    f"Projeto duplicado como {novo_projeto.numero}\n\n"
+                    f"Abrindo para edição..."
+                )
+                self.abrir_formulario(novo_projeto)
+
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao duplicar projeto")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao duplicar projeto: {str(e)}")
+
+    def _marcar_finalizado_from_context(self, projeto):
+        """Marca projeto como FINALIZADO a partir do menu de contexto"""
+        try:
+            # Confirmar ação
+            resposta = messagebox.askyesno(
+                "Marcar como Finalizado",
+                f"Marcar projeto {projeto.numero} como finalizado?\n\n"
+                f"O projeto passa para estado FINALIZADO."
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.mudar_estado(
+                projeto.id,
+                EstadoProjeto.FINALIZADO
+            )
+
+            if sucesso:
+                self.carregar_projetos()
+                self.table.clear_selection()
+                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} marcado como finalizado")
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao mudar estado")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao marcar como finalizado: {str(e)}")
+
+    def _marcar_pago_from_context(self, projeto):
+        """Marca projeto como PAGO a partir do menu de contexto"""
+        try:
+            # Confirmar ação
+            hoje = date.today()
+            resposta = messagebox.askyesno(
+                "Marcar como Pago",
+                f"Marcar projeto {projeto.numero} como pago?\n\n"
+                f"Data de pagamento será definida como hoje ({hoje.strftime('%d/%m/%Y')}).\n\n"
+                f"⚠️ ATENÇÃO: Isto afeta os cálculos de Saldos Pessoais!"
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.mudar_estado(
+                projeto.id,
+                EstadoProjeto.PAGO,
+                data_pagamento=hoje
+            )
+
+            if sucesso:
+                self.carregar_projetos()
+                self.table.clear_selection()
+                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} marcado como pago")
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao mudar estado")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao marcar como pago: {str(e)}")
+
+    def _marcar_ativo_from_context(self, projeto):
+        """Marca projeto como ATIVO a partir do menu de contexto"""
+        try:
+            # Confirmar ação
+            resposta = messagebox.askyesno(
+                "Voltar a Ativo",
+                f"Marcar projeto {projeto.numero} como ativo?\n\n"
+                f"O projeto voltará ao estado ATIVO."
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.mudar_estado(
+                projeto.id,
+                EstadoProjeto.ATIVO
+            )
+
+            if sucesso:
+                self.carregar_projetos()
+                self.table.clear_selection()
+                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} marcado como ativo")
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao mudar estado")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao marcar como ativo: {str(e)}")
+
+    def _anular_from_context(self, projeto):
+        """Anula projeto a partir do menu de contexto"""
+        try:
+            # Confirmar ação
+            resposta = messagebox.askyesno(
+                "Anular Projeto",
+                f"Anular projeto {projeto.numero}?\n\n"
+                f"⚠️ ATENÇÃO: Projetos anulados não entram nos cálculos\n"
+                f"de Saldos Pessoais e aparecem riscados na lista.\n\n"
+                f"Esta ação pode ser revertida voltando o projeto a ATIVO.",
+                icon='warning'
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.mudar_estado(
+                projeto.id,
+                EstadoProjeto.ANULADO
+            )
+
+            if sucesso:
+                self.carregar_projetos()
+                self.table.clear_selection()
+                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} anulado")
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao anular projeto")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao anular projeto: {str(e)}")
+
+    def _apagar_from_context(self, projeto):
+        """Apaga projeto a partir do menu de contexto"""
+        try:
+            # Confirmar exclusão
+            resposta = messagebox.askyesno(
+                "Confirmar Exclusão",
+                f"Tem certeza que deseja apagar o projeto {projeto.numero}?\n\n"
+                f"Cliente: {projeto.cliente.nome if projeto.cliente else '-'}\n"
+                f"Descrição: {projeto.descricao[:50]}...\n\n"
+                f"⚠️ ATENÇÃO: Esta ação não pode ser desfeita!\n"
+                f"⚠️ Isto vai afetar os cálculos de Saldos Pessoais!",
+                icon='warning'
+            )
+
+            if not resposta:
+                return
+
+            sucesso, erro = self.manager.apagar(projeto.id)
+
+            if sucesso:
+                self.carregar_projetos()
+                self.table.clear_selection()
+                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} apagado com sucesso")
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao apagar projeto")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao apagar projeto: {str(e)}")
 
 
 class FormularioProjetoDialog(ctk.CTkToplevel):
