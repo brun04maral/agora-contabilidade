@@ -247,6 +247,131 @@ class DespesasManager:
         """
         return self.db_session.query(Projeto).order_by(desc(Projeto.created_at)).all()
 
+    def filtrar_por_texto(self, search_text: str) -> List[Despesa]:
+        """
+        Filtra despesas por texto de pesquisa (nome fornecedor ou descrição)
+
+        Busca case-insensitive e com substring matching em:
+        - Nome do fornecedor (credor)
+        - Descrição da despesa
+
+        Args:
+            search_text: Texto a pesquisar (mínimo 1 caracter)
+
+        Returns:
+            Lista de despesas que correspondem à pesquisa
+        """
+        if not search_text or len(search_text.strip()) == 0:
+            return self.listar_todas()
+
+        # Normalize search text (lowercase, strip whitespace)
+        search_term = f"%{search_text.strip().lower()}%"
+
+        # Query with JOIN to Fornecedor table
+        despesas = self.db_session.query(Despesa).outerjoin(
+            Fornecedor, Despesa.credor_id == Fornecedor.id
+        ).filter(
+            # Search in fornecedor.nome OR despesa.descricao (case-insensitive)
+            (Fornecedor.nome.ilike(search_term)) |
+            (Despesa.descricao.ilike(search_term))
+        ).order_by(desc(Despesa.data)).all()
+
+        return despesas
+
+    def duplicar_despesa(self, despesa_id: int) -> Tuple[bool, Optional[Despesa], Optional[str]]:
+        """
+        Duplica uma despesa existente
+
+        Args:
+            despesa_id: ID da despesa a duplicar
+
+        Returns:
+            Tuple (sucesso, nova_despesa, mensagem_erro)
+        """
+        try:
+            despesa_original = self.obter_por_id(despesa_id)
+            if not despesa_original:
+                return False, None, "Despesa não encontrada"
+
+            # Gerar novo número
+            ultima_despesa = self.db_session.query(Despesa).order_by(
+                desc(Despesa.id)
+            ).first()
+
+            if ultima_despesa:
+                ultimo_num = int(ultima_despesa.numero.replace('#D', ''))
+                novo_num = ultimo_num + 1
+            else:
+                novo_num = 1
+
+            numero = f"#D{novo_num:06d}"
+
+            # Criar cópia da despesa
+            nova_despesa = Despesa(
+                numero=numero,
+                tipo=despesa_original.tipo,
+                data=date.today(),  # Data de hoje
+                descricao=f"{despesa_original.descricao} (Cópia)",
+                valor_sem_iva=despesa_original.valor_sem_iva,
+                valor_com_iva=despesa_original.valor_com_iva,
+                credor_id=despesa_original.credor_id,
+                projeto_id=despesa_original.projeto_id,
+                estado=EstadoDespesa.PENDENTE,  # Sempre começa como PENDENTE
+                data_pagamento=None,  # Sem data de pagamento
+                nota=despesa_original.nota,
+                despesa_template_id=None  # Não herda template
+            )
+
+            self.db_session.add(nova_despesa)
+            self.db_session.commit()
+            self.db_session.refresh(nova_despesa)
+
+            return True, nova_despesa, None
+
+        except Exception as e:
+            self.db_session.rollback()
+            return False, None, str(e)
+
+    def mudar_estado(
+        self,
+        despesa_id: int,
+        novo_estado: EstadoDespesa,
+        data_pagamento: Optional[date] = None
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Muda o estado de uma despesa
+
+        Args:
+            despesa_id: ID da despesa
+            novo_estado: Novo estado da despesa
+            data_pagamento: Data de pagamento (opcional, apenas para PAGO)
+
+        Returns:
+            Tuple (sucesso, mensagem_erro)
+        """
+        try:
+            despesa = self.obter_por_id(despesa_id)
+            if not despesa:
+                return False, "Despesa não encontrada"
+
+            estado_anterior = despesa.estado
+            despesa.estado = novo_estado
+
+            # Se marcar como PAGO, definir data_pagamento
+            if novo_estado == EstadoDespesa.PAGO and data_pagamento:
+                despesa.data_pagamento = data_pagamento
+            elif novo_estado != EstadoDespesa.PAGO:
+                # Se não for PAGO, limpar data_pagamento
+                despesa.data_pagamento = None
+
+            self.db_session.commit()
+
+            return True, None
+
+        except Exception as e:
+            self.db_session.rollback()
+            return False, str(e)
+
     # ========== Métodos de Despesas Recorrentes (usando Templates) ==========
 
     def gerar_despesas_recorrentes_mes(self, ano: int, mes: int) -> Tuple[int, List[str]]:
