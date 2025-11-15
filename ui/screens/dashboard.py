@@ -169,20 +169,20 @@ class DashboardScreen(ctk.CTkFrame):
         self.total_projetos_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
         self.projetos_recebidos_card = self.create_stat_card(
-            projetos_container, "Recebidos", "0", "#7CB342",  # Light Green 600 - Positivo
-            on_click=lambda: self.navigate_to_projetos("Recebido")
+            projetos_container, "Pagos", "0", "#7CB342",  # Light Green 600 - Positivo
+            on_click=lambda: self.navigate_to_projetos("Pago")
         )
         self.projetos_recebidos_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
         self.projetos_faturados_card = self.create_stat_card(
-            projetos_container, "Faturados", "0", "#C9941F",  # Dourado (match BA) - Ativo
-            on_click=lambda: self.navigate_to_projetos("Faturado")
+            projetos_container, "Finalizados", "0", "#C9941F",  # Dourado (match BA) - Ativo
+            on_click=lambda: self.navigate_to_projetos("Finalizado")
         )
         self.projetos_faturados_card.pack(side="left", fill="both", expand=True, padx=(10, 10))
 
         self.projetos_nao_faturados_card = self.create_stat_card(
-            projetos_container, "Não Faturados", "0", "#EF6C00",  # Orange 800 - Atenção
-            on_click=lambda: self.navigate_to_projetos("Não Faturado")
+            projetos_container, "Ativos", "0", "#EF6C00",  # Orange 800 - Atenção
+            on_click=lambda: self.navigate_to_projetos("Ativo")
         )
         self.projetos_nao_faturados_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
