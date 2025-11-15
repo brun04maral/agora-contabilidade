@@ -694,12 +694,14 @@ class LinhaDialog(ctk.CTkToplevel):
             scroll,
             values=projeto_options,
             height=35,
-            font=ctk.CTkFont(size=13)
+            font=ctk.CTkFont(size=13),
+            command=self.projeto_selecionado
         )
         self.projeto_dropdown.pack(fill="x", pady=(0, 10))
 
         # Store projeto mapping
         self.projeto_map = {f"{p.numero} - {p.descricao[:50]}": p.id for p in projetos}
+        self.projetos_dict = {p.id: p for p in projetos}  # Para acesso rápido ao projeto completo
 
         # Serviço
         ctk.CTkLabel(scroll, text="Serviço/Descrição *:", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
@@ -781,6 +783,35 @@ class LinhaDialog(ctk.CTkToplevel):
             hover_color=("#66BB6A", "#2E7D32")
         )
         save_btn.pack(side="left")
+
+    def projeto_selecionado(self, projeto_str: str):
+        """
+        Auto-preenche a descrição quando um projeto é selecionado
+
+        Args:
+            projeto_str: String do projeto selecionado (ex: "#P0001 - Descrição")
+        """
+        # Verificar se é um projeto válido
+        if projeto_str == "- Nenhum -":
+            return
+
+        # Obter projeto_id
+        projeto_id = self.projeto_map.get(projeto_str)
+        if not projeto_id:
+            return
+
+        # Buscar projeto completo
+        projeto = self.projetos_dict.get(projeto_id)
+        if not projeto:
+            return
+
+        # Auto-preencher serviço/descrição apenas se estiver vazio
+        # (para não sobrescrever se o utilizador já escreveu algo)
+        conteudo_atual = self.servico_entry.get("1.0", "end-1c").strip()
+        if not conteudo_atual:
+            # Preencher com a descrição completa do projeto
+            self.servico_entry.delete("1.0", "end")
+            self.servico_entry.insert("1.0", projeto.descricao)
 
     def preencher_dados(self, linha):
         """Fill form with existing linha data"""
