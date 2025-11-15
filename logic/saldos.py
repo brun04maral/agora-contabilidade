@@ -282,12 +282,47 @@ class SaldosCalculator:
         # === CALCULAR SALDO FINAL ===
         saldo_total = total_ins - total_outs
 
+        # === PRÉMIOS NÃO FATURADOS (Projetos FINALIZADOS) ===
+        # Não contam no saldo atual, mas permitem calcular saldo projetado
+        if socio == Socio.BRUNO:
+            query_premios_nao_faturados = self.db_session.query(
+                func.sum(Projeto.premio_bruno)
+            ).filter(
+                Projeto.estado == EstadoProjeto.FINALIZADO,
+                Projeto.premio_bruno > 0
+            )
+        else:
+            query_premios_nao_faturados = self.db_session.query(
+                func.sum(Projeto.premio_rafael)
+            ).filter(
+                Projeto.estado == EstadoProjeto.FINALIZADO,
+                Projeto.premio_rafael > 0
+            )
+
+        if data_inicio:
+            query_premios_nao_faturados = query_premios_nao_faturados.filter(
+                Projeto.data_faturacao >= data_inicio
+            )
+        if data_fim:
+            query_premios_nao_faturados = query_premios_nao_faturados.filter(
+                Projeto.data_faturacao <= data_fim
+            )
+
+        premios_nao_faturados = query_premios_nao_faturados.scalar() or Decimal("0.00")
+
+        # Saldo projetado (só calcular se houver prémios não faturados)
+        saldo_projetado = None
+        if premios_nao_faturados > 0:
+            saldo_projetado = float(saldo_total + premios_nao_faturados)
+
         return {
             'socio': socio.value,
             'saldo_total': float(saldo_total),
+            'saldo_projetado': saldo_projetado,  # None se não houver prémios não faturados
             'ins': {
                 'projetos_pessoais': float(projetos_pessoais),
                 'premios': float(premios),
+                'premios_nao_faturados': float(premios_nao_faturados),
                 'investimento_inicial': float(investimento),
                 'total': float(total_ins)
             },

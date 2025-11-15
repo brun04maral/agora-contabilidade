@@ -242,7 +242,7 @@ class SaldosScreen(ctk.CTkFrame):
 
         return card
 
-    def create_saldo_item(self, parent, label: str, value: float, is_total: bool = False, clickable: bool = False, on_click: Optional[Callable] = None, button_color: str = None, button_border_color: str = None):
+    def create_saldo_item(self, parent, label: str, value: float, is_total: bool = False, clickable: bool = False, on_click: Optional[Callable] = None, button_color: str = None, button_border_color: str = None, tooltip: str = None):
         """
         Create a saldo line item
 
@@ -255,6 +255,7 @@ class SaldosScreen(ctk.CTkFrame):
             on_click: Callback function when item is clicked
             button_color: Background color for clickable button (when clickable=True)
             button_border_color: Border color for clickable button (when clickable=True)
+            tooltip: Optional tooltip text to display on hover
         """
         item_frame = ctk.CTkFrame(parent, fg_color="transparent")
         item_frame.pack(fill="x", pady=5)
@@ -373,6 +374,11 @@ class SaldosScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_projetos(filtro_premio_socio="RR")
 
+    def navegar_premios_nao_faturados(self):
+        """Navigate to Projetos screen with FINALIZADO (não faturados) filter"""
+        if self.main_window:
+            self.main_window.show_projetos(filtro_estado="Finalizado")
+
     def navegar_despesas_fixas(self):
         """Navigate to Despesas screen with Fixa Mensal filter"""
         if self.main_window:
@@ -416,9 +422,18 @@ class SaldosScreen(ctk.CTkFrame):
         saldo_rafael = self.calculator.calcular_saldo_rafael()
 
         # Update BA
+        # Saldo atual
+        saldo_atual_bruno = saldo_bruno['saldo_total']
+        saldo_text = f"€{saldo_atual_bruno:,.2f}"
+
+        # Saldo projetado (se houver prémios não faturados)
+        if saldo_bruno.get('saldo_projetado'):
+            diferenca = saldo_bruno['saldo_projetado'] - saldo_atual_bruno
+            saldo_text += f"\nProjetado: €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
+
         self.bruno_saldo_label.configure(
-            text=f"€{saldo_bruno['saldo_total']:,.2f}",
-            text_color=("#4CAF50", "#66BB6A") if saldo_bruno['saldo_total'] >= 0 else ("#F44336", "#E57373")
+            text=saldo_text,
+            text_color=("#4CAF50", "#66BB6A") if saldo_atual_bruno >= 0 else ("#F44336", "#E57373")
         )
 
         # Clear and populate INs
@@ -443,6 +458,19 @@ class SaldosScreen(ctk.CTkFrame):
             button_color=("#E8F5E0", "#4A7028"),  # Green - match Recebido (INs = entradas)
             button_border_color=("#7CB342", "#9CCC65")
         )
+
+        # Prémios não faturados (só mostrar se > 0)
+        if saldo_bruno['ins'].get('premios_nao_faturados', 0) > 0:
+            self.create_saldo_item(
+                self.bruno_ins_frame,
+                "💡 Prémios não faturados",
+                saldo_bruno['ins']['premios_nao_faturados'],
+                clickable=True,
+                on_click=self.navegar_premios_nao_faturados,
+                button_color=("#FFF4E6", "#CC6600"),  # Laranja claro
+                button_border_color=("#FF9800", "#FFB74D"),
+                tooltip="Projetos concluídos aguardando pagamento"
+            )
 
         # Separator line
         sep = ctk.CTkFrame(self.bruno_ins_frame, height=1, fg_color="gray")
@@ -508,9 +536,18 @@ class SaldosScreen(ctk.CTkFrame):
         )
 
         # Update RR (same logic)
+        # Saldo atual
+        saldo_atual_rafael = saldo_rafael['saldo_total']
+        saldo_text_rr = f"€{saldo_atual_rafael:,.2f}"
+
+        # Saldo projetado (se houver prémios não faturados)
+        if saldo_rafael.get('saldo_projetado'):
+            diferenca_rr = saldo_rafael['saldo_projetado'] - saldo_atual_rafael
+            saldo_text_rr += f"\nProjetado: €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
+
         self.rafael_saldo_label.configure(
-            text=f"€{saldo_rafael['saldo_total']:,.2f}",
-            text_color=("#4CAF50", "#66BB6A") if saldo_rafael['saldo_total'] >= 0 else ("#F44336", "#E57373")
+            text=saldo_text_rr,
+            text_color=("#4CAF50", "#66BB6A") if saldo_atual_rafael >= 0 else ("#F44336", "#E57373")
         )
 
         # Clear and populate INs
@@ -535,6 +572,19 @@ class SaldosScreen(ctk.CTkFrame):
             button_color=("#E8F5E0", "#4A7028"),  # Green - match Recebido (INs = entradas)
             button_border_color=("#7CB342", "#9CCC65")
         )
+
+        # Prémios não faturados (só mostrar se > 0)
+        if saldo_rafael['ins'].get('premios_nao_faturados', 0) > 0:
+            self.create_saldo_item(
+                self.rafael_ins_frame,
+                "💡 Prémios não faturados",
+                saldo_rafael['ins']['premios_nao_faturados'],
+                clickable=True,
+                on_click=self.navegar_premios_nao_faturados,
+                button_color=("#FFF4E6", "#CC6600"),  # Laranja claro
+                button_border_color=("#FF9800", "#FFB74D"),
+                tooltip="Projetos concluídos aguardando pagamento"
+            )
 
         sep = ctk.CTkFrame(self.rafael_ins_frame, height=1, fg_color="gray")
         sep.pack(fill="x", pady=8)
