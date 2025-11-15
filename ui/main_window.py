@@ -4,9 +4,13 @@ Main window - Janela principal da aplicação
 """
 import customtkinter as ctk
 from sqlalchemy.orm import Session
+import logging
 
 from ui.components.sidebar import Sidebar
 from ui.screens.saldos import SaldosScreen
+from logic.projetos import ProjetosManager
+
+logger = logging.getLogger(__name__)
 
 
 class MainWindow(ctk.CTkFrame):
@@ -56,6 +60,9 @@ class MainWindow(ctk.CTkFrame):
         # Sidebar (created after content_frame so it can use it)
         self.sidebar = Sidebar(self, on_menu_select=self.on_menu_select, width=260)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
+
+        # Atualizar estados de projetos automaticamente ao iniciar
+        self._atualizar_estados_projetos_auto()
 
     def on_menu_select(self, menu_id: str):
         """
@@ -308,6 +315,21 @@ class MainWindow(ctk.CTkFrame):
         screen = InfoScreen(self.content_frame)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
+
+    def _atualizar_estados_projetos_auto(self):
+        """
+        Atualiza automaticamente estados de projetos (ATIVO → FINALIZADO)
+
+        Chamado ao iniciar a aplicação.
+        """
+        try:
+            projetos_manager = ProjetosManager(self.db_session)
+            count = projetos_manager.atualizar_estados_projetos()
+
+            if count > 0:
+                logger.info(f"Estados atualizados: {count} projeto(s) ATIVO → FINALIZADO")
+        except Exception as e:
+            logger.error(f"Erro ao atualizar estados de projetos automaticamente: {e}")
 
     def handle_logout(self):
         """Handle logout"""

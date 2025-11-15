@@ -171,7 +171,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
         self.estado_filter = ctk.CTkOptionMenu(
             filters_frame,
-            values=["Todos", "Não Faturado", "Faturado", "Recebido", "Anulado"],
+            values=["Todos", "Ativo", "Finalizado", "Pago", "Anulado"],
             command=self.aplicar_filtros,
             width=150
         )
@@ -240,6 +240,9 @@ class ProjetosScreen(ctk.CTkFrame):
 
     def carregar_projetos(self):
         """Load and display projects (respecting active filters)"""
+        # Atualizar estados automaticamente antes de carregar
+        self.manager.atualizar_estados_projetos()
+
         # If we have active filters, apply them instead of loading all
         if self.cliente_filter.get() != "Todos" or self.tipo_filter.get() != "Todos" or self.estado_filter.get() != "Todos":
             self.aplicar_filtros()
@@ -281,9 +284,9 @@ class ProjetosScreen(ctk.CTkFrame):
     def estado_to_label(self, estado: EstadoProjeto) -> str:
         """Convert estado enum to label"""
         mapping = {
-            EstadoProjeto.NAO_FATURADO: "Não Faturado",
-            EstadoProjeto.FATURADO: "Faturado",
-            EstadoProjeto.RECEBIDO: "Recebido",
+            EstadoProjeto.ATIVO: "Ativo",
+            EstadoProjeto.FINALIZADO: "Finalizado",
+            EstadoProjeto.PAGO: "Pago",
             EstadoProjeto.ANULADO: "Anulado"
         }
         return mapping.get(estado, str(estado))
@@ -291,9 +294,9 @@ class ProjetosScreen(ctk.CTkFrame):
     def estado_to_color(self, estado: EstadoProjeto) -> tuple:
         """Convert estado enum to pastel background color (light, dark) - Opção 3 Agora Inspired"""
         mapping = {
-            EstadoProjeto.NAO_FATURADO: ("#FFE5D0", "#8B4513"),  # Pastel orange (atenção)
-            EstadoProjeto.FATURADO: ("#FFF4CC", "#806020"),     # Pastel golden (match BA)
-            EstadoProjeto.RECEBIDO: ("#E8F5E0", "#4A7028"),     # Pastel green (positivo)
+            EstadoProjeto.ATIVO: ("#FFF4CC", "#806020"),        # Pastel golden (em curso)
+            EstadoProjeto.FINALIZADO: ("#FFE5D0", "#8B4513"),  # Pastel orange (aguardando)
+            EstadoProjeto.PAGO: ("#E8F5E0", "#4A7028"),         # Pastel green (positivo)
             EstadoProjeto.ANULADO: ("#808080", "#505050")       # Dark gray
         }
         return mapping.get(estado, ("#f8f8f8", "#252525"))
@@ -327,9 +330,9 @@ class ProjetosScreen(ctk.CTkFrame):
         # Filter by estado
         if estado != "Todos":
             estado_map = {
-                "Não Faturado": EstadoProjeto.NAO_FATURADO,
-                "Faturado": EstadoProjeto.FATURADO,
-                "Recebido": EstadoProjeto.RECEBIDO,
+                "Ativo": EstadoProjeto.ATIVO,
+                "Finalizado": EstadoProjeto.FINALIZADO,
+                "Pago": EstadoProjeto.PAGO,
                 "Anulado": EstadoProjeto.ANULADO
             }
             estado_enum = estado_map[estado]
@@ -529,7 +532,7 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
         # Estado
         ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))
-        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Não Faturado", "Faturado", "Recebido", "Anulado"], height=35)
+        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Ativo", "Finalizado", "Pago", "Anulado"], height=35)
         self.estado_dropdown.pack(anchor="w", pady=(0, 18))
 
         # Prémios (só para projetos EMPRESA)
@@ -606,9 +609,9 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
         # Estado
         estado_map = {
-            EstadoProjeto.NAO_FATURADO: "Não Faturado",
-            EstadoProjeto.FATURADO: "Faturado",
-            EstadoProjeto.RECEBIDO: "Recebido",
+            EstadoProjeto.ATIVO: "Ativo",
+            EstadoProjeto.FINALIZADO: "Finalizado",
+            EstadoProjeto.PAGO: "Pago",
             EstadoProjeto.ANULADO: "Anulado"
         }
         self.estado_dropdown.set(estado_map[p.estado])
@@ -652,9 +655,9 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
 
             # Estado
             estado_map = {
-                "Não Faturado": EstadoProjeto.NAO_FATURADO,
-                "Faturado": EstadoProjeto.FATURADO,
-                "Recebido": EstadoProjeto.RECEBIDO,
+                "Ativo": EstadoProjeto.ATIVO,
+                "Finalizado": EstadoProjeto.FINALIZADO,
+                "Pago": EstadoProjeto.PAGO,
                 "Anulado": EstadoProjeto.ANULADO
             }
             estado = estado_map[self.estado_dropdown.get()]

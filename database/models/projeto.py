@@ -18,10 +18,10 @@ class TipoProjeto(enum.Enum):
 
 class EstadoProjeto(enum.Enum):
     """Enum para estado do projeto"""
-    NAO_FATURADO = "NAO_FATURADO"
-    FATURADO = "FATURADO"
-    RECEBIDO = "RECEBIDO"
-    ANULADO = "ANULADO"
+    ATIVO = "ATIVO"  # Projeto em curso
+    FINALIZADO = "FINALIZADO"  # Trabalho concluído, aguarda pagamento
+    PAGO = "PAGO"  # Cliente pagou
+    ANULADO = "ANULADO"  # Projeto cancelado
 
 
 class Projeto(Base):
@@ -55,7 +55,7 @@ class Projeto(Base):
     # Faturação
     data_faturacao = Column(Date, nullable=True)
     data_vencimento = Column(Date, nullable=True)
-    estado = Column(SQLEnum(EstadoProjeto), nullable=False, default=EstadoProjeto.NAO_FATURADO, index=True)
+    estado = Column(SQLEnum(EstadoProjeto), nullable=False, default=EstadoProjeto.ATIVO, index=True)
 
     # Prémios (cachets + comissões) - para projetos da EMPRESA
     premio_bruno = Column(Numeric(10, 2), nullable=True, default=0)

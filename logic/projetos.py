@@ -7,8 +7,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import date
 from decimal import Decimal
+import logging
 
 from database.models import Projeto, Cliente, TipoProjeto, EstadoProjeto
+
+logger = logging.getLogger(__name__)
 
 
 class ProjetosManager:
@@ -84,7 +87,7 @@ class ProjetosManager:
         data_fim: Optional[date] = None,
         data_faturacao: Optional[date] = None,
         data_vencimento: Optional[date] = None,
-        estado: EstadoProjeto = EstadoProjeto.NAO_FATURADO,
+        estado: EstadoProjeto = EstadoProjeto.ATIVO,
         premio_bruno: Optional[Decimal] = None,
         premio_rafael: Optional[Decimal] = None,
         nota: Optional[str] = None
@@ -246,3 +249,44 @@ class ProjetosManager:
             Lista de clientes
         """
         return self.db_session.query(Cliente).order_by(Cliente.nome).all()
+
+    def atualizar_estados_projetos(self) -> int:
+        """
+        Atualiza projetos ATIVO para FINALIZADO quando data_fim < hoje
+
+        Conforme BUSINESS_LOGIC.md Secção 3.2:
+        - Projetos com estado ATIVO e data_fim no passado → FINALIZADO
+        - Transição automática
+
+        Returns:
+            Número de projetos atualizados
+        """
+        try:
+            hoje = date.today()
+
+            # Buscar projetos ativos com data_fim no passado
+            projetos_a_finalizar = self.db_session.query(Projeto).filter(
+                Projeto.estado == EstadoProjeto.ATIVO,
+                Projeto.data_fim.isnot(None),
+                Projeto.data_fim < hoje
+            ).all()
+
+            count = 0
+            for projeto in projetos_a_finalizar:
+                projeto.estado = EstadoProjeto.FINALIZADO
+                logger.info(
+                    f"Projeto {projeto.numero} finalizado automaticamente "
+                    f"(data_fim: {projeto.data_fim})"
+                )
+                count += 1
+
+            if count > 0:
+                self.db_session.commit()
+                logger.info(f"Total de {count} projeto(s) finalizado(s) automaticamente")
+
+            return count
+
+        except Exception as e:
+            logger.error(f"Erro ao atualizar estados de projetos: {e}")
+            self.db_session.rollback()
+            return 0
