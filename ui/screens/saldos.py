@@ -148,11 +148,22 @@ class SaldosScreen(ctk.CTkFrame):
         )
         saldo_value.pack(pady=(5, 0))
 
+        # Saldo projetado (smaller, gray text like "Saldo Atual:")
+        saldo_projetado_label = ctk.CTkLabel(
+            saldo_frame,
+            text="",
+            font=ctk.CTkFont(size=14),
+            text_color="gray"
+        )
+        saldo_projetado_label.pack(pady=(5, 0))
+
         # Store reference to update later
         if socio == Socio.BRUNO:
             self.bruno_saldo_label = saldo_value
+            self.bruno_saldo_projetado_label = saldo_projetado_label
         else:
             self.rafael_saldo_label = saldo_value
+            self.rafael_saldo_projetado_label = saldo_projetado_label
 
         # Separator
         sep1 = ctk.CTkFrame(card, height=1, fg_color="gray")
@@ -424,17 +435,19 @@ class SaldosScreen(ctk.CTkFrame):
         # Update BA
         # Saldo atual
         saldo_atual_bruno = saldo_bruno['saldo_total']
-        saldo_text = f"€{saldo_atual_bruno:,.2f}"
+        self.bruno_saldo_label.configure(
+            text=f"€{saldo_atual_bruno:,.2f}",
+            text_color=("#4CAF50", "#66BB6A") if saldo_atual_bruno >= 0 else ("#F44336", "#E57373")
+        )
 
         # Saldo projetado (se houver prémios não faturados)
         if saldo_bruno.get('saldo_projetado'):
             diferenca = saldo_bruno['saldo_projetado'] - saldo_atual_bruno
-            saldo_text += f"\nProjetado: €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
-
-        self.bruno_saldo_label.configure(
-            text=saldo_text,
-            text_color=("#4CAF50", "#66BB6A") if saldo_atual_bruno >= 0 else ("#F44336", "#E57373")
-        )
+            self.bruno_saldo_projetado_label.configure(
+                text=f"Projetado: €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
+            )
+        else:
+            self.bruno_saldo_projetado_label.configure(text="")
 
         # Clear and populate INs
         for widget in self.bruno_ins_frame.winfo_children():
@@ -538,17 +551,19 @@ class SaldosScreen(ctk.CTkFrame):
         # Update RR (same logic)
         # Saldo atual
         saldo_atual_rafael = saldo_rafael['saldo_total']
-        saldo_text_rr = f"€{saldo_atual_rafael:,.2f}"
+        self.rafael_saldo_label.configure(
+            text=f"€{saldo_atual_rafael:,.2f}",
+            text_color=("#4CAF50", "#66BB6A") if saldo_atual_rafael >= 0 else ("#F44336", "#E57373")
+        )
 
         # Saldo projetado (se houver prémios não faturados)
         if saldo_rafael.get('saldo_projetado'):
             diferenca_rr = saldo_rafael['saldo_projetado'] - saldo_atual_rafael
-            saldo_text_rr += f"\nProjetado: €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
-
-        self.rafael_saldo_label.configure(
-            text=saldo_text_rr,
-            text_color=("#4CAF50", "#66BB6A") if saldo_atual_rafael >= 0 else ("#F44336", "#E57373")
-        )
+            self.rafael_saldo_projetado_label.configure(
+                text=f"Projetado: €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
+            )
+        else:
+            self.rafael_saldo_projetado_label.configure(text="")
 
         # Clear and populate INs
         for widget in self.rafael_ins_frame.winfo_children():
