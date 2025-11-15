@@ -59,7 +59,7 @@ def create_test_data(db_session):
         descricao="Projeto Pessoal BA",
         valor_sem_iva=Decimal("1000.00"),
         data_faturacao=date(2025, 1, 15),
-        estado=EstadoProjeto.RECEBIDO
+        estado=EstadoProjeto.PAGO
     )
     db_session.add(projeto_bruno)
 
@@ -71,7 +71,7 @@ def create_test_data(db_session):
         descricao="Projeto Pessoal RR",
         valor_sem_iva=Decimal("1500.00"),
         data_faturacao=date(2025, 1, 20),
-        estado=EstadoProjeto.RECEBIDO
+        estado=EstadoProjeto.PAGO
     )
     db_session.add(projeto_rafael)
 
@@ -85,7 +85,7 @@ def create_test_data(db_session):
         premio_bruno=Decimal("200.00"),
         premio_rafael=Decimal("200.00"),
         data_faturacao=date(2025, 1, 25),
-        estado=EstadoProjeto.RECEBIDO
+        estado=EstadoProjeto.PAGO
     )
     db_session.add(projeto_empresa)
 

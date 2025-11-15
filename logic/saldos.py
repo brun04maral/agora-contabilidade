@@ -138,12 +138,12 @@ class SaldosCalculator:
 
         # === CALCULAR INs (Entradas) ===
 
-        # 1. Projetos pessoais (apenas RECEBIDOS)
+        # 1. Projetos pessoais (apenas PAGOS)
         query_projetos_pessoais = self.db_session.query(
             func.sum(Projeto.valor_sem_iva)
         ).filter(
             Projeto.tipo == tipo_projeto,
-            Projeto.estado == EstadoProjeto.RECEBIDO
+            Projeto.estado == EstadoProjeto.PAGO
         )
 
         if data_inicio:
@@ -372,7 +372,7 @@ class SaldosCalculator:
         # Projetos pessoais
         projetos_pessoais = self.db_session.query(Projeto).filter(
             Projeto.tipo == tipo_projeto,
-            Projeto.estado == EstadoProjeto.RECEBIDO
+            Projeto.estado == EstadoProjeto.PAGO
         ).all()
 
         # Projetos com prémios (TODOS, não só recebidos!)

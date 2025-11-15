@@ -94,7 +94,7 @@ def seed_example_data(db_session):
         descricao="Projeto Pessoal Bruno - Vídeo Corporativo",
         valor_sem_iva=Decimal("1500.00"),
         data_inicio=date(2025, 1, 15),
-        estado=EstadoProjeto.RECEBIDO
+        estado=EstadoProjeto.PAGO
     )
     db_session.add(projeto1)
 
@@ -108,7 +108,7 @@ def seed_example_data(db_session):
         premio_bruno=Decimal("500.00"),
         premio_rafael=Decimal("500.00"),
         data_inicio=date(2025, 1, 20),
-        estado=EstadoProjeto.FATURADO
+        estado=EstadoProjeto.FINALIZADO
     )
     db_session.add(projeto2)
 

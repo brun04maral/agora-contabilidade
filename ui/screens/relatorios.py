@@ -228,9 +228,9 @@ class RelatoriosScreen(ctk.CTkFrame):
         self.estado_projeto_var = ctk.StringVar(value="todos")
         estado_projeto_options = [
             ("Todos", "todos"),
-            ("Não Faturado", "nao_faturado"),
-            ("Faturado", "faturado"),
-            ("Recebido", "recebido")
+            ("Ativo", "ativo"),
+            ("Finalizado", "finalizado"),
+            ("Pago", "pago")
         ]
 
         for label, value in estado_projeto_options:
@@ -453,12 +453,12 @@ class RelatoriosScreen(ctk.CTkFrame):
                 # Map filter to EstadoProjeto enum
                 filtro_estado_str = self.estado_projeto_var.get()
                 estado_projeto = None
-                if filtro_estado_str == "nao_faturado":
-                    estado_projeto = EstadoProjeto.NAO_FATURADO
-                elif filtro_estado_str == "faturado":
-                    estado_projeto = EstadoProjeto.FATURADO
-                elif filtro_estado_str == "recebido":
-                    estado_projeto = EstadoProjeto.RECEBIDO
+                if filtro_estado_str == "ativo":
+                    estado_projeto = EstadoProjeto.ATIVO
+                elif filtro_estado_str == "finalizado":
+                    estado_projeto = EstadoProjeto.FINALIZADO
+                elif filtro_estado_str == "pago":
+                    estado_projeto = EstadoProjeto.PAGO
                 # "todos" maps to None (no filter)
 
                 self.current_report_data = self.manager.gerar_relatorio_projetos(

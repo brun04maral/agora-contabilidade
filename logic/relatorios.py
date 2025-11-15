@@ -108,9 +108,9 @@ class RelatoriosManager:
         if not data_inicio:
             data_inicio = data_fim - relativedelta(years=1)
 
-        # Buscar projetos recebidos no período
+        # Buscar projetos pagos no período
         projetos = self.db_session.query(Projeto).filter(
-            Projeto.estado == EstadoProjeto.RECEBIDO,
+            Projeto.estado == EstadoProjeto.PAGO,
             Projeto.data_faturacao.isnot(None),
             Projeto.data_faturacao >= data_inicio,
             Projeto.data_faturacao <= data_fim
@@ -259,9 +259,9 @@ class RelatoriosManager:
         }
 
         stats_por_estado = {
-            EstadoProjeto.NAO_FATURADO: {'count': 0, 'valor': Decimal('0')},
-            EstadoProjeto.FATURADO: {'count': 0, 'valor': Decimal('0')},
-            EstadoProjeto.RECEBIDO: {'count': 0, 'valor': Decimal('0')},
+            EstadoProjeto.ATIVO: {'count': 0, 'valor': Decimal('0')},
+            EstadoProjeto.FINALIZADO: {'count': 0, 'valor': Decimal('0')},
+            EstadoProjeto.PAGO: {'count': 0, 'valor': Decimal('0')},
             EstadoProjeto.ANULADO: {'count': 0, 'valor': Decimal('0')}
         }
 
@@ -651,9 +651,9 @@ class RelatoriosManager:
         """Get estado label in Portuguese"""
         from database.models import EstadoProjeto
         mapping = {
-            EstadoProjeto.NAO_FATURADO: "Não Faturado",
-            EstadoProjeto.FATURADO: "Faturado",
-            EstadoProjeto.RECEBIDO: "Recebido",
+            EstadoProjeto.ATIVO: "Ativo",
+            EstadoProjeto.FINALIZADO: "Finalizado",
+            EstadoProjeto.PAGO: "Pago",
             EstadoProjeto.ANULADO: "Anulado"
         }
         return mapping.get(estado, str(estado))
@@ -670,7 +670,7 @@ class RelatoriosManager:
             # "todos" ou "bruno" - mostrar projetos pessoais BA
             projetos_pessoais = self.db_session.query(Projeto).filter(
                 Projeto.tipo == TipoProjeto.PESSOAL_BRUNO,
-                Projeto.estado == EstadoProjeto.RECEBIDO
+                Projeto.estado == EstadoProjeto.PAGO
             ).all()
 
         # Prémios (projetos empresa onde BA tem prémio) - aplicar filtro
@@ -720,7 +720,7 @@ class RelatoriosManager:
             # "todos" ou "rafael" - mostrar projetos pessoais RR
             projetos_pessoais = self.db_session.query(Projeto).filter(
                 Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL,
-                Projeto.estado == EstadoProjeto.RECEBIDO
+                Projeto.estado == EstadoProjeto.PAGO
             ).all()
 
         # Prémios (projetos empresa onde RR tem prémio) - aplicar filtro

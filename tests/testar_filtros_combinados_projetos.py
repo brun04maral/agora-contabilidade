@@ -39,7 +39,7 @@ print("\n[TESTE 2] FILTRO: Empresa + Recebidos")
 print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos(
     tipo=TipoProjeto.EMPRESA,
-    estado=EstadoProjeto.RECEBIDO
+    estado=EstadoProjeto.PAGO
 )
 print(f"Total de projetos: {relatorio['total_projetos']}")
 print(f"Valor total: {relatorio['total_valor_fmt']}")
@@ -54,7 +54,7 @@ print("\n[TESTE 3] FILTRO: Pessoais Bruno + Não Faturado")
 print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos(
     tipo=TipoProjeto.PESSOAL_BRUNO,
-    estado=EstadoProjeto.NAO_FATURADO
+    estado=EstadoProjeto.ATIVO
 )
 print(f"Total de projetos: {relatorio['total_projetos']}")
 print(f"Valor total: {relatorio['total_valor_fmt']}")
@@ -69,7 +69,7 @@ print("\n[TESTE 4] FILTRO: Pessoais Rafael + Faturado")
 print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos(
     tipo=TipoProjeto.PESSOAL_RAFAEL,
-    estado=EstadoProjeto.FATURADO
+    estado=EstadoProjeto.FINALIZADO
 )
 print(f"Total de projetos: {relatorio['total_projetos']}")
 print(f"Valor total: {relatorio['total_valor_fmt']}")
@@ -83,7 +83,7 @@ if relatorio['projetos']:
 print("\n[TESTE 5] FILTRO: Apenas Estado = Não Faturado")
 print("-" * 80)
 relatorio = manager.gerar_relatorio_projetos(
-    estado=EstadoProjeto.NAO_FATURADO
+    estado=EstadoProjeto.ATIVO
 )
 print(f"Total de projetos: {relatorio['total_projetos']}")
 print(f"Valor total: {relatorio['total_valor_fmt']}")

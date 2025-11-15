@@ -62,7 +62,7 @@ print("-" * 80)
 
 relatorio_filtrado = manager.gerar_relatorio_projetos(
     tipo=TipoProjeto.EMPRESA,
-    estado=EstadoProjeto.RECEBIDO
+    estado=EstadoProjeto.PAGO
 )
 total_filtrado = relatorio_filtrado['total_projetos']
 print(f"Total de projetos filtrados: {total_filtrado}")

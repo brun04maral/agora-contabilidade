@@ -129,7 +129,7 @@ def setup_database():
                 valor_sem_iva=Decimal("1500.00"),
                 data_inicio=date(2025, 1, 10),
                 data_faturacao=date(2025, 1, 20),
-                estado=EstadoProjeto.RECEBIDO
+                estado=EstadoProjeto.PAGO
             )
             db_session.add(projeto1)
 
@@ -142,7 +142,7 @@ def setup_database():
                 valor_sem_iva=Decimal("2000.00"),
                 data_inicio=date(2025, 1, 15),
                 data_faturacao=date(2025, 1, 25),
-                estado=EstadoProjeto.RECEBIDO
+                estado=EstadoProjeto.PAGO
             )
             db_session.add(projeto2)
 
@@ -157,7 +157,7 @@ def setup_database():
                 premio_rafael=Decimal("500.00"),
                 data_inicio=date(2025, 1, 5),
                 data_faturacao=date(2025, 1, 30),
-                estado=EstadoProjeto.RECEBIDO
+                estado=EstadoProjeto.PAGO
             )
             db_session.add(projeto3)
 

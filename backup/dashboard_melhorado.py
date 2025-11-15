@@ -400,7 +400,7 @@ class DashboardMelhorado(ctk.CTkFrame):
         # === RESUMO FINANCEIRO ===
         # Faturação total (projetos recebidos)
         faturacao = self.db_session.query(func.sum(Projeto.valor_sem_iva)).filter(
-            Projeto.estado == EstadoProjeto.RECEBIDO
+            Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or Decimal("0")
 
         # Despesas totais (pagas)
@@ -440,7 +440,7 @@ class DashboardMelhorado(ctk.CTkFrame):
 
         # Projetos não faturados
         projetos_nao_faturados = self.db_session.query(func.count(Projeto.id)).filter(
-            Projeto.estado == EstadoProjeto.NAO_FATURADO
+            Projeto.estado == EstadoProjeto.ATIVO
         ).scalar() or 0
 
         if projetos_nao_faturados > 0:
@@ -472,10 +472,10 @@ class DashboardMelhorado(ctk.CTkFrame):
         # === PROJETOS ===
         total_projetos = self.db_session.query(func.count(Projeto.id)).scalar() or 0
         projetos_recebidos = self.db_session.query(func.count(Projeto.id)).filter(
-            Projeto.estado == EstadoProjeto.RECEBIDO
+            Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
         projetos_faturados = self.db_session.query(func.count(Projeto.id)).filter(
-            Projeto.estado == EstadoProjeto.FATURADO
+            Projeto.estado == EstadoProjeto.FINALIZADO
         ).scalar() or 0
 
         self.total_projetos_card.value_label.configure(text=str(total_projetos))

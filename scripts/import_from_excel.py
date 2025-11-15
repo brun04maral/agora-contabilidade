@@ -194,13 +194,13 @@ class ExcelImporter:
     def mapear_estado_projeto(self, data_recebimento, data_faturacao, data_vencimento):
         """Mapeia estado do projeto"""
         if data_recebimento:
-            return EstadoProjeto.RECEBIDO
+            return EstadoProjeto.PAGO
         elif data_vencimento and data_vencimento <= self.hoje:
-            return EstadoProjeto.RECEBIDO
+            return EstadoProjeto.PAGO
         elif data_faturacao:
-            return EstadoProjeto.FATURADO
+            return EstadoProjeto.FINALIZADO
         else:
-            return EstadoProjeto.NAO_FATURADO
+            return EstadoProjeto.ATIVO
 
     # ========== IMPORTAÇÃO DE CLIENTES ==========
 
@@ -411,7 +411,7 @@ class ExcelImporter:
             tipo = self.mapear_tipo_projeto(estado_str, owner_str)
             estado = self.mapear_estado_projeto(data_recebimento, data_faturacao, data_vencimento)
 
-            if estado == EstadoProjeto.RECEBIDO and data_recebimento and not data_faturacao:
+            if estado == EstadoProjeto.PAGO and data_recebimento and not data_faturacao:
                 data_faturacao = data_recebimento
 
             cliente_id = None
@@ -469,7 +469,7 @@ class ExcelImporter:
                     self.stats['projetos']['new'] += 1
                     self.projetos_map[numero] = projeto.id
                     tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else ("👤B" if tipo == TipoProjeto.PESSOAL_BRUNO else "👤R")
-                    estado_icon = "✅" if estado == EstadoProjeto.RECEBIDO else ("📄" if estado == EstadoProjeto.FATURADO else "⏳")
+                    estado_icon = "✅" if estado == EstadoProjeto.PAGO else ("📄" if estado == EstadoProjeto.FINALIZADO else "⏳")
                     print(f"  {estado_icon} {numero}: {tipo_icon} {descricao[:40]} (criado)")
                 else:
                     self.stats['projetos']['error'] += 1
