@@ -786,7 +786,7 @@ class LinhaDialog(ctk.CTkToplevel):
 
     def projeto_selecionado(self, projeto_str: str):
         """
-        Auto-preenche a descrição quando um projeto é selecionado
+        Auto-preenche a descrição e datas quando um projeto é selecionado
 
         Args:
             projeto_str: String do projeto selecionado (ex: "#P0001 - Descrição")
@@ -812,6 +812,15 @@ class LinhaDialog(ctk.CTkToplevel):
             # Preencher com a descrição completa do projeto
             self.servico_entry.delete("1.0", "end")
             self.servico_entry.insert("1.0", projeto.descricao)
+
+        # Auto-preencher datas apenas se estiverem vazias
+        # Data início
+        if projeto.data_inicio and self.data_inicio_picker.get_date() is None:
+            self.data_inicio_picker.set_date(projeto.data_inicio)
+
+        # Data fim
+        if projeto.data_fim and self.data_fim_picker.get_date() is None:
+            self.data_fim_picker.set_date(projeto.data_fim)
 
     def preencher_dados(self, linha):
         """Fill form with existing linha data"""
