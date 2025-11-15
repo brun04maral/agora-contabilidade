@@ -3,6 +3,7 @@
 Tela de Clientes - Gestão de clientes da Agora Media
 """
 import customtkinter as ctk
+import tkinter as tk
 from typing import Callable, Optional, Dict
 from sqlalchemy.orm import Session
 from logic.clientes import ClientesManager
@@ -211,7 +212,8 @@ class ClientesScreen(ctk.CTkFrame):
             table_container,
             columns=columns,
             on_row_double_click=self.on_double_click,
-            on_selection_change=self.on_selection_change
+            on_selection_change=self.on_selection_change,
+            on_row_right_click=self.show_context_menu
         )
         self.table.pack(fill="both", expand=True)
 
@@ -295,6 +297,49 @@ class ClientesScreen(ctk.CTkFrame):
         cliente_id = data.get("id")
         if cliente_id:
             self.editar_cliente(cliente_id)
+
+    def show_context_menu(self, event, data: dict):
+        """
+        Mostra menu de contexto (right-click) para um cliente
+
+        Args:
+            event: Evento do clique (para posição)
+            data: Dados da linha clicada
+        """
+        cliente = data.get('_cliente')
+        if not cliente:
+            return
+
+        # Criar menu
+        menu = tk.Menu(self, tearoff=0)
+
+        # ✏️ Editar
+        menu.add_command(
+            label="✏️ Editar",
+            command=lambda: self._editar_from_context(cliente)
+        )
+
+        menu.add_separator()
+
+        # 🗑️ Apagar
+        menu.add_command(
+            label="🗑️ Apagar",
+            command=lambda: self._apagar_from_context(cliente)
+        )
+
+        # Mostrar menu na posição do cursor
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _editar_from_context(self, cliente):
+        """Edita cliente a partir do menu de contexto"""
+        self.editar_cliente(cliente.id)
+
+    def _apagar_from_context(self, cliente):
+        """Apaga cliente a partir do menu de contexto"""
+        self.apagar_cliente(cliente.id)
 
     def cancelar_selecao(self):
         """Clear selection"""
