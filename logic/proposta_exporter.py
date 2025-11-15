@@ -157,7 +157,7 @@ class PropostaExporter:
         # Informações do cliente
         if orcamento.cliente:
             cliente_info = f"""
-            <b>Cliente:</b> {orcamento.cliente.nome}<br/>
+            <b>Cliente:</b> {orcamento.cliente.nome_formal}<br/>
             <b>Código do Orçamento:</b> {orcamento.codigo}<br/>
             <b>Data:</b> {orcamento.data_criacao.strftime('%d/%m/%Y') if orcamento.data_criacao else 'N/A'}
             """
