@@ -21,7 +21,7 @@ class DatePickerDropdown(ctk.CTkFrame):
     ):
         super().__init__(parent, fg_color="transparent", **kwargs)
 
-        self.selected_date = default_date or date.today()
+        self.selected_date = default_date if default_date is not None else None
         self.dropdown_frame = None
         self.is_dropdown_open = False
 
@@ -70,8 +70,9 @@ class DatePickerDropdown(ctk.CTkFrame):
         self.dropdown_frame.place(x=x, y=y)
         self.dropdown_frame.lift()
 
-        # Criar calendário
-        self._create_calendar(self.selected_date.year, self.selected_date.month)
+        # Criar calendário (usar data selecionada ou hoje como referência)
+        ref_date = self.selected_date if self.selected_date else date.today()
+        self._create_calendar(ref_date.year, ref_date.month)
 
         self.is_dropdown_open = True
 
