@@ -5,6 +5,15 @@
 
 ---
 
+- [ ] ✨ **Implementar Dialogs CRUD Específicos por Tipo - Orçamentos V2**
+  - Lado CLIENTE: ServicoDialog, EquipamentoDialog, TransporteDialog, RefeicaoDialog, OutroDialog
+  - Lado EMPRESA: ServicoEmpresaDialog, EquipamentoEmpresaDialog, ComissaoDialog
+  - Renderização tabular de items por tipo
+  - Sincronização automática despesas CLIENTE→EMPRESA
+  - Validação bloqueio aprovação (TOTAL_CLIENTE = TOTAL_EMPRESA)
+  - Auto-preenchimento de comissões
+  - Testes de fluxo completo (criar, editar, aprovar)
+
 ## 🔥 AGORA (Foco Imediato)
 
 <!-- Máximo 3 tarefas. Apenas o que está a ser trabalhado AGORA -->
