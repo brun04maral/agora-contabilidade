@@ -10,7 +10,7 @@ from ui.components.data_table_v2 import DataTableV2
 from typing import Optional
 from datetime import date, datetime
 from tkinter import messagebox
-from database.models.orcamento import Orcamento, PropostaSecao, PropostaItem
+from database.models.orcamento import Orcamento
 from assets.resources import get_icon, ORCAMENTOS
 
 
