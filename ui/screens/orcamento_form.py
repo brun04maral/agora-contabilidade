@@ -538,21 +538,216 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         for widget in self.cliente_scroll.winfo_children():
             widget.destroy()
 
-        # TODO: Carregar items do banco de dados
-        # TODO: Renderizar por secção (Serviços, Equipamento, Despesas)
-        # TODO: Calcular subtotais
+        # Obter secções
+        secoes = self.manager.obter_secoes(self.orcamento_id)
 
+        # Organizar secções principais (Serviços, Equipamento, Despesas)
+        secoes_principais = {
+            'servicos': next((s for s in secoes if s.tipo == 'servicos'), None),
+            'equipamento': next((s for s in secoes if s.tipo == 'equipamento'), None),
+            'despesas': next((s for s in secoes if s.tipo == 'despesas'), None)
+        }
+
+        total_geral = Decimal('0')
+
+        for nome_secao, secao_obj in secoes_principais.items():
+            if not secao_obj:
+                continue
+
+            # Obter items desta secção
+            items = self.manager.obter_itens(self.orcamento_id, secao_obj.id)
+            if not items:
+                continue  # Não mostrar secções vazias
+
+            # Frame da secção
+            secao_frame = ctk.CTkFrame(
+                self.cliente_scroll,
+                fg_color=("#f5f5f5", "#2b2b2b"),
+                corner_radius=10
+            )
+            secao_frame.pack(fill="x", padx=10, pady=(0, 15))
+
+            # Header da secção
+            header_frame = ctk.CTkFrame(secao_frame, fg_color="transparent")
+            header_frame.pack(fill="x", padx=15, pady=(15, 10))
+
+            # Nome da secção
+            nome_display = {
+                'servicos': '🔧 SERVIÇOS',
+                'equipamento': '📦 EQUIPAMENTO',
+                'despesas': '💰 DESPESAS'
+            }.get(nome_secao, nome_secao.upper())
+
+            ctk.CTkLabel(
+                header_frame,
+                text=nome_display,
+                font=ctk.CTkFont(size=14, weight="bold")
+            ).pack(side="left")
+
+            # Items da secção
+            subtotal_secao = Decimal('0')
+            for idx, item in enumerate(items):
+                self.renderizar_item_cliente(secao_frame, item, idx)
+                subtotal_secao += item.total
+
+            # Subtotal da secção
+            subtotal_frame = ctk.CTkFrame(secao_frame, fg_color="transparent")
+            subtotal_frame.pack(fill="x", padx=15, pady=(5, 10))
+
+            ctk.CTkLabel(
+                subtotal_frame,
+                text=f"Subtotal: €{float(subtotal_secao):.2f}",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color=("#2c3e50", "#ecf0f1")
+            ).pack(side="right")
+
+            total_geral += subtotal_secao
+
+        # Atualizar total geral
+        self._total_cliente = total_geral
         self.atualizar_total_cliente()
+
+    def renderizar_item_cliente(self, parent, item: OrcamentoItem, index: int):
+        """Renderiza um item CLIENTE"""
+        # Cor de fundo alternada
+        bg_color = ("#ffffff", "#1e1e1e") if index % 2 == 0 else ("#f9f9f9", "#252525")
+
+        item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
+        item_frame.pack(fill="x", padx=15, pady=2)
+
+        # Container principal (descrição + detalhes + ações)
+        content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        content_frame.pack(fill="x", padx=10, pady=8)
+
+        # Coluna 1: Descrição + Tipo
+        desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        desc_frame.pack(side="left", fill="both", expand=True)
+
+        # Tipo badge
+        tipo_colors = {
+            'servico': ("#4CAF50", "#2e7d32"),
+            'equipamento': ("#2196F3", "#1565c0"),
+            'transporte': ("#FF9800", "#e65100"),
+            'refeicao': ("#FF9800", "#e65100"),
+            'outro': ("#FF9800", "#e65100")
+        }
+        tipo_bg = tipo_colors.get(item.tipo, ("#9E9E9E", "#616161"))
+
+        ctk.CTkLabel(
+            desc_frame,
+            text=item.tipo.upper(),
+            font=ctk.CTkFont(size=9, weight="bold"),
+            fg_color=tipo_bg,
+            corner_radius=4,
+            padx=6,
+            pady=2
+        ).pack(side="left", padx=(0, 8))
+
+        # Descrição
+        desc_text = item.descricao[:60] + "..." if len(item.descricao) > 60 else item.descricao
+        ctk.CTkLabel(
+            desc_frame,
+            text=desc_text,
+            font=ctk.CTkFont(size=12),
+            anchor="w"
+        ).pack(side="left", fill="x", expand=True)
+
+        # Coluna 2: Detalhes (campos específicos por tipo)
+        details_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        details_frame.pack(side="left", padx=20)
+
+        if item.tipo in ['servico', 'equipamento']:
+            detail_text = f"{item.quantidade} × {item.dias}d × €{float(item.preco_unitario):.2f}"
+            if item.desconto and item.desconto > 0:
+                detail_text += f" (-{float(item.desconto * 100):.1f}%)"
+        elif item.tipo == 'transporte':
+            detail_text = f"{float(item.kms):.1f}km × €{float(item.valor_por_km):.2f}/km"
+        elif item.tipo == 'refeicao':
+            detail_text = f"{item.num_refeicoes} refeições × €{float(item.valor_por_refeicao):.2f}"
+        elif item.tipo == 'outro':
+            detail_text = f"Valor fixo"
+        else:
+            detail_text = ""
+
+        ctk.CTkLabel(
+            details_frame,
+            text=detail_text,
+            font=ctk.CTkFont(size=11),
+            text_color=("#555", "#aaa")
+        ).pack()
+
+        # Coluna 3: Total
+        total_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        total_frame.pack(side="left", padx=10)
+
+        ctk.CTkLabel(
+            total_frame,
+            text=f"€{float(item.total):.2f}",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=("#2e7d32", "#66bb6a")
+        ).pack()
+
+        # Coluna 4: Ações (Edit/Delete)
+        actions_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        actions_frame.pack(side="right")
+
+        btn_editar = ctk.CTkButton(
+            actions_frame,
+            text="✏️",
+            command=lambda: self.editar_item_cliente(item),
+            width=30,
+            height=28,
+            fg_color=("#2196F3", "#1565c0"),
+            hover_color=("#1976D2", "#0d47a1")
+        )
+        btn_editar.pack(side="left", padx=2)
+
+        btn_eliminar = ctk.CTkButton(
+            actions_frame,
+            text="🗑️",
+            command=lambda: self.eliminar_item_cliente(item.id),
+            width=30,
+            height=28,
+            fg_color=("#f44336", "#c62828"),
+            hover_color=("#d32f2f", "#b71c1c")
+        )
+        btn_eliminar.pack(side="left", padx=2)
+
+    def editar_item_cliente(self, item: OrcamentoItem):
+        """Abre dialog para editar item CLIENTE"""
+        # Determinar qual dialog abrir baseado no tipo
+        if item.tipo == 'servico':
+            dialog = ServicoDialogCliente(self, self.db_session, self.orcamento_id, item.secao_id, item.id)
+        elif item.tipo == 'equipamento':
+            dialog = EquipamentoDialogCliente(self, self.db_session, self.orcamento_id, item.secao_id, item.id)
+        elif item.tipo == 'transporte':
+            dialog = TransporteDialog(self, self.db_session, self.orcamento_id, item.secao_id, item.id)
+        elif item.tipo == 'refeicao':
+            dialog = RefeicaoDialog(self, self.db_session, self.orcamento_id, item.secao_id, item.id)
+        elif item.tipo == 'outro':
+            dialog = OutroDialog(self, self.db_session, self.orcamento_id, item.secao_id, item.id)
+        else:
+            messagebox.showerror("Erro", f"Tipo de item desconhecido: {item.tipo}")
+            return
+
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_cliente()
+
+    def eliminar_item_cliente(self, item_id: int):
+        """Elimina item CLIENTE"""
+        if not messagebox.askyesno("Confirmar", "Tem certeza que deseja eliminar este item?"):
+            return
+
+        sucesso, erro = self.manager.eliminar_item(item_id)
+        if sucesso:
+            self.carregar_items_cliente()
+        else:
+            messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
 
     def atualizar_total_cliente(self):
         """Atualiza TOTAL CLIENTE"""
-        if not self.orcamento_id:
-            self._total_cliente = Decimal('0')
-            self.total_cliente_label.configure(text="TOTAL CLIENTE: €0,00")
-            return
-
-        # TODO: Calcular total real dos items
-        self._total_cliente = Decimal('0')
+        # _total_cliente já foi calculado em carregar_items_cliente()
         self.total_cliente_label.configure(text=f"TOTAL CLIENTE: €{float(self._total_cliente):.2f}")
 
         # Validar contra TOTAL EMPRESA
@@ -598,21 +793,250 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         for widget in self.empresa_scroll.winfo_children():
             widget.destroy()
 
-        # TODO: Carregar items empresa do banco de dados
-        # TODO: Carregar despesas espelhadas (readonly)
-        # TODO: Carregar comissões
+        # Obter repartições (items EMPRESA)
+        reparticoes = self.manager.obter_reparticoes(self.orcamento_id)
 
+        if not reparticoes:
+            # Mostrar mensagem se vazio
+            empty_label = ctk.CTkLabel(
+                self.empresa_scroll,
+                text="Nenhum item EMPRESA adicionado ainda.\nUse os botões acima para adicionar.",
+                font=ctk.CTkFont(size=12),
+                text_color=("#999", "#666")
+            )
+            empty_label.pack(pady=40)
+            self.atualizar_total_empresa()
+            return
+
+        # Agrupar por tipo
+        grupos = {
+            'servico': [],
+            'equipamento': [],
+            'despesa': [],
+            'comissao': []
+        }
+
+        for rep in reparticoes:
+            grupos[rep.tipo].append(rep)
+
+        total_geral = Decimal('0')
+
+        # Renderizar grupos
+        grupos_display = {
+            'servico': ('🔧 SERVIÇOS', "#4CAF50"),
+            'equipamento': ('📦 EQUIPAMENTO', "#2196F3"),
+            'despesa': ('💰 DESPESAS ESPELHADAS', "#FF9800"),
+            'comissao': ('💼 COMISSÕES', "#9C27B0")
+        }
+
+        for tipo, items_grupo in grupos.items():
+            if not items_grupo:
+                continue
+
+            nome_grupo, cor_grupo = grupos_display[tipo]
+
+            # Frame do grupo
+            grupo_frame = ctk.CTkFrame(
+                self.empresa_scroll,
+                fg_color=("#f5f5f5", "#2b2b2b"),
+                corner_radius=10
+            )
+            grupo_frame.pack(fill="x", padx=10, pady=(0, 15))
+
+            # Header do grupo
+            header_frame = ctk.CTkFrame(grupo_frame, fg_color="transparent")
+            header_frame.pack(fill="x", padx=15, pady=(15, 10))
+
+            ctk.CTkLabel(
+                header_frame,
+                text=nome_grupo,
+                font=ctk.CTkFont(size=14, weight="bold")
+            ).pack(side="left")
+
+            # Items do grupo
+            subtotal_grupo = Decimal('0')
+            for idx, rep in enumerate(items_grupo):
+                self.renderizar_item_empresa(grupo_frame, rep, idx, tipo)
+                subtotal_grupo += rep.total
+
+            # Subtotal do grupo
+            subtotal_frame = ctk.CTkFrame(grupo_frame, fg_color="transparent")
+            subtotal_frame.pack(fill="x", padx=15, pady=(5, 10))
+
+            ctk.CTkLabel(
+                subtotal_frame,
+                text=f"Subtotal: €{float(subtotal_grupo):.2f}",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color=("#2c3e50", "#ecf0f1")
+            ).pack(side="right")
+
+            total_geral += subtotal_grupo
+
+        # Atualizar total geral
+        self._total_empresa = total_geral
         self.atualizar_total_empresa()
+
+    def renderizar_item_empresa(self, parent, rep: OrcamentoReparticao, index: int, tipo: str):
+        """Renderiza um item EMPRESA"""
+        # Cor de fundo alternada
+        bg_color = ("#ffffff", "#1e1e1e") if index % 2 == 0 else ("#f9f9f9", "#252525")
+
+        # Se for despesa espelhada, usar cor diferente (readonly)
+        is_espelhada = (tipo == 'despesa')
+        if is_espelhada:
+            bg_color = ("#fff8e1", "#3e2723")
+
+        item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
+        item_frame.pack(fill="x", padx=15, pady=2)
+
+        # Container principal
+        content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        content_frame.pack(fill="x", padx=10, pady=8)
+
+        # Coluna 1: Beneficiário badge + Descrição
+        desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        desc_frame.pack(side="left", fill="both", expand=True)
+
+        # Beneficiário badge
+        beneficiario_colors = {
+            'BA': ("#4CAF50", "#2e7d32"),
+            'RR': ("#2196F3", "#1565c0"),
+            'AGORA': ("#9C27B0", "#6a1b9a")
+        }
+        benef_bg = beneficiario_colors.get(rep.beneficiario, ("#9E9E9E", "#616161"))
+
+        benef_text = rep.beneficiario if rep.beneficiario else "N/A"
+        if is_espelhada:
+            benef_text = "🔗 AGORA"  # Despesas sempre vão para AGORA
+
+        ctk.CTkLabel(
+            desc_frame,
+            text=benef_text,
+            font=ctk.CTkFont(size=9, weight="bold"),
+            fg_color=benef_bg,
+            corner_radius=4,
+            padx=6,
+            pady=2
+        ).pack(side="left", padx=(0, 8))
+
+        # Descrição
+        desc_text = rep.descricao[:50] + "..." if len(rep.descricao) > 50 else rep.descricao
+        if is_espelhada:
+            desc_text = "🔗 " + desc_text  # Indicador visual de espelhado
+
+        ctk.CTkLabel(
+            desc_frame,
+            text=desc_text,
+            font=ctk.CTkFont(size=12),
+            anchor="w"
+        ).pack(side="left", fill="x", expand=True)
+
+        # Coluna 2: Detalhes
+        details_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        details_frame.pack(side="left", padx=20)
+
+        if tipo in ['servico', 'equipamento']:
+            detail_text = f"{rep.quantidade} × {rep.dias}d × €{float(rep.valor_unitario):.2f}"
+        elif tipo == 'comissao':
+            detail_text = f"{float(rep.percentagem):.3f}% × €{float(rep.base_calculo):.2f}"
+        elif tipo == 'despesa':
+            # Despesas espelhadas - mostrar detalhes do tipo
+            if rep.kms:
+                detail_text = f"{float(rep.kms):.1f}km × €{float(rep.valor_por_km):.2f}/km"
+            elif rep.num_refeicoes:
+                detail_text = f"{rep.num_refeicoes} ref. × €{float(rep.valor_por_refeicao):.2f}"
+            elif rep.valor_fixo:
+                detail_text = "Valor fixo"
+            else:
+                detail_text = "Espelhado"
+        else:
+            detail_text = ""
+
+        ctk.CTkLabel(
+            details_frame,
+            text=detail_text,
+            font=ctk.CTkFont(size=11),
+            text_color=("#555", "#aaa")
+        ).pack()
+
+        # Coluna 3: Total
+        total_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        total_frame.pack(side="left", padx=10)
+
+        ctk.CTkLabel(
+            total_frame,
+            text=f"€{float(rep.total):.2f}",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=("#2e7d32", "#66bb6a")
+        ).pack()
+
+        # Coluna 4: Ações
+        actions_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        actions_frame.pack(side="right")
+
+        if not is_espelhada:
+            # Edit/Delete buttons (apenas para items não-espelhados)
+            btn_editar = ctk.CTkButton(
+                actions_frame,
+                text="✏️",
+                command=lambda: self.editar_item_empresa(rep),
+                width=30,
+                height=28,
+                fg_color=("#2196F3", "#1565c0"),
+                hover_color=("#1976D2", "#0d47a1")
+            )
+            btn_editar.pack(side="left", padx=2)
+
+            btn_eliminar = ctk.CTkButton(
+                actions_frame,
+                text="🗑️",
+                command=lambda: self.eliminar_item_empresa(rep.id),
+                width=30,
+                height=28,
+                fg_color=("#f44336", "#c62828"),
+                hover_color=("#d32f2f", "#b71c1c")
+            )
+            btn_eliminar.pack(side="left", padx=2)
+        else:
+            # Readonly indicator
+            ctk.CTkLabel(
+                actions_frame,
+                text="🔒 READONLY",
+                font=ctk.CTkFont(size=9),
+                text_color=("#999", "#666")
+            ).pack()
+
+    def editar_item_empresa(self, rep: OrcamentoReparticao):
+        """Abre dialog para editar item EMPRESA"""
+        if rep.tipo == 'servico':
+            dialog = ServicoDialogEmpresa(self, self.db_session, self.orcamento_id, rep.id)
+        elif rep.tipo == 'equipamento':
+            dialog = EquipamentoDialogEmpresa(self, self.db_session, self.orcamento_id, rep.id)
+        elif rep.tipo == 'comissao':
+            # Passar base de cálculo atual
+            dialog = ComissaoDialog(self, self.db_session, self.orcamento_id, rep.base_calculo or Decimal('0'), rep.id)
+        else:
+            messagebox.showerror("Erro", f"Tipo de item EMPRESA desconhecido: {rep.tipo}")
+            return
+
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_empresa()
+
+    def eliminar_item_empresa(self, rep_id: int):
+        """Elimina item EMPRESA"""
+        if not messagebox.askyesno("Confirmar", "Tem certeza que deseja eliminar este item?"):
+            return
+
+        sucesso, erro = self.manager.eliminar_reparticao(rep_id)
+        if sucesso:
+            self.carregar_items_empresa()
+        else:
+            messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
 
     def atualizar_total_empresa(self):
         """Atualiza TOTAL EMPRESA"""
-        if not self.orcamento_id:
-            self._total_empresa = Decimal('0')
-            self.total_empresa_label.configure(text="TOTAL EMPRESA: €0,00")
-            return
-
-        # TODO: Calcular total real (base + comissões)
-        self._total_empresa = Decimal('0')
+        # _total_empresa já foi calculado em carregar_items_empresa()
         self.total_empresa_label.configure(text=f"TOTAL EMPRESA: €{float(self._total_empresa):.2f}")
 
         # Validar contra TOTAL CLIENTE
