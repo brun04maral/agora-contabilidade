@@ -4,6 +4,53 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-16] Orçamentos V2 - Arquitetura Base Implementada
+
+### ✨ Modelos de Dados Atualizados (Commit: 087fb08)
+- **Orcamento:** Campo `owner` adicionado (BA/RR)
+- **OrcamentoItem:** Campo `tipo` + campos específicos por tipo (kms, num_refeicoes, valor_fixo, etc)
+- **OrcamentoReparticao:** Campo `beneficiario` + suporte para comissões e todos os tipos
+- Removidas classes legacy: PropostaSecao, PropostaItem
+
+### 🗄️ Migration 022 - Schema V2 (Commits: d4afcf6, 3b589f7)
+**LADO CLIENTE (orcamento_itens):** +7 colunas
+- tipo, kms, valor_por_km, num_refeicoes, valor_por_refeicao, valor_fixo
+
+**LADO EMPRESA (orcamento_reparticoes):** +13 colunas
+- tipo, beneficiario, descricao, quantidade, dias, valor_unitario, base_calculo, kms, valor_por_km, num_refeicoes, valor_por_refeicao, valor_fixo, item_cliente_id
+
+**Features:**
+- Migração automática de dados existentes
+- Inferência de tipos baseada em secções
+- Tabelas legacy marcadas para remoção
+
+### 🎨 OrcamentoFormScreen V2 - Reescrita Completa (Commit: 2882cdc)
+**Estrutura:**
+- Tabs CLIENTE/EMPRESA totalmente separadas
+- Header com campos obrigatórios (owner, cliente, datas)
+- Validação de totais em tempo real com feedback visual
+- Footer com botões "Gravar Rascunho" e "Aprovar Orçamento"
+
+**Preparado para:**
+- Dialogs específicos por tipo (8 dialogs)
+- Renderização de items
+- Sincronização despesas CLIENTE→EMPRESA
+- Auto-preenchimento de comissões
+
+**Referências:**
+- BUSINESS_LOGIC.md (Secção 1-7)
+- DATABASE_SCHEMA.md (Modelo V2)
+- ARCHITECTURE.md (Fluxos e managers)
+
+### 📦 Commits
+- `087fb08` - Modelos V2
+- `d4afcf6` - Migration 022
+- `2882cdc` - OrcamentoFormScreen V2
+- `3b589f7` - Migration aplicada
+
+---
+
+
 ## [2025-11-15 - Noite 21:30] Session 011Nxway2rBVpU2mvorwQDGJ
 
 ### ✨ Migration 021 - Cliente Nome e Nome Formal
