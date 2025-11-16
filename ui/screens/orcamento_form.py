@@ -176,7 +176,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         ctk.CTkLabel(fields_frame, text="Data Criação:", font=ctk.CTkFont(size=13, weight="bold")).grid(
             row=1, column=2, padx=(20, 10), pady=(0, 10), sticky="w"
         )
-        self.data_criacao_picker = DatePickerDropdown(fields_frame, initial_date=date.today())
+        self.data_criacao_picker = DatePickerDropdown(fields_frame, default_date=date.today())
         self.data_criacao_picker.grid(row=1, column=3, padx=(0, 20), pady=(0, 10), sticky="ew")
 
         # Row 2: Data Evento | Local Evento
