@@ -303,7 +303,12 @@ class OrcamentosScreen(ctk.CTkFrame):
 
     def adicionar_orcamento(self):
         """Add new orcamento"""
-        self.master.show_screen("orcamento_form", orcamento_id=None)
+        # Hierarchy: self (OrcamentosScreen) -> master (content_frame) -> master (MainWindow)
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            main_window.show_screen("orcamento_form", orcamento_id=None)
+        else:
+            messagebox.showerror("Erro", "Não foi possível navegar para o formulário de orçamento")
 
     def editar_orcamento(self, data=None):
         """Edit selected orcamento"""
@@ -317,7 +322,12 @@ class OrcamentosScreen(ctk.CTkFrame):
                 return
             orcamento_id = selected[0]["id"]
 
-        self.master.show_screen("orcamento_form", orcamento_id=orcamento_id)
+        # Hierarchy: self (OrcamentosScreen) -> master (content_frame) -> master (MainWindow)
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            main_window.show_screen("orcamento_form", orcamento_id=orcamento_id)
+        else:
+            messagebox.showerror("Erro", "Não foi possível navegar para o formulário de orçamento")
 
     def visualizar_orcamento(self):
         """View selected orcamento details"""

@@ -430,7 +430,12 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             if not messagebox.askyesno("Confirmar", "Existem alterações não guardadas. Deseja sair sem gravar?"):
                 return
 
-        self.master.show_screen("orcamentos")
+        # Hierarchy: self (OrcamentoFormScreen) -> master (content_frame) -> master (MainWindow)
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            main_window.show_screen("orcamentos")
+        else:
+            messagebox.showerror("Erro", "Não foi possível voltar para a lista de orçamentos")
 
     def atualizar_botoes_acao(self):
         """Atualiza botões baseado no estado"""
