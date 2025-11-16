@@ -519,6 +519,99 @@ class OrcamentoManager:
 
         return query.order_by(OrcamentoItem.ordem).all()
 
+    # ==================== Items V2 (Tipo-específicos) ====================
+
+    def adicionar_item_v2(
+        self,
+        orcamento_id: int,
+        secao_id: int,
+        tipo: str,
+        descricao: str,
+        ordem: int = 0,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoItem], Optional[str]]:
+        """
+        Adiciona novo item V2 ao orçamento (suporta todos os tipos)
+
+        Args:
+            orcamento_id: ID do orçamento
+            secao_id: ID da secção
+            tipo: Tipo do item ('servico', 'equipamento', 'transporte', 'refeicao', 'outro')
+            descricao: Descrição do item
+            ordem: Ordem de apresentação
+            **kwargs: Campos específicos por tipo
+
+        Returns:
+            (sucesso, item, mensagem_erro)
+        """
+        try:
+            # Criar item com campos base
+            item = OrcamentoItem(
+                orcamento_id=orcamento_id,
+                secao_id=secao_id,
+                tipo=tipo,
+                descricao=descricao,
+                ordem=ordem,
+                total=Decimal('0')  # Será calculado
+            )
+
+            # Adicionar campos específicos por tipo
+            for key, value in kwargs.items():
+                if hasattr(item, key):
+                    setattr(item, key, value)
+
+            # Calcular total usando método do modelo
+            item.total = item.calcular_total()
+
+            self.db.add(item)
+            self.db.commit()
+            self.db.refresh(item)
+
+            # Recalcular totais do orçamento
+            self.recalcular_totais(orcamento_id)
+
+            return True, item, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
+    def atualizar_item_v2(
+        self,
+        item_id: int,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoItem], Optional[str]]:
+        """
+        Atualiza item V2 existente e recalcula o total
+
+        Returns:
+            (sucesso, item, mensagem_erro)
+        """
+        try:
+            item = self.db.query(OrcamentoItem).filter(OrcamentoItem.id == item_id).first()
+            if not item:
+                return False, None, "Item não encontrado"
+
+            # Atualizar campos fornecidos
+            for key, value in kwargs.items():
+                if hasattr(item, key):
+                    setattr(item, key, value)
+
+            # Recalcular total usando método do modelo
+            item.total = item.calcular_total()
+
+            self.db.commit()
+            self.db.refresh(item)
+
+            # Recalcular totais do orçamento
+            self.recalcular_totais(item.orcamento_id)
+
+            return True, item, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
     # ==================== Cálculos ====================
 
     def recalcular_totais(self, orcamento_id: int) -> bool:

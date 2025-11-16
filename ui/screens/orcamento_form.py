@@ -13,6 +13,7 @@ from logic.orcamentos import OrcamentoManager
 from logic.clientes import ClientesManager
 from ui.components.autocomplete_entry import AutocompleteEntry
 from ui.components.date_picker_dropdown import DatePickerDropdown
+from database.models.orcamento import OrcamentoItem, OrcamentoReparticao
 from typing import Optional
 from datetime import date
 from tkinter import messagebox
@@ -399,8 +400,134 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
     def adicionar_item_cliente(self, tipo_secao):
         """Abre dialog para adicionar item no lado CLIENTE"""
-        # TODO: Implementar dialogs específicos por tipo
-        messagebox.showinfo("Em desenvolvimento", f"Dialog para adicionar item em secção: {tipo_secao}")
+        # Verificar se orçamento foi gravado
+        if not self.orcamento_id:
+            messagebox.showwarning("Aviso", "Grave o orçamento antes de adicionar items!")
+            return
+
+        # Obter secção correspondente
+        secoes = self.manager.obter_secoes(self.orcamento_id)
+        secao = None
+
+        # Mapear tipo_secao para tipo de secção do banco
+        if tipo_secao == 'servicos':
+            secao = next((s for s in secoes if s.tipo == 'servicos'), None)
+            if secao:
+                self.abrir_dialog_servico_cliente(secao.id)
+        elif tipo_secao == 'equipamento':
+            secao = next((s for s in secoes if s.tipo == 'equipamento'), None)
+            if secao:
+                self.abrir_dialog_equipamento_cliente(secao.id)
+        elif tipo_secao == 'despesas':
+            # Para despesas, mostrar menu de escolha
+            self.mostrar_menu_despesas_cliente()
+
+        if not secao and tipo_secao != 'despesas':
+            messagebox.showerror("Erro", f"Secção '{tipo_secao}' não encontrada!")
+
+    def mostrar_menu_despesas_cliente(self):
+        """Mostra menu para escolher tipo de despesa"""
+        # Obter secção de despesas
+        secoes = self.manager.obter_secoes(self.orcamento_id)
+        secao_despesas = next((s for s in secoes if s.tipo == 'despesas'), None)
+
+        if not secao_despesas:
+            messagebox.showerror("Erro", "Secção 'Despesas' não encontrada!")
+            return
+
+        # Criar janela de escolha
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Escolher Tipo de Despesa")
+        dialog.geometry("350x280")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Conteúdo
+        main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        ctk.CTkLabel(
+            main_frame,
+            text="Escolha o tipo de despesa:",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(pady=(0, 20))
+
+        # Botões
+        btn_transporte = ctk.CTkButton(
+            main_frame,
+            text="🚗 Transporte (KMs)",
+            command=lambda: [dialog.destroy(), self.abrir_dialog_transporte(secao_despesas.id)],
+            height=40,
+            fg_color="#FF9800",
+            hover_color="#e68900"
+        )
+        btn_transporte.pack(fill="x", pady=(0, 10))
+
+        btn_refeicao = ctk.CTkButton(
+            main_frame,
+            text="🍽️ Refeições",
+            command=lambda: [dialog.destroy(), self.abrir_dialog_refeicao(secao_despesas.id)],
+            height=40,
+            fg_color="#FF9800",
+            hover_color="#e68900"
+        )
+        btn_refeicao.pack(fill="x", pady=(0, 10))
+
+        btn_outro = ctk.CTkButton(
+            main_frame,
+            text="📄 Outro (Valor Fixo)",
+            command=lambda: [dialog.destroy(), self.abrir_dialog_outro(secao_despesas.id)],
+            height=40,
+            fg_color="#FF9800",
+            hover_color="#e68900"
+        )
+        btn_outro.pack(fill="x", pady=(0, 10))
+
+        btn_cancelar = ctk.CTkButton(
+            main_frame,
+            text="Cancelar",
+            command=dialog.destroy,
+            height=35,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(fill="x")
+
+    def abrir_dialog_servico_cliente(self, secao_id: int):
+        """Abre dialog para adicionar serviço"""
+        dialog = ServicoDialogCliente(self, self.db_session, self.orcamento_id, secao_id)
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_cliente()
+
+    def abrir_dialog_equipamento_cliente(self, secao_id: int):
+        """Abre dialog para adicionar equipamento"""
+        dialog = EquipamentoDialogCliente(self, self.db_session, self.orcamento_id, secao_id)
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_cliente()
+
+    def abrir_dialog_transporte(self, secao_id: int):
+        """Abre dialog para adicionar transporte"""
+        dialog = TransporteDialog(self, self.db_session, self.orcamento_id, secao_id)
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_cliente()
+
+    def abrir_dialog_refeicao(self, secao_id: int):
+        """Abre dialog para adicionar refeição"""
+        dialog = RefeicaoDialog(self, self.db_session, self.orcamento_id, secao_id)
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_cliente()
+
+    def abrir_dialog_outro(self, secao_id: int):
+        """Abre dialog para adicionar outro"""
+        dialog = OutroDialog(self, self.db_session, self.orcamento_id, secao_id)
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_cliente()
 
     def carregar_items_cliente(self):
         """Carrega e renderiza todos os items do LADO CLIENTE"""
@@ -656,13 +783,860 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
 
 # ========================================
-# TODO: Dialogs específicos por tipo
+# DIALOGS ESPECÍFICOS POR TIPO - LADO CLIENTE
 # ========================================
-# - ServicoDialogCliente
-# - EquipamentoDialogCliente
-# - TransporteDialog (só cliente)
-# - RefeicaoDialog (só cliente)
-# - OutroDialog (só cliente)
+
+class ServicoDialogCliente(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Serviço no LADO CLIENTE"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, secao_id: int, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.secao_id = secao_id
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Serviço" if not item_id else "Editar Serviço")
+        self.geometry("500x450")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        # Se edição, carregar dados
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        # Container principal
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Serviço - LADO CLIENTE",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Quantidade
+        ctk.CTkLabel(main_frame, text="Quantidade:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.quantidade_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 2")
+        self.quantidade_entry.pack(fill="x", pady=(0, 15))
+
+        # Dias
+        ctk.CTkLabel(main_frame, text="Dias:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.dias_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 3")
+        self.dias_entry.pack(fill="x", pady=(0, 15))
+
+        # Preço Unitário
+        ctk.CTkLabel(main_frame, text="Preço Unitário (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.preco_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 150.00")
+        self.preco_entry.pack(fill="x", pady=(0, 15))
+
+        # Desconto (opcional)
+        ctk.CTkLabel(main_frame, text="Desconto (%):", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.desconto_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 10 (opcional)")
+        self.desconto_entry.pack(fill="x", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoItem).filter(OrcamentoItem.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        self.descricao_entry.delete("1.0", "end")
+        self.descricao_entry.insert("1.0", item.descricao or "")
+        self.quantidade_entry.insert(0, str(item.quantidade or ""))
+        self.dias_entry.insert(0, str(item.dias or ""))
+        self.preco_entry.insert(0, str(float(item.preco_unitario or 0)))
+
+        if item.desconto:
+            # Converter de 0-1 para percentagem
+            self.desconto_entry.insert(0, str(float(item.desconto * 100)))
+
+    def gravar(self):
+        """Grava o serviço"""
+        try:
+            # Validar campos
+            descricao = self.descricao_entry.get("1.0", "end").strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            quantidade_str = self.quantidade_entry.get().strip()
+            if not quantidade_str:
+                messagebox.showwarning("Aviso", "Quantidade é obrigatória!")
+                return
+
+            dias_str = self.dias_entry.get().strip()
+            if not dias_str:
+                messagebox.showwarning("Aviso", "Dias é obrigatório!")
+                return
+
+            preco_str = self.preco_entry.get().strip()
+            if not preco_str:
+                messagebox.showwarning("Aviso", "Preço unitário é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                quantidade = int(quantidade_str)
+                dias = int(dias_str)
+                preco_unitario = Decimal(preco_str.replace(',', '.'))
+
+                # Desconto (opcional)
+                desconto_str = self.desconto_entry.get().strip()
+                if desconto_str:
+                    desconto_pct = Decimal(desconto_str.replace(',', '.'))
+                    desconto = desconto_pct / 100  # Converter para 0-1
+                else:
+                    desconto = Decimal('0')
+
+            except ValueError:
+                messagebox.showerror("Erro", "Valores numéricos inválidos!")
+                return
+
+            # Validar valores
+            if quantidade <= 0:
+                messagebox.showwarning("Aviso", "Quantidade deve ser maior que 0!")
+                return
+            if dias <= 0:
+                messagebox.showwarning("Aviso", "Dias deve ser maior que 0!")
+                return
+            if preco_unitario <= 0:
+                messagebox.showwarning("Aviso", "Preço unitário deve ser maior que 0!")
+                return
+            if desconto < 0 or desconto > 1:
+                messagebox.showwarning("Aviso", "Desconto deve estar entre 0% e 100%!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                # Editar existente
+                sucesso, item, erro = self.manager.atualizar_item_v2(
+                    item_id=self.item_id,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    preco_unitario=preco_unitario,
+                    desconto=desconto
+                )
+            else:
+                # Criar novo
+                sucesso, item, erro = self.manager.adicionar_item_v2(
+                    orcamento_id=self.orcamento_id,
+                    secao_id=self.secao_id,
+                    tipo='servico',
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    preco_unitario=preco_unitario,
+                    desconto=desconto
+                )
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class EquipamentoDialogCliente(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Equipamento no LADO CLIENTE"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, secao_id: int, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.secao_id = secao_id
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Equipamento" if not item_id else "Editar Equipamento")
+        self.geometry("500x450")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        # Se edição, carregar dados
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        # Container principal
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Equipamento - LADO CLIENTE",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Quantidade
+        ctk.CTkLabel(main_frame, text="Quantidade:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.quantidade_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 4")
+        self.quantidade_entry.pack(fill="x", pady=(0, 15))
+
+        # Dias
+        ctk.CTkLabel(main_frame, text="Dias:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.dias_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 2")
+        self.dias_entry.pack(fill="x", pady=(0, 15))
+
+        # Preço Unitário
+        ctk.CTkLabel(main_frame, text="Preço Unitário (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.preco_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 75.00")
+        self.preco_entry.pack(fill="x", pady=(0, 15))
+
+        # Desconto (opcional)
+        ctk.CTkLabel(main_frame, text="Desconto (%):", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.desconto_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 5 (opcional)")
+        self.desconto_entry.pack(fill="x", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#2196F3",
+            hover_color="#0b7dda"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoItem).filter(OrcamentoItem.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        self.descricao_entry.delete("1.0", "end")
+        self.descricao_entry.insert("1.0", item.descricao or "")
+        self.quantidade_entry.insert(0, str(item.quantidade or ""))
+        self.dias_entry.insert(0, str(item.dias or ""))
+        self.preco_entry.insert(0, str(float(item.preco_unitario or 0)))
+
+        if item.desconto:
+            self.desconto_entry.insert(0, str(float(item.desconto * 100)))
+
+    def gravar(self):
+        """Grava o equipamento"""
+        try:
+            # Validar campos
+            descricao = self.descricao_entry.get("1.0", "end").strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            quantidade_str = self.quantidade_entry.get().strip()
+            if not quantidade_str:
+                messagebox.showwarning("Aviso", "Quantidade é obrigatória!")
+                return
+
+            dias_str = self.dias_entry.get().strip()
+            if not dias_str:
+                messagebox.showwarning("Aviso", "Dias é obrigatório!")
+                return
+
+            preco_str = self.preco_entry.get().strip()
+            if not preco_str:
+                messagebox.showwarning("Aviso", "Preço unitário é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                quantidade = int(quantidade_str)
+                dias = int(dias_str)
+                preco_unitario = Decimal(preco_str.replace(',', '.'))
+
+                # Desconto (opcional)
+                desconto_str = self.desconto_entry.get().strip()
+                if desconto_str:
+                    desconto_pct = Decimal(desconto_str.replace(',', '.'))
+                    desconto = desconto_pct / 100
+                else:
+                    desconto = Decimal('0')
+
+            except ValueError:
+                messagebox.showerror("Erro", "Valores numéricos inválidos!")
+                return
+
+            # Validar valores
+            if quantidade <= 0:
+                messagebox.showwarning("Aviso", "Quantidade deve ser maior que 0!")
+                return
+            if dias <= 0:
+                messagebox.showwarning("Aviso", "Dias deve ser maior que 0!")
+                return
+            if preco_unitario <= 0:
+                messagebox.showwarning("Aviso", "Preço unitário deve ser maior que 0!")
+                return
+            if desconto < 0 or desconto > 1:
+                messagebox.showwarning("Aviso", "Desconto deve estar entre 0% e 100%!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                sucesso, item, erro = self.manager.atualizar_item_v2(
+                    item_id=self.item_id,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    preco_unitario=preco_unitario,
+                    desconto=desconto
+                )
+            else:
+                sucesso, item, erro = self.manager.adicionar_item_v2(
+                    orcamento_id=self.orcamento_id,
+                    secao_id=self.secao_id,
+                    tipo='equipamento',
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    preco_unitario=preco_unitario,
+                    desconto=desconto
+                )
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class TransporteDialog(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Transporte (Despesa) no LADO CLIENTE"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, secao_id: int, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.secao_id = secao_id
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Transporte" if not item_id else "Editar Transporte")
+        self.geometry("450x350")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Despesa: Transporte (KMs)",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Quilómetros
+        ctk.CTkLabel(main_frame, text="Quilómetros (KMs):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.kms_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 250.5")
+        self.kms_entry.pack(fill="x", pady=(0, 15))
+
+        # Valor por KM
+        ctk.CTkLabel(main_frame, text="Valor por KM (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.valor_km_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 0.36")
+        self.valor_km_entry.pack(fill="x", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#FF9800",
+            hover_color="#e68900"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoItem).filter(OrcamentoItem.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        self.descricao_entry.delete("1.0", "end")
+        self.descricao_entry.insert("1.0", item.descricao or "")
+        if item.kms:
+            self.kms_entry.insert(0, str(float(item.kms)))
+        if item.valor_por_km:
+            self.valor_km_entry.insert(0, str(float(item.valor_por_km)))
+
+    def gravar(self):
+        """Grava o transporte"""
+        try:
+            # Validar campos
+            descricao = self.descricao_entry.get("1.0", "end").strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            kms_str = self.kms_entry.get().strip()
+            if not kms_str:
+                messagebox.showwarning("Aviso", "Quilómetros são obrigatórios!")
+                return
+
+            valor_km_str = self.valor_km_entry.get().strip()
+            if not valor_km_str:
+                messagebox.showwarning("Aviso", "Valor por KM é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                kms = Decimal(kms_str.replace(',', '.'))
+                valor_por_km = Decimal(valor_km_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Valores numéricos inválidos!")
+                return
+
+            # Validar valores
+            if kms <= 0:
+                messagebox.showwarning("Aviso", "Quilómetros deve ser maior que 0!")
+                return
+            if valor_por_km <= 0:
+                messagebox.showwarning("Aviso", "Valor por KM deve ser maior que 0!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                sucesso, item, erro = self.manager.atualizar_item_v2(
+                    item_id=self.item_id,
+                    descricao=descricao,
+                    kms=kms,
+                    valor_por_km=valor_por_km
+                )
+            else:
+                sucesso, item, erro = self.manager.adicionar_item_v2(
+                    orcamento_id=self.orcamento_id,
+                    secao_id=self.secao_id,
+                    tipo='transporte',
+                    descricao=descricao,
+                    kms=kms,
+                    valor_por_km=valor_por_km
+                )
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class RefeicaoDialog(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Refeição (Despesa) no LADO CLIENTE"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, secao_id: int, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.secao_id = secao_id
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Refeição" if not item_id else "Editar Refeição")
+        self.geometry("450x350")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Despesa: Refeições",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Número de refeições
+        ctk.CTkLabel(main_frame, text="Número de Refeições:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.num_refeicoes_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 12")
+        self.num_refeicoes_entry.pack(fill="x", pady=(0, 15))
+
+        # Valor por refeição
+        ctk.CTkLabel(main_frame, text="Valor por Refeição (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.valor_refeicao_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 8.50")
+        self.valor_refeicao_entry.pack(fill="x", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#FF9800",
+            hover_color="#e68900"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoItem).filter(OrcamentoItem.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        self.descricao_entry.delete("1.0", "end")
+        self.descricao_entry.insert("1.0", item.descricao or "")
+        if item.num_refeicoes:
+            self.num_refeicoes_entry.insert(0, str(item.num_refeicoes))
+        if item.valor_por_refeicao:
+            self.valor_refeicao_entry.insert(0, str(float(item.valor_por_refeicao)))
+
+    def gravar(self):
+        """Grava a refeição"""
+        try:
+            # Validar campos
+            descricao = self.descricao_entry.get("1.0", "end").strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            num_refeicoes_str = self.num_refeicoes_entry.get().strip()
+            if not num_refeicoes_str:
+                messagebox.showwarning("Aviso", "Número de refeições é obrigatório!")
+                return
+
+            valor_refeicao_str = self.valor_refeicao_entry.get().strip()
+            if not valor_refeicao_str:
+                messagebox.showwarning("Aviso", "Valor por refeição é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                num_refeicoes = int(num_refeicoes_str)
+                valor_por_refeicao = Decimal(valor_refeicao_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Valores numéricos inválidos!")
+                return
+
+            # Validar valores
+            if num_refeicoes <= 0:
+                messagebox.showwarning("Aviso", "Número de refeições deve ser maior que 0!")
+                return
+            if valor_por_refeicao <= 0:
+                messagebox.showwarning("Aviso", "Valor por refeição deve ser maior que 0!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                sucesso, item, erro = self.manager.atualizar_item_v2(
+                    item_id=self.item_id,
+                    descricao=descricao,
+                    num_refeicoes=num_refeicoes,
+                    valor_por_refeicao=valor_por_refeicao
+                )
+            else:
+                sucesso, item, erro = self.manager.adicionar_item_v2(
+                    orcamento_id=self.orcamento_id,
+                    secao_id=self.secao_id,
+                    tipo='refeicao',
+                    descricao=descricao,
+                    num_refeicoes=num_refeicoes,
+                    valor_por_refeicao=valor_por_refeicao
+                )
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class OutroDialog(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Outro (Despesa) no LADO CLIENTE"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, secao_id: int, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.secao_id = secao_id
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Outro" if not item_id else "Editar Outro")
+        self.geometry("450x320")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Despesa: Outro (Valor Fixo)",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Valor Fixo
+        ctk.CTkLabel(main_frame, text="Valor Fixo (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.valor_fixo_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 50.00")
+        self.valor_fixo_entry.pack(fill="x", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#FF9800",
+            hover_color="#e68900"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoItem).filter(OrcamentoItem.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        self.descricao_entry.delete("1.0", "end")
+        self.descricao_entry.insert("1.0", item.descricao or "")
+        if item.valor_fixo:
+            self.valor_fixo_entry.insert(0, str(float(item.valor_fixo)))
+
+    def gravar(self):
+        """Grava outro tipo de despesa"""
+        try:
+            # Validar campos
+            descricao = self.descricao_entry.get("1.0", "end").strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            valor_fixo_str = self.valor_fixo_entry.get().strip()
+            if not valor_fixo_str:
+                messagebox.showwarning("Aviso", "Valor fixo é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                valor_fixo = Decimal(valor_fixo_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Valor numérico inválido!")
+                return
+
+            # Validar valores
+            if valor_fixo <= 0:
+                messagebox.showwarning("Aviso", "Valor fixo deve ser maior que 0!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                sucesso, item, erro = self.manager.atualizar_item_v2(
+                    item_id=self.item_id,
+                    descricao=descricao,
+                    valor_fixo=valor_fixo
+                )
+            else:
+                sucesso, item, erro = self.manager.adicionar_item_v2(
+                    orcamento_id=self.orcamento_id,
+                    secao_id=self.secao_id,
+                    tipo='outro',
+                    descricao=descricao,
+                    valor_fixo=valor_fixo
+                )
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+# ========================================
+# TODO: DIALOGS EMPRESA SIDE
+# ========================================
 # - ServicoDialogEmpresa (com beneficiário)
 # - EquipamentoDialogEmpresa (com beneficiário)
 # - ComissaoDialog (auto-preenchimento)
