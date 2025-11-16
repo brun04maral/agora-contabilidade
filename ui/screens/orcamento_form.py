@@ -1381,8 +1381,8 @@ class ServicoDialogCliente(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Serviço" if not item_id else "Editar Serviço")
-        self.geometry("500x450")
-        self.resizable(False, False)
+        self.geometry("500x550")
+        self.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -1580,8 +1580,8 @@ class EquipamentoDialogCliente(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Equipamento" if not item_id else "Editar Equipamento")
-        self.geometry("500x450")
-        self.resizable(False, False)
+        self.geometry("500x550")
+        self.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -1776,8 +1776,8 @@ class TransporteDialog(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Transporte" if not item_id else "Editar Transporte")
-        self.geometry("450x350")
-        self.resizable(False, False)
+        self.geometry("500x550")
+        self.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -1937,8 +1937,8 @@ class RefeicaoDialog(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Refeição" if not item_id else "Editar Refeição")
-        self.geometry("450x350")
-        self.resizable(False, False)
+        self.geometry("500x550")
+        self.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -2098,8 +2098,8 @@ class OutroDialog(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Outro" if not item_id else "Editar Outro")
-        self.geometry("450x320")
-        self.resizable(False, False)
+        self.geometry("500x550")
+        self.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -2245,7 +2245,7 @@ class ServicoDialogEmpresa(ctk.CTkToplevel):
         # Configurar janela
         self.title("Adicionar Serviço EMPRESA" if not item_id else "Editar Serviço EMPRESA")
         self.geometry("500x500")
-        self.resizable(False, False)
+        self.geself.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -2455,7 +2455,7 @@ class EquipamentoDialogEmpresa(ctk.CTkToplevel):
         # Configurar janela
         self.title("Adicionar Equipamento EMPRESA" if not item_id else "Editar Equipamento EMPRESA")
         self.geometry("500x500")
-        self.resizable(False, False)
+        self.geself.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -2662,7 +2662,7 @@ class ComissaoDialog(ctk.CTkToplevel):
         # Configurar janela
         self.title("Adicionar Comissão" if not item_id else "Editar Comissão")
         self.geometry("450x400")
-        self.resizable(False, False)
+        self.geself.resizable(True, True)
 
         # Modal
         self.transient(parent)
