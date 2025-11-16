@@ -856,8 +856,76 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             messagebox.showwarning("Aviso", "Grave o orçamento primeiro!")
             return
 
-        # TODO: Implementar lógica de auto-preenchimento
-        messagebox.showinfo("Em desenvolvimento", "Auto-preenchimento de comissões será implementado")
+        # Calcular base de cálculo (TOTAL CLIENTE)
+        base_calculo = self._total_cliente
+
+        if base_calculo <= 0:
+            messagebox.showwarning(
+                "Aviso",
+                "Não há valores no lado CLIENTE para calcular comissões!\n"
+                "Adicione serviços ou equipamento primeiro."
+            )
+            return
+
+        # Verificar se já existem comissões
+        reparticoes_existentes = self.manager.obter_reparticoes(self.orcamento_id)
+        comissoes_existentes = [r for r in reparticoes_existentes if r.tipo == 'comissao']
+
+        if comissoes_existentes:
+            if not messagebox.askyesno(
+                "Aviso",
+                f"Já existem {len(comissoes_existentes)} comissão(ões) criada(s).\n"
+                "Deseja eliminar as existentes e criar novas com valores padrão?"
+            ):
+                return
+
+            # Eliminar comissões existentes
+            for comissao in comissoes_existentes:
+                self.manager.eliminar_reparticao(comissao.id)
+
+        # Obter owner do orçamento (para comissão de venda)
+        orcamento = self.manager.obter_orcamento(self.orcamento_id)
+        owner = orcamento.owner if orcamento else "BA"
+
+        # 1. Criar Comissão de Venda (5% para owner)
+        comissao_venda = OrcamentoReparticao(
+            orcamento_id=self.orcamento_id,
+            tipo='comissao',
+            beneficiario=owner,
+            descricao=f"Comissão de Venda ({owner})",
+            percentagem=Decimal('5.000'),  # 5%
+            base_calculo=base_calculo,
+            total=Decimal('0')
+        )
+        comissao_venda.total = comissao_venda.calcular_total()
+        self.db_session.add(comissao_venda)
+
+        # 2. Criar Comissão Empresa (10% para AGORA)
+        comissao_empresa = OrcamentoReparticao(
+            orcamento_id=self.orcamento_id,
+            tipo='comissao',
+            beneficiario='AGORA',
+            descricao="Comissão Empresa (AGORA)",
+            percentagem=Decimal('10.000'),  # 10%
+            base_calculo=base_calculo,
+            total=Decimal('0')
+        )
+        comissao_empresa.total = comissao_empresa.calcular_total()
+        self.db_session.add(comissao_empresa)
+
+        self.db_session.commit()
+
+        # Recarregar lado EMPRESA
+        self.carregar_items_empresa()
+
+        messagebox.showinfo(
+            "Sucesso",
+            f"Comissões criadas com sucesso!\n\n"
+            f"Base de cálculo: €{float(base_calculo):.2f}\n"
+            f"• Comissão Venda ({owner}): 5% = €{float(comissao_venda.total):.2f}\n"
+            f"• Comissão Empresa (AGORA): 10% = €{float(comissao_empresa.total):.2f}\n\n"
+            f"Pode editar as percentagens clicando no botão ✏️"
+        )
 
     def carregar_items_empresa(self):
         """Carrega e renderiza todos os items do LADO EMPRESA"""
