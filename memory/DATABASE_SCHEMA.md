@@ -1,75 +1,37 @@
-### MODELO DE DADOS - ORÇAMENTOS v2 (16/11/2025)
+### `socios` - Sócios da Empresa (Migration 022)
+
+**Campos principais:**
+- `id` - PK
+- `codigo` - "BA" ou "RR"
+- `nome` - Nome completo
+- `nif` - Número fiscal
+- `iban` - Conta bancária
+- `percentagem` - % da sociedade (50.0)
+- `cargo` - Cargo profissional
+- `data_nascimento` - Data de nascimento
+- `niss` - Número de Segurança Social
+- `morada` - Morada completo
+- `salario_base` - Salário base mensal
+- `subsidio_alimentacao` - Subsídio de alimentação mensal
+- `created_at` / `updated_at` - datetimes de registo/modificação
+
+**Enums:**
+- Nenhum
+
+**Relações:**
+- `projetos` → Lista de projetos
+- `despesas` → Lista de despesas
+- `boletins` → Lista de boletins
+
+**Notas sobre UI:**
+- Página independente por sócio, acesso por seleção inicial
+- Card único informativo/editável
 
 ---
 
-#### orcamentos
-- id (PK)
-- codigo
-- cliente_id (FK → clientes)
-- status (enum)
-- owner (BA, RR)
-- data_criacao
-- data_evento
-- local_evento
-- valor_total (calculado CLIENTE)
-- ...
-
-#### orcamento_secoes
-- id
-- orcamento_id (FK)
-- nome
-- tipo ("servicos", "equipamento", "despesas")
-- parent_id (FK → orcamento_secoes) (apenas para subsecções Equipamento)
-- ordem
-- subtotal (calculado)
-
-#### orcamento_itens
-- id
-- orcamento_id (FK)
-- secao_id (FK)
-- descricao
-- tipo ("servico", "equipamento", "transporte", "refeicao", "outro")
-- quantidade
-- dias
-- preco_unitario (decimal)
-- desconto (decimal, %) (opcional)
-- total (calculado)
-- ordem
-- equipamento_id (opcional, FK)
-
-#### orcamento_reparticoes
-- id
-- orcamento_id (FK)
-- tipo ("servico", "equipamento", "despesa", "comissao")
-- descricao
-- beneficiario ("BA", "RR", "AGORA", "FREELANCER_[id]", "FORNECEDOR_[id]")
-- quantidade
-- dias
-- valor_unitario
-- percentagem (decimal, 3 casas, para "comissao")
-- total (calculado)
-- ordem
-- equipamento_id (opcional, FK)
-- fornecedor_id (opcional, FK)
+### Migration 022: Expandir tabela `socios` (Adiciona campos acima)
+- Criar/atualizar `database/models/socio.py`
+- Migration script `022_expandir_socios.py` adiciona todos os campos
+- Testado rollback, compatibilidade e persistência
 
 ---
-
-#### enums
-- status (orcamento): "rascunho", "aprovado", "rejeitado"
-- tipo (secao): ver acima
-- tipo (item/reparticao): ver acima
-- beneficiario: ver acima
-
----
-
-#### Integrações & regras
-- Despesas: CLIENTE e EMPRESA replicadas, nunca editáveis manualmente no EMPRESA
-- Comissões: percentagem/beneficiário fixos mas editáveis
-- FK equip/fornecedor: referenciam linhas de respetivas tabelas
-
----
-
-#### Checklist de migração
-- Campos e enums existentes (ver código + BUSINESS_LOGIC.md)
-- Índices para performance (orcamento_id, tipo, beneficiario)
-- Testes: CRUD de todos os tipos, espelhamento de despesas, bloqueio aprovação
