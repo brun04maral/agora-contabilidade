@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-15 (21:30)
-**Sessão:** claude/sync-with-latest-branch-011Nxway2rBVpU2mvorwQDGJ
+**Última atualização:** 2025-11-16 (22:00)
+**Sessão:** claude/sync-latest-updates-012SDyaYGLD1zvqARajAPDPC
 
 ---
 
@@ -231,7 +231,6 @@ Esta sessão é continuação de uma anterior. Faz merge do branch da última se
   - CHANGELOG.md (histórico)
   - GUIA_COMPLETO.md (guia completo)
   - ASSET_SYSTEM.md (assets/ícones)
-  - PLANO_ORCAMENTOS.md (plano orçamentos)
   - README.md (índice)
 - ✅ `memory/archive/` para documentação histórica
 - ✅ README.md raiz com "Frase Mágica" para novas sessões
