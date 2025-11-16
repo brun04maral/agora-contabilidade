@@ -508,25 +508,32 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         if dialog.success:
             self.carregar_items_cliente()
 
-    def abrir_dialog_transporte(self, secao_id: int):
+    def abrir_dialog_transporte(self, secao_id: int, item_id: Optional[int] = None):
         """Abre dialog para adicionar transporte"""
-        dialog = TransporteDialog(self, self.db_session, self.orcamento_id, secao_id)
+        dialog = TransporteDialog(self, self.db_session, self.orcamento_id, secao_id, item_id)
         self.wait_window(dialog)
         if dialog.success:
+            # Obter ID do item criado/atualizado
+            if hasattr(dialog, 'item_created_id'):
+                self.sincronizar_despesa_cliente_empresa(dialog.item_created_id)
             self.carregar_items_cliente()
 
-    def abrir_dialog_refeicao(self, secao_id: int):
+    def abrir_dialog_refeicao(self, secao_id: int, item_id: Optional[int] = None):
         """Abre dialog para adicionar refeição"""
-        dialog = RefeicaoDialog(self, self.db_session, self.orcamento_id, secao_id)
+        dialog = RefeicaoDialog(self, self.db_session, self.orcamento_id, secao_id, item_id)
         self.wait_window(dialog)
         if dialog.success:
+            if hasattr(dialog, 'item_created_id'):
+                self.sincronizar_despesa_cliente_empresa(dialog.item_created_id)
             self.carregar_items_cliente()
 
-    def abrir_dialog_outro(self, secao_id: int):
+    def abrir_dialog_outro(self, secao_id: int, item_id: Optional[int] = None):
         """Abre dialog para adicionar outro"""
-        dialog = OutroDialog(self, self.db_session, self.orcamento_id, secao_id)
+        dialog = OutroDialog(self, self.db_session, self.orcamento_id, secao_id, item_id)
         self.wait_window(dialog)
         if dialog.success:
+            if hasattr(dialog, 'item_created_id'):
+                self.sincronizar_despesa_cliente_empresa(dialog.item_created_id)
             self.carregar_items_cliente()
 
     def carregar_items_cliente(self):
@@ -739,11 +746,79 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         if not messagebox.askyesno("Confirmar", "Tem certeza que deseja eliminar este item?"):
             return
 
+        # Verificar se é despesa (tem que eliminar espelhada também)
+        item = self.db_session.query(OrcamentoItem).filter(OrcamentoItem.id == item_id).first()
+        if item and item.tipo in ['transporte', 'refeicao', 'outro']:
+            # Eliminar despesa espelhada primeiro
+            rep_espelhada = self.db_session.query(OrcamentoReparticao).filter(
+                OrcamentoReparticao.item_cliente_id == item_id
+            ).first()
+            if rep_espelhada:
+                self.manager.eliminar_reparticao(rep_espelhada.id)
+
         sucesso, erro = self.manager.eliminar_item(item_id)
         if sucesso:
             self.carregar_items_cliente()
+            # Recarregar lado EMPRESA também (para remover espelhada)
+            self.carregar_items_empresa()
         else:
             messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
+
+    def sincronizar_despesa_cliente_empresa(self, item_cliente_id: int):
+        """
+        Sincroniza despesa CLIENTE→EMPRESA automaticamente
+        Cria ou atualiza despesa espelhada no lado EMPRESA
+        """
+        # Obter item CLIENTE
+        item_cliente = self.db_session.query(OrcamentoItem).filter(
+            OrcamentoItem.id == item_cliente_id
+        ).first()
+
+        if not item_cliente or item_cliente.tipo not in ['transporte', 'refeicao', 'outro']:
+            return  # Não é despesa, não sincroniza
+
+        # Verificar se já existe despesa espelhada
+        rep_espelhada = self.db_session.query(OrcamentoReparticao).filter(
+            OrcamentoReparticao.item_cliente_id == item_cliente_id
+        ).first()
+
+        if rep_espelhada:
+            # Atualizar existente
+            rep_espelhada.descricao = item_cliente.descricao
+            rep_espelhada.beneficiario = "AGORA"  # Sempre AGORA
+            rep_espelhada.tipo = 'despesa'
+
+            # Copiar campos específicos
+            rep_espelhada.kms = item_cliente.kms
+            rep_espelhada.valor_por_km = item_cliente.valor_por_km
+            rep_espelhada.num_refeicoes = item_cliente.num_refeicoes
+            rep_espelhada.valor_por_refeicao = item_cliente.valor_por_refeicao
+            rep_espelhada.valor_fixo = item_cliente.valor_fixo
+
+            # Recalcular total
+            rep_espelhada.total = rep_espelhada.calcular_total()
+            self.db_session.commit()
+        else:
+            # Criar nova despesa espelhada
+            rep_espelhada = OrcamentoReparticao(
+                orcamento_id=self.orcamento_id,
+                tipo='despesa',
+                beneficiario='AGORA',
+                descricao=item_cliente.descricao,
+                kms=item_cliente.kms,
+                valor_por_km=item_cliente.valor_por_km,
+                num_refeicoes=item_cliente.num_refeicoes,
+                valor_por_refeicao=item_cliente.valor_por_refeicao,
+                valor_fixo=item_cliente.valor_fixo,
+                item_cliente_id=item_cliente_id,
+                total=Decimal('0')
+            )
+            rep_espelhada.total = rep_espelhada.calcular_total()
+            self.db_session.add(rep_espelhada)
+            self.db_session.commit()
+
+        # Recarregar lado EMPRESA para mostrar sincronização
+        self.carregar_items_empresa()
 
     def atualizar_total_cliente(self):
         """Atualiza TOTAL CLIENTE"""
@@ -1755,6 +1830,8 @@ class TransporteDialog(ctk.CTkToplevel):
                     kms=kms,
                     valor_por_km=valor_por_km
                 )
+                if sucesso:
+                    self.item_created_id = self.item_id
             else:
                 sucesso, item, erro = self.manager.adicionar_item_v2(
                     orcamento_id=self.orcamento_id,
@@ -1764,6 +1841,8 @@ class TransporteDialog(ctk.CTkToplevel):
                     kms=kms,
                     valor_por_km=valor_por_km
                 )
+                if sucesso:
+                    self.item_created_id = item.id
 
             if sucesso:
                 self.success = True
@@ -1912,6 +1991,8 @@ class RefeicaoDialog(ctk.CTkToplevel):
                     num_refeicoes=num_refeicoes,
                     valor_por_refeicao=valor_por_refeicao
                 )
+                if sucesso:
+                    self.item_created_id = self.item_id
             else:
                 sucesso, item, erro = self.manager.adicionar_item_v2(
                     orcamento_id=self.orcamento_id,
@@ -1921,6 +2002,8 @@ class RefeicaoDialog(ctk.CTkToplevel):
                     num_refeicoes=num_refeicoes,
                     valor_por_refeicao=valor_por_refeicao
                 )
+                if sucesso:
+                    self.item_created_id = item.id
 
             if sucesso:
                 self.success = True
@@ -2052,6 +2135,8 @@ class OutroDialog(ctk.CTkToplevel):
                     descricao=descricao,
                     valor_fixo=valor_fixo
                 )
+                if sucesso:
+                    self.item_created_id = self.item_id
             else:
                 sucesso, item, erro = self.manager.adicionar_item_v2(
                     orcamento_id=self.orcamento_id,
@@ -2060,6 +2145,8 @@ class OutroDialog(ctk.CTkToplevel):
                     descricao=descricao,
                     valor_fixo=valor_fixo
                 )
+                if sucesso:
+                    self.item_created_id = item.id
 
             if sucesso:
                 self.success = True
