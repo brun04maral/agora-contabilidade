@@ -275,7 +275,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         # Cliente
         if self.orcamento.cliente:
             cliente_key = f"{self.orcamento.cliente.numero} - {self.orcamento.cliente.nome}"
-            self.cliente_autocomplete.set_value(cliente_key)
+            self.cliente_autocomplete.set(cliente_key)
 
         # Data Criação
         if self.orcamento.data_criacao:
@@ -329,7 +329,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             return False
 
         # Cliente
-        cliente_texto = self.cliente_autocomplete.get_value()
+        cliente_texto = self.cliente_autocomplete.get()
         if not cliente_texto or cliente_texto.strip() == "":
             messagebox.showerror("Erro", "Cliente é obrigatório!")
             return False
@@ -348,7 +348,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
     def obter_dados_formulario(self):
         """Obtém dados do formulário"""
-        cliente_texto = self.cliente_autocomplete.get_value()
+        cliente_texto = self.cliente_autocomplete.get()
         cliente_id = self.clientes_map.get(cliente_texto)
 
         data = {
