@@ -163,7 +163,6 @@ class OrcamentosScreen(ctk.CTkFrame):
             {"key": "data_criacao", "label": "Data Criação", "width": 120},
             {"key": "valor_total", "label": "Valor Total", "width": 120},
             {"key": "status", "label": "Status", "width": 120},
-            {"key": "versao_cliente", "label": "PDF Cliente", "width": 100},
         ]
 
         self.table = DataTableV2(
@@ -258,7 +257,6 @@ class OrcamentosScreen(ctk.CTkFrame):
             cliente_nome = orc.cliente.nome if orc.cliente else "N/A"
             valor_str = f"{float(orc.valor_total or 0):.2f}€" if orc.valor_total else "0.00€"
             data_str = orc.data_criacao.strftime("%Y-%m-%d") if orc.data_criacao else "N/A"
-            versao_cliente = "✓" if orc.tem_versao_cliente else "-"
 
             data.append({
                 "id": orc.id,
@@ -267,7 +265,6 @@ class OrcamentosScreen(ctk.CTkFrame):
                 "data_criacao": data_str,
                 "valor_total": valor_str,
                 "status": orc.status or "rascunho",
-                "versao_cliente": versao_cliente,
             })
 
         # Update table
