@@ -216,7 +216,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         # Criar autocomplete
         autocomplete = AutocompleteEntry(
             parent,
-            completevalues=clientes_list,
+            options=clientes_list,
             placeholder="Digite para pesquisar cliente...",
             height=35
         )
