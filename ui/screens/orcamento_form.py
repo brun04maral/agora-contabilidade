@@ -8,6 +8,7 @@ from logic.orcamentos import OrcamentoManager
 from logic.clientes import ClientesManager
 from ui.components.autocomplete_entry import AutocompleteEntry
 from ui.components.date_picker_dropdown import DatePickerDropdown
+from ui.components.date_range_picker_dropdown import DateRangePickerDropdown
 from typing import Optional
 from datetime import date
 from tkinter import messagebox
@@ -152,11 +153,11 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         ctk.CTkLabel(fields_frame, text="Data Evento:").grid(
             row=2, column=2, padx=(20, 10), pady=(0, 10), sticky="w"
         )
-        self.data_evento_entry = ctk.CTkEntry(
+        self.data_evento_picker = DateRangePickerDropdown(
             fields_frame,
-            placeholder_text="Ex: 15-20/11/2025"
+            placeholder="Selecionar período do evento..."
         )
-        self.data_evento_entry.grid(row=2, column=3, padx=(0, 20), pady=(0, 10), sticky="ew")
+        self.data_evento_picker.grid(row=2, column=3, padx=(0, 20), pady=(0, 10), sticky="ew")
 
         # Row 3: Local Evento
         ctk.CTkLabel(fields_frame, text="Local Evento:").grid(
@@ -281,10 +282,11 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         if self.orcamento.data_criacao:
             self.data_criacao_picker.set_date(self.orcamento.data_criacao)
 
-        # Data Evento
+        # Data Evento (o texto já está formatado no BD)
         if self.orcamento.data_evento:
-            self.data_evento_entry.delete(0, "end")
-            self.data_evento_entry.insert(0, self.orcamento.data_evento)
+            # Inserir texto formatado diretamente no entry do picker
+            self.data_evento_picker.entry.delete(0, "end")
+            self.data_evento_picker.entry.insert(0, self.orcamento.data_evento)
 
         # Local Evento
         if self.orcamento.local_evento:
@@ -354,7 +356,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         data = {
             "cliente_id": cliente_id,
             "data_criacao": self.data_criacao_picker.get_date(),
-            "data_evento": self.data_evento_entry.get().strip() or None,
+            "data_evento": self.data_evento_picker.get().strip() or None,
             "local_evento": self.local_evento_entry.get().strip() or None,
             "status": "rascunho"
         }
