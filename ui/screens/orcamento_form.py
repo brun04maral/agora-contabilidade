@@ -564,8 +564,21 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
     def adicionar_item_empresa(self, tipo):
         """Abre dialog para adicionar item no lado EMPRESA"""
-        # TODO: Implementar dialogs específicos por tipo
-        messagebox.showinfo("Em desenvolvimento", f"Dialog para adicionar item EMPRESA tipo: {tipo}")
+        if not self.orcamento_id:
+            messagebox.showwarning("Aviso", "Grave o orçamento antes de adicionar items!")
+            return
+
+        if tipo == 'servico':
+            dialog = ServicoDialogEmpresa(self, self.db_session, self.orcamento_id)
+            self.wait_window(dialog)
+            if dialog.success:
+                self.carregar_items_empresa()
+
+        elif tipo == 'equipamento':
+            dialog = EquipamentoDialogEmpresa(self, self.db_session, self.orcamento_id)
+            self.wait_window(dialog)
+            if dialog.success:
+                self.carregar_items_empresa()
 
     def auto_preencher_comissoes(self):
         """Auto-preenche comissões com valores padrão"""
@@ -1635,8 +1648,613 @@ class OutroDialog(ctk.CTkToplevel):
 
 
 # ========================================
-# TODO: DIALOGS EMPRESA SIDE
+# DIALOGS ESPECÍFICOS POR TIPO - LADO EMPRESA
 # ========================================
-# - ServicoDialogEmpresa (com beneficiário)
-# - EquipamentoDialogEmpresa (com beneficiário)
-# - ComissaoDialog (auto-preenchimento)
+
+class ServicoDialogEmpresa(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Serviço no LADO EMPRESA"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Serviço EMPRESA" if not item_id else "Editar Serviço EMPRESA")
+        self.geometry("500x500")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Serviço - LADO EMPRESA",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Beneficiário (OBRIGATÓRIO)
+        ctk.CTkLabel(main_frame, text="Beneficiário:", font=ctk.CTkFont(size=13, weight="bold"), text_color="#f44336").pack(anchor="w", pady=(0, 5))
+        self.beneficiario_var = ctk.StringVar(value="")
+        self.beneficiario_dropdown = ctk.CTkOptionMenu(
+            main_frame,
+            variable=self.beneficiario_var,
+            values=["BA", "RR", "AGORA"],
+            width=200
+        )
+        self.beneficiario_dropdown.pack(anchor="w", pady=(0, 15))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Quantidade
+        ctk.CTkLabel(main_frame, text="Quantidade:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.quantidade_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 2")
+        self.quantidade_entry.pack(fill="x", pady=(0, 15))
+
+        # Dias
+        ctk.CTkLabel(main_frame, text="Dias:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.dias_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 3")
+        self.dias_entry.pack(fill="x", pady=(0, 15))
+
+        # Valor Unitário (não tem desconto no lado EMPRESA)
+        ctk.CTkLabel(main_frame, text="Valor Unitário (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.valor_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 100.00")
+        self.valor_entry.pack(fill="x", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoReparticao).filter(OrcamentoReparticao.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        if item.beneficiario:
+            self.beneficiario_var.set(item.beneficiario)
+
+        self.descricao_entry.delete("1.0", "end")
+        self.descricao_entry.insert("1.0", item.descricao or "")
+
+        if item.quantidade:
+            self.quantidade_entry.insert(0, str(item.quantidade))
+        if item.dias:
+            self.dias_entry.insert(0, str(item.dias))
+        if item.valor_unitario:
+            self.valor_entry.insert(0, str(float(item.valor_unitario)))
+
+    def gravar(self):
+        """Grava o serviço EMPRESA"""
+        try:
+            # Validar beneficiário (OBRIGATÓRIO)
+            beneficiario = self.beneficiario_var.get()
+            if not beneficiario:
+                messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
+                return
+
+            # Validar campos
+            descricao = self.descricao_entry.get("1.0", "end").strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            quantidade_str = self.quantidade_entry.get().strip()
+            if not quantidade_str:
+                messagebox.showwarning("Aviso", "Quantidade é obrigatória!")
+                return
+
+            dias_str = self.dias_entry.get().strip()
+            if not dias_str:
+                messagebox.showwarning("Aviso", "Dias é obrigatório!")
+                return
+
+            valor_str = self.valor_entry.get().strip()
+            if not valor_str:
+                messagebox.showwarning("Aviso", "Valor unitário é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                quantidade = int(quantidade_str)
+                dias = int(dias_str)
+                valor_unitario = Decimal(valor_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Valores numéricos inválidos!")
+                return
+
+            # Validar valores
+            if quantidade <= 0:
+                messagebox.showwarning("Aviso", "Quantidade deve ser maior que 0!")
+                return
+            if dias <= 0:
+                messagebox.showwarning("Aviso", "Dias deve ser maior que 0!")
+                return
+            if valor_unitario <= 0:
+                messagebox.showwarning("Aviso", "Valor unitário deve ser maior que 0!")
+                return
+
+            # Gravar no banco (usando método V2 para repartições)
+            if self.item_id:
+                # Editar
+                sucesso, item, erro = self.manager.atualizar_reparticao(
+                    reparticao_id=self.item_id,
+                    tipo='servico',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    valor_unitario=valor_unitario
+                )
+                # Recalcular total manualmente
+                if sucesso:
+                    item.total = item.calcular_total()
+                    self.db_session.commit()
+            else:
+                # Criar novo (preciso criar método adicionar_reparticao_v2)
+                # Por agora, vou criar manualmente
+                reparticao = OrcamentoReparticao(
+                    orcamento_id=self.orcamento_id,
+                    tipo='servico',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    valor_unitario=valor_unitario,
+                    total=Decimal('0')
+                )
+                reparticao.total = reparticao.calcular_total()
+                self.db_session.add(reparticao)
+                self.db_session.commit()
+                sucesso = True
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro if 'erro' in locals() else 'Desconhecido'}")
+
+        except Exception as e:
+            self.db_session.rollback()
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class EquipamentoDialogEmpresa(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Equipamento no LADO EMPRESA"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Equipamento EMPRESA" if not item_id else "Editar Equipamento EMPRESA")
+        self.geometry("500x500")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Equipamento - LADO EMPRESA",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Beneficiário (OBRIGATÓRIO)
+        ctk.CTkLabel(main_frame, text="Beneficiário:", font=ctk.CTkFont(size=13, weight="bold"), text_color="#f44336").pack(anchor="w", pady=(0, 5))
+        self.beneficiario_var = ctk.StringVar(value="")
+        self.beneficiario_dropdown = ctk.CTkOptionMenu(
+            main_frame,
+            variable=self.beneficiario_var,
+            values=["BA", "RR", "AGORA"],
+            width=200
+        )
+        self.beneficiario_dropdown.pack(anchor="w", pady=(0, 15))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Quantidade
+        ctk.CTkLabel(main_frame, text="Quantidade:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.quantidade_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 4")
+        self.quantidade_entry.pack(fill="x", pady=(0, 15))
+
+        # Dias
+        ctk.CTkLabel(main_frame, text="Dias:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.dias_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 2")
+        self.dias_entry.pack(fill="x", pady=(0, 15))
+
+        # Valor Unitário
+        ctk.CTkLabel(main_frame, text="Valor Unitário (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.valor_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 50.00")
+        self.valor_entry.pack(fill="x", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#2196F3",
+            hover_color="#0b7dda"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoReparticao).filter(OrcamentoReparticao.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        if item.beneficiario:
+            self.beneficiario_var.set(item.beneficiario)
+
+        self.descricao_entry.delete("1.0", "end")
+        self.descricao_entry.insert("1.0", item.descricao or "")
+
+        if item.quantidade:
+            self.quantidade_entry.insert(0, str(item.quantidade))
+        if item.dias:
+            self.dias_entry.insert(0, str(item.dias))
+        if item.valor_unitario:
+            self.valor_entry.insert(0, str(float(item.valor_unitario)))
+
+    def gravar(self):
+        """Grava o equipamento EMPRESA"""
+        try:
+            # Validar beneficiário (OBRIGATÓRIO)
+            beneficiario = self.beneficiario_var.get()
+            if not beneficiario:
+                messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
+                return
+
+            # Validar campos
+            descricao = self.descricao_entry.get("1.0", "end").strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            quantidade_str = self.quantidade_entry.get().strip()
+            if not quantidade_str:
+                messagebox.showwarning("Aviso", "Quantidade é obrigatória!")
+                return
+
+            dias_str = self.dias_entry.get().strip()
+            if not dias_str:
+                messagebox.showwarning("Aviso", "Dias é obrigatório!")
+                return
+
+            valor_str = self.valor_entry.get().strip()
+            if not valor_str:
+                messagebox.showwarning("Aviso", "Valor unitário é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                quantidade = int(quantidade_str)
+                dias = int(dias_str)
+                valor_unitario = Decimal(valor_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Valores numéricos inválidos!")
+                return
+
+            # Validar valores
+            if quantidade <= 0:
+                messagebox.showwarning("Aviso", "Quantidade deve ser maior que 0!")
+                return
+            if dias <= 0:
+                messagebox.showwarning("Aviso", "Dias deve ser maior que 0!")
+                return
+            if valor_unitario <= 0:
+                messagebox.showwarning("Aviso", "Valor unitário deve ser maior que 0!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                sucesso, item, erro = self.manager.atualizar_reparticao(
+                    reparticao_id=self.item_id,
+                    tipo='equipamento',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    valor_unitario=valor_unitario
+                )
+                if sucesso:
+                    item.total = item.calcular_total()
+                    self.db_session.commit()
+            else:
+                reparticao = OrcamentoReparticao(
+                    orcamento_id=self.orcamento_id,
+                    tipo='equipamento',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    valor_unitario=valor_unitario,
+                    total=Decimal('0')
+                )
+                reparticao.total = reparticao.calcular_total()
+                self.db_session.add(reparticao)
+                self.db_session.commit()
+                sucesso = True
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro if 'erro' in locals() else 'Desconhecido'}")
+
+        except Exception as e:
+            self.db_session.rollback()
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+
+
+class ComissaoDialog(ctk.CTkToplevel):
+    """Dialog para adicionar/editar Comissão no LADO EMPRESA"""
+
+    def __init__(self, parent, db_session: Session, orcamento_id: int, base_calculo: Decimal, item_id: Optional[int] = None):
+        super().__init__(parent)
+
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
+        self.orcamento_id = orcamento_id
+        self.base_calculo = base_calculo  # Base para cálculo da comissão
+        self.item_id = item_id
+        self.success = False
+
+        # Configurar janela
+        self.title("Adicionar Comissão" if not item_id else "Editar Comissão")
+        self.geometry("450x400")
+        self.resizable(False, False)
+
+        # Modal
+        self.transient(parent)
+        self.grab_set()
+
+        self.create_widgets()
+
+        if item_id:
+            self.carregar_dados()
+
+    def create_widgets(self):
+        """Cria widgets do dialog"""
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Título
+        title_label = ctk.CTkLabel(
+            main_frame,
+            text="Comissão - LADO EMPRESA",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Beneficiário (OBRIGATÓRIO)
+        ctk.CTkLabel(main_frame, text="Beneficiário:", font=ctk.CTkFont(size=13, weight="bold"), text_color="#f44336").pack(anchor="w", pady=(0, 5))
+        self.beneficiario_var = ctk.StringVar(value="")
+        self.beneficiario_dropdown = ctk.CTkOptionMenu(
+            main_frame,
+            variable=self.beneficiario_var,
+            values=["BA", "RR", "AGORA"],
+            width=200
+        )
+        self.beneficiario_dropdown.pack(anchor="w", pady=(0, 15))
+
+        # Descrição
+        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: Comissão de Venda")
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
+
+        # Percentagem (3 casas decimais)
+        ctk.CTkLabel(main_frame, text="Percentagem (%):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.percentagem_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 5.125")
+        self.percentagem_entry.pack(fill="x", pady=(0, 15))
+
+        # Base de cálculo (display only)
+        ctk.CTkLabel(main_frame, text="Base de Cálculo (€):", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
+        self.base_label = ctk.CTkLabel(
+            main_frame,
+            text=f"€{float(self.base_calculo):.2f}",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=("#e8f5e0", "#2b4a2b"),
+            corner_radius=6,
+            padx=10,
+            pady=8
+        )
+        self.base_label.pack(anchor="w", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_cancelar = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=120,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        )
+        btn_cancelar.pack(side="left", padx=(0, 10))
+
+        btn_gravar = ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=120,
+            fg_color="#9C27B0",
+            hover_color="#7B1FA2"
+        )
+        btn_gravar.pack(side="right")
+
+    def carregar_dados(self):
+        """Carrega dados do item para edição"""
+        item = self.db_session.query(OrcamentoReparticao).filter(OrcamentoReparticao.id == self.item_id).first()
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
+            return
+
+        if item.beneficiario:
+            self.beneficiario_var.set(item.beneficiario)
+
+        if item.descricao:
+            self.descricao_entry.insert(0, item.descricao)
+
+        if item.percentagem:
+            self.percentagem_entry.insert(0, str(float(item.percentagem)))
+
+        if item.base_calculo:
+            self.base_calculo = item.base_calculo
+            self.base_label.configure(text=f"€{float(self.base_calculo):.2f}")
+
+    def gravar(self):
+        """Grava a comissão"""
+        try:
+            # Validar beneficiário (OBRIGATÓRIO)
+            beneficiario = self.beneficiario_var.get()
+            if not beneficiario:
+                messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
+                return
+
+            # Validar campos
+            descricao = self.descricao_entry.get().strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            percentagem_str = self.percentagem_entry.get().strip()
+            if not percentagem_str:
+                messagebox.showwarning("Aviso", "Percentagem é obrigatória!")
+                return
+
+            # Converter valores
+            try:
+                percentagem = Decimal(percentagem_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Percentagem inválida!")
+                return
+
+            # Validar valores
+            if percentagem <= 0:
+                messagebox.showwarning("Aviso", "Percentagem deve ser maior que 0!")
+                return
+            if percentagem > 100:
+                messagebox.showwarning("Aviso", "Percentagem não pode ser maior que 100%!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                sucesso, item, erro = self.manager.atualizar_reparticao(
+                    reparticao_id=self.item_id,
+                    tipo='comissao',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    percentagem=percentagem,
+                    base_calculo=self.base_calculo
+                )
+                if sucesso:
+                    item.total = item.calcular_total()
+                    self.db_session.commit()
+            else:
+                reparticao = OrcamentoReparticao(
+                    orcamento_id=self.orcamento_id,
+                    tipo='comissao',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    percentagem=percentagem,
+                    base_calculo=self.base_calculo,
+                    total=Decimal('0')
+                )
+                reparticao.total = reparticao.calcular_total()
+                self.db_session.add(reparticao)
+                self.db_session.commit()
+                sucesso = True
+
+            if sucesso:
+                self.success = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro if 'erro' in locals() else 'Desconhecido'}")
+
+        except Exception as e:
+            self.db_session.rollback()
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
