@@ -33,6 +33,121 @@ Visão geral da estrutura da base de dados SQLite.
 
 ---
 
+---
+
+## 🆕 ORÇAMENTOS V2 - Modelo de Dados Completo (Migration 022)
+
+### Tabela: orcamentos
+
+**Campos principais:**
+- `id` - INTEGER PRIMARY KEY
+- `codigo` - VARCHAR(20) UNIQUE NOT NULL (ex: #O000001)
+- `owner` - VARCHAR(2) NOT NULL ('BA' ou 'RR')
+- `cliente_id` - INTEGER NOT NULL (FK para clientes)
+- `status` - VARCHAR(20) ('rascunho', 'aprovado', 'rejeitado')
+- `data_criacao` - DATE
+- `data_evento` - TEXT (texto formatado do período)
+- `local_evento` - TEXT
+- `valor_total` - DECIMAL(10,2)
+- `created_at` / `updated_at` - TIMESTAMP
+
+### Tabela: orcamento_itens (LADO CLIENTE)
+
+**Campos comuns a todos os tipos:**
+- `id` - INTEGER PRIMARY KEY
+- `orcamento_id` - INTEGER NOT NULL (FK CASCADE DELETE)
+- `secao_id` - INTEGER NOT NULL (FK CASCADE DELETE)
+- `tipo` - VARCHAR(20) NOT NULL ('servico', 'equipamento', 'transporte', 'refeicao', 'outro')
+- `descricao` - TEXT NOT NULL
+- `total` - DECIMAL(10,2) NOT NULL
+- `ordem` - INTEGER DEFAULT 0
+
+**Para tipo 'servico' e 'equipamento':**
+- `quantidade` - INTEGER
+- `dias` - INTEGER
+- `preco_unitario` - DECIMAL(10,2)
+- `desconto` - DECIMAL(5,2) DEFAULT 0 (percentagem)
+- `equipamento_id` - INTEGER (FK opcional)
+
+**Para tipo 'transporte':**
+- `kms` - DECIMAL(10,2)
+- `valor_por_km` - DECIMAL(10,2)
+
+**Para tipo 'refeicao':**
+- `num_refeicoes` - INTEGER
+- `valor_por_refeicao` - DECIMAL(10,2)
+
+**Para tipo 'outro':**
+- `valor_fixo` - DECIMAL(10,2)
+
+### Tabela: orcamento_reparticoes (LADO EMPRESA)
+
+**Campos comuns a todos os tipos:**
+- `id` - INTEGER PRIMARY KEY
+- `orcamento_id` - INTEGER NOT NULL (FK CASCADE DELETE)
+- `tipo` - VARCHAR(20) NOT NULL ('servico', 'equipamento', 'despesa', 'comissao')
+- `beneficiario` - VARCHAR(50) NOT NULL ('BA', 'RR', 'AGORA', 'FREELANCER_[id]', 'FORNECEDOR_[id]')
+- `descricao` - TEXT
+- `valor` - DECIMAL(10,2) NOT NULL
+- `ordem` - INTEGER DEFAULT 0
+
+**Para tipo 'servico' e 'equipamento':**
+- `quantidade` - INTEGER
+- `dias` - INTEGER
+- `valor_unitario` - DECIMAL(10,2)
+- `equipamento_id` - INTEGER (FK opcional)
+- `fornecedor_id` - INTEGER (FK opcional)
+
+**Para tipo 'comissao':**
+- `percentagem` - DECIMAL(6,3) (3 casas decimais, ex: 5.125%)
+- `base_calculo` - DECIMAL(10,2)
+
+**Para tipo 'despesa' (espelhadas do CLIENTE):**
+- `item_cliente_id` - INTEGER (FK CASCADE DELETE)
+- `kms` - DECIMAL(10,2)
+- `valor_por_km` - DECIMAL(10,2)
+- `num_refeicoes` - INTEGER
+- `valor_por_refeicao` - DECIMAL(10,2)
+- `valor_fixo` - DECIMAL(10,2)
+
+### Enums e Valores Permitidos
+
+**orcamento_itens.tipo:**
+- `servico` - Serviço manual
+- `equipamento` - Equipamento
+- `transporte` - Despesa de transporte (kms × valor/km)
+- `refeicao` - Despesa de refeição (nº × valor/refeição)
+- `outro` - Despesa com valor fixo
+
+**orcamento_reparticoes.tipo:**
+- `servico` - Serviço com beneficiário
+- `equipamento` - Equipamento com beneficiário
+- `despesa` - Despesa espelhada do CLIENTE (readonly)
+- `comissao` - Comissão (venda ou empresa)
+
+**orcamento_reparticoes.beneficiario:**
+- `BA` - Sócio Bruno Amaral
+- `RR` - Sócio Rafael Rodrigues
+- `AGORA` - Empresa
+- `FREELANCER_[id]` - Freelancer
+- `FORNECEDOR_[id]` - Fornecedor
+
+**orcamentos.status:**
+- `rascunho` - Editável, sem validação
+- `aprovado` - Validado (totais coincidem), readonly
+- `rejeitado` - Anulado
+
+### Índices Recomendados
+
+CREATE INDEX idx_orcamento_itens_orcamento ON orcamento_itens(orcamento_id);
+CREATE INDEX idx_orcamento_itens_tipo ON orcamento_itens(tipo);
+CREATE INDEX idx_orcamento_reparticoes_orcamento ON orcamento_reparticoes(orcamento_id);
+CREATE INDEX idx_orcamento_reparticoes_beneficiario ON orcamento_reparticoes(beneficiario);
+CREATE INDEX idx_orcamento_reparticoes_item_cliente ON orcamento_reparticoes(item_cliente_id);
+
+---
+
+
 ## 📋 Tabelas
 
 ### `socios` - Sócios da Empresa
