@@ -324,6 +324,61 @@ class OrcamentoManager:
             .order_by(OrcamentoSecao.ordem)\
             .all()
 
+    def atualizar_secao(
+        self,
+        secao_id: int,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoSecao], Optional[str]]:
+        """
+        Atualiza secção existente
+
+        Returns:
+            (sucesso, secao, mensagem_erro)
+        """
+        try:
+            secao = self.db.query(OrcamentoSecao).filter(OrcamentoSecao.id == secao_id).first()
+            if not secao:
+                return False, None, "Secção não encontrada"
+
+            # Atualizar campos
+            for key, value in kwargs.items():
+                if hasattr(secao, key):
+                    setattr(secao, key, value)
+
+            self.db.commit()
+            self.db.refresh(secao)
+
+            return True, secao, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
+    def eliminar_secao(self, secao_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Elimina secção do orçamento (cascade elimina items e subsecções)
+
+        Returns:
+            (sucesso, mensagem_erro)
+        """
+        try:
+            secao = self.db.query(OrcamentoSecao).filter(OrcamentoSecao.id == secao_id).first()
+            if not secao:
+                return False, "Secção não encontrada"
+
+            orcamento_id = secao.orcamento_id
+            self.db.delete(secao)
+            self.db.commit()
+
+            # Recalcular totais do orçamento
+            self.recalcular_totais(orcamento_id)
+
+            return True, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, str(e)
+
     # ==================== Items ====================
 
     def adicionar_item(
