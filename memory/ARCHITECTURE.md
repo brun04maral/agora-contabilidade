@@ -324,5 +324,67 @@ python-dateutil = "Datas"
 
 ---
 
+---
+
+## 📊 Orçamentos V2 - Arquitetura Detalhada (16/11/2025)
+
+### Camada Logic - Managers
+
+logic/
+├── orcamentos.py          # OrcamentoManager (CRUD, aprovação, validação totais)
+├── orcamento_items.py     # ItemManager (CRUD tipo-aware: servico, equipamento, despesas)
+├── orcamento_reparticoes.py # ReparticaoManager (CRUD beneficiarios, comissões)
+
+### Camada UI - Screens & Dialogs
+
+ui/screens/
+├── orcamento_form.py      # Screen principal (tabs CLIENTE/EMPRESA, validação)
+└── dialogs/
+    ├── servico_dialog.py       # CLIENTE: descrição, qtd, dias, preço, desconto
+    ├── equipamento_dialog.py   # CLIENTE: idem + seleção de lista
+    ├── transporte_dialog.py    # CLIENTE: kms × valor/km
+    ├── refeicao_dialog.py      # CLIENTE: nº refeições × valor/refeição
+    ├── outro_dialog.py         # CLIENTE: valor fixo
+    ├── servico_empresa_dialog.py    # EMPRESA: + beneficiário
+    ├── equipamento_empresa_dialog.py # EMPRESA: + beneficiário
+    └── comissao_dialog.py      # EMPRESA: tipo, %, base, beneficiário
+
+### Fluxos Críticos
+
+**1. Sincronização Despesas CLIENTE→EMPRESA:**
+
+Ao criar/editar despesa no CLIENTE:
+1. ItemManager.criar_item(tipo='transporte|refeicao|outro')
+2. Trigger automático: ReparticaoManager.espelhar_despesa(item_id)
+3. Cria repartição com:
+   - tipo='despesa'
+   - beneficiario='AGORA'
+   - item_cliente_id=item.id
+   - readonly=True
+4. Ao editar/apagar item cliente → propaga para empresa
+
+**2. Validação de Totais:**
+
+Em tempo real no OrcamentoFormScreen:
+- total_cliente = sum(item.total for item in items_cliente)
+- total_empresa = sum(rep.total for rep in reparticoes_empresa)
+- Se abs(total_cliente - total_empresa) < 0.01: Verde (pode aprovar)
+- Senão: Vermelho (bloqueio aprovação) + mostrar diferença
+
+**3. Auto-preenchimento Comissões:**
+
+Botão "Auto-preencher" no EMPRESA:
+- base = total_empresa_antes_comissoes
+- Comissão venda: tipo='comissao', beneficiario=owner (BA/RR), %=5.000
+- Comissão empresa: tipo='comissao', beneficiario='AGORA', %=10.000
+
+### Referências Técnicas
+- BUSINESS_LOGIC.md (Secção 1-7)
+- DATABASE_SCHEMA.md (tabelas, enums, FKs)
+- Migration 022 (schema V2)
+
+---
+
+
 **Mantido por:** Equipa Agora
 **Última revisão:** 2025-11-13
