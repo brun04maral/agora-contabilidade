@@ -631,6 +631,70 @@ class OrcamentoManager:
             .order_by(OrcamentoReparticao.ordem)\
             .all()
 
+    def atualizar_reparticao(
+        self,
+        reparticao_id: int,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoReparticao], Optional[str]]:
+        """
+        Atualiza repartição existente
+
+        Args:
+            reparticao_id: ID da repartição
+            **kwargs: Campos a atualizar (entidade, valor, percentagem, ordem)
+
+        Returns:
+            (sucesso, reparticao, mensagem_erro)
+        """
+        try:
+            reparticao = self.db.query(OrcamentoReparticao).filter(
+                OrcamentoReparticao.id == reparticao_id
+            ).first()
+
+            if not reparticao:
+                return False, None, "Repartição não encontrada"
+
+            # Atualizar campos fornecidos
+            for key, value in kwargs.items():
+                if hasattr(reparticao, key):
+                    setattr(reparticao, key, value)
+
+            self.db.commit()
+            self.db.refresh(reparticao)
+
+            return True, reparticao, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
+    def eliminar_reparticao(self, reparticao_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Elimina repartição do orçamento
+
+        Args:
+            reparticao_id: ID da repartição
+
+        Returns:
+            (sucesso, mensagem_erro)
+        """
+        try:
+            reparticao = self.db.query(OrcamentoReparticao).filter(
+                OrcamentoReparticao.id == reparticao_id
+            ).first()
+
+            if not reparticao:
+                return False, "Repartição não encontrada"
+
+            self.db.delete(reparticao)
+            self.db.commit()
+
+            return True, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, str(e)
+
     # ==================== Utilidades ====================
 
     def duplicar_orcamento(

@@ -212,13 +212,39 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
         # Tab Empresa
         self.tab_empresa = self.tabview.add("🏢 EMPRESA")
-        placeholder_empresa = ctk.CTkLabel(
-            self.tab_empresa,
-            text="💼 Repartições serão implementadas na próxima fase",
-            font=ctk.CTkFont(size=14),
-            text_color="gray"
+
+        # Header com botões
+        header_empresa = ctk.CTkFrame(self.tab_empresa, fg_color="transparent")
+        header_empresa.pack(fill="x", padx=20, pady=(10, 0))
+
+        self.nova_reparticao_btn = ctk.CTkButton(
+            header_empresa,
+            text="➕ Nova Repartição",
+            command=self.adicionar_reparticao,
+            width=160,
+            height=32,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
         )
-        placeholder_empresa.pack(expand=True)
+        self.nova_reparticao_btn.pack(side="left", padx=(0, 10))
+
+        self.reparticao_auto_btn = ctk.CTkButton(
+            header_empresa,
+            text="⚡ Repartição Automática",
+            command=self.reparticao_automatica,
+            width=180,
+            height=32,
+            fg_color="#2196F3",
+            hover_color="#0b7dda"
+        )
+        self.reparticao_auto_btn.pack(side="left")
+
+        # Área scrollável para repartições
+        self.reparticoes_scroll = ctk.CTkScrollableFrame(
+            self.tab_empresa,
+            fg_color="transparent"
+        )
+        self.reparticoes_scroll.pack(fill="both", expand=True, padx=20, pady=(10, 0))
 
         # Total Empresa
         total_empresa_frame = ctk.CTkFrame(self.tab_empresa)
@@ -229,7 +255,16 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="#4CAF50"
         )
-        self.total_empresa_label.pack(pady=10)
+        self.total_empresa_label.pack(pady=(10, 5))
+
+        # Label de aviso quando totais não coincidem
+        self.validacao_label = ctk.CTkLabel(
+            total_empresa_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color="#f44336"
+        )
+        self.validacao_label.pack(pady=(0, 10))
 
         # 4. FOOTER com botões
         footer_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -320,6 +355,9 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
         # Carregar secções e items
         self.carregar_secoes_items()
+
+        # Carregar repartições
+        self.carregar_reparticoes()
 
     def atualizar_estado_badge(self):
         """Atualiza badge de estado"""
@@ -674,6 +712,9 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
         self.total_cliente_label.configure(text=f"TOTAL CLIENTE: €{total:.2f}")
 
+        # Validar totais (se repartições existirem)
+        self.validar_totais()
+
     # ==================== CRUD de Secções ====================
 
     def adicionar_secao(self):
@@ -745,6 +786,261 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             self.carregar_secoes_items()
         else:
             messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
+
+    # ==================== Métodos para Repartições (Tab EMPRESA) ====================
+
+    def carregar_reparticoes(self):
+        """Carrega e renderiza todas as repartições"""
+        if not self.orcamento_id:
+            return
+
+        # Limpar área
+        for widget in self.reparticoes_scroll.winfo_children():
+            widget.destroy()
+
+        # Obter repartições
+        reparticoes = self.manager.obter_reparticoes(self.orcamento_id)
+
+        if not reparticoes:
+            msg_label = ctk.CTkLabel(
+                self.reparticoes_scroll,
+                text="Nenhuma repartição ainda. Clique em 'Nova Repartição' ou 'Repartição Automática'.",
+                font=ctk.CTkFont(size=13),
+                text_color="gray"
+            )
+            msg_label.pack(pady=50)
+        else:
+            for reparticao in reparticoes:
+                self.render_reparticao(reparticao)
+
+        # Atualizar total e validação
+        self.atualizar_total_empresa()
+        self.validar_totais()
+
+    def render_reparticao(self, reparticao):
+        """Renderiza uma repartição na lista"""
+        # Frame da repartição
+        reparticao_frame = ctk.CTkFrame(
+            self.reparticoes_scroll,
+            fg_color=("#f0f0f0", "#2b2b2b"),
+            corner_radius=6
+        )
+        reparticao_frame.pack(fill="x", pady=5, padx=5)
+
+        # Grid layout
+        reparticao_frame.grid_columnconfigure(1, weight=1)
+
+        # Ícone e entidade
+        icon_map = {
+            "BA": "🏢",
+            "RR": "🏛️",
+            "Agora": "⚡",
+            "Freelancers": "👥",
+            "Despesas": "💰"
+        }
+        icon = icon_map.get(reparticao.entidade, "💼")
+
+        entidade_label = ctk.CTkLabel(
+            reparticao_frame,
+            text=f"{icon} {reparticao.entidade}",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            anchor="w"
+        )
+        entidade_label.grid(row=0, column=0, columnspan=2, padx=15, pady=(10, 5), sticky="w")
+
+        # Valor
+        valor_label = ctk.CTkLabel(
+            reparticao_frame,
+            text=f"€{float(reparticao.valor):.2f}",
+            font=ctk.CTkFont(size=13),
+            anchor="w",
+            text_color=("#2c3e50", "#ecf0f1")
+        )
+        valor_label.grid(row=1, column=0, padx=15, pady=(0, 5), sticky="w")
+
+        # Percentagem (se existir)
+        if reparticao.percentagem:
+            percent_label = ctk.CTkLabel(
+                reparticao_frame,
+                text=f"({float(reparticao.percentagem):.1f}%)",
+                font=ctk.CTkFont(size=12),
+                text_color="gray",
+                anchor="w"
+            )
+            percent_label.grid(row=1, column=1, padx=(5, 15), pady=(0, 5), sticky="w")
+
+        # Botões de ação
+        btn_frame = ctk.CTkFrame(reparticao_frame, fg_color="transparent")
+        btn_frame.grid(row=0, column=2, rowspan=2, padx=10, pady=5)
+
+        editar_btn = ctk.CTkButton(
+            btn_frame,
+            text="✏️",
+            command=lambda r=reparticao: self.editar_reparticao(r),
+            width=40,
+            height=28,
+            fg_color="transparent",
+            hover_color=("#e0e0e0", "#3a3a3a")
+        )
+        editar_btn.pack(side="left", padx=2)
+
+        eliminar_btn = ctk.CTkButton(
+            btn_frame,
+            text="🗑️",
+            command=lambda r=reparticao: self.eliminar_reparticao(r),
+            width=40,
+            height=28,
+            fg_color="transparent",
+            hover_color=("#ffcdd2", "#d32f2f"),
+            text_color=("#d32f2f", "#ff5252")
+        )
+        eliminar_btn.pack(side="left", padx=2)
+
+    def adicionar_reparticao(self):
+        """Abre dialog para adicionar nova repartição"""
+        if not self.orcamento_id:
+            messagebox.showwarning("Aviso", "Grave o orçamento primeiro!")
+            return
+
+        # Obter entidades já usadas
+        reparticoes_existentes = self.manager.obter_reparticoes(self.orcamento_id)
+        entidades_usadas = {r.entidade for r in reparticoes_existentes}
+
+        dialog = ReparticaoDialog(
+            self,
+            self.manager,
+            self.orcamento_id,
+            entidades_usadas=entidades_usadas
+        )
+        self.wait_window(dialog)
+
+        if dialog.sucesso:
+            self.alteracoes_pendentes = True
+            self.carregar_reparticoes()
+
+    def editar_reparticao(self, reparticao):
+        """Abre dialog para editar repartição"""
+        # Obter entidades já usadas (exceto a atual)
+        reparticoes_existentes = self.manager.obter_reparticoes(self.orcamento_id)
+        entidades_usadas = {r.entidade for r in reparticoes_existentes if r.id != reparticao.id}
+
+        dialog = ReparticaoDialog(
+            self,
+            self.manager,
+            self.orcamento_id,
+            reparticao=reparticao,
+            entidades_usadas=entidades_usadas
+        )
+        self.wait_window(dialog)
+
+        if dialog.sucesso:
+            self.alteracoes_pendentes = True
+            self.carregar_reparticoes()
+
+    def eliminar_reparticao(self, reparticao):
+        """Elimina repartição após confirmação"""
+        if not messagebox.askyesno("Confirmar", f"Eliminar repartição '{reparticao.entidade}'?"):
+            return
+
+        sucesso, erro = self.manager.eliminar_reparticao(reparticao.id)
+
+        if sucesso:
+            messagebox.showinfo("Sucesso", "Repartição eliminada!")
+            self.alteracoes_pendentes = True
+            self.carregar_reparticoes()
+        else:
+            messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
+
+    def reparticao_automatica(self):
+        """Cria repartições automáticas com percentagens padrão"""
+        if not self.orcamento_id:
+            messagebox.showwarning("Aviso", "Grave o orçamento primeiro!")
+            return
+
+        # Confirmar ação
+        reparticoes_existentes = self.manager.obter_reparticoes(self.orcamento_id)
+        if reparticoes_existentes:
+            if not messagebox.askyesno(
+                "Confirmar",
+                "Já existem repartições. Deseja substituí-las pela repartição automática?"
+            ):
+                return
+
+            # Eliminar repartições existentes
+            for rep in reparticoes_existentes:
+                self.manager.eliminar_reparticao(rep.id)
+
+        # Obter total cliente
+        items = self.manager.obter_itens(self.orcamento_id)
+        total_cliente = sum(float(item.total) for item in items)
+
+        if total_cliente == 0:
+            messagebox.showwarning("Aviso", "Total do cliente é €0. Adicione items primeiro!")
+            return
+
+        # Percentagens padrão
+        percentagens_padrao = {
+            "BA": Decimal("40.0"),
+            "RR": Decimal("30.0"),
+            "Agora": Decimal("15.0"),
+            "Freelancers": Decimal("10.0"),
+            "Despesas": Decimal("5.0")
+        }
+
+        # Criar repartições
+        ordem = 0
+        for entidade, percentagem in percentagens_padrao.items():
+            valor = Decimal(str(total_cliente)) * (percentagem / Decimal("100"))
+            self.manager.adicionar_reparticao(
+                orcamento_id=self.orcamento_id,
+                entidade=entidade,
+                valor=valor,
+                percentagem=percentagem,
+                ordem=ordem
+            )
+            ordem += 1
+
+        messagebox.showinfo("Sucesso", "Repartição automática criada!")
+        self.alteracoes_pendentes = True
+        self.carregar_reparticoes()
+
+    def atualizar_total_empresa(self):
+        """Atualiza o total da empresa (soma de todas as repartições)"""
+        if not self.orcamento_id:
+            self.total_empresa_label.configure(text="TOTAL EMPRESA: €0.00")
+            return
+
+        reparticoes = self.manager.obter_reparticoes(self.orcamento_id)
+        total = sum(float(r.valor) for r in reparticoes)
+        self.total_empresa_label.configure(text=f"TOTAL EMPRESA: €{total:.2f}")
+
+    def validar_totais(self):
+        """Valida se TOTAL EMPRESA == TOTAL CLIENTE"""
+        if not self.orcamento_id:
+            self.validacao_label.configure(text="")
+            return
+
+        # Obter totais
+        items = self.manager.obter_itens(self.orcamento_id)
+        total_cliente = sum(float(item.total) for item in items)
+
+        reparticoes = self.manager.obter_reparticoes(self.orcamento_id)
+        total_empresa = sum(float(r.valor) for r in reparticoes)
+
+        # Comparar com tolerância de 0.01 (por causa de arredondamentos)
+        diferenca = abs(total_cliente - total_empresa)
+
+        if diferenca < 0.01:
+            # Totais coincidem
+            self.validacao_label.configure(text="✓ Totais coincidem", text_color="#4CAF50")
+            self.total_empresa_label.configure(text_color="#4CAF50")
+        else:
+            # Totais não coincidem
+            self.validacao_label.configure(
+                text=f"⚠️ ATENÇÃO: Diferença de €{diferenca:.2f}",
+                text_color="#f44336"
+            )
+            self.total_empresa_label.configure(text_color="#f44336")
 
 
 # ==================== Diálogos ====================
@@ -1109,5 +1405,233 @@ class ItemDialog(ctk.CTkToplevel):
                 self.destroy()
             else:
                 messagebox.showerror("Erro", f"Erro: {erro}")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro: {str(e)}")
+
+
+class ReparticaoDialog(ctk.CTkToplevel):
+    """Dialog para criar/editar repartição"""
+
+    def __init__(self, parent, manager, orcamento_id, reparticao=None, entidades_usadas=None):
+        super().__init__(parent)
+
+        self.manager = manager
+        self.orcamento_id = orcamento_id
+        self.reparticao = reparticao
+        self.entidades_usadas = entidades_usadas or set()
+        self.sucesso = False
+
+        # Configurar janela
+        self.title("Editar Repartição" if reparticao else "Nova Repartição")
+        self.geometry("450x300")
+        self.resizable(False, False)
+
+        # Center window
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+
+        # Tornar modal
+        self.transient(parent)
+        self.grab_set()
+
+        # UI
+        self.criar_ui()
+
+        # Preencher se edição
+        if reparticao:
+            self.carregar_dados()
+
+    def criar_ui(self):
+        """Cria interface do dialog"""
+        # Container principal
+        container = ctk.CTkFrame(self, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=30, pady=30)
+
+        # Entidade (dropdown com opções fixas)
+        ctk.CTkLabel(
+            container,
+            text="Entidade:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).grid(row=0, column=0, sticky="w", pady=(0, 5))
+
+        # Opções de entidades
+        entidades_disponiveis = ["BA", "RR", "Agora", "Freelancers", "Despesas"]
+
+        # Se editando, incluir a entidade atual mesmo se já usada
+        if self.reparticao:
+            entidades_disponiveis_filtradas = [self.reparticao.entidade] + [
+                e for e in entidades_disponiveis if e not in self.entidades_usadas
+            ]
+        else:
+            # Se criando, filtrar entidades já usadas
+            entidades_disponiveis_filtradas = [
+                e for e in entidades_disponiveis if e not in self.entidades_usadas
+            ]
+
+        if not entidades_disponiveis_filtradas:
+            # Nenhuma entidade disponível
+            ctk.CTkLabel(
+                container,
+                text="Todas as entidades já foram utilizadas!",
+                text_color="red"
+            ).grid(row=1, column=0, sticky="w", pady=(0, 15))
+
+            # Botão fechar
+            ctk.CTkButton(
+                container,
+                text="Fechar",
+                command=self.destroy,
+                width=120,
+                height=35
+            ).grid(row=2, column=0, pady=(20, 0))
+            return
+
+        self.entidade_var = ctk.StringVar(value=entidades_disponiveis_filtradas[0])
+        self.entidade_dropdown = ctk.CTkOptionMenu(
+            container,
+            variable=self.entidade_var,
+            values=entidades_disponiveis_filtradas,
+            width=200,
+            height=35
+        )
+        self.entidade_dropdown.grid(row=1, column=0, sticky="w", pady=(0, 15))
+
+        # Se editando, desabilitar mudança de entidade
+        if self.reparticao:
+            self.entidade_dropdown.configure(state="disabled")
+
+        # Valor
+        ctk.CTkLabel(
+            container,
+            text="Valor (€):",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).grid(row=2, column=0, sticky="w", pady=(0, 5))
+
+        self.valor_entry = ctk.CTkEntry(
+            container,
+            placeholder_text="0.00",
+            width=200,
+            height=35
+        )
+        self.valor_entry.grid(row=3, column=0, sticky="w", pady=(0, 15))
+
+        # Percentagem (opcional)
+        ctk.CTkLabel(
+            container,
+            text="Percentagem (%) [opcional]:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).grid(row=4, column=0, sticky="w", pady=(0, 5))
+
+        self.percentagem_entry = ctk.CTkEntry(
+            container,
+            placeholder_text="0.0",
+            width=200,
+            height=35
+        )
+        self.percentagem_entry.grid(row=5, column=0, sticky="w", pady=(0, 20))
+
+        # Botões
+        btn_frame = ctk.CTkFrame(container, fg_color="transparent")
+        btn_frame.grid(row=6, column=0, sticky="w")
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.destroy,
+            width=100,
+            height=35,
+            fg_color="gray",
+            hover_color="#5a5a5a"
+        ).pack(side="left", padx=(0, 10))
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Gravar",
+            command=self.gravar,
+            width=100,
+            height=35,
+            fg_color="#4CAF50",
+            hover_color="#45a049"
+        ).pack(side="left")
+
+    def carregar_dados(self):
+        """Carrega dados da repartição para edição"""
+        if not self.reparticao:
+            return
+
+        self.entidade_var.set(self.reparticao.entidade)
+        self.valor_entry.insert(0, str(float(self.reparticao.valor)))
+
+        if self.reparticao.percentagem:
+            self.percentagem_entry.insert(0, str(float(self.reparticao.percentagem)))
+
+    def gravar(self):
+        """Valida e grava repartição"""
+        try:
+            # Validar campos
+            entidade = self.entidade_var.get().strip()
+            if not entidade:
+                messagebox.showwarning("Aviso", "Selecione uma entidade!")
+                return
+
+            valor_str = self.valor_entry.get().strip()
+            if not valor_str:
+                messagebox.showwarning("Aviso", "Preencha o valor!")
+                return
+
+            try:
+                valor = Decimal(valor_str)
+                if valor <= 0:
+                    messagebox.showwarning("Aviso", "Valor deve ser maior que zero!")
+                    return
+            except:
+                messagebox.showwarning("Aviso", "Valor inválido!")
+                return
+
+            # Percentagem (opcional)
+            percentagem = None
+            percentagem_str = self.percentagem_entry.get().strip()
+            if percentagem_str:
+                try:
+                    percentagem = Decimal(percentagem_str)
+                    if percentagem < 0 or percentagem > 100:
+                        messagebox.showwarning("Aviso", "Percentagem deve estar entre 0 e 100!")
+                        return
+                except:
+                    messagebox.showwarning("Aviso", "Percentagem inválida!")
+                    return
+
+            # Preparar dados
+            data = {
+                "entidade": entidade,
+                "valor": valor,
+                "percentagem": percentagem,
+                "ordem": 0  # Ordem será ajustada automaticamente
+            }
+
+            # Gravar
+            if self.reparticao:
+                # Editar
+                sucesso, _, erro = self.manager.atualizar_reparticao(
+                    self.reparticao.id,
+                    **data
+                )
+            else:
+                # Criar
+                sucesso, _, erro = self.manager.adicionar_reparticao(
+                    self.orcamento_id,
+                    **data
+                )
+
+            if sucesso:
+                self.sucesso = True
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro: {erro}")
+
         except Exception as e:
             messagebox.showerror("Erro", f"Erro: {str(e)}")
