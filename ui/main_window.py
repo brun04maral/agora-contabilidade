@@ -316,6 +316,42 @@ class MainWindow(ctk.CTkFrame):
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
+    def show_screen(self, screen_name: str, **kwargs):
+        """
+        Generic method to show a screen by name with optional parameters
+
+        Args:
+            screen_name: Name of the screen to show
+            **kwargs: Optional parameters to pass to the screen
+        """
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Show requested screen
+        if screen_name == "orcamento_form":
+            self.show_orcamento_form(**kwargs)
+        elif screen_name == "orcamentos":
+            self.show_orcamentos()
+        # Add more screens as needed
+
+    def show_orcamento_form(self, orcamento_id=None):
+        """Show orcamento form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.orcamento_form import OrcamentoFormScreen
+        screen = OrcamentoFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            orcamento_id=orcamento_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
     def _atualizar_estados_projetos_auto(self):
         """
         Atualiza automaticamente estados de projetos (ATIVO → FINALIZADO)
