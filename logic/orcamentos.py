@@ -901,6 +901,64 @@ class OrcamentoManager:
         """Obtém lista de status possíveis"""
         return ["Todos", "rascunho", "enviado", "aprovado", "rejeitado"]
 
+    def aprovar_orcamento(self, orcamento_id: int) -> Tuple[bool, Optional[Orcamento], Optional[str]]:
+        """
+        Aprova um orçamento após validações completas
+
+        Validações:
+        1. Orçamento existe
+        2. Tem pelo menos 1 item CLIENTE
+        3. Tem pelo menos 1 item EMPRESA
+        4. TOTAL_CLIENTE == TOTAL_EMPRESA (tolerância 0.01€)
+
+        Args:
+            orcamento_id: ID do orçamento a aprovar
+
+        Returns:
+            (sucesso, orcamento_atualizado, mensagem_erro)
+        """
+        try:
+            # 1. Validar que orçamento existe
+            orcamento = self.obter_orcamento(orcamento_id)
+            if not orcamento:
+                return False, None, "Orçamento não encontrado"
+
+            # 2. Validar que tem items CLIENTE (mínimo 1)
+            itens_cliente = self.obter_itens(orcamento_id)
+            if not itens_cliente or len(itens_cliente) == 0:
+                return False, None, "Orçamento deve ter pelo menos 1 item CLIENTE"
+
+            # 3. Validar que tem items EMPRESA (mínimo 1)
+            itens_empresa = self.obter_reparticoes(orcamento_id)
+            if not itens_empresa or len(itens_empresa) == 0:
+                return False, None, "Orçamento deve ter pelo menos 1 item EMPRESA"
+
+            # 4. Validar TOTAL_CLIENTE == TOTAL_EMPRESA (tolerância 0.01€)
+            total_cliente = sum(item.total for item in itens_cliente)
+            total_empresa = sum(item.total for item in itens_empresa)
+
+            diferenca = abs(total_cliente - total_empresa)
+            tolerancia = Decimal('0.01')
+
+            if diferenca > tolerancia:
+                return False, None, (
+                    f"Totais não coincidem: CLIENTE €{float(total_cliente):.2f} vs "
+                    f"EMPRESA €{float(total_empresa):.2f} (diferença: €{float(diferenca):.2f})"
+                )
+
+            # 5. Atualizar status = "aprovado"
+            orcamento.status = 'aprovado'
+            orcamento.updated_at = datetime.now()
+
+            self.db.commit()
+            self.db.refresh(orcamento)
+
+            return True, orcamento, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, f"Erro ao aprovar orçamento: {str(e)}"
+
     def estatisticas(self) -> dict:
         """
         Retorna estatísticas de orçamentos
