@@ -52,6 +52,15 @@ class FornecedoresManager:
 
         return query.all()
 
+    def listar_ativos(self) -> List[Fornecedor]:
+        """
+        List all fornecedores (fornecedores don't have active/inactive status)
+
+        Returns:
+            List of all Fornecedor objects ordered by name
+        """
+        return self.db.query(Fornecedor).order_by(Fornecedor.nome).all()
+
     def buscar_por_id(self, fornecedor_id: int) -> Optional[Fornecedor]:
         """
         Find fornecedor by ID

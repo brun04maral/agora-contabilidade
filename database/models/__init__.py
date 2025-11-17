@@ -15,6 +15,9 @@ from database.models.boletim_linha import BoletimLinha, TipoDeslocacao
 from database.models.valor_referencia_anual import ValorReferenciaAnual
 from database.models.equipamento import Equipamento
 from database.models.orcamento import Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
+from database.models.freelancer import Freelancer
+from database.models.freelancer_trabalho import FreelancerTrabalho, StatusTrabalho
+from database.models.fornecedor_compra import FornecedorCompra
 
 __all__ = [
     'Base',
@@ -40,4 +43,8 @@ __all__ = [
     'OrcamentoSecao',
     'OrcamentoItem',
     'OrcamentoReparticao',
+    'Freelancer',
+    'FreelancerTrabalho',
+    'StatusTrabalho',
+    'FornecedorCompra',
 ]
