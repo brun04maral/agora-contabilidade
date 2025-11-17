@@ -1331,7 +1331,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             messagebox.showerror("Erro ao Aprovar", erro or "Erro desconhecido ao aprovar orçamento")
 
     def converter_em_projeto(self):
-        """Converte orçamento aprovado em projeto (placeholder - próximo sprint)"""
+        """Converte orçamento aprovado em projeto"""
         if not self.orcamento_id:
             messagebox.showwarning("Aviso", "Grave o orçamento primeiro!")
             return
@@ -1343,13 +1343,74 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             )
             return
 
-        # Placeholder - implementar próximo sprint
-        messagebox.showinfo(
-            "Em Desenvolvimento",
-            "Converter em projeto - próximo sprint\n\n"
-            "Esta funcionalidade irá criar um projeto a partir do orçamento aprovado,\n"
-            "replicando valores, datas e informações do cliente."
+        # 1. Verificar se já foi convertido (se campo projeto_id existir)
+        if hasattr(self.orcamento, 'projeto_id') and self.orcamento.projeto_id:
+            messagebox.showwarning(
+                "Aviso",
+                f"Este orçamento já foi convertido no Projeto #{self.orcamento.projeto_id}"
+            )
+            return
+
+        # 2. Confirmar com user
+        confirmacao = messagebox.askyesno(
+            "Confirmar Conversão",
+            "Converter orçamento em Projeto?\n\n"
+            "Será criado com cliente, valor e prémios calculados."
         )
+
+        if not confirmacao:
+            return
+
+        try:
+            # 3. Calcular prémios BA/RR das repartições
+            reparticoes = self.manager.obter_reparticoes(self.orcamento_id)
+            premio_ba = sum(r.total for r in reparticoes if r.beneficiario == 'BA')
+            premio_rr = sum(r.total for r in reparticoes if r.beneficiario == 'RR')
+
+            # 4. Criar projeto usando ProjetoManager
+            from logic.projetos import ProjetoManager
+            from database.models.projeto import TipoProjeto, EstadoProjeto
+            from datetime import date
+
+            projeto_manager = ProjetoManager(self.db_session)
+
+            sucesso, projeto, erro = projeto_manager.criar(
+                tipo=TipoProjeto.EMPRESA,
+                cliente_id=self.orcamento.cliente_id,
+                descricao=f"Projeto criado a partir do orçamento {self.orcamento.codigo}",
+                valor_sem_iva=self._total_cliente,
+                premio_bruno=premio_ba,
+                premio_rafael=premio_rr,
+                data_inicio=date.today(),
+                estado=EstadoProjeto.ATIVO
+            )
+
+            # 5. Se sucesso
+            if sucesso:
+                # Guardar link SE campo existe
+                if hasattr(self.orcamento, 'projeto_id'):
+                    self.orcamento.projeto_id = projeto.id
+                    self.db_session.commit()
+
+                # Desabilitar botão (já foi convertido)
+                self.btn_converter.configure(state="disabled")
+
+                # Mensagem de sucesso com detalhes
+                messagebox.showinfo(
+                    "Projeto Criado",
+                    f"Projeto criado com sucesso!\n\n"
+                    f"Número: {projeto.numero}\n"
+                    f"Valor: €{float(projeto.valor_sem_iva):.2f}\n"
+                    f"Prémio BA: €{float(premio_ba):.2f}\n"
+                    f"Prémio RR: €{float(premio_rr):.2f}\n\n"
+                    f"O projeto está ATIVO."
+                )
+            else:
+                # 6. Se erro
+                messagebox.showerror("Erro ao Criar Projeto", erro or "Erro desconhecido")
+
+        except Exception as e:
+            messagebox.showerror("Erro Inesperado", f"Erro ao converter orçamento:\n{str(e)}")
 
     def carregar_orcamento(self):
         """Carrega dados do orçamento para edição"""
