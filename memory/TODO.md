@@ -15,25 +15,7 @@ LEGENDA DE PRIORIDADES
 🔥 AGORA - Sprint Atual (17/11/2025)
 ====================================================================
 
-1. Orçamentos V2 - Lado EMPRESA (5 dialogs)
-   ├─ Implementar ServicoEmpresaDialog (beneficiário + campos)
-   ├─ Implementar EquipamentoEmpresaDialog (beneficiário + equipamento_id)
-   ├─ Implementar DespesaDialog (espelhamento automático lado CLIENTE)
-   ├─ Implementar ComissaoDialog (% sobre base de cálculo)
-   └─ Implementar AluguerEquipamentoDialog (equipamento + dias)
-   
-   Status: 5/5 dialogs CLIENTE concluídos ✅
-   Próximo: Começar dialogs EMPRESA
-   Ver: memory/ARCHITECTURE.md (Secção Orçamentos V2)
-
-2. Auditoria Sistema Memory (FASE 2)
-   ├─ ✅ FASE 1: Reorganizar DATABASE_SCHEMA, CURRENT_STATE, BUSINESS_LOGIC
-   └─ 🚧 FASE 2: Melhorar navegação (README.md, links cruzados)
-   
-   Status: FASE 1 completa, FASE 2 em curso
-   Ver: Esta conversa (17/11/2025)
-
-3. Testar Sistema Boletim Itinerário
+1. Testar Sistema Boletim Itinerário
    ├─ Criar dados de teste (valores ref 2024-2026)
    ├─ Criar 2 templates recorrentes (BA + RR)
    ├─ Gerar boletins de teste com múltiplas linhas
@@ -112,16 +94,15 @@ LEGENDA DE PRIORIDADES
 🟡 Média Prioridade - Próximo Mês
 ====================================================================
 
-8. Sistema Freelancers e Fornecedores (Migration 024)
-   
-   ├─ Criar migrations (freelancers, freelancer_trabalhos, fornecedor_compras)
-   ├─ Adicionar modelos e managers
-   ├─ Expandir fornecedores (numero, categoria, iban)
-   ├─ Implementar screens CRUD
-   └─ Integrar com orçamentos (beneficiários FREELANCER_[id], FORNECEDOR_[id])
-   
-   Estimativa: 1-2 semanas
-   Ver: memory/DATABASE_SCHEMA.md (fim), memory/BUSINESS_LOGIC.md (Secção 5)
+8. UI Gestão Freelancers e Trabalhos/Compras
+
+   ├─ Screen CRUD Freelancers (listar, criar, editar, inativar)
+   ├─ Screen Trabalhos Freelancers (listar a_pagar, marcar como pago, filtros)
+   ├─ Screen Compras Fornecedores (listar a_pagar, marcar como pago, filtros)
+   └─ Dashboard: cards "A Pagar Freelancers" e "A Pagar Fornecedores"
+
+   Estimativa: 1 semana
+   Ver: memory/CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade)
 
 9. Testes de Integração Completos
    
@@ -206,9 +187,18 @@ Para contexto e decisões:
 
 Ver memory/CHANGELOG.md para histórico completo.
 
-Últimas 5 features (Novembro 2025):
-- ✅ 17/11: Sistema Aprovação e Conversão Orçamentos - Ver CHANGELOG.md (17/11/2025)
-- ✅ 17/11: Orçamentos V2 - 5/5 dialogs CLIENTE implementados
+Últimas 6 features (Novembro 2025):
+- ✅ 17/11: **Orçamentos V2 Sistema Multi-Entidade COMPLETO**
+  - Migration 025 (freelancers, trabalhos, compras)
+  - Beneficiários multi-entidade em todos dialogs EMPRESA (BA/RR/AGORA + FREELANCER_{id} + FORNECEDOR_{id})
+  - Managers: FreelancersManager, FreelancerTrabalhosManager, FornecedorComprasManager
+  - Aprovação cria registos históricos automaticamente
+  - Rastreabilidade completa de pagamentos a entidades externas
+  - Total: ~1455 linhas novas
+  - Ver CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade Completo)
+
+- ✅ 17/11: Sistema Aprovação e Conversão Orçamentos
+- ✅ 17/11: Orçamentos V2 - 5/5 dialogs CLIENTE + 3/3 dialogs EMPRESA
 - ✅ 17/11: Auditoria Memory - DATABASE_SCHEMA, CURRENT_STATE, BUSINESS_LOGIC reorganizados
 - ✅ 15/11: Migration 021 - Cliente nome e nome_formal
 - ✅ 15/11: Migration 020 - Owner em projetos/orçamentos, rastreabilidade

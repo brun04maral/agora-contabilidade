@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-17 16:30 WET
+**Última atualização:** 2025-11-17 18:00 WET
 **Branch:** claude/sync-latest-branch-015m9WoqWnfPgMYpDUTCxiko
 **Status Geral:** ✅ PRODUÇÃO READY
 
@@ -19,11 +19,10 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (17/11/2025):**
-- 🎯 **Orçamentos V2** - Dialogs CRUD completos (5 CLIENTE + 3 EMPRESA)
-- 🎯 **Integração e Correções** - Merge completo + cleanup + bug fixes
+- 🎯 **Orçamentos V2 - Sistema Multi-Entidade Completo** - Migration 025, beneficiários externos, registos históricos
 
 **Última Feature Concluída:**
-- ✅ **Integração CLIENTE + EMPRESA + Correções** (17/11/2025) - Merge de conflitos resolvido, cleanup de 3 dialogs obsoletos, correção de bug NameError nos nomes das classes Dialog EMPRESA. Sistema totalmente funcional. **Ver:** memory/CHANGELOG.md (17/11/2025 - Integração CLIENTE + EMPRESA e Correções)
+- ✅ **Orçamentos V2 Sistema Multi-Entidade Completo** (17/11/2025) - Migration 025 aplicada (freelancers, trabalhos, compras). Beneficiários multi-entidade em todos dialogs EMPRESA (BA/RR/AGORA + FREELANCER_{id} + FORNECEDOR_{id}). Aprovação cria registos históricos automaticamente. Rastreabilidade completa de pagamentos a entidades externas. **Ver:** memory/CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade Completo)
 
 **Próximo Milestone:**
 - 📋 UX Improvements - Orçamentos (DateRangePicker + Context Menus)
@@ -52,20 +51,23 @@
 ---
 
 ### 💾 Base de Dados
-**Status:** ✅ Completo  
-**Última Migration:** 023 (17/11/2025)
+**Status:** ✅ Completo
+**Última Migration:** 025 (17/11/2025)
 
-**Tabelas Principais (13):**
+**Tabelas Principais (16):**
 - Core: socios, clientes, fornecedores
 - Projetos: projetos, orcamentos, orcamento_itens, orcamento_reparticoes
 - Despesas: despesas, despesa_templates
 - Boletins: boletins, boletim_linhas, valores_referencia_anual
 - Equipamento: equipamento
+- **Externos:** freelancers, freelancer_trabalhos, fornecedor_compras
 
 **Migrations Recentes:**
 - ✅ 020: Owner em orçamentos/projetos, rastreabilidade financeira (15/11)
 - ✅ 021: Cliente nome e nome_formal (15/11)
 - ✅ 022-023: Orçamentos V2 - sistema tipo-específico (16-17/11)
+- ✅ 024: Campo projeto_id em orcamentos (17/11)
+- ✅ 025: Freelancers e fornecedores multi-entidade (17/11)
 
 **Ver:** `memory/DATABASE_SCHEMA.md`
 
@@ -91,7 +93,7 @@
 ---
 
 ### 💰 Lógica de Negócio
-**Status:** ✅ Core completo
+**Status:** ✅ Core completo + Multi-Entidade
 
 **Sistemas Implementados:**
 - ✅ Cálculo saldos pessoais (50/50)
@@ -99,9 +101,15 @@
 - ✅ Despesas recorrentes (templates + geração automática)
 - ✅ Boletim Itinerário completo (linhas múltiplas, valores anuais, cálculos auto)
 - ✅ Orçamentos V2 - Lado CLIENTE completo (5 tipos de items)
+- ✅ Orçamentos V2 - Lado EMPRESA completo (3 dialogs multi-entidade)
+- ✅ Freelancers e Fornecedores (managers CRUD completos)
+- ✅ Rastreabilidade pagamentos (trabalhos/compras automáticos)
 
-**Em Desenvolvimento:**
-- 🚧 Orçamentos V2 - Lado EMPRESA (5 dialogs a implementar)
+**Managers Implementados:**
+- FreelancersManager (CRUD, listar_ativos, gerar_proximo_numero)
+- FornecedoresManager (expandido com listar_ativos)
+- FreelancerTrabalhosManager (CRUD, marcar_como_pago, calcular_total_a_pagar)
+- FornecedorComprasManager (CRUD, marcar_como_pago, calcular_total_a_pagar)
 
 **Ver:** `memory/BUSINESS_LOGIC.md` (33KB, 5 secções)
 
@@ -146,32 +154,34 @@
 
 ## 🚧 Trabalho em Curso
 
-### Sprint Atual: Orçamentos V2 - Completo + UX Improvements
+### Sprint Atual: Orçamentos V2 Sistema Multi-Entidade - COMPLETO ✅
 
 **Concluído (17/11/2025):**
-- ✅ 5/5 Dialogs CLIENTE implementados:
-  - ServicoDialog (Commit: 59e4504)
-  - EquipamentoDialog (Commit: 75085bd)
-  - TransporteDialog (Commit: 7baf6d1)
-  - RefeicaoDialog (Commit: 86be721)
-  - OutroDialog (Commit: 48eec23)
 
-- ✅ 3/3 Dialogs EMPRESA implementados:
-  - ServicoEmpresaDialog (Commit: 7bf6580)
-  - EquipamentoEmpresaDialog (Commit: 7bf6580)
-  - ComissaoDialog (Commit: febbff8)
+**PARTE 1 - Dialogs CLIENTE (5/5):**
+- ✅ ServicoDialog (Commit: 59e4504)
+- ✅ EquipamentoDialog (Commit: 75085bd)
+- ✅ TransporteDialog (Commit: 7baf6d1)
+- ✅ RefeicaoDialog (Commit: 86be721)
+- ✅ OutroDialog (Commit: 48eec23)
 
-- ✅ Integração CLIENTE + EMPRESA (Commit: a0cd275)
-- ✅ Cleanup dialogs obsoletos (Commit: d217406)
-- ✅ Bug fix nomes classes (Commit: 231be26)
+**PARTE 2 - Dialogs EMPRESA (3/3):**
+- ✅ ServicoEmpresaDialog (Commit: 7bf6580)
+- ✅ EquipamentoEmpresaDialog (Commit: 7bf6580)
+- ✅ ComissaoDialog (Commit: febbff8)
 
-**Próximo (Pendente desta sessão):**
-- 📋 DateRangePicker para campo "data do evento" em orçamentos
-- 📋 Context menus (right-click) em tabelas de items CLIENTE e EMPRESA
-  - Ações: Editar, Apagar, Duplicar
-  - Seguir padrão de outras screens
+**PARTE 3 - Migration 025 + Beneficiários Multi-Entidade:**
+- ✅ Migration 025: freelancers, trabalhos, compras (Commit: 7592a88)
+- ✅ Beneficiários multi-entidade em todos dialogs EMPRESA (Commit: 1aa4ee5)
+- ✅ Managers: FreelancersManager, FreelancerTrabalhosManager, FornecedorComprasManager
+- ✅ Lógica aprovação com registos históricos automáticos (Commit: 1b6d2e1)
 
-**Ver:** `memory/TODO.md` (Tarefa 4 - UX/UI Improvements Orçamentos)
+**Próximo Sprint:**
+- 📋 UX Improvements - DateRangePicker + Context Menus em Orçamentos
+- 📋 UI Gestão Freelancers (screen CRUD)
+- 📋 UI Trabalhos/Compras (listar, marcar como pago)
+
+**Ver:** `memory/TODO.md`, `memory/CHANGELOG.md` (17/11/2025)
 
 ---
 
@@ -206,25 +216,6 @@
 **Migration:** 025 (planeada)  
 **Estimativa:** 3-4 semanas após validação  
 **Ver:** `memory/TODO.md` (linha 25), `memory/FISCAL.md`
-
----
-
-### 👥 Freelancers e Fornecedores (Média Prioridade)
-**Documentação:** 📄 `memory/DATABASE_SCHEMA.md` (secção final)  
-**Status:** 📝 Especificado, aguarda implementação  
-**Prioridade:** 🟡 Média
-
-**Novas tabelas:**
-- `freelancers` (profissionais externos)
-- `freelancer_trabalhos` (histórico)
-- `fornecedor_compras` (histórico)
-
-**Expansões:**
-- `fornecedores` → campos numero, categoria, iban
-- `orcamento_reparticoes` → beneficiarios FREELANCER_[id], FORNECEDOR_[id]
-
-**Migration:** 024 (planeada)  
-**Ver:** `memory/DATABASE_SCHEMA.md` (fim), `memory/BUSINESS_LOGIC.md` (Secção 5)
 
 ---
 

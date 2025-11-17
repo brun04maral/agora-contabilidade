@@ -692,9 +692,56 @@ session.query(Orcamento).filter(
 
 ---
 
+#### Migration 025 - Freelancers e Fornecedores (17/11/2025)
+**Status:** ✅ Aplicada
+**Commit:** 7592a88, 1aa4ee5, 1b6d2e1
+
+**3 Novas Tabelas:**
+
+1. **`freelancers` - Profissionais Externos:**
+   - Campos: id, numero (#F0001), nome, nif, email, telefone, iban, morada, especialidade, notas, ativo
+   - Índices: ativo, nome
+   - Relação: trabalhos → freelancer_trabalhos (one-to-many)
+
+2. **`freelancer_trabalhos` - Histórico de Trabalhos:**
+   - Campos: id, freelancer_id (FK CASCADE), orcamento_id (FK SET NULL), projeto_id (FK SET NULL), descricao, valor, data, status (a_pagar/pago/cancelado), data_pagamento, nota
+   - Gerados automaticamente ao aprovar orçamentos
+   - Índices: freelancer_id, status, data
+   - Status workflow: a_pagar → pago → cancelado
+
+3. **`fornecedor_compras` - Histórico de Compras:**
+   - Estrutura idêntica a freelancer_trabalhos
+   - fornecedor_id (FK CASCADE) em vez de freelancer_id
+   - Mesmo status workflow
+
+**Expansão `fornecedores`:**
+- ✅ Campos adicionados: `numero` (#FN0001 UNIQUE), `categoria`, `iban`
+- ✅ Índice: `idx_fornecedores_categoria`
+
+**Integração `orcamento_reparticoes`:**
+- ✅ Campo beneficiario agora suporta: BA, RR, AGORA, FREELANCER_{id}, FORNECEDOR_{id}
+- ✅ Validações: verifica existência e status ativo antes de salvar
+- ✅ Aprovação cria registos históricos automaticamente
+
+**Ficheiros:**
+- Migration: `database/migrations/025_freelancers_fornecedores.py`
+- Script: `scripts/run_migration_025.py`
+- Modelos: `database/models/freelancer.py`, `freelancer_trabalho.py`, `fornecedor_compra.py`
+- Managers: `logic/freelancers.py`, `freelancer_trabalhos.py`, `fornecedor_compras.py`
+- UI: Dialogs EMPRESA atualizados (servico, equipamento, comissao)
+
+**Rastreabilidade:**
+- Registos criados automaticamente ao aprovar orçamentos
+- Links: orcamento_id, projeto_id (SET NULL se apagado)
+- Gestão futura: marcar como pago, calcular totais a pagar
+
+**Ver:** memory/CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade Completo)
+
+---
+
 ### 📋 Planeadas (Futuro)
 
-#### Migration 025 - Freelancers e Fornecedores (PLANEADO)
+#### Migration 026 - Sistema Fiscal - Receitas (PLANEADO)
 **Prioridade:** 🟡 Média  
 **Status:** 📝 Documentado, aguarda implementação
 
@@ -728,8 +775,8 @@ session.query(Orcamento).filter(
 
 ---
 
-#### Migration 025 - Sistema Fiscal - Receitas (PLANEADO)
-**Prioridade:** 🔴 Alta  
+#### Migration 026 - Sistema Fiscal - Receitas (PLANEADO)
+**Prioridade:** 🔴 Alta
 **Status:** 📝 Documentado em FISCAL.md (39KB), aguarda validação TOC
 
 **Nova tabela:**
@@ -769,9 +816,11 @@ cp agora_media.db agora_media_backup_$(date +%Y%m%d).db
 
 ---
 
-## 👥 FREELANCERS E FORNECEDORES - Especificação Completa (Migration 024)
+## 👥 FREELANCERS E FORNECEDORES - Especificação Completa (Migration 025)
 
-Esta secção documenta em detalhe as tabelas planeadas para gestão de freelancers e fornecedores externos.
+**Status:** ✅ Implementado (17/11/2025)
+
+Esta secção documenta em detalhe as tabelas implementadas para gestão de freelancers e fornecedores externos.
 
 ### Tabela: freelancers - Profissionais Externos
 

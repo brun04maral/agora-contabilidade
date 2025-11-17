@@ -4,6 +4,151 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-17] Orçamentos V2 - Sistema Multi-Entidade Completo
+
+### ✨ Migration 025 - Freelancers e Fornecedores
+
+**Migration Aplicada** (Commit: 7592a88)
+- **3 Novas Tabelas:**
+  1. `freelancers` - Profissionais externos (id, numero #F0001, nome, nif, email, telefone, iban, morada, especialidade, notas, ativo)
+  2. `freelancer_trabalhos` - Histórico de trabalhos (freelancer_id, orcamento_id, projeto_id, descricao, valor, data, status a_pagar/pago/cancelado)
+  3. `fornecedor_compras` - Histórico de compras (estrutura idêntica a freelancer_trabalhos)
+- **Expansão fornecedores:**
+  - Campos adicionados: `numero` (#FN0001), `categoria`, `iban`
+  - Índice: `idx_fornecedores_categoria`
+- **Script:** `scripts/run_migration_025.py`
+- **Modelos:** `database/models/freelancer.py`, `freelancer_trabalho.py`, `fornecedor_compra.py`
+
+**Rastreabilidade de Pagamentos:**
+- Registos criados automaticamente ao aprovar orçamentos
+- Status workflow: a_pagar → pago → cancelado
+- Links: orcamento_id, projeto_id (SET NULL se apagado)
+
+---
+
+### 🎨 Beneficiários Multi-Entidade em Orçamentos EMPRESA
+
+**Implementação Completa** (Commits: 7592a88, 1aa4ee5)
+
+**Sistema expandido de beneficiários:**
+- **Antes:** Apenas BA, RR, AGORA (sócios fixos)
+- **Depois:** BA, RR, AGORA + FREELANCER_{id} + FORNECEDOR_{id}
+
+**3 Dialogs EMPRESA Atualizados:**
+1. **ServicoEmpresaDialog** (Commit: 7592a88)
+   - Dropdown dinâmico com freelancers ativos
+   - Dropdown dinâmico com fornecedores ativos
+   - Display: "FREELANCER_2 - João Silva"
+   - Stored: "FREELANCER_2"
+   - Validação: verifica existência e status ativo
+
+2. **EquipamentoEmpresaDialog** (Commit: 1aa4ee5)
+   - Mesma lógica multi-entidade
+   - Pattern idêntico a ServicoEmpresaDialog
+
+3. **ComissaoDialog** (Commit: 1aa4ee5)
+   - Mesma lógica multi-entidade
+   - Suporta comissões para freelancers/fornecedores
+
+**Managers Criados:**
+- `logic/freelancers.py` - FreelancersManager (CRUD completo, gerar_proximo_numero, listar_ativos)
+- `logic/fornecedores.py` - Expandido com método `listar_ativos()`
+
+**Pattern de Implementação:**
+- Mapeamento {id: display_name} dictionary
+- Reverse lookup ao gravar (display → id)
+- Validação antes de salvar (existe + ativo)
+- Try/except para tabelas que podem não existir ainda
+
+---
+
+### ⚙️ Lógica de Aprovação - Registos Históricos Automáticos
+
+**Expansão aprovar_orcamento()** (Commit: 1b6d2e1)
+
+**Ficheiros criados:**
+- `logic/freelancer_trabalhos.py` (272 linhas) - FreelancerTrabalhosManager
+  - CRUD completo: criar, listar_todos, listar_a_pagar, buscar_por_id
+  - Operações: atualizar, marcar_como_pago, cancelar, apagar
+  - Cálculo: calcular_total_a_pagar()
+  - Validações: freelancer existe, valor > 0, data obrigatória
+
+- `logic/fornecedor_compras.py` (272 linhas) - FornecedorComprasManager
+  - Estrutura idêntica a FreelancerTrabalhosManager
+  - Trabalha com modelo FornecedorCompra
+
+**Ficheiro modificado:**
+- `logic/orcamentos.py` (+52 linhas)
+  - Importações: FreelancerTrabalhosManager, FornecedorComprasManager, StatusTrabalho
+  - Após validação de totais, antes de mudar status para 'aprovado':
+    * Loop através de todas reparticoes EMPRESA
+    * Para beneficiário FREELANCER_X: criar registo em freelancer_trabalhos
+    * Para beneficiário FORNECEDOR_X: criar registo em fornecedor_compras
+  - Registos criados com:
+    * Links: orcamento_id, projeto_id
+    * Status: a_pagar
+    * Data: hoje
+    * Valor: total da reparticao
+    * Descrição: da reparticao
+
+**Rastreabilidade Completa:**
+- Agora quando orçamento é aprovado:
+  1. Valida totais CLIENTE = EMPRESA
+  2. Identifica todos beneficiários externos
+  3. Cria registos históricos de valores a pagar
+  4. Permite gestão futura de pagamentos
+  5. Mantém ligação ao orçamento e projeto de origem
+  6. Muda status para 'aprovado'
+
+**Exemplo de Fluxo:**
+```
+Orçamento aprovado com:
+- FREELANCER_2 (João Silva): €500 (serviço edição)
+- FORNECEDOR_5 (Rental Co): €200 (equipamento)
+
+→ Cria automaticamente:
+  - freelancer_trabalhos: freelancer_id=2, valor=€500, status=a_pagar
+  - fornecedor_compras: fornecedor_id=5, valor=€200, status=a_pagar
+```
+
+---
+
+### 📦 Commits do Sprint
+
+**Migration + Models:**
+- `7592a88` - feat: Migration 025 + Beneficiários multi-entidade em Orçamentos EMPRESA
+
+**UI Dialogs:**
+- `1aa4ee5` - feat: Beneficiários multi-entidade em todos dialogs EMPRESA
+
+**Business Logic:**
+- `1b6d2e1` - feat: Criar registos históricos freelancers/fornecedores ao aprovar orçamento
+
+**Estatísticas:**
+- +865 linhas (Migration 025 + Managers + Dialogs)
+- +590 linhas (Managers trabalhos/compras + Logic aprovação)
+- Total: ~1455 linhas novas
+
+---
+
+### 🎯 Resultado Final
+
+**Sistema Completo:**
+- ✅ Migration 025 aplicada
+- ✅ 3 novas tabelas (freelancers, freelancer_trabalhos, fornecedor_compras)
+- ✅ Fornecedores expandidos (numero, categoria, iban)
+- ✅ 5 managers criados/expandidos
+- ✅ 3 dialogs EMPRESA com multi-entidade
+- ✅ Aprovação com registos históricos automáticos
+- ✅ Rastreabilidade completa de pagamentos
+
+**Próximos Passos:**
+- Criar UI para gestão de Freelancers (CRUD)
+- Criar UI para gestão de Trabalhos/Compras (listar, marcar como pago)
+- Dashboard com totais a pagar
+
+---
+
 ## [2025-11-17] Integração CLIENTE + EMPRESA e Correções
 
 ### 🔀 Merge: Integração Completa CLIENTE + EMPRESA
