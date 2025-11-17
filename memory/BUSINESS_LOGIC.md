@@ -997,3 +997,114 @@ total_boletim = sum(linha.total for linha in boletim.linhas)
 - "Prémios não faturados" → Projetos filtrados por FINALIZADO
 
 ---
+
+---
+
+## 5. SISTEMA DE BENEFICIÁRIOS
+
+### 5.1 Tipos de Beneficiários
+
+O sistema suporta 5 tipos de beneficiários para repartição de valores:
+
+**A) Sócios:**
+- `BA` - Bruno Amaral (sócio)
+- `RR` - Rafael Rodrigues (sócio)
+- Valores pagos a sócios geram automaticamente entradas em **Prémios**
+- Integração: Ao aprovar orçamento → criar registo em `premios`
+
+**B) Empresa:**
+- `AGORA` - Agora Media Production (empresa)
+- Valores retidos pela empresa
+- Integração futura: Ao aprovar orçamento → criar registo em `receitas`
+
+**C) Freelancers:**
+- Formato: `FREELANCER_[id]` (ex: `FREELANCER_123`)
+- Profissionais externos contratados para projetos específicos
+- Tabela: `freelancers` (nome, NIF, contactos, IBAN)
+- Integração: Ao aprovar orçamento → registar em histórico de trabalhos do freelancer
+
+**D) Fornecedores:**
+- Formato: `FORNECEDOR_[id]` (ex: `FORNECEDOR_456`)
+- Empresas externas que fornecem serviços/equipamento
+- Tabela: `fornecedores` (nome, NIF, contactos, notas)
+- Integração: Ao aprovar orçamento → registar em histórico de compras
+
+**E) Outros (futuro):**
+- Sistema preparado para adicionar novos tipos (ex: parceiros, subcontratados)
+
+### 5.2 Seleção de Beneficiários na UI
+
+Nos dialogs EMPRESA (ServicoEmpresaDialog, EquipamentoEmpresaDialog, ComissaoDialog):
+
+Interface de seleção em 2 níveis:
+
+**Nível 1 - Dropdown Rápido:**
+[Dropdown: BA | RR | AGORA | Outro... ▼]
+
+**Nível 2 - Se selecionar "Outro...":**
+Abre BeneficiarioSelectorDialog com:
+- Tabs: [Freelancers] [Fornecedores]
+- Campo de pesquisa por nome
+- Lista com nome, NIF, contacto
+- Botão "Selecionar"
+- Botão "+ Criar Novo" (abre dialog de criação rápida)
+
+Após seleção:
+- Campo mostra: "João Silva (Freelancer)" ou "TechRent Lda (Fornecedor)"
+- Valor guardado na DB: `FREELANCER_123` ou `FORNECEDOR_456`
+
+### 5.3 Resolução de Beneficiários (Display)
+
+Função utilitária para converter código em nome display:
+
+- 'BA' → ('Bruno Amaral', 'Sócio')
+- 'AGORA' → ('Agora Media', 'Empresa')
+- 'FREELANCER_123' → ('João Silva', 'Freelancer')
+- 'FORNECEDOR_456' → ('TechRent Lda', 'Fornecedor')
+
+### 5.4 Resumo de Beneficiários no Orçamento
+
+Nova Tab no OrcamentoFormScreen: "💰 RESUMO BENEFICIÁRIOS"
+
+Mostra tabela agregada com:
+- Beneficiário | Tipo | Nº Items | Total € | % do Total
+
+Funcionalidades:
+- Clique no beneficiário → mostra lista detalhada de repartições
+- Exportar resumo para PDF/Excel
+- Validação visual: total resumo = total empresa
+
+### 5.5 Integrações ao Aprovar Orçamento
+
+Quando orçamento muda de status rascunho → aprovado:
+
+**A) Registar Prémios (Sócios BA/RR):**
+- Criar registo em tabela premios
+- origem='orcamento', valor=total_beneficiario
+- status='pendente'
+
+**B) Registar Receitas (Empresa AGORA) - FUTURO:**
+- Quando módulo Receitas for implementado
+
+**C) Registar Trabalhos (Freelancers):**
+- Criar registo em freelancer_trabalhos
+- orcamento_id, valor, data, status='a_pagar'
+
+**D) Registar Compras (Fornecedores):**
+- Criar registo em fornecedor_compras
+- orcamento_id, valor, data, status='a_pagar'
+
+### 5.6 Validações de Beneficiários
+
+Ao gravar repartição:
+1. Beneficiário não pode estar vazio
+2. Se formato FREELANCER_[id] → verificar se freelancer existe e está ativo
+3. Se formato FORNECEDOR_[id] → verificar se fornecedor existe e está ativo
+4. Alertar se beneficiário inativo (permite gravar mas avisa)
+
+Ao aprovar orçamento:
+1. Todos os beneficiários devem ser válidos
+2. Freelancers/fornecedores referenciados devem existir
+3. Total por beneficiário > 0 (não permitir beneficiários sem valor)
+
+---
