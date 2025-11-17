@@ -262,8 +262,8 @@ CREATE INDEX idx_orcamento_itens_tipo ON orcamento_itens(tipo);
 - `BA` - Sócio Bruno Amaral
 - `RR` - Sócio Rafael Rodrigues
 - `AGORA` - Empresa
-- `FREELANCER_[id]` - Freelancer externo (futura Migration 024)
-- `FORNECEDOR_[id]` - Fornecedor externo (futura Migration 024)
+- `FREELANCER_[id]` - Freelancer externo (futura Migration 025)
+- `FORNECEDOR_[id]` - Fornecedor externo (futura Migration 025)
 
 **Campos específicos por tipo:**
 
@@ -668,9 +668,33 @@ session.query(Orcamento).filter(
 
 ---
 
+#### Migration 024 - Campo projeto_id em Orcamentos (17/11/2025)
+**Status:** ✅ Aplicada
+**Commit:** 18ee88f
+
+**Alterações:**
+- ✅ `orcamentos.projeto_id` INTEGER NULL (FK para projetos.id)
+- ✅ Índice `idx_orcamentos_projeto` para performance
+- ✅ Relationship bidirecional: `orcamento.projeto` ↔ `projeto.orcamentos`
+
+**Objetivo:**
+- Link bidirecional orçamento ↔ projeto
+- Prevenir conversão dupla (verificar se `projeto_id` já existe)
+- Rastreabilidade completa de conversões
+- Histórico de qual projeto foi criado de qual orçamento
+
+**Ficheiros:**
+- Migration: `database/migrations/024_add_projeto_id_to_orcamento.py`
+- Script: `scripts/run_migration_024.py`
+- Modelos: `database/models/orcamento.py:41`, `database/models/projeto.py:71`
+
+**Ver:** memory/CHANGELOG.md (17/11/2025 - Migration 024)
+
+---
+
 ### 📋 Planeadas (Futuro)
 
-#### Migration 024 - Freelancers e Fornecedores (PLANEADO)
+#### Migration 025 - Freelancers e Fornecedores (PLANEADO)
 **Prioridade:** 🟡 Média  
 **Status:** 📝 Documentado, aguarda implementação
 

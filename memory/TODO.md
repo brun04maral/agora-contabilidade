@@ -196,11 +196,11 @@ Para contexto e decisões:
 Ver memory/CHANGELOG.md para histórico completo.
 
 Últimas 5 features (Novembro 2025):
+- ✅ 17/11: Sistema Aprovação e Conversão Orçamentos - Ver CHANGELOG.md (17/11/2025)
 - ✅ 17/11: Orçamentos V2 - 5/5 dialogs CLIENTE implementados
 - ✅ 17/11: Auditoria Memory - DATABASE_SCHEMA, CURRENT_STATE, BUSINESS_LOGIC reorganizados
 - ✅ 15/11: Migration 021 - Cliente nome e nome_formal
 - ✅ 15/11: Migration 020 - Owner em projetos/orçamentos, rastreabilidade
-- ✅ 13/11: Sistema Boletim Itinerário completo (Migrations 016-019)
 
 Para histórico anterior: Ver memory/CHANGELOG.md
 

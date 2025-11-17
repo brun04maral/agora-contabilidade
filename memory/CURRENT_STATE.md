@@ -23,7 +23,7 @@
 - 🎯 **Auditoria Sistema Memory** - Reorganização documentação
 
 **Última Feature Concluída:**
-- ✅ **OutroDialog** (Commit: 48eec23) - Último dialog CLIENTE implementado
+- ✅ **Sistema Aprovação e Conversão Orçamentos** (17/11/2025) - Aprovar orçamentos com validações + converter automaticamente em projetos com cálculo de prémios. **Ver:** memory/CHANGELOG.md (17/11/2025)
 
 **Próximo Milestone:**
 - 📋 Implementar 5 dialogs EMPRESA (Serviço, Equipamento, Despesa, Comissão, Aluguer)

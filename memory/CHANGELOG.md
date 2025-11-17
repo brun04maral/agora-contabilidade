@@ -4,6 +4,104 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-17] Sistema Aprovação e Conversão Orçamentos
+
+### ✨ Feature: Aprovar Orçamento
+
+**Método aprovar_orcamento() no OrcamentoManager** (Commit: 23c399c)
+- Ficheiro: `logic/orcamentos.py:904-960`
+- Validações completas antes de aprovar:
+  1. Orçamento existe
+  2. Tem pelo menos 1 item CLIENTE
+  3. Tem pelo menos 1 item EMPRESA
+  4. TOTAL_CLIENTE == TOTAL_EMPRESA (tolerância ±0.01€)
+- Atualiza `status = 'aprovado'` e `updated_at`
+- Retorna tupla: `(sucesso, orcamento, mensagem_erro)`
+
+**Botão Aprovar Orçamento na UI** (Commit: f892656)
+- Ficheiro: `ui/screens/orcamento_form.py:1272-1318`
+- Fluxo completo:
+  1. Validar totais (método existente `validar_totais()`)
+  2. Confirmar com user (messagebox.askyesno)
+  3. Chamar `manager.aprovar_orcamento()`
+  4. Atualizar badge de estado (verde "APROVADO")
+  5. Mostrar mensagem de sucesso
+- Mensagem: "Orçamento aprovado com sucesso! Use o botão 'Converter em Projeto' para criar o projeto correspondente."
+
+---
+
+### ✨ Feature: Converter Orçamento em Projeto
+
+**Botão UI** (Commit: 6e86259)
+- Ficheiro: `ui/screens/orcamento_form.py:405-416`
+- Botão roxo (#9C27B0) no footer após "Aprovar"
+- Estado: `disabled` (habilitado apenas quando status = "aprovado")
+- Controle automático em `atualizar_estado_badge()`
+
+**Conversão Completa** (Commit: 31b4166)
+- Ficheiro: `ui/screens/orcamento_form.py:1333-1413`
+- Cálculo automático de prémios:
+  - `premio_ba = sum(r.total for r in reparticoes if r.beneficiario == 'BA')`
+  - `premio_rr = sum(r.total for r in reparticoes if r.beneficiario == 'RR')`
+- Cria projeto via `ProjetoManager.criar()`:
+  - Tipo: `TipoProjeto.EMPRESA`
+  - Estado: `EstadoProjeto.ATIVO`
+  - Data início: `date.today()`
+  - Descrição: "Projeto criado a partir do orçamento [código]"
+- Grava link `orcamento.projeto_id = projeto.id`
+- Previne conversão dupla (verifica `projeto_id` existente)
+- Desabilita botão após conversão
+- Mensagem sucesso: mostra número, valor, prémios BA/RR
+
+**Exemplo de Cálculo:**
+```python
+# Repartições EMPRESA:
+- BA: €800 (serviço) + €200 (equipamento) = €1000
+- RR: €500 (serviço) + €100 (equipamento) = €600
+- AGORA: €400 (comissão)
+
+# Projeto criado:
+- Número: #P0042
+- Valor: €2000.00 (total CLIENTE)
+- Prémio BA: €1000.00 (calculado automaticamente)
+- Prémio RR: €600.00 (calculado automaticamente)
+- Estado: ATIVO
+```
+
+---
+
+### 🗄️ Migration 024 - Campo projeto_id em Orcamentos
+
+**Migration** (Commit: 18ee88f)
+- Ficheiro: `database/migrations/024_add_projeto_id_to_orcamento.py`
+- Adiciona coluna `projeto_id INTEGER NULL` à tabela `orcamentos`
+- FK para `projetos.id`
+- Índice: `idx_orcamentos_projeto`
+- Suporta `upgrade()` e `downgrade()`
+
+**Modelos Atualizados:**
+- `database/models/orcamento.py:41`
+  - Campo: `projeto_id = Column(Integer, ForeignKey('projetos.id'), nullable=True)`
+  - Relationship: `projeto = relationship("Projeto", back_populates="orcamentos")`
+- `database/models/projeto.py:71`
+  - Relationship: `orcamentos = relationship("Orcamento", back_populates="projeto")`
+
+**Script de Execução:**
+- `scripts/run_migration_024.py`
+- Aplica migration com verificação
+- Valida campo foi criado
+- Instruções de próximos passos
+
+**Benefícios:**
+- Link bidirecional orçamento ↔ projeto
+- Prevenir conversão dupla
+- Rastreabilidade completa
+- Histórico de conversões
+
+**Ver:** memory/DATABASE_SCHEMA.md (Migration 024)
+
+---
+
 ## [2025-11-17] Orçamentos V2 - Dialogs CRUD Completos
 
 ### ✨ Dialogs CLIENTE - 5/5 Implementados
