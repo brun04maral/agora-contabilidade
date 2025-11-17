@@ -385,6 +385,114 @@ Botão "Auto-preencher" no EMPRESA:
 
 ---
 
+---
+
+## 🔄 SISTEMA DE BENEFICIÁRIOS - Fluxos e Integrações
+
+### Managers Necessários
+
+Novos ficheiros a criar:
+
+logic/freelancers.py - FreelancerManager
+- listar_todos(ativo=None)
+- obter(freelancer_id)
+- criar(nome, nif, email, iban, ...)
+- atualizar(freelancer_id, ...)
+- ativar_desativar(freelancer_id)
+- registar_trabalho(freelancer_id, orcamento_id, valor, ...)
+- obter_trabalhos(freelancer_id, status=None)
+- marcar_trabalho_pago(trabalho_id)
+
+logic/fornecedores.py - FornecedorManager (EXPANDIR EXISTENTE)
+Métodos novos:
+- registar_compra(fornecedor_id, orcamento_id, valor, ...)
+- obter_compras(fornecedor_id, status=None)
+- marcar_compra_paga(compra_id)
+
+utils/beneficiario_utils.py - Funções utilitárias
+- resolver_beneficiario_display(beneficiario, db_session)
+- validar_beneficiario(beneficiario, db_session)
+- extrair_id_beneficiario(beneficiario)
+
+### UI Components Necessários
+
+Novos ficheiros a criar:
+
+ui/dialogs/beneficiario_selector_dialog.py
+- BeneficiarioSelectorDialog (modal com tabs Freelancers/Fornecedores)
+- Campo pesquisa, tabela, botão selecionar
+- Botão "+ Criar Novo" → abre quick dialogs
+
+ui/dialogs/freelancer_quick_dialog.py
+- FreelancerQuickDialog (criação rápida: nome, NIF, IBAN)
+
+ui/dialogs/fornecedor_quick_dialog.py
+- FornecedorQuickDialog (criação rápida: nome, NIF)
+
+ui/screens/freelancers_screen.py (NOVA)
+- CRUD completo de freelancers
+- Tabela com histórico de trabalhos
+- Filtros por status (a_pagar, pago)
+
+ui/screens/fornecedores_screen.py (EXPANDIR EXISTENTE)
+- Adicionar tab "Histórico de Compras"
+- Mostrar compras por fornecedor
+
+### Fluxo: Seleção de Beneficiário
+
+Nos dialogs EMPRESA (ServicoEmpresaDialog, EquipamentoEmpresaDialog, ComissaoDialog):
+
+Nível 1 - Dropdown rápido:
+[BA | RR | AGORA | Outro... ▼]
+
+Nível 2 - Se "Outro..." selecionado:
+Abre BeneficiarioSelectorDialog com tabs [Freelancers] [Fornecedores]
+
+Retorno:
+- codigo: "FREELANCER_123" ou "FORNECEDOR_456"
+- nome_display: "João Silva" ou "TechRent Lda"
+
+### Fluxo: Integrações ao Aprovar Orçamento
+
+Trigger: OrcamentoManager.aprovar_orcamento()
+
+1. Validar totais coincidem
+2. Calcular resumo de beneficiários
+3. Para cada beneficiário:
+   - Se BA ou RR → PremioManager.criar(...)
+   - Se AGORA → (futuro) ReceitaManager.criar(...)
+   - Se FREELANCER_[id] → FreelancerManager.registar_trabalho(...)
+   - Se FORNECEDOR_[id] → FornecedorManager.registar_compra(...)
+4. Criar projeto (fluxo existente)
+5. Atualizar status orçamento
+
+### Fluxo: Resumo de Beneficiários
+
+Nova tab no OrcamentoFormScreen: "💰 RESUMO BENEFICIÁRIOS"
+
+Mostra tabela agregada:
+Beneficiário | Tipo | Nº Items | Total € | % Total
+
+Funcionalidades:
+- Clique → detalha repartições
+- Validação: soma = total empresa
+- Exportação para Excel/PDF
+
+### Validações
+
+Ao criar/editar reparticão:
+- Beneficiário não vazio
+- Se FREELANCER_[id] → verificar existe e ativo
+- Se FORNECEDOR_[id] → verificar existe e ativo
+- Alertar se inativo (permite gravar)
+
+Ao aprovar orçamento:
+- Todos beneficiários válidos
+- Freelancers/fornecedores existem
+- Total por beneficiário > 0
+
+---
+
 
 **Mantido por:** Equipa Agora
-**Última revisão:** 2025-11-13
+**Última revisão:** 2025-11-17
