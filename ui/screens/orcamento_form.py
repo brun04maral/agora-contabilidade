@@ -1285,8 +1285,37 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             )
             return
 
-        # TODO: Aprovar orçamento no manager
-        messagebox.showinfo("Em desenvolvimento", "Aprovação será implementada")
+        # Confirmar com user
+        confirmacao = messagebox.askyesno(
+            "Confirmar Aprovação",
+            "Deseja aprovar este orçamento?\n\n"
+            f"TOTAL CLIENTE: €{float(self._total_cliente):.2f}\n"
+            f"TOTAL EMPRESA: €{float(self._total_empresa):.2f}\n\n"
+            "Esta ação irá marcar o orçamento como APROVADO."
+        )
+
+        if not confirmacao:
+            return
+
+        # Chamar manager para aprovar
+        sucesso, orcamento_atualizado, erro = self.manager.aprovar_orcamento(self.orcamento_id)
+
+        if sucesso:
+            # Atualizar objeto local
+            self.orcamento = orcamento_atualizado
+
+            # Atualizar badge de estado
+            self.atualizar_estado_badge()
+
+            # Mostrar mensagem de sucesso
+            messagebox.showinfo(
+                "Orçamento Aprovado",
+                "Orçamento aprovado com sucesso!\n\n"
+                "Use o botão 'Converter em Projeto' para criar o projeto correspondente."
+            )
+        else:
+            # Mostrar erro
+            messagebox.showerror("Erro ao Aprovar", erro or "Erro desconhecido ao aprovar orçamento")
 
     def carregar_orcamento(self):
         """Carrega dados do orçamento para edição"""
