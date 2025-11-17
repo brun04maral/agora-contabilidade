@@ -150,6 +150,223 @@ RELAÇÃO COM ORÇAMENTOS:
 * Reporting por equipamento possível (quanto rendeu cada ativo).
 
 ====================================================================
+7. SISTEMA DE TOTAIS POR BENEFICIÁRIO (PLANEADO)
+====================================================================
+
+STATUS: 📝 Especificado, aguarda implementação (próximo sprint)
+
+7.1 VISUALIZAÇÃO EM ORÇAMENTOS
+-------------------------------
+
+**Frame Totais por Beneficiário (Lado EMPRESA):**
+- Localização: OrcamentoForm, abaixo da tabela de repartições EMPRESA
+- Mostra totais agrupados por beneficiário em tempo real
+- Cálculo dinâmico: atualiza ao adicionar/editar/apagar items EMPRESA
+
+**Cards Coloridos por Tipo:**
+- 🟢 VERDE (Sócios): BA, RR
+  - Display: "BA - Bruno: €1.500,00"
+  - Display: "RR - Rafael: €800,00"
+- 🔵 AZUL (Empresa): AGORA
+  - Display: "AGORA - Empresa: €400,00"
+- 🟠 LARANJA (Externos): FREELANCER_*, FORNECEDOR_*
+  - Display: "FREELANCER_2 - João Silva: €500,00"
+  - Display: "FORNECEDOR_5 - Rental Co: €200,00"
+
+**Método calcular_totais_beneficiarios():**
+```python
+def calcular_totais_beneficiarios(self) -> Dict[str, Decimal]:
+    """
+    Retorna: {
+        'BA': Decimal('1500.00'),
+        'RR': Decimal('800.00'),
+        'AGORA': Decimal('400.00'),
+        'FREELANCER_2': Decimal('500.00'),
+        'FORNECEDOR_5': Decimal('200.00')
+    }
+    """
+    totais = {}
+    for reparticao in self.reparticoes:
+        beneficiario = reparticao.beneficiario
+        totais[beneficiario] = totais.get(beneficiario, Decimal('0')) + reparticao.total
+    return totais
+```
+
+**Validação Visual:**
+- Soma de todos beneficiários == TOTAL EMPRESA
+- Se diferença > 0.01€ → mostrar warning laranja
+- Se coincidir → check verde
+
+---
+
+7.2 CONVERSÃO AUTOMÁTICA EM PROJETO
+------------------------------------
+
+**Ao converter orçamento aprovado em projeto:**
+
+```python
+def converter_em_projeto(orcamento_id):
+    totais = calcular_totais_beneficiarios(orcamento_id)
+
+    # Distribuir valores nos campos de rastreabilidade
+    projeto = Projeto(
+        premio_bruno = totais.get('BA', 0),
+        premio_rafael = totais.get('RR', 0),
+        valor_empresa = totais.get('AGORA', 0),
+        valor_fornecedores = sum([
+            v for k, v in totais.items()
+            if k.startswith('FREELANCER_') or k.startswith('FORNECEDOR_')
+        ])
+    )
+```
+
+**Campos Projeto Preenchidos Automaticamente:**
+- `premio_bruno`: soma de todas repartições com beneficiario='BA'
+- `premio_rafael`: soma de todas repartições com beneficiario='RR'
+- `valor_empresa`: soma de todas repartições com beneficiario='AGORA'
+- `valor_fornecedores`: soma de FREELANCER_* + FORNECEDOR_*
+- `valor_total`: total CLIENTE (já existente)
+
+**Exemplo:**
+```
+Orçamento #O000042:
+- TOTAL CLIENTE: €3.400,00
+
+Repartições EMPRESA:
+- BA: €1.500,00 (serviços)
+- RR: €800,00 (serviços)
+- AGORA: €400,00 (comissão)
+- FREELANCER_2: €500,00 (edição)
+- FORNECEDOR_5: €200,00 (equipamento alugado)
+
+→ Projeto #P0084 criado:
+  - valor_total: €3.400,00
+  - premio_bruno: €1.500,00
+  - premio_rafael: €800,00
+  - valor_empresa: €400,00
+  - valor_fornecedores: €700,00 (500+200)
+```
+
+---
+
+7.3 RASTREABILIDADE FREELANCERS
+--------------------------------
+
+**Tabela: freelancer_trabalhos** (já implementada Migration 025)
+
+**Criação Automática:**
+- Quando orçamento aprovado tem repartição FREELANCER_X
+- Manager: FreelancerTrabalhosManager.criar()
+- Campos: freelancer_id, orcamento_id, projeto_id, descricao, valor, data, status='a_pagar'
+
+**Status Workflow:**
+- `a_pagar` → Trabalho concluído, aguarda pagamento
+- `pago` → Freelancer já recebeu (data_pagamento preenchida)
+- `cancelado` → Orçamento anulado ou trabalho cancelado
+
+**Ficha Individual Freelancer:**
+- Screen: FreelancerForm (novo)
+- Secção superior: dados cadastrais (nome, NIF, IBAN, especialidade)
+- Secção inferior: tabela de trabalhos históricos
+- Colunas tabela: Data, Orçamento, Projeto, Descrição, Valor, Status, Ações
+- Botão "Marcar como Pago" em cada linha com status='a_pagar'
+- Totais no footer: Total A Pagar | Total Pago | Total Geral
+
+**Dashboard Card:**
+- Título: "💰 Freelancers A Pagar"
+- Valor: sum(valor WHERE status='a_pagar')
+- Clique: navega para FreelancersScreen com filtro status='a_pagar'
+
+---
+
+7.4 RASTREABILIDADE FORNECEDORES
+---------------------------------
+
+**Tabela: fornecedor_compras** (já implementada Migration 025)
+
+**Estrutura Idêntica a freelancer_trabalhos:**
+- Campos: fornecedor_id, orcamento_id, projeto_id, descricao, valor, data, status
+- Mesmo status workflow: a_pagar → pago → cancelado
+
+**Ficha Individual Fornecedor:**
+- Screen: FornecedorForm (expandir existente)
+- Adicionar secção: tabela de compras históricas
+- Mesmo layout e funcionalidades que FreelancerForm
+
+**Dashboard Card:**
+- Título: "🏢 Fornecedores A Pagar"
+- Valor: sum(valor WHERE status='a_pagar')
+- Clique: navega para FornecedoresScreen com filtro status='a_pagar'
+
+---
+
+7.5 FLUXO COMPLETO END-TO-END
+------------------------------
+
+**1. CRIAR ORÇAMENTO:**
+- User adiciona items CLIENTE (serviços, equipamentos, etc)
+- User adiciona repartições EMPRESA (beneficiários: BA, RR, AGORA, FREELANCER_2, FORNECEDOR_5)
+- Frame "Totais por Beneficiário" mostra distribuição em tempo real
+- User valida visualmente que totais coincidem
+
+**2. APROVAR ORÇAMENTO:**
+- Botão "Aprovar Orçamento" → validação automática (totais CLIENTE = EMPRESA)
+- Se válido:
+  - Status muda para 'aprovado'
+  - Sistema cria automaticamente registos em freelancer_trabalhos e fornecedor_compras
+  - Cada registo com status='a_pagar', data=hoje, links para orcamento_id e projeto_id
+
+**3. CONVERTER EM PROJETO:**
+- Botão "Converter em Projeto" → criar projeto
+- Campos rastreabilidade preenchidos automaticamente:
+  - premio_bruno, premio_rafael, valor_empresa, valor_fornecedores
+- Link bidirecional: orcamento.projeto_id ↔ projeto.orcamentos
+
+**4. DASHBOARD:**
+- Cards mostram totais pendentes:
+  - "Freelancers A Pagar: €500,00"
+  - "Fornecedores A Pagar: €200,00"
+- User clica → navega para screen com filtro
+
+**5. MARCAR COMO PAGO:**
+- User abre ficha individual (FreelancerForm ou FornecedorForm)
+- Vê tabela com todos trabalhos/compras
+- Clica "Marcar como Pago" numa linha com status='a_pagar'
+- Sistema:
+  - Atualiza status='pago'
+  - Preenche data_pagamento=hoje
+  - Recalcula totais da ficha
+  - Dashboard atualiza automaticamente
+
+**6. HISTÓRICO PERMANENTE:**
+- Registos NUNCA são apagados (histórico contabilístico)
+- Status 'cancelado' permite anular sem perder rastreabilidade
+- Relatórios futuros: quanto pago a cada freelancer/fornecedor por ano
+
+---
+
+7.6 IMPLEMENTAÇÃO TÉCNICA
+--------------------------
+
+**Ficheiros a Criar:**
+- ui/screens/freelancer_form.py (screen ficha individual)
+- ui/components/totais_beneficiarios_frame.py (frame reutilizável)
+
+**Ficheiros a Modificar:**
+- ui/screens/orcamento_form.py (+150 linhas: frame totais, cálculo dinâmico)
+- ui/screens/dashboard.py (+2 cards: freelancers a_pagar, fornecedores a_pagar)
+- ui/screens/fornecedor_form.py (+tabela compras históricas)
+- logic/orcamentos.py (converter_em_projeto: preencher campos rastreabilidade)
+
+**Managers Já Existentes (Migration 025):**
+- FreelancerTrabalhosManager: calcular_total_a_pagar(), marcar_como_pago()
+- FornecedorComprasManager: calcular_total_a_pagar(), marcar_como_pago()
+
+**Estimativa:** 2-3 sessões de implementação
+
+**Ver:** TODO.md (Tarefa 7), ARCHITECTURE.md (Orçamentos V2), DATABASE_SCHEMA.md (Migration 025)
+
+====================================================================
 NOTAS FINAIS E FONTE DE VERDADE:
 ====================================================================
 
@@ -159,5 +376,5 @@ NOTAS FINAIS E FONTE DE VERDADE:
 - Qualquer alteração de lógica aqui deve obrigatoriamente ser refletida na implementação (database/models/ e logic/).
 
 Mantido por: Equipa Agora
-Última revisão lógica: 2025-11-17 09:40 WET
+Última revisão lógica: 2025-11-17 18:30 WET
 

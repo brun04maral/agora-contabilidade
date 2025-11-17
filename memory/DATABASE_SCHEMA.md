@@ -895,6 +895,23 @@ StatusTrabalho:
 - Criado automaticamente quando orçamento aprovado tem repartição FREELANCER_[id]
 - FK com SET NULL: se orçamento/projeto apagado → mantém registo histórico
 
+**Funcionalidade Rastreabilidade (PLANEADO):**
+- ✅ Registos criados automaticamente na aprovação orçamento (já implementado)
+- 📝 Visualizados em ficha individual freelancer (a implementar)
+  - Screen: FreelancerForm com tabela de trabalhos históricos
+  - Colunas: Data | Orçamento | Projeto | Descrição | Valor | Status | Ações
+  - Totais: A Pagar | Pago | Total Geral
+- 📝 Dashboard mostra totais status='a_pagar' (a implementar)
+  - Card: "💰 Freelancers A Pagar: €XXX"
+  - Clique: navega para FreelancersScreen com filtro
+- 📝 Botão marcar pago (a implementar)
+  - Atualiza: status='pago', data_pagamento=hoje
+  - Manager: FreelancerTrabalhosManager.marcar_como_pago()
+- ⚠️ Histórico permanente: NUNCA apagar registos (manter auditoria contabilística)
+  - Status 'cancelado' permite anular sem perder rastreabilidade
+
+**Ver:** BUSINESS_LOGIC.md (Secção 7), ARCHITECTURE.md (Orçamentos V2 - Totais por Beneficiário), TODO.md (Tarefa 7)
+
 ---
 
 ### Tabela: fornecedor_compras - Histórico de Compras
@@ -931,9 +948,26 @@ StatusCompra:
   - pago      # Fornecedor já recebeu
   - cancelado # Orçamento anulado ou compra cancelada
 
+**Funcionalidade Rastreabilidade (PLANEADO):**
+- ✅ Registos criados automaticamente na aprovação orçamento (já implementado)
+- 📝 Visualizados em ficha individual fornecedor (a implementar)
+  - Screen: FornecedorForm expandido com tabela de compras históricas
+  - Colunas: Data | Orçamento | Projeto | Descrição | Valor | Status | Ações
+  - Totais: A Pagar | Pago | Total Geral
+- 📝 Dashboard mostra totais status='a_pagar' (a implementar)
+  - Card: "🏢 Fornecedores A Pagar: €XXX"
+  - Clique: navega para FornecedoresScreen com filtro
+- 📝 Botão marcar pago (a implementar)
+  - Atualiza: status='pago', data_pagamento=hoje
+  - Manager: FornecedorComprasManager.marcar_como_pago()
+- ⚠️ Histórico permanente: NUNCA apagar registos (manter auditoria contabilística)
+  - Status 'cancelado' permite anular sem perder rastreabilidade
+
+**Ver:** BUSINESS_LOGIC.md (Secção 7), ARCHITECTURE.md (Orçamentos V2 - Totais por Beneficiário), TODO.md (Tarefa 7)
+
 ---
 
-### Expansão: fornecedores (ATUALIZAÇÃO em Migration 024)
+### Expansão: fornecedores (ATUALIZAÇÃO em Migration 025)
 
 **Campos a adicionar:**
 ALTER TABLE fornecedores ADD COLUMN numero VARCHAR(20) UNIQUE;

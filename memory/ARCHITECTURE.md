@@ -385,6 +385,115 @@ Botão "Auto-preencher" no EMPRESA:
 
 ---
 
+### Totais por Beneficiário (PLANEADO)
+
+**STATUS:** 📝 Especificado, aguarda implementação (próximo sprint)
+
+**OrcamentoForm - Método calcular_totais_beneficiarios():**
+```python
+def calcular_totais_beneficiarios(self) -> Dict[str, Decimal]:
+    """
+    Percorre todas reparticoes EMPRESA e agrega por beneficiário.
+
+    Retorna: {
+        'BA': Decimal('1500.00'),
+        'RR': Decimal('800.00'),
+        'AGORA': Decimal('400.00'),
+        'FREELANCER_2': Decimal('500.00'),
+        'FORNECEDOR_5': Decimal('200.00')
+    }
+    """
+    totais = {}
+    for reparticao in self.reparticoes_empresa:
+        beneficiario = reparticao.beneficiario
+        totais[beneficiario] = totais.get(beneficiario, Decimal('0')) + reparticao.total
+    return totais
+```
+
+**UI - Frame Dedicado com Cards Coloridos:**
+- Localização: OrcamentoForm, abaixo da tabela reparticoes EMPRESA
+- Atualiza em tempo real ao adicionar/editar/apagar items
+- Cards coloridos por tipo:
+  - 🟢 VERDE: Sócios (BA, RR)
+  - 🔵 AZUL: Empresa (AGORA)
+  - 🟠 LARANJA: Externos (FREELANCER_*, FORNECEDOR_*)
+- Display: "BA - Bruno: €1.500,00"
+- Validação visual: soma == TOTAL EMPRESA (check verde ou warning laranja)
+
+**Conversão em Projeto:**
+
+Método `converter_em_projeto()` distribui valores nos campos de rastreabilidade:
+
+```python
+def converter_em_projeto(self, orcamento_id):
+    totais = self.calcular_totais_beneficiarios()
+
+    # Separar por categoria
+    premio_bruno = totais.get('BA', 0)
+    premio_rafael = totais.get('RR', 0)
+    valor_empresa = totais.get('AGORA', 0)
+    valor_fornecedores = sum([
+        v for k, v in totais.items()
+        if k.startswith('FREELANCER_') or k.startswith('FORNECEDOR_')
+    ])
+
+    # Criar projeto com campos preenchidos
+    projeto = ProjetoManager.criar(
+        cliente_id=orcamento.cliente_id,
+        valor_total=orcamento.total_cliente,
+        premio_bruno=premio_bruno,
+        premio_rafael=premio_rafael,
+        valor_empresa=valor_empresa,
+        valor_fornecedores=valor_fornecedores,
+        # ... outros campos
+    )
+```
+
+**Campos Projeto Preenchidos Automaticamente:**
+- `premio_bruno`: sum(reparticoes WHERE beneficiario='BA')
+- `premio_rafael`: sum(reparticoes WHERE beneficiario='RR')
+- `valor_empresa`: sum(reparticoes WHERE beneficiario='AGORA')
+- `valor_fornecedores`: sum(reparticoes WHERE beneficiario LIKE 'FREELANCER_%' OR LIKE 'FORNECEDOR_%')
+
+**Screens Novos a Criar:**
+
+1. **ui/screens/freelancer_form.py** - Ficha Individual Freelancer
+   - Secção superior: dados cadastrais (nome, NIF, IBAN, especialidade, notas)
+   - Secção inferior: tabela trabalhos históricos
+   - Colunas: Data | Orçamento | Projeto | Descrição | Valor | Status | Ações
+   - Botão "Marcar como Pago" em cada linha status='a_pagar'
+   - Footer: Total A Pagar | Total Pago | Total Geral
+
+2. **ui/screens/fornecedor_form.py** - Expandir Existente
+   - Adicionar secção: tabela compras históricas
+   - Mesmo layout e funcionalidades que freelancer_form.py
+
+3. **ui/components/totais_beneficiarios_frame.py** - Frame Reutilizável
+   - Recebe dict de totais
+   - Renderiza cards coloridos
+   - Mostra validação visual (soma vs total)
+
+**Dashboard - Novos Cards:**
+
+1. Card "💰 Freelancers A Pagar"
+   - Valor: FreelancerTrabalhosManager.calcular_total_a_pagar()
+   - Clique: navega para FreelancersScreen com filtro status='a_pagar'
+
+2. Card "🏢 Fornecedores A Pagar"
+   - Valor: FornecedorComprasManager.calcular_total_a_pagar()
+   - Clique: navega para FornecedoresScreen com filtro status='a_pagar'
+
+**Ficheiros a Modificar:**
+- `ui/screens/orcamento_form.py` (+150 linhas)
+- `ui/screens/dashboard.py` (+80 linhas)
+- `logic/orcamentos.py` (converter_em_projeto: +30 linhas)
+
+**Estimativa:** 2-3 sessões de implementação
+
+**Ver:** TODO.md (Tarefa 7), BUSINESS_LOGIC.md (Secção 7), DATABASE_SCHEMA.md (Migration 025)
+
+---
+
 ---
 
 ## 🔄 SISTEMA DE BENEFICIÁRIOS - Fluxos e Integrações

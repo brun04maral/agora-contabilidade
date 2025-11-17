@@ -78,23 +78,43 @@ LEGENDA DE PRIORIDADES
    Status: Documentação completa (39KB)
    Ver: memory/FISCAL.md
 
-7. Implementar Tabela Receitas (Migration 025)
-   
+7. Sistema de Totais por Beneficiário e Rastreabilidade
+
+   ├─ Totais por beneficiário no form orçamento (lado EMPRESA)
+   │  - Frame dedicado com cards coloridos por tipo
+   │  - Cálculo em tempo real ao adicionar/editar items
+   │  - Cores: Verde (sócios), Azul (empresa), Laranja (externos)
+   ├─ Conversão automática em campos projeto (prémios/receita/fornecedores)
+   │  - premio_bruno, premio_rafael (sum beneficiario BA/RR)
+   │  - valor_empresa (sum beneficiario AGORA)
+   │  - valor_fornecedores (sum FREELANCER_* + FORNECEDOR_*)
+   ├─ Screens ficha freelancer/fornecedor com histórico
+   │  - Tabela trabalhos/compras (status, valor, data)
+   │  - Botão marcar como pago em cada linha
+   │  - Totais: a_pagar, pago, total geral
+   └─ Cards dashboard (freelancers a pagar, fornecedores a pagar)
+      - Navegação para screen com filtro status=a_pagar
+
+   Estimativa: 2-3 sessões
+   Ver: memory/BUSINESS_LOGIC.md (Secção 6), memory/ARCHITECTURE.md (Orçamentos V2)
+
+8. Implementar Tabela Receitas (Migration 026)
+
    Após validação TOC:
-   ├─ Criar migration 025_receitas.py
+   ├─ Criar migration 026_receitas.py
    ├─ Adicionar modelo Receita (database/models/)
    ├─ Criar ReceitasManager (logic/)
    ├─ Implementar screen Receitas (ui/screens/)
    └─ Integrar com projetos (criar receita ao marcar PAGO)
-   
+
    Estimativa: 1 semana após validação
-   Ver: memory/FISCAL.md (Secção 1), memory/DATABASE_SCHEMA.md (Migration 025)
+   Ver: memory/FISCAL.md (Secção 1), memory/DATABASE_SCHEMA.md (Migration 026)
 
 ====================================================================
 🟡 Média Prioridade - Próximo Mês
 ====================================================================
 
-8. UI Gestão Freelancers e Trabalhos/Compras
+9. UI Gestão Freelancers e Trabalhos/Compras
 
    ├─ Screen CRUD Freelancers (listar, criar, editar, inativar)
    ├─ Screen Trabalhos Freelancers (listar a_pagar, marcar como pago, filtros)
@@ -104,7 +124,7 @@ LEGENDA DE PRIORIDADES
    Estimativa: 1 semana
    Ver: memory/CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade)
 
-9. Testes de Integração Completos
+10. Testes de Integração Completos
    
    ├─ Testes E2E principais fluxos (criar projeto, aprovar orçamento, etc)
    ├─ Testes unitários managers críticos
@@ -113,7 +133,7 @@ LEGENDA DE PRIORIDADES
    
    Framework: pytest
 
-10. Build para Windows (PyInstaller)
+11. Build para Windows (PyInstaller)
     
     ├─ Configurar spec file
     ├─ Testar em Windows 10/11
@@ -123,7 +143,7 @@ LEGENDA DE PRIORIDADES
     
     Ver: memory/DEV_SETUP.md (adicionar secção Build)
 
-11. Dashboard Fiscal (após Migration 025)
+12. Dashboard Fiscal (após Migration 025)
     
     ├─ Card IVA a pagar (trimestre atual)
     ├─ Card IRS retido (mês atual)
@@ -137,30 +157,30 @@ LEGENDA DE PRIORIDADES
 🟢 Baixa Prioridade - Backlog
 ====================================================================
 
-12. Notificações e Alertas
+13. Notificações e Alertas
     - Despesas vencidas
     - Orçamentos aguardando aprovação há > 7 dias
     - Projetos sem movimento há > 30 dias
     - Prazos fiscais próximos
 
-13. Sistema de Backup Automático
+14. Sistema de Backup Automático
     - Backup diário da BD (agora_media.db)
     - Rotação (manter últimos 7 dias)
     - Opcional: upload cloud (Google Drive, Dropbox)
 
-14. Relatórios Avançados
+15. Relatórios Avançados
     - Relatório de rendibilidade por cliente
     - Relatório de custos por tipo
     - Análise de margens (receitas vs custos)
     - Export multi-formato (PDF, Excel, CSV)
 
-15. Multi-utilizador (Futuro distante)
+16. Multi-utilizador (Futuro distante)
     - Sistema de autenticação
     - Permissões por role
     - Auditoria de alterações
     - Nota: Não prioritário (apenas 2 sócios)
 
-16. App Mobile (Exploratório)
+17. App Mobile (Exploratório)
     - Consulta rápida de saldos
     - Adicionar despesas em movimento
     - Push notifications
