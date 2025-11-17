@@ -1,356 +1,306 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-16 (22:00)
-**Sessão:** claude/sync-latest-updates-012SDyaYGLD1zvqARajAPDPC
+**Última atualização:** 2025-11-17 09:25 WET  
+**Branch:** claude/sync-latest-updates-012SDyaYGLD1zvqARajAPDPC  
+**Status Geral:** ✅ PRODUÇÃO READY
 
 ---
 
-## 🚨 IMPORTANTE - Nova Sessão Claude Code?
+## 🚨 NOVA SESSÃO? Importa Contexto Primeiro!
 
-**SE ESTA É UMA NOVA SESSÃO:** O novo branch foi criado do `main` (desatualizado). O código atualizado está no branch da sessão anterior!
+⚠️ Se este branch foi criado do `main`, está **desatualizado**. Usa a frase:
 
-**FRASE MÁGICA - Usa sempre:**
-```
-Esta sessão é continuação de uma anterior. Faz merge do branch da última sessão para este branch atual para teres todo o código e contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md para contexto completo.
-```
+> Esta sessão é continuação de uma anterior. Faz merge do branch da última sessão para este branch atual para teres todo o código e contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md para contexto completo.
 
-**Isto vai:** Fazer merge do branch anterior + Ler documentação = Contexto completo!
-
-**Instruções completas:** Ver `/SESSION_IMPORT.md` na raiz do projeto.
+**Instruções completas:** Ver `/SESSION_IMPORT.md` na raiz.
 
 ---
 
-## ✅ Features Completas e Funcionais
+## 📌 Resumo Executivo
 
-### 🎨 Sistema de Assets e Ícones (COMPLETO)
-- ✅ Ícones PNG Base64 embutidos no código (11 ícones disponíveis)
-- ✅ Sistema de fallback: SVG → PNG → Emoji
-- ✅ Logos PNG de alta qualidade fornecidos manualmente (71KB, 156KB)
-- ✅ Ícones aplicados em:
-  - Sidebar (10 menus + Info) - 27x27 pixels
-  - Títulos de todas as screens (10 screens) - 22x22 pixels
-  - Dashboard com ícones nas secções (5 secções)
-- ✅ Documentação em `memory/ASSET_SYSTEM.md`
+**Sprint Atual (17/11/2025):**
+- 🎯 **Orçamentos V2** - Dialogs CRUD completos (5/5 implementados)
+- 🎯 **Auditoria Sistema Memory** - Reorganização documentação
 
-### 💾 Sistema de Base de Dados (COMPLETO)
-- ✅ SQLAlchemy ORM com SQLite
-- ✅ Migrations com Alembic
-- ✅ Modelos: Sócio, Projeto, Despesa, Boletim, Cliente, Fornecedor, Orçamento, Equipamento
-- ✅ Relacionamentos e constraints
-- ✅ Seed data para desenvolvimento
+**Última Feature Concluída:**
+- ✅ **OutroDialog** (Commit: 48eec23) - Último dialog CLIENTE implementado
 
-### 🖥️ Interface Gráfica (COMPLETO)
-- ✅ CustomTkinter (tema moderno)
-- ✅ 10 screens funcionais + Info screen:
-  - Dashboard (com ícones nas secções + navegação interativa em cards)
-  - Saldos Pessoais (CORE) - **Com navegação clicável completa**
-    - 10 botões clicáveis com filtros automáticos (Projetos, Prémios, Despesas, Boletins)
-    - Cores semânticas: Verde para INs, Laranja para OUTs
-    - Ícones PNG customizados (ins.png, outs.png)
-    - Boletins separados (Pendentes e Pagos)
-  - Projetos
-  - Orçamentos
-  - Despesas
-  - Boletins
-  - Clientes
-  - Fornecedores
-  - Equipamento
-  - Relatórios
-  - Info (versão v0.0.1, créditos)
-- ✅ Componentes reutilizáveis (DataTableV2, forms)
-- ✅ **Date Pickers Profissionais** (NOVO 13/11)
-  - `DatePickerDropdown` - Seleção de data única com calendário inline
-  - `DateRangePickerDropdown` - Seleção de período com formato inteligente:
-    - Mesmo mês: `15-20/11/2025`
-    - Meses diferentes: `28/11-05/12/2025`
-    - Anos diferentes: `28/12/2024-05/01/2025`
-  - Usado em **todos os 6 screens CRUD:** Projetos, Despesas, Boletins, Orçamentos, Equipamento, Fornecedores
-  - Calendário visual com navegação mês/ano
-  - Proteção contra bugs (widget string, CustomTkinter constraints)
-- ✅ **Fornecedores: Enhancements** (NOVO 13/11)
-  - **Website clicável:** Campo de texto + botão "🔗 Abrir" que abre URL no browser
-  - **Seguro dinâmico:** Campo "Validade Seguro Trabalho" só visível para FREELANCER
-  - Migration 012 aplicada (coluna `website` adicionada)
-- ✅ Sidebar com scroll vertical
-  - Logo fixo no topo
-  - Menus scrollable (27x27 icons)
-  - Info e Sair fixos no fundo
-  - Separador visual
-- ✅ Navegação intuitiva e profissional
+**Próximo Milestone:**
+- 📋 Implementar 5 dialogs EMPRESA (Serviço, Equipamento, Despesa, Comissão, Aluguer)
 
-### 💰 Lógica de Negócio (COMPLETO)
-- ✅ Cálculo de saldos pessoais (50/50)
-- ✅ Gestão de projetos (tipos, estados, prémios)
-- ✅ Gestão de despesas (tipos, pagamentos)
-- ✅ **Sistema de Templates de Despesas Recorrentes** (NOVO 13/11)
-  - Tabela separada `despesa_templates` para moldes de despesas fixas mensais
-  - Template ID único: #TD000001, #TD000002, etc.
-  - Templates armazenam dia do mês (1-31) em vez de data completa
-  - Geração automática mensal via botão "🔁 Gerar Recorrentes"
-  - Indicador visual: asterisco (*) em despesas geradas (ex: "Fixa Mensal*")
-  - Screen dedicado com CRUD completo (acesso via "📝 Editar Recorrentes")
-  - Templates NÃO entram em cálculos financeiros
-  - Link rastreável entre template e despesas geradas
-- ✅ **Sistema Completo de Boletim Itinerário** (NOVO 13/11)
-  - **4 Tabelas:** valores_referencia_anual, boletim_linhas, boletim_templates, boletins (expandida)
-  - **Modelo expandido:** mes, ano, valores de referência por ano, totais calculados automaticamente
-  - **Deslocações múltiplas:** Cada boletim pode ter N linhas de deslocação
-  - **Valores de referência editáveis:** Por ano (72.65€/167.07€/0.40€)
-  - **Cálculos automáticos:** dias × val_dia + kms × val_km (NACIONAL/ESTRANGEIRO)
-  - **Templates recorrentes:** Geração automática mensal com verificação de duplicados
-  - **Relação com projetos:** FK opcional (SET NULL), dropdown em deslocações
-  - **4 Screens:**
-    1. `ValoresReferenciaScreen` - CRUD valores por ano (escondido, configurações)
-    2. `TemplatesBoletinsScreen` - CRUD templates recorrentes
-    3. `BoletimFormScreen` - Editor completo (header + tabela linhas CRUD inline)
-    4. `BoletinsScreen` - Atualizado (coluna "Linhas", botão "🔁 Gerar Recorrentes")
-  - **Total:** ~2600 linhas de código (4 DB + 3 logic + 4 UI)
-  - **UX Melhorias - Boletim Linhas** (NOVO 15/11):
-    - **Auto-preenchimento de datas:** Quando projeto selecionado, data_inicio e data_fim preenchem automaticamente
-    - **Auto-preenchimento de descrição:** Campo serviço preenche com projeto.descricao (se vazio)
-    - **Datas visíveis imediatamente:** Atualização visual instantânea (não só após gravar)
-    - **Duplicar Boletim:** Botão "📋 Duplicar" no form e na lista (copia header + todas linhas)
-    - **Context menu (right-click):** Menu popup com Editar, Duplicar, Marcar Pago/Pendente, Apagar
-    - **Fixes no DatePickerDropdown:** Aceita None como valor, força atualização visual
-  - **Commits desta sessão:**
-    - 697f71a - Right-click context menu funciona sempre
-    - ebbf8d1 - Auto-preencher datas da linha com datas do projeto
-    - 88d0fa0 - DatePickerDropdown aceita None como valor válido
-    - ad548c6 - Forçar atualização visual imediata no set_date()
-- ✅ **Migration 020 - Orçamentos e Projetos Completo** (NOVO 15/11)
-  - **Tabela orcamentos:** Coluna `owner` VARCHAR(2) NOT NULL (default 'BA')
-  - **Tabela projetos:** 6 novas colunas
-    - `owner` VARCHAR(2) NOT NULL (inferido de tipo)
-    - Rastreabilidade financeira: `valor_empresa`, `valor_fornecedores`, `valor_equipamento`, `valor_despesas`
-    - `data_pagamento` DATE NULL
-    - Estados atualizados: ATIVO, FINALIZADO, PAGO, ANULADO (de NAO_FATURADO, FATURADO, RECEBIDO)
-  - **Tabela orcamento_reparticoes:** 3 novas colunas
-    - `tipo` VARCHAR(20) (mapeado de entidade)
-    - `fornecedor_id` INTEGER NULL (FK)
-    - `equipamento_id` INTEGER NULL (FK)
-  - **Tabela equipamento:** `rendimento_acumulado` DECIMAL(10,2) DEFAULT 0
-  - **Script de migração de dados:** `fix_estados_projetos.py`
-    - Migrou 121 projetos (17 ATIVO, 12 FINALIZADO, 46 PAGO)
-- ✅ **Transição Automática de Projetos** (NOVO 15/11)
-  - **Método automático:** Projetos ATIVO com data_fim < hoje → FINALIZADO
-  - **Ativação:** Ao iniciar app + ao carregar/atualizar screen Projetos
-  - **Validação:** Apenas ATIVO são afetados, requer data_fim definida
-  - **Logging:** Todas as transições registadas com detalhes
-  - **Testes:** 4 cenários validados (vencido, sem data, futuro, já pago)
-  - **Ficheiros alterados:** 16 ficheiros (logic, UI, scripts, testes) com referências corrigidas
-- ✅ **Migration 021 - Cliente Nome e Nome Formal** (NOVO 15/11 - Sessão 011Nxway2rBVpU2mvorwQDGJ)
-  - **Reestruturação dos campos de nome:** Distinção entre nome curto e nome formal
-  - **Tabela clientes:**
-    - Campo `nome` (existente) renomeado para `nome_formal` (VARCHAR 255)
-    - Novo campo `nome` (VARCHAR 120) para nome curto usado em listagens
-    - Dados migrados: 20 clientes (valores copiados de nome original para ambos os campos)
-  - **Lógica de negócio:**
-    - `ClientesManager.criar()` aceita ambos os parâmetros (nome_formal opcional, default=nome)
-    - `ClientesManager.atualizar()` aceita ambos os parâmetros
-    - `ClientesManager.pesquisar()` busca em AMBOS os campos simultaneamente (ILIKE)
-  - **Interface:**
-    - Listagem de clientes: mostra apenas coluna "Nome" (campo curto)
-    - Formulário: campos separados com labels descritivos
-    - Dropdowns/referências: usam nome curto
-  - **Documentos formais:**
-    - `logic/proposta_exporter.py`: PDFs de orçamentos usam `nome_formal`
-  - **Scripts de teste:**
-    - `tests/verificar_cliente_schema.py`: Verificação de schema (sqlite3)
-    - `tests/testar_cliente_nome_formal.py`: Testes funcionais (requer SQLAlchemy)
-  - **Commits:**
-    - 4126e67 - ✨ Feature: Adicionar campo 'nome_formal' ao modelo Cliente
-    - f1695fd - 🗄️ Database: Aplicar migration 021 - campos nome e nome_formal
-- ✅ **Menu de Contexto (Right-Click) em Clientes** (NOVO 15/11)
-  - **Feature:** Menu popup ao clicar com botão direito na tabela de clientes
-  - **Ações disponíveis:**
-    - ✏️ Editar - Abre formulário de edição
-    - 🗑️ Apagar - Remove cliente (com confirmação)
-  - **Implementação:**
-    - `DataTableV2` já suportava `on_row_right_click` callback
-    - Método `show_context_menu()` cria menu nativo tk.Menu
-    - Suporte Mac (Button-2) e Windows/Linux (Button-3)
-  - **Commit:**
-    - 37688a5 - ✨ Feature: Adicionar menu de contexto (right-click) à tabela de Clientes
-- ✅ **Correção: Event Bindings no DataTableV2** (NOVO 15/11)
-  - **Problema:** `TypeError: lambda() missing 1 required positional argument: 'e'`
-  - **Causa:** Lambdas com `e=None` (default) não recebem evento do tkinter corretamente
-  - **Solução:** Remover default, usar `lambda e, ...` (sem =None)
-  - **Eventos corrigidos:** `<Button-1>`, `<Double-Button-1>`, `<Enter>`, `<Leave>`
-  - **Total:** 8 lambdas corrigidos em `ui/components/data_table_v2.py`
-  - **Commit:**
-    - 7640087 - 🐛 Fix: Corrigir lambdas com e=None em event bindings do DataTableV2
-- ✅ **Correção: Toggle Tipo Item em Orçamentos** (NOVO 15/11)
-  - **Problema:** `TclError: window isn't packed` ao alternar tipo de item
-  - **Causa:** Código frágil usando índice de children `[5]` para posicionar frame
-  - **Solução:**
-    - Guardar referência `self.tipo_frame` ao criar widget
-    - Usar `after=self.tipo_frame` (robusto) em vez de índice
-  - **Commit:**
-    - 2053cdd - 🐛 Fix: Corrigir erro de pack no toggle_tipo_item em Orçamentos
-- ✅ Sistema de orçamentos (versões, aprovações)
-- ✅ Relatórios exportáveis (Excel)
-
-### 📦 Sistema de Importação Incremental (COMPLETO)
-- ✅ **Script otimizado:** `scripts/import_from_excel.py`
-- ✅ **Modo incremental:** Skip automático de registos existentes (preserva alterações locais)
-- ✅ **Flags:**
-  - `--dry-run` - Preview sem gravar nada
-  - `--excel PATH` - Ficheiro Excel custom
-  - `--clear-all` - Limpar DB (com confirmação)
-- ✅ **Matching inteligente:** Por número (#C001, #P001, etc.)
-- ✅ **Update seletivo:** Prémios de projetos podem ser atualizados
-- ✅ **Validações robustas:** Skip de despesas sem data, etc.
-- ✅ **Estatísticas detalhadas:** NEW/SKIP/UPDATED/ERROR
-- ✅ **Última importação:** 15/11/2025 (CONTABILIDADE_FINAL_20251115.xlsx)
-  - 3 despesas novas (#D000244, #D000245, #D000246)
-  - Total: 19 clientes, 44 fornecedores, 75 projetos, 168 despesas, 34 boletins
-  - Estados finais: 157 PAGO (93.5%), 11 PENDENTE (6.5%)
-- ✅ **Documentação:** `IMPORT_GUIDE.md` (guia completo de uso)
-- ✅ **Histórico:** Documentação antiga em `memory/archive/importacao/`
-
-### 🔍 Sistema de Verificação de Migrations (COMPLETO)
-- ✅ **Script de diagnóstico:** `check_migrations.py` (~200 linhas)
-- ✅ **Funcionalidades:**
-  - Verifica todas as migrations 001-019
-  - Lista migrations aplicadas ✅ e pendentes ❌
-  - Detecta tabelas e colunas existentes via PRAGMA
-  - Mostra comandos exatos para executar migrations pendentes
-  - Reconhece scripts combinados (009+010, 016-019)
-- ✅ **Uso:** `python3 check_migrations.py` (sem argumentos)
-- ✅ **Output:** Relatório visual com instruções step-by-step
-- ✅ **Status:** Todas migrations 001-019 aplicadas e verificadas ✅
-
-### 🧠 Sistema de Documentação e Organização (COMPLETO)
-- ✅ Pasta `memory/` com documentação estruturada:
-  - CURRENT_STATE.md (estado atual)
-  - TODO.md (tarefas priorizadas)
-  - ARCHITECTURE.md (arquitetura)
-  - DECISIONS.md (decisões técnicas)
-  - DATABASE_SCHEMA.md (esquema DB)
-  - DEV_SETUP.md (setup dev)
-  - CHANGELOG.md (histórico)
-  - GUIA_COMPLETO.md (guia completo)
-  - ASSET_SYSTEM.md (assets/ícones)
-  - README.md (índice)
-- ✅ `memory/archive/` para documentação histórica
-- ✅ README.md raiz com "Frase Mágica" para novas sessões
-- ✅ Repositório limpo e organizado
+**Dados Atuais (Última Importação 15/11/2025):**
+- 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins
+- 157 registos PAGO (93.5%) | 11 PENDENTE (6.5%)
 
 ---
 
-## 🚧 Em Desenvolvimento
+## ✅ Módulos Implementados
 
-### 🧪 Fase 4: Testes & Ajustes - Sistema Boletim Itinerário
-- [x] ✅ Migrations 009-019 executadas e verificadas (14/11/2025)
-  - 009-010: Equipamento alugueres + Orçamento único (scripts/run_migrations_009_010.py)
-  - 011: Tabelas proposta_secoes e proposta_itens (scripts/run_migration_011.py)
-  - 012-019: Website + Despesas recorrentes + Boletim Itinerário
-- [ ] Criar dados de teste:
-  - Valores de referência para anos 2024-2026
-  - 2 templates recorrentes (BA + RR)
-  - Boletins com múltiplas linhas de deslocação
-  - Testar linhas COM e SEM projeto associado
-- [ ] Validar cálculos automáticos:
-  - Ajudas nacionais (dias × 72.65€)
-  - Ajudas estrangeiro (dias × 167.07€)
-  - Kms (kms × 0.40€)
-  - Total = soma dos 3
-- [ ] Testar geração recorrente:
-  - Gerar boletins para mês atual
-  - Verificar prevenção de duplicados
-  - Testar meses sem 31 dias (fevereiro)
-- [ ] Edge cases:
-  - Valores zero (0 dias, 0 kms)
-  - Apagar projeto com linhas associadas (deve ficar NULL)
-  - Ano sem valores de referência (deve usar defaults)
-  - Boletim sem linhas (totais = 0)
+### 🎨 Sistema de Assets e Ícones
+**Status:** ✅ Completo  
+**Implementado:** 13/11/2025
 
-**Status:** Implementação completa (Fases 1-3) ✅ | Aguardando testes locais
+**Features:**
+- 11 ícones PNG Base64 embutidos no código
+- Sistema de fallback: SVG → PNG → Emoji
+- Logos PNG alta qualidade (71KB, 156KB) fornecidos manualmente
+- Aplicado em: Sidebar (27x27), Títulos screens (22x22), Dashboard
+
+**Ver:** `memory/ASSET_SYSTEM.md`
 
 ---
 
-## 📝 Próximas Tarefas (ver `TODO.md`)
+### 💾 Base de Dados
+**Status:** ✅ Completo  
+**Última Migration:** 023 (17/11/2025)
 
-1. **UX/UI Improvements** - Orçamentos e Boletins (PRIORITY)
-   - Feedback: Ambos os screens são "muito maus e algo confusos"
-   - 18 melhorias específicas documentadas em TODO.md
-   - Orçamentos: Wizard multi-step, preview lateral, gráficos
-   - Boletins: Cards view, edição inline, calculadora visual
-2. Testes de integração completos
-3. Build para Windows (PyInstaller)
-4. Documentação de usuário final
-5. Backup automático de base de dados
+**Tabelas Principais (13):**
+- Core: socios, clientes, fornecedores
+- Projetos: projetos, orcamentos, orcamento_itens, orcamento_reparticoes
+- Despesas: despesas, despesa_templates
+- Boletins: boletins, boletim_linhas, valores_referencia_anual
+- Equipamento: equipamento
+
+**Migrations Recentes:**
+- ✅ 020: Owner em orçamentos/projetos, rastreabilidade financeira (15/11)
+- ✅ 021: Cliente nome e nome_formal (15/11)
+- ✅ 022-023: Orçamentos V2 - sistema tipo-específico (16-17/11)
+
+**Ver:** `memory/DATABASE_SCHEMA.md`
+
+---
+
+### 🖥️ Interface Gráfica
+**Status:** ✅ Completo (10 screens funcionais)
+
+**Screens:**
+- Dashboard (cards interativos com navegação)
+- Saldos Pessoais (navegação clicável completa, 10 botões com filtros)
+- Projetos, Orçamentos, Despesas, Boletins
+- Clientes, Fornecedores, Equipamento
+- Relatórios, Info
+
+**Componentes:**
+- DataTableV2 (tabelas com sort, filtros, context menu)
+- DatePickerDropdown e DateRangePickerDropdown (calendários visuais)
+- Forms reutilizáveis com validação
+
+**Framework:** CustomTkinter (tema moderno, cross-platform)
+
+---
+
+### 💰 Lógica de Negócio
+**Status:** ✅ Core completo
+
+**Sistemas Implementados:**
+- ✅ Cálculo saldos pessoais (50/50)
+- ✅ Gestão projetos (tipos, estados, prémios, transições automáticas)
+- ✅ Despesas recorrentes (templates + geração automática)
+- ✅ Boletim Itinerário completo (linhas múltiplas, valores anuais, cálculos auto)
+- ✅ Orçamentos V2 - Lado CLIENTE completo (5 tipos de items)
+
+**Em Desenvolvimento:**
+- 🚧 Orçamentos V2 - Lado EMPRESA (5 dialogs a implementar)
+
+**Ver:** `memory/BUSINESS_LOGIC.md` (33KB, 5 secções)
+
+---
+
+### 📦 Sistema de Importação
+**Status:** ✅ Completo  
+**Última Importação:** 15/11/2025
+
+**Features:**
+- Modo incremental (skip registos existentes)
+- Flags: `--dry-run`, `--excel PATH`, `--clear-all`
+- Matching inteligente por número (#C001, #P001)
+- Estatísticas detalhadas (NEW/SKIP/UPDATED/ERROR)
+
+**Script:** `scripts/import_from_excel.py`
+
+---
+
+### 🧠 Sistema de Documentação
+**Status:** ✅ Completo e organizado
+
+**Pasta memory/ (13 ficheiros):**
+- CURRENT_STATE.md (este ficheiro)
+- TODO.md (tarefas priorizadas, 34KB)
+- ARCHITECTURE.md (arquitetura, 15KB)
+- DECISIONS.md (ADRs, 30KB)
+- DATABASE_SCHEMA.md (schema completo, reorganizado 17/11)
+- BUSINESS_LOGIC.md (regras negócio, 33KB)
+- FISCAL.md (sistema fiscal, 39KB - planeado)
+- CHANGELOG.md (histórico completo, 53KB)
+- DEV_SETUP.md, GUIA_COMPLETO.md, PLANO_SOCIOS.md
+- ASSET_SYSTEM.md, README.md
+
+**Sistema "Frase-Chave":**
+- Atualização flexível de docs via prompt específico
+- Ver `memory/README.md` e `/SESSION_IMPORT.md`
+
+**Pasta archive/:** Documentação histórica (não poluir memória ativa)
+
+---
+
+## 🚧 Trabalho em Curso
+
+### Sprint Atual: Orçamentos V2 - Lado EMPRESA
+
+**Concluído (17/11/2025):**
+- ✅ 5/5 Dialogs CLIENTE implementados:
+  - ServicoDialog (Commit: 59e4504)
+  - EquipamentoDialog (Commit: 75085bd)
+  - TransporteDialog (Commit: 7baf6d1)
+  - RefeicaoDialog (Commit: 86be721)
+  - OutroDialog (Commit: 48eec23)
+
+**Próximo (A Implementar):**
+- 📋 5 Dialogs EMPRESA:
+  - ServicoEmpresaDialog (com beneficiário)
+  - EquipamentoEmpresaDialog (com beneficiário)
+  - DespesaDialog (espelhamento automático)
+  - ComissaoDialog (% sobre base)
+  - AluguerEquipamentoDialog (equipamento + dias)
+
+**Ver:** `memory/TODO.md` (Secção "🔥 AGORA")
+
+---
+
+### Funcionalidades em Teste
+
+**Boletim Itinerário (Fase 4 - Testes):**
+- [ ] Criar dados de teste (valores ref 2024-2026, templates, boletins)
+- [ ] Validar cálculos automáticos (ajudas + kms)
+- [ ] Testar geração recorrente (duplicados, edge cases)
+- [ ] Edge cases (zeros, projeto apagado, ano sem valores)
+
+**Status:** Implementação completa (Migrations 016-019) ✅ | Aguarda testes locais
+
+---
+
+## 📋 Documentação de Features Planeadas
+
+### 💰 Sistema Fiscal (Alta Prioridade)
+**Documentação:** 📄 `memory/FISCAL.md` (39KB, 9 secções completas)  
+**Status:** 📝 Planeado, aguarda validação TOC  
+**Prioridade:** 🔴 Alta
+
+**Escopo:**
+1. Receitas e Faturação (tabela `receitas`)
+2. IVA Trimestral (periodicidade mensal)
+3. IRS Retido na Fonte (11.5%)
+4. IRC Anual (21%)
+5. Segurança Social (21.4% + 11%)
+6. SAF-T (PT) - Exportação trimestral
+7. Calendário Fiscal completo
+
+**Migration:** 025 (planeada)  
+**Estimativa:** 3-4 semanas após validação  
+**Ver:** `memory/TODO.md` (linha 25), `memory/FISCAL.md`
+
+---
+
+### 👥 Freelancers e Fornecedores (Média Prioridade)
+**Documentação:** 📄 `memory/DATABASE_SCHEMA.md` (secção final)  
+**Status:** 📝 Especificado, aguarda implementação  
+**Prioridade:** 🟡 Média
+
+**Novas tabelas:**
+- `freelancers` (profissionais externos)
+- `freelancer_trabalhos` (histórico)
+- `fornecedor_compras` (histórico)
+
+**Expansões:**
+- `fornecedores` → campos numero, categoria, iban
+- `orcamento_reparticoes` → beneficiarios FREELANCER_[id], FORNECEDOR_[id]
+
+**Migration:** 024 (planeada)  
+**Ver:** `memory/DATABASE_SCHEMA.md` (fim), `memory/BUSINESS_LOGIC.md` (Secção 5)
 
 ---
 
 ## 🐛 Problemas Conhecidos
 
-### Alta Prioridade
-- **Scroll em popups modais propaga para lista de fundo** ⏸️ **POSTPONED**
-  - **Problema:** Ao fazer scroll em qualquer popup modal (edição/criação), a lista por trás também faz scroll
-  - **Comportamento esperado:** Scroll apenas dentro do popup, lista não deve mover
-  - **Requerimento crítico:** Trackpad deve funcionar normalmente no popup
-  - **Tentativas exaustivas (7+ abordagens testadas em 11/11/2025):**
-    1. **Unbind/rebind mousewheel events** - Bloqueou eventos do parent mas desabilitou trackpad no popup
-    2. **Smart detection com winfo_toplevel()** - Tentativa de redirecionar eventos para widget correto, mas lista continuou scrollando
-    3. **Enter/Leave bindings com bind_all/unbind_all** - Trackpad não funcionou no popup
-    4. **Manual scroll redirection com bind_all + "break"** - Quebrou bindings internos do DataTableV2 (TypeError: lambda missing argument)
-    5. **Corrigido com add=True em bind_all** - Resolveu erro do DataTableV2 mas lista continuou scrollando
-    6. **Bind com "break" diretamente no tree** - Lista continuou scrollando
-    7. **bindtags() save/disable/restore** - Desabilitou completamente bindtags do tree durante popup, mas lista continuou scrollando
-  - **Decisão final:** Issue postponed após múltiplas tentativas sem sucesso
-  - **Razão técnica:** Provável limitação do CustomTkinter/Tkinter com eventos de scroll em modal dialogs. CTkScrollableFrame usa canvas interno que pode estar capturando eventos antes do bind_all.
-  - **Ficheiros afetados:** Todos os dialogs modais da aplicação
-    - `ui/screens/projetos.py` (FormularioProjetoDialog)
-    - `ui/screens/despesas.py` (FormularioDespesaDialog)
-    - `ui/screens/boletins.py` (FormularioBoletimDialog)
-    - `ui/screens/clientes.py` (FormularioClienteDialog)
-    - `ui/screens/fornecedores.py` (FormularioFornecedorDialog)
-    - `ui/screens/equipamento.py` (FormularioEquipamentoDialog)
-    - `ui/screens/orcamentos.py` (FormularioOrcamentoDialog)
-  - **Impacto:** Issue de UX menor que não bloqueia funcionalidades críticas
-  - **Próximos passos possíveis:**
-    - Pesquisar soluções específicas na comunidade CustomTkinter
-    - Investigar eventos internos do CTkScrollableFrame
-    - Aguardar updates do framework que possam resolver
-    - Considerar implementação de modal overlay completo (solução complexa)
-  - **Ver:** `memory/TODO.md` linha 20 para mais detalhes técnicos
-
-### Baixa Prioridade
-- Logo SVG contém PNG embutido (não é vetorial verdadeiro)
-  - **Solução:** PNGs mantidos manualmente com alta qualidade
-  - **Estado:** Resolvido com workaround
+### ⚠️ Scroll em Popups Modais (Postponed)
+**Descrição:** Scroll em popup modal propaga para lista de fundo  
+**Impacto:** UX menor, não bloqueia funcionalidades  
+**Status:** Issue postponed após 7+ tentativas sem sucesso (11/11/2025)  
+**Decisão:** Aguardar solução framework ou investigação futura  
+**Ver:** `memory/TODO.md` (linha 20) para histórico técnico completo
 
 ---
 
-## 🏗️ Arquitetura Atual
+### 🟢 Logo SVG Contém PNG (Resolvido)
+**Descrição:** Logo SVG não é vetorial verdadeiro  
+**Solução:** PNGs mantidos manualmente com alta qualidade (71KB, 156KB)  
+**Status:** ✅ Resolvido com workaround
 
-```
+---
+
+## 🏗️ Arquitetura
+
 agora-contabilidade/
 ├── main.py                 # Entry point
-├── database/              # SQLAlchemy models + migrations
+├── database/              
+│   ├── models/            # SQLAlchemy models (13 tabelas)
+│   └── migrations/        # Migration scripts (001-023)
 ├── logic/                 # Business logic (managers)
 ├── ui/
 │   ├── screens/          # 10 screens principais
-│   └── components/       # Componentes reutilizáveis
-├── assets/               # Recursos (ícones Base64)
+│   └── components/       # DataTableV2, DatePickers, Forms
+├── scripts/              # Importação, migrations, utilidades
+├── assets/               # Ícones Base64
 ├── media/                # Logos PNG
-└── memory/               # 🧠 Esta pasta (documentação dev)
-```
+└── memory/               # 📚 Documentação desenvolvimento (13 ficheiros)
+
+**Padrão:** Manager → Model → Screen (separação clara de concerns)
 
 ---
 
-## 💡 Decisões Técnicas Importantes
+## 🔗 Documentação Relacionada
 
-1. **Assets:** PNGs mantidos manualmente (não conversão automática)
-2. **Ícones:** Base64 embutidos no código (distribuição simples)
-3. **DB:** SQLite (simplicidade, backup fácil)
-4. **UI:** CustomTkinter (moderno, cross-platform)
-5. **Lógica:** Managers separados (testabilidade)
+**Leitura obrigatória para novas sessões:**
+1. 📄 **memory/README.md** - Índice sistema memory
+2. 📄 **memory/TODO.md** - Tarefas priorizadas (🔥/🔴/🟡/🟢)
+3. 📄 **memory/ARCHITECTURE.md** - Como funciona (fluxos, padrões)
+4. 📄 **memory/BUSINESS_LOGIC.md** - Regras de negócio detalhadas
+
+**Referência técnica:**
+5. 📄 **memory/DATABASE_SCHEMA.md** - Schema completo (reorganizado 17/11)
+6. 📄 **memory/DECISIONS.md** - ADRs (Architecture Decision Records)
+7. 📄 **memory/CHANGELOG.md** - Histórico completo de alterações
+
+**Features futuras:**
+8. 📄 **memory/FISCAL.md** - Sistema fiscal (39KB, aguarda validação)
+9. 📄 **memory/PLANO_SOCIOS.md** - Planeamento features sócios
+
+**Setup e guias:**
+10. 📄 **memory/DEV_SETUP.md** - Setup ambiente desenvolvimento
+11. 📄 **memory/GUIA_COMPLETO.md** - Guia utilizador final
+12. 📄 **/SESSION_IMPORT.md** (raiz) - Importar contexto entre sessões
 
 ---
 
-## 🎯 Estado Geral: ✅ PRODUÇÃO READY
+## 🎯 Próximos Passos Imediatos
 
-A aplicação está **funcional e completa** para uso em produção.
-Tarefas restantes são melhorias opcionais.
+**Ver TODO.md para lista completa priorizada.**
+
+**🔥 AGORA (Esta/Próxima Sessão):**
+1. Implementar 5 dialogs EMPRESA (Orçamentos V2)
+2. Testar sistema Boletim Itinerário (criar dados teste)
+
+**🔴 Alta Prioridade (Próximas 2 semanas):**
+3. UX/UI Improvements - Orçamentos e Boletins (18 melhorias)
+4. Validar sistema fiscal com TOC
+5. Implementar tabela receitas (Migration 025)
+
+**🟡 Média Prioridade (Próximo mês):**
+6. Sistema Freelancers/Fornecedores (Migration 024)
+7. Testes integração completos
+8. Build Windows (PyInstaller)
+
+---
+
+**Mantido por:** Equipa Agora  
+**Para contexto completo:** Começa sempre por `memory/README.md`
