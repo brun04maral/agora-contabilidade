@@ -115,18 +115,40 @@ archive/
 └─ Referência histórica (não poluir memória ativa)
 
 ====================================================================
-SISTEMA "FRASE-CHAVE" PARA ATUALIZAÇÃO
+SISTEMA DE ATUALIZAÇÃO AUTOMÁTICA
 ====================================================================
 
-Para atualizar documentação de forma consistente, usa prompts específicos:
+📖 Guia completo: memory/HOW_TO_UPDATE.md
 
-"Atualiza [FICHEIRO.md] com [MUDANÇA ESPECÍFICA]. 
-Mantém estrutura existente, adiciona na secção [X], 
-sem remover contexto importante."
+CHAVE MÁGICA (usa no final de sessões com Claude Code):
 
-Exemplo:
-"Atualiza TODO.md removendo tarefa completada 'Implementar OutroDialog' 
-da secção 🔥 AGORA. Mantém estrutura e prioridades."
+┌────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  "Atualiza memory/. Segue HOW_TO_UPDATE.md."                  │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+
+O Claude Code analisa automaticamente:
+- Commits da sessão
+- Features implementadas  
+- Bugs corrigidos
+- Alterações em BD/arquitetura
+
+E atualiza os ficheiros corretos:
+- CHANGELOG.md (histórico completo)
+- TODO.md (move tasks)
+- CURRENT_STATE.md (estado atual)
+- Outros conforme necessário
+
+VARIAÇÕES ACEITES:
+- "Atualiza memory/. Segue HOW_TO_UPDATE.md."
+- "Sync memory/. Segue HOW_TO_UPDATE.md."
+
+Ver HOW_TO_UPDATE.md para:
+- Workflow completo do CC
+- Mapa de responsabilidades (Single Source of Truth)
+- Exemplos detalhados
+- Regras e validações
 
 ====================================================================
 IMPORTAÇÃO DE CONTEXTO ENTRE SESSÕES
