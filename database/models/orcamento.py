@@ -37,6 +37,9 @@ class Orcamento(Base):
     # Status do orçamento
     status = Column(String(20), nullable=False, default='rascunho')  # 'rascunho', 'aprovado', 'rejeitado'
 
+    # Link para projeto (quando convertido)
+    projeto_id = Column(Integer, ForeignKey('projetos.id'), nullable=True)
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -45,6 +48,7 @@ class Orcamento(Base):
     secoes = relationship("OrcamentoSecao", back_populates="orcamento", cascade="all, delete-orphan")
     itens = relationship("OrcamentoItem", back_populates="orcamento", cascade="all, delete-orphan")
     reparticoes = relationship("OrcamentoReparticao", back_populates="orcamento", cascade="all, delete-orphan")
+    projeto = relationship("Projeto", back_populates="orcamentos")
 
     def __repr__(self):
         return f"<Orcamento(codigo='{self.codigo}', owner='{self.owner}', cliente='{self.cliente.nome if self.cliente else 'N/A'}')>"
