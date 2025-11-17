@@ -6,9 +6,11 @@ import customtkinter as ctk
 from tkinter import messagebox
 from sqlalchemy.orm import Session
 from logic.orcamentos import OrcamentoManager
+from logic.freelancers import FreelancersManager
+from logic.fornecedores import FornecedoresManager
 from database.models.orcamento import OrcamentoReparticao
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Dict
 
 
 class ComissaoDialog(ctk.CTkToplevel):
@@ -16,7 +18,7 @@ class ComissaoDialog(ctk.CTkToplevel):
     Dialog para adicionar/editar comissão no LADO EMPRESA
 
     Campos:
-    - Beneficiário (dropdown obrigatório: BA, RR, AGORA)
+    - Beneficiário (dropdown obrigatório: BA, RR, AGORA, FREELANCER_[id], FORNECEDOR_[id])
     - Descrição (obrigatório)
     - Percentagem (decimal 0-100, 3 casas decimais, obrigatório)
     - Base de Cálculo (readonly, display only)
@@ -25,6 +27,11 @@ class ComissaoDialog(ctk.CTkToplevel):
     Cálculo:
     total = base_calculo × (percentagem / 100)
     Suporta 3 casas decimais (ex: 5.125%)
+
+    Beneficiários:
+    - Sócios: BA, RR, AGORA
+    - Freelancers: FREELANCER_{id} (apenas ativos)
+    - Fornecedores: FORNECEDOR_{id} (apenas ativos)
     """
 
     def __init__(
@@ -39,10 +46,16 @@ class ComissaoDialog(ctk.CTkToplevel):
 
         self.db_session = db_session
         self.manager = OrcamentoManager(db_session)
+        self.freelancers_manager = FreelancersManager(db_session)
+        self.fornecedores_manager = FornecedoresManager(db_session)
         self.orcamento_id = orcamento_id
         self.base_calculo = base_calculo  # Base para cálculo da comissão
         self.item_id = item_id
         self.success = False
+
+        # Mapeamento beneficiários: {id: display_name}
+        self.beneficiarios_map: Dict[str, str] = {}
+        self._carregar_beneficiarios()
 
         # Configurar janela
         self.title("Adicionar Comissão" if not item_id else "Editar Comissão")
@@ -62,6 +75,31 @@ class ComissaoDialog(ctk.CTkToplevel):
 
         # Calcular total inicial
         self.atualizar_total()
+
+    def _carregar_beneficiarios(self):
+        """Carrega beneficiários de múltiplas fontes"""
+        # Sócios fixos
+        self.beneficiarios_map["BA"] = "BA - Bruno Amaral"
+        self.beneficiarios_map["RR"] = "RR - Rafael Ribeiro"
+        self.beneficiarios_map["AGORA"] = "AGORA - Empresa"
+
+        # Freelancers ativos
+        try:
+            freelancers = self.freelancers_manager.listar_ativos()
+            for freelancer in freelancers:
+                key = f"FREELANCER_{freelancer.id}"
+                self.beneficiarios_map[key] = f"{key} - {freelancer.nome}"
+        except:
+            pass  # Tabela pode não existir ainda
+
+        # Fornecedores ativos
+        try:
+            fornecedores = self.fornecedores_manager.listar_ativos()
+            for fornecedor in fornecedores:
+                key = f"FORNECEDOR_{fornecedor.id}"
+                self.beneficiarios_map[key] = f"{key} - {fornecedor.nome}"
+        except:
+            pass  # Tabela pode não existir ainda
 
     def create_widgets(self):
         """Cria widgets do dialog"""
@@ -85,11 +123,14 @@ class ComissaoDialog(ctk.CTkToplevel):
             text_color="#f44336"
         ).pack(anchor="w", pady=(0, 5))
 
+        # Valores do dropdown: display_name (mas guardamos id interno)
+        dropdown_values = list(self.beneficiarios_map.values())
+
         self.beneficiario_var = ctk.StringVar(value="")
         self.beneficiario_dropdown = ctk.CTkOptionMenu(
             main_frame,
             variable=self.beneficiario_var,
-            values=["BA", "RR", "AGORA"],
+            values=dropdown_values if dropdown_values else ["BA - Bruno Amaral", "RR - Rafael Ribeiro", "AGORA - Empresa"],
             height=35
         )
         self.beneficiario_dropdown.pack(fill="x", pady=(0, 15))
@@ -215,7 +256,9 @@ class ComissaoDialog(ctk.CTkToplevel):
 
         # Preencher campos
         if item.beneficiario:
-            self.beneficiario_var.set(item.beneficiario)
+            # Encontrar display name correspondente ao id
+            display_name = self.beneficiarios_map.get(item.beneficiario, item.beneficiario)
+            self.beneficiario_var.set(display_name)
 
         if item.descricao:
             self.descricao_entry.delete(0, "end")
@@ -237,10 +280,35 @@ class ComissaoDialog(ctk.CTkToplevel):
         """Grava a comissão"""
         try:
             # Validar beneficiário (OBRIGATÓRIO)
-            beneficiario = self.beneficiario_var.get()
-            if not beneficiario:
+            beneficiario_display = self.beneficiario_var.get()
+            if not beneficiario_display:
                 messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
                 return
+
+            # Extrair ID do beneficiário (reverse lookup no mapa)
+            beneficiario_id = None
+            for key, value in self.beneficiarios_map.items():
+                if value == beneficiario_display:
+                    beneficiario_id = key
+                    break
+
+            if not beneficiario_id:
+                messagebox.showerror("Erro", "Beneficiário inválido!")
+                return
+
+            # Validar beneficiário (freelancer/fornecedor deve existir e estar ativo)
+            if beneficiario_id.startswith("FREELANCER_"):
+                freelancer_id = int(beneficiario_id.replace("FREELANCER_", ""))
+                freelancer = self.freelancers_manager.buscar_por_id(freelancer_id)
+                if not freelancer or not freelancer.ativo:
+                    messagebox.showerror("Erro", "Freelancer não encontrado ou inativo!")
+                    return
+            elif beneficiario_id.startswith("FORNECEDOR_"):
+                fornecedor_id = int(beneficiario_id.replace("FORNECEDOR_", ""))
+                fornecedor = self.fornecedores_manager.buscar_por_id(fornecedor_id)
+                if not fornecedor:
+                    messagebox.showerror("Erro", "Fornecedor não encontrado!")
+                    return
 
             # Validar descrição
             descricao = self.descricao_entry.get().strip()
@@ -270,13 +338,13 @@ class ComissaoDialog(ctk.CTkToplevel):
                 messagebox.showwarning("Aviso", "Percentagem não pode ser maior que 100%!")
                 return
 
-            # Gravar no banco
+            # Gravar no banco (usar beneficiario_id)
             if self.item_id:
                 # Editar existente
                 sucesso, item, erro = self.manager.atualizar_reparticao(
                     reparticao_id=self.item_id,
                     tipo='comissao',
-                    beneficiario=beneficiario,
+                    beneficiario=beneficiario_id,  # Usar ID (BA, FREELANCER_2, FORNECEDOR_5, etc)
                     descricao=descricao,
                     percentagem=percentagem,
                     base_calculo=self.base_calculo
@@ -289,7 +357,7 @@ class ComissaoDialog(ctk.CTkToplevel):
                 reparticao = OrcamentoReparticao(
                     orcamento_id=self.orcamento_id,
                     tipo='comissao',
-                    beneficiario=beneficiario,
+                    beneficiario=beneficiario_id,  # Usar ID (BA, FREELANCER_2, FORNECEDOR_5, etc)
                     descricao=descricao,
                     percentagem=percentagem,
                     base_calculo=self.base_calculo,
