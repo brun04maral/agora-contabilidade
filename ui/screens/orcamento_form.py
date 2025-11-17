@@ -2244,8 +2244,8 @@ class ServicoDialogEmpresa(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Serviço EMPRESA" if not item_id else "Editar Serviço EMPRESA")
-        self.geometry("500x500")
-        self.geself.resizable(True, True)
+        self.geometry("500x580")
+        self.resizable(True, True)
 
         # Modal
         self.transient(parent)
@@ -2455,7 +2455,8 @@ class EquipamentoDialogEmpresa(ctk.CTkToplevel):
         # Configurar janela
         self.title("Adicionar Equipamento EMPRESA" if not item_id else "Editar Equipamento EMPRESA")
         self.geometry("500x500")
-        self.geself.resizable(True, True)
+        self.resizable(True, True)
+
 
         # Modal
         self.transient(parent)
@@ -2662,7 +2663,8 @@ class ComissaoDialog(ctk.CTkToplevel):
         # Configurar janela
         self.title("Adicionar Comissão" if not item_id else "Editar Comissão")
         self.geometry("450x400")
-        self.geself.resizable(True, True)
+        self.resizable(True, True)
+
 
         # Modal
         self.transient(parent)
