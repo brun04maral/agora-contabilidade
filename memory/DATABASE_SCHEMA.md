@@ -933,4 +933,148 @@ CREATE INDEX idx_receitas_estado ON receitas(estado);
 
 ---
 
-_Última atualização: 15/11/2025_
+---
+
+## 👥 FREELANCERS E FORNECEDORES - Novas Tabelas (Migration 023)
+
+### Tabela: freelancers - Profissionais Externos
+
+Descrição: 
+Freelancers são profissionais externos contratados para projetos específicos (cameramen, editores, designers, etc).
+
+Campos principais:
+- id - INTEGER PRIMARY KEY
+- numero - VARCHAR(20) UNIQUE NOT NULL (ex: #F0001, #F0002)
+- nome - VARCHAR(200) NOT NULL
+- nif - VARCHAR(20) NULL
+- email - VARCHAR(200) NULL
+- telefone - VARCHAR(50) NULL
+- iban - VARCHAR(50) NULL (para pagamentos)
+- morada - TEXT NULL
+- especialidade - VARCHAR(100) NULL (ex: "Cameraman", "Editor Vídeo")
+- notas - TEXT NULL
+- ativo - BOOLEAN DEFAULT 1
+- created_at - TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- updated_at - TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+Índices:
+- idx_freelancers_ativo ON freelancers(ativo)
+- idx_freelancers_nome ON freelancers(nome)
+
+Relações:
+- trabalhos → freelancer_trabalhos (one-to-many)
+- reparticoes → orcamento_reparticoes (via beneficiario='FREELANCER_[id]')
+
+Regras de negócio:
+- Número gerado automaticamente (#F0001, #F0002, etc)
+- Podem estar inativos (não apagados, mantém histórico)
+- IBAN obrigatório para processamento de pagamentos
+
+### Tabela: freelancer_trabalhos - Histórico de Trabalhos
+
+Descrição:
+Registo de trabalhos realizados por freelancers, gerados automaticamente ao aprovar orçamentos.
+
+Campos principais:
+- id - INTEGER PRIMARY KEY
+- freelancer_id - INTEGER NOT NULL (FK CASCADE DELETE)
+- orcamento_id - INTEGER NULL (FK SET NULL)
+- projeto_id - INTEGER NULL (FK SET NULL)
+- descricao - TEXT NOT NULL
+- valor - DECIMAL(10,2) NOT NULL
+- data - DATE NOT NULL
+- status - VARCHAR(20) NOT NULL (a_pagar, pago, cancelado)
+- data_pagamento - DATE NULL
+- nota - TEXT NULL
+- created_at - TIMESTAMP
+- updated_at - TIMESTAMP
+
+Enums:
+StatusTrabalho:
+- a_pagar: Trabalho concluído, aguarda pagamento
+- pago: Freelancer já recebeu
+- cancelado: Orçamento anulado ou trabalho cancelado
+
+Índices:
+- idx_freelancer_trabalhos_freelancer ON freelancer_trabalhos(freelancer_id)
+- idx_freelancer_trabalhos_status ON freelancer_trabalhos(status)
+- idx_freelancer_trabalhos_data ON freelancer_trabalhos(data)
+
+Constraints:
+FOREIGN KEY (freelancer_id) REFERENCES freelancers(id) ON DELETE CASCADE
+FOREIGN KEY (orcamento_id) REFERENCES orcamentos(id) ON DELETE SET NULL
+FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
+
+### Tabela: fornecedores - Empresas Externas (ATUALIZAÇÃO)
+
+NOTA: Tabela já existe mas precisa ser expandida.
+
+Campos a adicionar:
+- numero - VARCHAR(20) UNIQUE (ex: #FN0001, #FN0002)
+- categoria - VARCHAR(50) NULL (ex: "Aluguer Equipamento", "Catering")
+- website - VARCHAR(200) NULL
+- iban - VARCHAR(50) NULL
+
+Campos existentes a manter:
+- id, nome, nif, email, telefone, morada, ativo, estatuto
+
+Índices a adicionar:
+- idx_fornecedores_categoria ON fornecedores(categoria)
+
+Relações:
+- compras → fornecedor_compras (one-to-many)
+- reparticoes → orcamento_reparticoes (via fornecedor_id FK e beneficiario)
+
+### Tabela: fornecedor_compras - Histórico de Compras (NOVA)
+
+Descrição:
+Registo de compras/serviços contratados a fornecedores, gerados ao aprovar orçamentos.
+
+Campos principais:
+- id - INTEGER PRIMARY KEY
+- fornecedor_id - INTEGER NOT NULL (FK CASCADE DELETE)
+- orcamento_id - INTEGER NULL (FK SET NULL)
+- projeto_id - INTEGER NULL (FK SET NULL)
+- descricao - TEXT NOT NULL
+- valor - DECIMAL(10,2) NOT NULL
+- data - DATE NOT NULL
+- status - VARCHAR(20) NOT NULL (a_pagar, pago, cancelado)
+- data_pagamento - DATE NULL
+- nota - TEXT NULL
+- created_at - TIMESTAMP
+- updated_at - TIMESTAMP
+
+Enums:
+StatusCompra:
+- a_pagar: Serviço contratado, aguarda pagamento
+- pago: Fornecedor já recebeu
+- cancelado: Orçamento anulado ou compra cancelada
+
+Índices:
+- idx_fornecedor_compras_fornecedor ON fornecedor_compras(fornecedor_id)
+- idx_fornecedor_compras_status ON fornecedor_compras(status)
+- idx_fornecedor_compras_data ON fornecedor_compras(data)
+
+Constraints:
+FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE CASCADE
+FOREIGN KEY (orcamento_id) REFERENCES orcamentos(id) ON DELETE SET NULL
+FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
+
+### Atualização: orcamento_reparticoes - Suporte Completo
+
+Campo beneficiario - Formatos suportados:
+- BA → Sócio Bruno Amaral
+- RR → Sócio Rafael Rodrigues
+- AGORA → Empresa
+- FREELANCER_123 → Freelancer com id=123
+- FORNECEDOR_456 → Fornecedor com id=456
+
+Validações:
+- Se FREELANCER_[id] → verificar se existe e está ativo
+- Se FORNECEDOR_[id] → verificar se existe e está ativo
+- Alertar se inativo mas permitir gravar
+
+---
+
+
+_Última atualização: 17/11/2025_
