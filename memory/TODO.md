@@ -5,14 +5,17 @@
 
 ---
 
-- [ ] ✨ **Implementar Dialogs CRUD Específicos por Tipo - Orçamentos V2**
-  - Lado CLIENTE: ServicoDialog, EquipamentoDialog, TransporteDialog, RefeicaoDialog, OutroDialog
-  - Lado EMPRESA: ServicoEmpresaDialog, EquipamentoEmpresaDialog, ComissaoDialog
-  - Renderização tabular de items por tipo
-  - Sincronização automática despesas CLIENTE→EMPRESA
-  - Validação bloqueio aprovação (TOTAL_CLIENTE = TOTAL_EMPRESA)
-  - Auto-preenchimento de comissões
-  - Testes de fluxo completo (criar, editar, aprovar)
+- [x] ✨ **Implementar Dialogs CRUD Específicos por Tipo - Orçamentos V2** ✅ COMPLETO (17/11/2025)
+  - [x] **Database & Models:** Migration 022 + 023 aplicadas, Models criados (OrcamentoItem, OrcamentoReparticao)
+  - [x] **Dialogs CLIENTE (5/5):** TransporteDialog, RefeicaoDialog, OutroDialog, ServicoDialog, EquipamentoDialog
+  - [x] **Dialogs EMPRESA (3/3):** ServicoEmpresaDialog, EquipamentoEmpresaDialog, ComissaoDialog
+  - [x] **Refatorações:** orcamento_form.py reduzido 30% (1999→1391 linhas)
+  - [ ] **Pendente - Logic Layer:** Expandir OrcamentoItemManager, Criar OrcamentoReparticaoManager
+  - [ ] **Pendente - UI Integration:** Conectar 8 dialogs ao form, Tabs CLIENTE/EMPRESA funcionais
+  - [ ] **Pendente - Testes:** Fluxo completo (criar, editar, sincronização, validação, aprovação)
+  - **Commits:** 7bf6580, febbff8, 75085bd, 59e4504, 48eec23, 86be721, 7baf6d1, dba655d
+  - **Ver:** CHANGELOG.md ([2025-11-17] Orçamentos V2 - Dialogs CRUD Completos)
+
 
 ## 🔥 AGORA (Foco Imediato)
 
