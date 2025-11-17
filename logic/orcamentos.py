@@ -324,6 +324,61 @@ class OrcamentoManager:
             .order_by(OrcamentoSecao.ordem)\
             .all()
 
+    def atualizar_secao(
+        self,
+        secao_id: int,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoSecao], Optional[str]]:
+        """
+        Atualiza secção existente
+
+        Returns:
+            (sucesso, secao, mensagem_erro)
+        """
+        try:
+            secao = self.db.query(OrcamentoSecao).filter(OrcamentoSecao.id == secao_id).first()
+            if not secao:
+                return False, None, "Secção não encontrada"
+
+            # Atualizar campos
+            for key, value in kwargs.items():
+                if hasattr(secao, key):
+                    setattr(secao, key, value)
+
+            self.db.commit()
+            self.db.refresh(secao)
+
+            return True, secao, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
+    def eliminar_secao(self, secao_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Elimina secção do orçamento (cascade elimina items e subsecções)
+
+        Returns:
+            (sucesso, mensagem_erro)
+        """
+        try:
+            secao = self.db.query(OrcamentoSecao).filter(OrcamentoSecao.id == secao_id).first()
+            if not secao:
+                return False, "Secção não encontrada"
+
+            orcamento_id = secao.orcamento_id
+            self.db.delete(secao)
+            self.db.commit()
+
+            # Recalcular totais do orçamento
+            self.recalcular_totais(orcamento_id)
+
+            return True, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, str(e)
+
     # ==================== Items ====================
 
     def adicionar_item(
@@ -464,6 +519,99 @@ class OrcamentoManager:
 
         return query.order_by(OrcamentoItem.ordem).all()
 
+    # ==================== Items V2 (Tipo-específicos) ====================
+
+    def adicionar_item_v2(
+        self,
+        orcamento_id: int,
+        secao_id: int,
+        tipo: str,
+        descricao: str,
+        ordem: int = 0,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoItem], Optional[str]]:
+        """
+        Adiciona novo item V2 ao orçamento (suporta todos os tipos)
+
+        Args:
+            orcamento_id: ID do orçamento
+            secao_id: ID da secção
+            tipo: Tipo do item ('servico', 'equipamento', 'transporte', 'refeicao', 'outro')
+            descricao: Descrição do item
+            ordem: Ordem de apresentação
+            **kwargs: Campos específicos por tipo
+
+        Returns:
+            (sucesso, item, mensagem_erro)
+        """
+        try:
+            # Criar item com campos base
+            item = OrcamentoItem(
+                orcamento_id=orcamento_id,
+                secao_id=secao_id,
+                tipo=tipo,
+                descricao=descricao,
+                ordem=ordem,
+                total=Decimal('0')  # Será calculado
+            )
+
+            # Adicionar campos específicos por tipo
+            for key, value in kwargs.items():
+                if hasattr(item, key):
+                    setattr(item, key, value)
+
+            # Calcular total usando método do modelo
+            item.total = item.calcular_total()
+
+            self.db.add(item)
+            self.db.commit()
+            self.db.refresh(item)
+
+            # Recalcular totais do orçamento
+            self.recalcular_totais(orcamento_id)
+
+            return True, item, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
+    def atualizar_item_v2(
+        self,
+        item_id: int,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoItem], Optional[str]]:
+        """
+        Atualiza item V2 existente e recalcula o total
+
+        Returns:
+            (sucesso, item, mensagem_erro)
+        """
+        try:
+            item = self.db.query(OrcamentoItem).filter(OrcamentoItem.id == item_id).first()
+            if not item:
+                return False, None, "Item não encontrado"
+
+            # Atualizar campos fornecidos
+            for key, value in kwargs.items():
+                if hasattr(item, key):
+                    setattr(item, key, value)
+
+            # Recalcular total usando método do modelo
+            item.total = item.calcular_total()
+
+            self.db.commit()
+            self.db.refresh(item)
+
+            # Recalcular totais do orçamento
+            self.recalcular_totais(item.orcamento_id)
+
+            return True, item, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
     # ==================== Cálculos ====================
 
     def recalcular_totais(self, orcamento_id: int) -> bool:
@@ -575,6 +723,70 @@ class OrcamentoManager:
             .filter(OrcamentoReparticao.orcamento_id == orcamento_id)\
             .order_by(OrcamentoReparticao.ordem)\
             .all()
+
+    def atualizar_reparticao(
+        self,
+        reparticao_id: int,
+        **kwargs
+    ) -> Tuple[bool, Optional[OrcamentoReparticao], Optional[str]]:
+        """
+        Atualiza repartição existente
+
+        Args:
+            reparticao_id: ID da repartição
+            **kwargs: Campos a atualizar (entidade, valor, percentagem, ordem)
+
+        Returns:
+            (sucesso, reparticao, mensagem_erro)
+        """
+        try:
+            reparticao = self.db.query(OrcamentoReparticao).filter(
+                OrcamentoReparticao.id == reparticao_id
+            ).first()
+
+            if not reparticao:
+                return False, None, "Repartição não encontrada"
+
+            # Atualizar campos fornecidos
+            for key, value in kwargs.items():
+                if hasattr(reparticao, key):
+                    setattr(reparticao, key, value)
+
+            self.db.commit()
+            self.db.refresh(reparticao)
+
+            return True, reparticao, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, str(e)
+
+    def eliminar_reparticao(self, reparticao_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Elimina repartição do orçamento
+
+        Args:
+            reparticao_id: ID da repartição
+
+        Returns:
+            (sucesso, mensagem_erro)
+        """
+        try:
+            reparticao = self.db.query(OrcamentoReparticao).filter(
+                OrcamentoReparticao.id == reparticao_id
+            ).first()
+
+            if not reparticao:
+                return False, "Repartição não encontrada"
+
+            self.db.delete(reparticao)
+            self.db.commit()
+
+            return True, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, str(e)
 
     # ==================== Utilidades ====================
 
@@ -688,6 +900,64 @@ class OrcamentoManager:
     def obter_status(self) -> List[str]:
         """Obtém lista de status possíveis"""
         return ["Todos", "rascunho", "enviado", "aprovado", "rejeitado"]
+
+    def aprovar_orcamento(self, orcamento_id: int) -> Tuple[bool, Optional[Orcamento], Optional[str]]:
+        """
+        Aprova um orçamento após validações completas
+
+        Validações:
+        1. Orçamento existe
+        2. Tem pelo menos 1 item CLIENTE
+        3. Tem pelo menos 1 item EMPRESA
+        4. TOTAL_CLIENTE == TOTAL_EMPRESA (tolerância 0.01€)
+
+        Args:
+            orcamento_id: ID do orçamento a aprovar
+
+        Returns:
+            (sucesso, orcamento_atualizado, mensagem_erro)
+        """
+        try:
+            # 1. Validar que orçamento existe
+            orcamento = self.obter_orcamento(orcamento_id)
+            if not orcamento:
+                return False, None, "Orçamento não encontrado"
+
+            # 2. Validar que tem items CLIENTE (mínimo 1)
+            itens_cliente = self.obter_itens(orcamento_id)
+            if not itens_cliente or len(itens_cliente) == 0:
+                return False, None, "Orçamento deve ter pelo menos 1 item CLIENTE"
+
+            # 3. Validar que tem items EMPRESA (mínimo 1)
+            itens_empresa = self.obter_reparticoes(orcamento_id)
+            if not itens_empresa or len(itens_empresa) == 0:
+                return False, None, "Orçamento deve ter pelo menos 1 item EMPRESA"
+
+            # 4. Validar TOTAL_CLIENTE == TOTAL_EMPRESA (tolerância 0.01€)
+            total_cliente = sum(item.total for item in itens_cliente)
+            total_empresa = sum(item.total for item in itens_empresa)
+
+            diferenca = abs(total_cliente - total_empresa)
+            tolerancia = Decimal('0.01')
+
+            if diferenca > tolerancia:
+                return False, None, (
+                    f"Totais não coincidem: CLIENTE €{float(total_cliente):.2f} vs "
+                    f"EMPRESA €{float(total_empresa):.2f} (diferença: €{float(diferenca):.2f})"
+                )
+
+            # 5. Atualizar status = "aprovado"
+            orcamento.status = 'aprovado'
+            orcamento.updated_at = datetime.now()
+
+            self.db.commit()
+            self.db.refresh(orcamento)
+
+            return True, orcamento, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, None, f"Erro ao aprovar orçamento: {str(e)}"
 
     def estatisticas(self) -> dict:
         """

@@ -1,12 +1,14 @@
 # 🗄️ Database Schema - Agora Contabilidade
 
-Visão geral da estrutura da base de dados SQLite.
+**Última atualização:** 2025-11-17 09:10 WET  
+**Branch:** claude/sync-latest-updates-012SDyaYGLD1zvqARajAPDPC
+
+Visão geral da estrutura da base de dados SQLite do sistema Agora Contabilidade.
 
 ---
 
 ## 📊 Diagrama de Entidades (Resumo)
 
-```
 ┌─────────────┐
 │   Socio     │ (2 fixos: BA, RR)
 └──────┬──────┘
@@ -21,111 +23,67 @@ Visão geral da estrutura da base de dados SQLite.
       │           │             │           │
       ▼           ▼             ▼           ▼
  ┌─────────┐ ┌──────────────────┐ ┌──────────────┐ ┌──────────┐
- │ Cliente │ │DespesaTemplate   │ │BoletimLinhas │ │OrcLinhas │
- └─────────┘ │(Recorrentes)     │ │(Deslocações) │ └──────────┘
-             └──────────────────┘ └──────────────┘
+ │ Cliente │ │DespesaTemplate   │ │BoletimLinhas │ │OrcItens  │
+ └─────────┘ │(Recorrentes)     │ │(Deslocações) │ │OrcRepat  │
+             └──────────────────┘ └──────────────┘ └──────────┘
 
  ┌────────────┐  ┌─────────────────────┐  ┌───────────────────┐
- │Fornecedor  │  │BoletimTemplates     │  │ValorRefAnual      │
- │            │  │(Geração Recorrente) │  │(Config por Ano)   │
+ │Fornecedor  │  │ValorRefAnual        │  │(BoletimTemplates) │
+ │            │  │(Config por Ano)     │  │    [LEGACY]       │
  └────────────┘  └─────────────────────┘  └───────────────────┘
-```
 
 ---
 
-## 📋 Tabelas
+## 📋 Tabelas Implementadas
 
-### `socios` - Sócios da Empresa
+### 🔹 Core - Entidades Fundamentais
+
+#### `socios` - Sócios da Empresa
 
 **Campos principais:**
 - `id` - PK
-- `codigo` - "BA" ou "RR"
+- `codigo` - "BA" ou "RR" (UNIQUE)
 - `nome` - Nome completo
 - `nif` - Número fiscal
 - `iban` - Conta bancária
 - `percentagem` - % da sociedade (50.0)
 
-**Enums:**
-- Nenhum
-
-**Relações:**
-- `projetos` → Lista de projetos
-- `despesas` → Lista de despesas
-- `boletins` → Lista de boletins
-
 **Constantes:**
-```python
 Socio.BRUNO = "BA"
 Socio.RAFAEL = "RR"
-```
-
----
-
-### `projetos` - Projetos de Clientes
-
-**Campos principais:**
-- `id` - PK
-- `codigo` - "P001", "P002", etc.
-- `nome` - Nome do projeto
-- `cliente_id` - FK → clientes
-- `socio_responsavel` - FK → socios
-- `tipo` - ENUM (frontend/backend/fullstack)
-- `estado` - ENUM (ativo/concluido/cancelado)
-- `data_inicio` - Date
-- `data_fim` - Date (opcional)
-- `valor_frontend` - Decimal
-- `valor_backend` - Decimal
-- `valor_total` - Decimal
-- `premio_bruno` - Decimal
-- `premio_rafael` - Decimal
-- `valor_pago` - Decimal
-
-**Enums:**
-```python
-TipoProjeto:
-  - FRONTEND
-  - BACKEND
-  - FULLSTACK
-
-EstadoProjeto:
-  - ATIVO
-  - CONCLUIDO
-  - CANCELADO
-```
 
 **Relações:**
-- `cliente` → Cliente (many-to-one)
-- `socio` → Socio (many-to-one)
-
-**Regras de negócio:**
-- `valor_total` = `valor_frontend` + `valor_backend`
-- Prémios individuais por sócio
-- Valor pago ≤ valor total
+- `projetos` → Lista de projetos (one-to-many)
+- `despesas` → Lista de despesas (one-to-many)
+- `boletins` → Lista de boletins (one-to-many)
 
 ---
 
-### `clientes` - Clientes da Agora Media
+#### `clientes` - Clientes da Agora Media
 
 **Campos principais:**
 - `id` - PK
-- `numero` - String única (#C0001, #C0002, etc.)
-- `nome` - **VARCHAR(120)** - Nome curto para listagens e referências rápidas
-- `nome_formal` - **VARCHAR(255)** - Nome completo/formal da empresa (usado em documentos oficiais)
-- `nif` - NIF (opcional)
-- `pais` - País (default: "Portugal")
-- `morada` - Morada completa (opcional, TEXT)
-- `contacto` - Telefone/contacto (opcional)
-- `email` - Email (opcional)
-- `angariacao` - Informação sobre origem/angariação (opcional)
-- `nota` - Notas adicionais (opcional, TEXT)
-- `created_at` - Timestamp de criação
-- `updated_at` - Timestamp de última atualização
+- `numero` - VARCHAR(20) UNIQUE (#C0001, #C0002, etc.)
+- `nome` - **VARCHAR(120)** - Nome curto para listagens
+- `nome_formal` - **VARCHAR(255)** - Nome completo/legal para documentos
+- `nif` - VARCHAR(20) (nullable)
+- `pais` - VARCHAR(50) DEFAULT "Portugal"
+- `morada` - TEXT (nullable)
+- `contacto` - VARCHAR(50) (nullable)
+- `email` - VARCHAR(100) (nullable)
+- `angariacao` - TEXT (nullable)
+- `nota` - TEXT (nullable)
+- `created_at` / `updated_at` - TIMESTAMP
 
 **Campos de Nome (desde Migration 021):**
-- **nome:** Nome curto usado em listagens, tabelas, dropdowns (ex: "Farmácia do Povo")
-- **nome_formal:** Nome completo/legal usado em documentos formais e PDFs (ex: "Farmácia Popular do Centro, Lda.")
-- **Comportamento:** Se nome_formal não fornecido, usa automaticamente o valor de nome
-- **Pesquisa:** Ambos os campos são pesquisáveis (ILIKE case-insensitive)
+- **nome:** Nome curto para listagens/tabelas/dropdowns
+- **nome_formal:** Nome legal para PDFs/contratos/documentos oficiais
+- Se `nome_formal` vazio → usa automaticamente `nome`
+- Ambos pesquisáveis (case-insensitive)
+
+**Exemplos:**
+- nome: "Farmácia do Povo"
+- nome_formal: "Farmácia Popular do Centro, Lda."
 
 **Relações:**
 - `projetos` → Lista de projetos (one-to-many)
@@ -133,347 +91,430 @@ EstadoProjeto:
 
 ---
 
-### `despesas` - Despesas da Empresa
+#### `fornecedores` - Fornecedores/Credores
 
 **Campos principais:**
 - `id` - PK
-- `numero` - String única (#D000001, #D000002, etc.)
-- `tipo` - ENUM (fixa_mensal, pessoal_bruno, pessoal_rafael, equipamento, projeto)
-- `credor_id` - FK → fornecedores (opcional)
-- `projeto_id` - FK → projetos (opcional)
-- `descricao` - Text
-- `valor_sem_iva` - Decimal
-- `valor_com_iva` - Decimal
-- `data` - Date
-- `estado` - ENUM (pendente, vencido, pago)
-- `data_pagamento` - Date (opcional)
-- `nota` - Text (opcional)
-- `despesa_template_id` - FK → despesa_templates (se foi gerada de template)
+- `nome` - VARCHAR(200)
+- `nif` - VARCHAR(20) (nullable)
+- `email` - VARCHAR(100) (nullable)
+- `telefone` - VARCHAR(50) (nullable)
+- `morada` - TEXT (nullable)
+- `website` - VARCHAR(200) (nullable) - Desde Migration 012
+- `ativo` - BOOLEAN
+- `estatuto` - ENUM
 
 **Enums:**
-```python
+EstatutoFornecedor:
+  - CREDOR
+  - FORNECEDOR
+
+**Relações:**
+- `despesas` → Via credor_id (one-to-many)
+
+---
+
+### 🔹 Projetos e Orçamentos
+
+#### `projetos` - Projetos de Clientes
+
+**Campos principais:**
+- `id` - PK
+- `codigo` - VARCHAR(20) UNIQUE (#P0001, etc.)
+- `nome` - VARCHAR(200)
+- `owner` - VARCHAR(2) NOT NULL - Desde Migration 020
+- `cliente_id` - FK → clientes
+- `socio_responsavel` - FK → socios
+- `tipo` - ENUM
+- `estado` - ENUM - Atualizado Migration 020
+- `data_inicio` / `data_fim` - DATE
+- `data_pagamento` - DATE (nullable) - Desde Migration 020
+- `valor_frontend` / `valor_backend` / `valor_total` - DECIMAL(10,2)
+- `premio_bruno` / `premio_rafael` - DECIMAL(10,2)
+- `valor_pago` - DECIMAL(10,2)
+
+**Rastreabilidade Financeira (desde Migration 020):**
+- `valor_empresa` - DECIMAL(10,2) - Parcela empresa
+- `valor_fornecedores` - DECIMAL(10,2) - Pago a fornecedores
+- `valor_equipamento` - DECIMAL(10,2) - Rendimento equipamento
+- `valor_despesas` - DECIMAL(10,2) - Despesas do projeto
+
+**Enums:**
+TipoProjeto:
+  - FRONTEND
+  - BACKEND
+  - FULLSTACK
+
+EstadoProjeto:
+  - ATIVO       # Em curso
+  - FINALIZADO  # Concluído, aguarda pagamento
+  - PAGO        # Cliente pagou
+  - ANULADO     # Cancelado
+
+**Regras:**
+- `valor_total` = `valor_frontend` + `valor_backend`
+- Transição ATIVO → FINALIZADO: automática quando `data_fim < hoje`
+- Transição FINALIZADO → PAGO: manual (distribui prémios)
+
+**Relações:**
+- `cliente` → Cliente (many-to-one)
+- `socio` → Socio (many-to-one)
+- `despesas` → Lista despesas (one-to-many via projeto_id)
+- `orcamento` → Orçamento origem (one-to-one, nullable)
+
+---
+
+#### `orcamentos` - Orçamentos para Clientes
+
+**Campos principais:**
+- `id` - PK
+- `codigo` - VARCHAR(20) UNIQUE (#O000001, etc.)
+- `owner` - VARCHAR(2) NOT NULL - Desde Migration 022
+- `cliente_id` - INTEGER NOT NULL (FK)
+- `status` - VARCHAR(20)
+- `data_criacao` - DATE
+- `data_evento` - TEXT (período formatado)
+- `local_evento` - TEXT
+- `valor_total` - DECIMAL(10,2)
+- `created_at` / `updated_at` - TIMESTAMP
+
+**Enums:**
+StatusOrcamento:
+  - rascunho  # Editável, sem validação
+  - aprovado  # Validado (totais coincidem), readonly
+  - rejeitado # Anulado
+
+**Regras:**
+- Ao aprovar: totais CLIENTE = EMPRESA (validação obrigatória)
+- Aprovação cria projeto automaticamente
+
+**Relações:**
+- `cliente` → Cliente (many-to-one)
+- `itens` → orcamento_itens (one-to-many, CASCADE DELETE)
+- `reparticoes` → orcamento_reparticoes (one-to-many, CASCADE DELETE)
+
+---
+
+#### `orcamento_itens` - Items do Lado CLIENTE (Migration 022-023)
+
+**Estrutura:** Sistema tipo-específico com campos condicionais
+
+**Campos comuns:**
+- `id` - PK
+- `orcamento_id` - INTEGER NOT NULL (FK CASCADE DELETE)
+- `secao_id` - INTEGER NOT NULL (FK CASCADE DELETE)
+- `tipo` - VARCHAR(20) NOT NULL
+- `descricao` - TEXT NOT NULL
+- `total` - DECIMAL(10,2) NOT NULL
+- `ordem` - INTEGER DEFAULT 0
+
+**Campos específicos por tipo:**
+
+**SERVICO / EQUIPAMENTO:**
+- `quantidade` - INTEGER (nullable)
+- `dias` - INTEGER (nullable)
+- `preco_unitario` - DECIMAL(10,2) (nullable)
+- `desconto` - DECIMAL(5,2) (nullable, percentagem 0-100)
+- `equipamento_id` - INTEGER FK (nullable)
+- **Cálculo:** (qtd × dias × preço) × (1 - desconto/100)
+
+**TRANSPORTE:**
+- `kms` - DECIMAL(10,2) (nullable)
+- `valor_por_km` - DECIMAL(10,2) (nullable)
+- **Cálculo:** kms × valor_km
+
+**REFEICAO:**
+- `num_refeicoes` - INTEGER (nullable)
+- `valor_por_refeicao` - DECIMAL(10,2) (nullable)
+- **Cálculo:** num × valor
+
+**OUTRO:**
+- `valor_fixo` - DECIMAL(10,2) (nullable)
+- **Cálculo:** valor_fixo
+
+**Tipos suportados:**
+- `servico` - Serviço manual
+- `equipamento` - Equipamento
+- `transporte` - Despesa transporte
+- `refeicao` - Despesa refeição
+- `outro` - Valor fixo
+
+**Índices:**
+CREATE INDEX idx_orcamento_itens_orcamento ON orcamento_itens(orcamento_id);
+CREATE INDEX idx_orcamento_itens_tipo ON orcamento_itens(tipo);
+
+---
+
+#### `orcamento_reparticoes` - Repartições Lado EMPRESA (Migration 022-023)
+
+**Estrutura:** Sistema de beneficiários com tipos múltiplos
+
+**Campos comuns:**
+- `id` - PK
+- `orcamento_id` - INTEGER NOT NULL (FK CASCADE DELETE)
+- `tipo` - VARCHAR(20) NOT NULL
+- `beneficiario` - VARCHAR(50) NOT NULL
+- `descricao` - TEXT
+- `valor` - DECIMAL(10,2) NOT NULL
+- `ordem` - INTEGER DEFAULT 0
+
+**Beneficiários suportados:**
+- `BA` - Sócio Bruno Amaral
+- `RR` - Sócio Rafael Rodrigues
+- `AGORA` - Empresa
+- `FREELANCER_[id]` - Freelancer externo (futura Migration 025)
+- `FORNECEDOR_[id]` - Fornecedor externo (futura Migration 025)
+
+**Campos específicos por tipo:**
+
+**SERVICO / EQUIPAMENTO:**
+- `quantidade`, `dias`, `valor_unitario` - INTEGER/DECIMAL (nullable)
+- `equipamento_id` - FK (nullable)
+- `fornecedor_id` - FK (nullable, desde Migration 020)
+
+**COMISSAO:**
+- `percentagem` - DECIMAL(6,3) (3 decimais, ex: 5.125%)
+- `base_calculo` - DECIMAL(10,2)
+- **Cálculo:** base × (percentagem / 100)
+
+**DESPESA (espelhadas do CLIENTE):**
+- `item_cliente_id` - INTEGER (FK CASCADE DELETE)
+- `kms`, `valor_por_km` - DECIMAL (nullable)
+- `num_refeicoes`, `valor_por_refeicao` - INTEGER/DECIMAL (nullable)
+- `valor_fixo` - DECIMAL (nullable)
+
+**Tipos:**
+- `servico` - Serviço com beneficiário
+- `equipamento` - Equipamento com beneficiário
+- `despesa` - Despesa espelhada (readonly)
+- `comissao` - Comissão (venda/empresa)
+
+**Índices:**
+CREATE INDEX idx_orcamento_reparticoes_orcamento ON orcamento_reparticoes(orcamento_id);
+CREATE INDEX idx_orcamento_reparticoes_beneficiario ON orcamento_reparticoes(beneficiario);
+CREATE INDEX idx_orcamento_reparticoes_item_cliente ON orcamento_reparticoes(item_cliente_id);
+
+---
+
+### 🔹 Despesas
+
+#### `despesas` - Despesas da Empresa
+
+**Campos principais:**
+- `id` - PK
+- `numero` - VARCHAR(20) UNIQUE (#D000001, etc.)
+- `tipo` - ENUM
+- `credor_id` - FK → fornecedores (nullable)
+- `projeto_id` - FK → projetos (nullable)
+- `descricao` - TEXT
+- `valor_sem_iva` - DECIMAL(10,2)
+- `valor_com_iva` - DECIMAL(10,2)
+- `data` - DATE
+- `estado` - ENUM
+- `data_pagamento` - DATE (nullable)
+- `nota` - TEXT (nullable)
+- `despesa_template_id` - FK → despesa_templates (nullable)
+
+**Enums:**
 TipoDespesa:
-  - FIXA_MENSAL      # Despesas fixas mensais (ex: software, servidor)
-  - PESSOAL_BRUNO    # Despesas pessoais de Bruno
-  - PESSOAL_RAFAEL   # Despesas pessoais de Rafael
-  - EQUIPAMENTO      # Equipamento da empresa
-  - PROJETO          # Despesas específicas de projeto
+  - FIXA_MENSAL     # Fixas mensais (divididas 50/50)
+  - PESSOAL_BRUNO   # Despesas pessoais BA (100% BA)
+  - PESSOAL_RAFAEL  # Despesas pessoais RR (100% RR)
+  - EQUIPAMENTO     # Equipamento empresa (50/50)
+  - PROJETO         # Despesas projeto (50/50)
 
 EstadoDespesa:
-  - PENDENTE         # Por pagar
-  - VENCIDO          # Atrasada
-  - PAGO             # Paga
-```
+  - PENDENTE  # Por pagar
+  - VENCIDO   # Atrasada
+  - PAGO      # Paga
+
+**Regras de cálculo saldos:**
+- FIXA_MENSAL, EQUIPAMENTO, PROJETO → cada sócio paga 50%
+- PESSOAL_BA → 100% Bruno
+- PESSOAL_RAFAEL → 100% Rafael
+
+**Indicador visual:**
+- Tipo mostra "*" quando gerada de template (ex: "Fixa Mensal*")
 
 **Relações:**
-- `credor` → Fornecedor (many-to-one, opcional)
-- `projeto` → Projeto (many-to-one, opcional)
-- `despesa_template` → DespesaTemplate (many-to-one, opcional - se gerada de template)
-
-**Regras de negócio:**
-- **Fixas Mensais:** Divididas 50/50 no cálculo de saldos
-- **Pessoais:** Cada sócio paga as suas (não divididas)
-- **Equipamento e Projeto:** Divididas 50/50
-- **Templates:** Despesas podem ser geradas automaticamente de templates (ver despesa_templates)
-- **Indicador visual:** Tipo mostra "*" quando gerada de template (ex: "Fixa Mensal*")
+- `credor` → Fornecedor (many-to-one)
+- `projeto` → Projeto (many-to-one)
+- `template` → DespesaTemplate origem (many-to-one)
 
 ---
 
-### `despesa_templates` - Templates de Despesas Recorrentes (NOVO 13/11/2025)
+#### `despesa_templates` - Templates Recorrentes (Migration 014)
 
-**Descrição:** Templates para geração automática de despesas fixas mensais. NÃO são despesas reais, são moldes.
+**Descrição:** Templates para geração automática de despesas fixas mensais. **NÃO são despesas reais.**
 
 **Campos principais:**
 - `id` - PK
-- `numero` - String única (#TD000001, #TD000002, etc.)
-- `tipo` - ENUM (normalmente FIXA_MENSAL)
-- `credor_id` - FK → fornecedores (opcional)
-- `projeto_id` - FK → projetos (opcional)
-- `descricao` - Text
-- `valor_sem_iva` - Decimal
-- `valor_com_iva` - Decimal
-- `dia_mes` - Integer (1-31) - Dia do mês para gerar despesa
-- `nota` - Text (opcional)
+- `numero` - VARCHAR(20) UNIQUE (#TD000001, etc.)
+- `tipo` - ENUM (usa TipoDespesa)
+- `credor_id` - FK → fornecedores (nullable)
+- `projeto_id` - FK → projetos (nullable)
+- `descricao` - TEXT
+- `valor_sem_iva` - DECIMAL(10,2)
+- `valor_com_iva` - DECIMAL(10,2)
+- `dia_mes` - INTEGER (1-31)
+- `nota` - TEXT (nullable)
 
-**Enums:**
-- Usa TipoDespesa (mesmo enum de despesas)
+**Regras:**
+- **NÃO entram em cálculos financeiros**
+- Geram despesas via botão "🔁 Gerar Recorrentes"
+- Se dia não existe no mês (ex: 31/Feb) → usa último dia
+- Despesas geradas mantêm FK para template (rastreabilidade)
+
+**UI:** Screen dedicado (modal 1000x700) via botão "📝 Editar Recorrentes" em Despesas
 
 **Relações:**
-- `credor` → Fornecedor (many-to-one, opcional)
-- `projeto` → Projeto (many-to-one, opcional)
-- `despesas_geradas` → Despesas (one-to-many) - Despesas geradas deste template
-
-**Regras de negócio:**
-- **NÃO entram em cálculos financeiros** (não são despesas reais)
-- Geram despesas automaticamente via botão "🔁 Gerar Recorrentes"
-- **dia_mes:** 1-31 - Se dia não existir no mês (ex: 31 Feb), usa último dia do mês
-- Templates podem ser editados/deletados sem afetar despesas já geradas
-- Despesas mantêm FK para template de origem (rastreabilidade)
-
-**Acesso UI:**
-- Screen dedicado via botão "📝 Editar Recorrentes" em Despesas
-- Modal 1000x700px com CRUD completo
+- `credor` → Fornecedor (many-to-one)
+- `projeto` → Projeto (many-to-one)
+- `despesas_geradas` → Despesas (one-to-many)
 
 ---
 
-### `valores_referencia_anual` - Valores de Referência por Ano
+### 🔹 Boletins Itinerário
+
+#### `boletins` - Boletins de Ajudas de Custo (Migrations 016-019)
 
 **Campos principais:**
 - `id` - PK
-- `ano` - Integer (unique, indexed) - Ex: 2025, 2026
-- `val_dia_nacional` - Decimal - Ex: 72.65€
-- `val_dia_estrangeiro` - Decimal - Ex: 167.07€
-- `val_km` - Decimal - Ex: 0.40€
-- `created_at` - DateTime
-- `updated_at` - DateTime
-
-**Relações:**
-- Nenhuma (configuração global)
-
-**Regras de negócio:**
-- Um registo por ano
-- Editável via configurações (botão escondido)
-- Novos boletins copiam valores do ano vigente
-- Se ano não existe, usa defaults hard-coded
-
-**Acesso UI:**
-- Screen `valores_referencia.py` (configurações)
-- Botão "escondido" (pouco usado)
-
----
-
-### `boletins` - Boletins Itinerário (Ajudas de Custo)
-
-**Campos principais:**
-- `id` - PK
-- `numero` - String única (#B0001, #B0002, etc.)
+- `numero` - VARCHAR(20) UNIQUE (#B0001, etc.)
 - `socio` - ENUM (BRUNO/RAFAEL)
-- `mes` - Integer (1-12, indexed)
-- `ano` - Integer (ex: 2025, indexed)
-- `data_emissao` - Date (indexed)
-- `data_pagamento` - Date (nullable)
-- `estado` - ENUM (PENDENTE/PAGO, indexed)
+- `mes` - INTEGER (1-12, indexed)
+- `ano` - INTEGER (indexed)
+- `data_emissao` - DATE (indexed)
+- `data_pagamento` - DATE (nullable)
+- `estado` - ENUM (indexed)
 
-**Valores de Referência (copiados do ano):**
-- `val_dia_nacional` - Decimal - Ex: 72.65€
-- `val_dia_estrangeiro` - Decimal - Ex: 167.07€
-- `val_km` - Decimal - Ex: 0.40€
+**Valores de Referência (copiados na criação):**
+- `val_dia_nacional` - DECIMAL (ex: 72.65€)
+- `val_dia_estrangeiro` - DECIMAL (ex: 167.07€)
+- `val_km` - DECIMAL (ex: 0.40€)
 
 **Totais Calculados Automaticamente:**
-- `total_ajudas_nacionais` - Decimal - Soma dias nacionais × val_dia_nacional
-- `total_ajudas_estrangeiro` - Decimal - Soma dias estrangeiro × val_dia_estrangeiro
-- `total_kms` - Decimal - Soma kms × val_km
-- `valor_total` - Decimal - Soma dos 3 totais
+- `total_ajudas_nacionais` - DECIMAL
+- `total_ajudas_estrangeiro` - DECIMAL
+- `total_kms` - DECIMAL
+- `valor_total` - DECIMAL (soma dos 3)
 
 **Metadata:**
-- `nota` - Text (nullable)
-- `created_at` - DateTime
-- `updated_at` - DateTime
+- `nota` - TEXT (nullable)
+- `created_at` / `updated_at` - DATETIME
 
 **Enums:**
-```python
 EstadoBoletim:
-  - PENDENTE  # Emitido mas não pago (desconta do saldo imediatamente)
-  - PAGO      # Pago (DESCONTA do saldo)
-```
-
-**Relações:**
-- `linhas` → BoletimLinha (one-to-many) - Deslocações deste boletim
-
-**Regras de negócio:**
-- Totais calculados automaticamente ao editar linhas
-- Valores de referência copiados do ano vigente na criação
-- **IMPORTANTE:** Boletins descontam do saldo quando PAGOS (não quando emitidos)
+  - PENDENTE  # Emitido mas não pago
+  - PAGO      # Pago (desconta do saldo do sócio)
 
 **Cálculos:**
-```python
-total_ajudas_nacionais = sum(linha.dias for linha in linhas if linha.tipo == NACIONAL) × val_dia_nacional
-total_ajudas_estrangeiro = sum(linha.dias for linha in linhas if linha.tipo == ESTRANGEIRO) × val_dia_estrangeiro
-total_kms = sum(linha.kms for linha in linhas) × val_km
+total_ajudas_nacionais = sum(linha.dias where tipo=NACIONAL) × val_dia_nacional
+total_ajudas_estrangeiro = sum(linha.dias where tipo=ESTRANGEIRO) × val_dia_estrangeiro
+total_kms = sum(linha.kms) × val_km
 valor_total = total_ajudas_nacionais + total_ajudas_estrangeiro + total_kms
-```
 
-**Acesso UI:**
-- Screen `boletins.py` (lista) + coluna "Linhas" (contador)
-- Botão "🔁 Gerar Recorrentes"
-- Duplo-clique abre `BoletimForm` (editor completo)
+**Regras:**
+- Totais recalculados automaticamente ao modificar linhas
+- Valores de referência copiados do ano vigente
+- **Desconta do saldo quando PAGO**, não quando PENDENTE
+
+**Relações:**
+- `linhas` → BoletimLinha (one-to-many, CASCADE DELETE)
+
+**UI:** 
+- Lista com coluna "Linhas" (contador)
+- Duplo-clique abre editor completo (BoletimForm)
 
 ---
 
-### `boletim_linhas` - Linhas de Deslocação (NOVO - Planeado)
+#### `boletim_linhas` - Linhas de Deslocação (Migration 017)
 
 **Campos principais:**
 - `id` - PK
 - `boletim_id` - FK → boletins (CASCADE DELETE, indexed)
-- `ordem` - Integer (ordenação: 1, 2, 3...)
-- `projeto_id` - FK → projetos (NULLABLE, SET NULL) - **Dropdown opcional**
-- `servico` - Text (not null) - Ex: "vMix Novobanco", "reunião com cliente"
-- `localidade` - String(100) - Ex: "Aguieira", "Lisboa", "Copenhaga"
-- `data_inicio` - Date
-- `hora_inicio` - Time (informativa)
-- `data_fim` - Date
-- `hora_fim` - Time (informativa)
+- `ordem` - INTEGER (ordenação)
+- `projeto_id` - FK → projetos (NULLABLE, SET NULL)
+- `servico` - TEXT NOT NULL
+- `localidade` - VARCHAR(100)
+- `data_inicio` / `data_fim` - DATE
+- `hora_inicio` / `hora_fim` - TIME (informativas)
 - `tipo` - ENUM (NACIONAL/ESTRANGEIRO)
-- `dias` - Decimal (inserido manualmente: 0, 0.5, 1, 6)
-- `kms` - Integer (ex: 400, 206)
-- `created_at` - DateTime
-- `updated_at` - DateTime
+- `dias` - DECIMAL (inserido manualmente)
+- `kms` - INTEGER
+- `created_at` / `updated_at` - DATETIME
 
 **Enums:**
-```python
 TipoDeslocacao:
-  - NACIONAL      # Deslocação em Portugal
-  - ESTRANGEIRO   # Deslocação fora de Portugal
-```
+  - NACIONAL     # Deslocação em Portugal
+  - ESTRANGEIRO  # Deslocação fora de Portugal
+
+**Regras:**
+- Horas informativas (não usadas em cálculo)
+- Dias inseridos manualmente (usuário decide)
+- Se `projeto_id` preenchido → `servico` auto-preenche mas é editável
+- Trigger recalcula totais do boletim ao modificar
 
 **Relações:**
 - `boletim` → Boletim (many-to-one)
-- `projeto` → Projeto (many-to-one, nullable)
-
-**Regras de negócio:**
-- Ordenação via campo `ordem`
-- Se `projeto_id` preenchido, `servico` auto-preenche mas é editável
-- Horas são informativas (não usadas em cálculo)
-- Dias inseridos manualmente (cálculo complexo, usuário decide)
-- Trigger recalcula totais do boletim ao adicionar/editar/remover
-
-**Comportamento ao apagar projeto:**
-- SET NULL: `projeto_id` = NULL (mantém texto em `servico`)
+- `projeto` → Projeto (many-to-one, nullable, ON DELETE SET NULL)
 
 ---
 
-### `boletim_templates` - Templates de Boletins Recorrentes (NOVO - Planeado)
+#### `valores_referencia_anual` - Configuração por Ano (Migration 016)
 
 **Campos principais:**
 - `id` - PK
-- `numero` - String única (#TB000001, #TB000002)
-- `nome` - String(200) - Ex: "Boletim Bruno Mensal"
-- `socio` - ENUM (BRUNO/RAFAEL)
-- `dia_mes` - Integer (1-31) - Dia para gerar automaticamente
-- `ativo` - Boolean (default=True)
-- `created_at` - DateTime
-- `updated_at` - DateTime
+- `ano` - INTEGER (unique, indexed)
+- `val_dia_nacional` - DECIMAL (default: 72.65)
+- `val_dia_estrangeiro` - DECIMAL (default: 167.07)
+- `val_km` - DECIMAL (default: 0.40)
+- `created_at` / `updated_at` - DATETIME
 
-**Relações:**
-- Nenhuma (não armazena linhas pré-definidas)
+**Regras:**
+- Um registo por ano
+- Editável via configurações
+- Novos boletins copiam valores do ano atual
+- Fallback: usa ano anterior ou defaults
 
-**Regras de negócio:**
-- **NÃO armazena valores de referência** (usa ano vigente na geração)
-- **NÃO armazena linhas pré-definidas**
-- Geração cria boletim com cabeçalho vazio
-- **🎯 NICE-TO-HAVE:** Pré-preencher linhas com projetos do sócio no mês
-- Apenas 2 templates esperados: BA (#TB000001) e RR (#TB000002)
-
-**Comportamento geração:**
-```python
-def gerar_boletim(template, mes, ano):
-    # 1. Criar boletim com valores do ano vigente
-    boletim = Boletim(
-        socio=template.socio,
-        mes=mes,
-        ano=ano,
-        val_dia_nacional=get_valor_ano(ano, 'nacional'),
-        ...
-    )
-    # 2. (Opcional) Pré-preencher com projetos do mês
-    # projetos = query_projetos_socio_mes(template.socio, mes, ano)
-    # for projeto in projetos:
-    #     criar_linha_sugerida(boletim, projeto)
-```
-
-**Acesso UI:**
-- Screen `templates_boletins.py` (CRUD simples)
-- Similar a `templates_despesas.py`
+**UI:** Screen dedicado (botão "escondido" em configurações)
 
 ---
 
-### `orcamentos` - Orçamentos para Clientes
+#### `boletim_templates` - Templates Recorrentes [LEGACY] (Migration 018)
 
-**Campos principais:**
-- `id` - PK
-- `cliente_id` - FK → clientes
-- `codigo` - "ORC001", "ORC002", etc.
-- `versao` - "v1.0", "v1.1", etc.
-- `data_criacao` - Date
-- `data_validade` - Date
-- `valor_total` - Decimal
-- `estado` - ENUM (pendente/aprovado/rejeitado)
-- `observacoes` - Text
+**Status:** ⚠️ **LEGACY** - Tabela existe mas funcionalidade removida da UI (13/11/2025)
 
-**Enums:**
-```python
-EstadoOrcamento:
-  - PENDENTE
-  - APROVADO
-  - REJEITADO
-```
+**Razão remoção:** Sistema considerado demasiado complexo. Substituído por funcionalidade "Duplicar Boletim".
 
-**Relações:**
-- `cliente` → Cliente (many-to-one)
-- `linhas` → Lista de linhas de orçamento (one-to-many)
+**Campos (mantidos por compatibilidade):**
+- `id`, `numero`, `nome`, `socio`, `dia_mes`, `ativo`
+- `created_at` / `updated_at`
 
-**Regras de negócio:**
-- Múltiplas versões do mesmo orçamento (código base igual)
-- Valor total calculado a partir das linhas
+**Futuro:** Considerar remover em limpeza de schema (baixa prioridade).
+
+**Ver:** DECISIONS.md, CHANGELOG.md (13/11/2025)
 
 ---
 
-### `orcamento_linhas` - Linhas de Orçamento
+### 🔹 Equipamento
+
+#### `equipamento` - Equipamento da Empresa
 
 **Campos principais:**
 - `id` - PK
-- `orcamento_id` - FK → orcamentos
-- `descricao` - Descrição do item
-- `quantidade` - Decimal
-- `preco_unitario` - Decimal
-- `preco_total` - Decimal
+- `nome` - VARCHAR(200)
+- `descricao` - TEXT
+- `numero_serie` - VARCHAR(100) (nullable)
+- `data_aquisicao` - DATE
+- `valor_aquisicao` - DECIMAL(10,2)
+- `localizacao` - VARCHAR(100) (nullable)
+- `rendimento_acumulado` - DECIMAL(10,2) DEFAULT 0 - Desde Migration 020
+- `ativo` - BOOLEAN
 
-**Relações:**
-- `orcamento` → Orcamento (many-to-one)
-
-**Regras de negócio:**
-- `preco_total` = `quantidade` × `preco_unitario`
-
----
-
-### `fornecedores` - Fornecedores/Credores
-
-**Campos principais:**
-- `id` - PK
-- `nome` - Nome do fornecedor
-- `nif` - NIF (opcional)
-- `email` - Email (opcional)
-- `telefone` - Telefone (opcional)
-- `morada` - Morada (opcional)
-- `ativo` - Boolean
-- `estatuto` - ENUM (credor/fornecedor)
-
-**Enums:**
-```python
-EstatutoFornecedor:
-  - CREDOR
-  - FORNECEDOR
-```
-
-**Relações:**
-- Nenhuma (independente)
-
----
-
-### `equipamento` - Equipamento da Empresa
-
-**Campos principais:**
-- `id` - PK
-- `nome` - Nome do equipamento
-- `descricao` - Descrição
-- `numero_serie` - Número de série (opcional)
-- `data_aquisicao` - Date
-- `valor_aquisicao` - Decimal
-- `localizacao` - Localização física (opcional)
-- `ativo` - Boolean
-
-**Relações:**
-- Nenhuma (independente)
+**Regras:**
+- `rendimento_acumulado` incrementa ao aprovar orçamentos com repartição tipo='EQUIPAMENTO'
+- Não reverte se orçamento anulado (mantém histórico)
 
 **Exemplos:**
 - Câmaras, lentes, tripés
@@ -488,334 +529,448 @@ EstatutoFornecedor:
 - Primary Keys (todas as tabelas)
 - Foreign Keys (todas as relações)
 
-### Índices Adicionais (se necessário)
-```sql
--- Procura de projetos por cliente
-CREATE INDEX idx_projetos_cliente ON projetos(cliente_id);
+### Índices Adicionais Recomendados
 
--- Procura de boletins por sócio/mês/ano
-CREATE INDEX idx_boletins_socio_mes_ano ON boletins(socio_id, mes, ano);
-```
+-- Projetos
+CREATE INDEX idx_projetos_cliente ON projetos(cliente_id);
+CREATE INDEX idx_projetos_estado ON projetos(estado);
+CREATE INDEX idx_projetos_owner ON projetos(owner);
+
+-- Despesas
+CREATE INDEX idx_despesas_tipo ON despesas(tipo);
+CREATE INDEX idx_despesas_estado ON despesas(estado);
+CREATE INDEX idx_despesas_data ON despesas(data);
+
+-- Boletins
+CREATE INDEX idx_boletins_socio_mes_ano ON boletins(socio, mes, ano);
+CREATE INDEX idx_boletins_estado ON boletins(estado);
+
+-- Orçamentos
+CREATE INDEX idx_orcamentos_cliente ON orcamentos(cliente_id);
+CREATE INDEX idx_orcamentos_status ON orcamentos(status);
+CREATE INDEX idx_orcamentos_owner ON orcamentos(owner);
 
 ---
 
 ## 📊 Queries Comuns
 
 ### Saldos Pessoais (CORE)
-```python
-# Receitas por sócio
-SELECT
-  SUM(valor_frontend + valor_backend + premio_bruno) AS total_ba
-FROM projetos
-WHERE socio_responsavel = 'BA' AND estado = 'CONCLUIDO'
 
-# Despesas por sócio (50/50)
-SELECT
-  SUM(valor) * 0.5 AS despesas_ba
+**Receitas por sócio (BA):**
+-- Projetos PAGO
+SELECT SUM(
+  CASE 
+    WHEN tipo = 'PESSOAL_BA' THEN valor 
+    WHEN tipo = 'EMPRESA' THEN premio_bruno 
+  END
+) AS total_ba
+FROM projetos
+WHERE estado = 'PAGO' AND owner = 'BA'
+
+**Despesas por sócio (BA):**
+-- Divididas 50/50 + Pessoais
+SELECT 
+  SUM(CASE WHEN tipo IN ('FIXA_MENSAL', 'EQUIPAMENTO', 'PROJETO') 
+      THEN valor_com_iva * 0.5 END) +
+  SUM(CASE WHEN tipo = 'PESSOAL_BA' THEN valor_com_iva END)
+AS despesas_ba
 FROM despesas
 WHERE estado = 'PAGO'
 
-# Boletins por sócio
-SELECT
-  SUM(vencimento_total) AS boletins_ba
+**Boletins por sócio:**
+SELECT SUM(valor_total) AS boletins_ba
 FROM boletins
-WHERE socio_id = 'BA' AND estado = 'PAGO'
-```
+WHERE socio = 'BA' AND estado = 'PAGO'
 
 ### Projetos Ativos
-```python
-projetos = session.query(Projeto).filter(
-    Projeto.estado == EstadoProjeto.ATIVO
-).all()
-```
+session.query(Projeto).filter(
+    Projeto.estado == 'ATIVO'
+).order_by(Projeto.data_inicio.desc()).all()
 
 ### Despesas Pendentes
-```python
-despesas = session.query(Despesa).filter(
-    Despesa.estado == EstadoDespesa.PENDENTE
+session.query(Despesa).filter(
+    Despesa.estado == 'PENDENTE'
 ).order_by(Despesa.data).all()
-```
+
+### Orçamentos por Status
+session.query(Orcamento).filter(
+    Orcamento.status == 'aprovado'
+).all()
 
 ---
 
-## 🔄 Migrations
+## 🔄 Histórico de Migrations
 
-### Histórico de Migrations
-Ver `database/migrations/versions/`
+**Nota:** Sistema não usa Alembic tracking (tabela `alembic_version` não existe). Migrations aplicadas via scripts Python diretos.
 
-### Criar Nova Migration
-```bash
-# 1. Alterar model em database/models/
-# 2. Gerar migration
-alembic revision --autogenerate -m "adicionar campo X"
-# 3. Revisar migration gerada
-# 4. Aplicar
-alembic upgrade head
-```
+### ✅ Aplicadas
+
+#### Migration 012 - Fornecedor Website (13/11/2025)
+- ✅ `fornecedores.website` VARCHAR(200)
+
+---
+
+#### Migrations 013-015 - Sistema Despesas Recorrentes (13/11/2025)
+- ✅ 014: Criar tabela `despesa_templates`
+- ✅ 015: Remover campos obsoletos de recorrência de `despesas`
+
+**Decisão:** Tabela separada para templates (não campos na tabela despesas).  
+**Ver:** DECISIONS.md (Secção "Sistema de Recorrência")
+
+---
+
+#### Migrations 016-019 - Sistema Boletim Itinerário (13-14/11/2025)
+- ✅ 016: Criar `valores_referencia_anual` com seed 2025
+- ✅ 017: Criar `boletim_linhas`
+- ✅ 018: Criar `boletim_templates` (LEGACY desde 13/11)
+- ✅ 019: Expandir `boletins` (mes, ano, valores_ref, totais)
+
+---
+
+#### Migration 020 - Orçamentos e Projetos Completo (15/11/2025)
+**Status:** ✅ Aplicada manualmente
+
+**Alterações implementadas:**
+
+**Tabela `orcamentos`:**
+- ✅ `owner` VARCHAR(2) NOT NULL DEFAULT 'BA'
+
+**Tabela `projetos`:**
+- ✅ `owner` VARCHAR(2) NOT NULL
+- ✅ Estados atualizados: ATIVO | FINALIZADO | PAGO | ANULADO
+- ✅ Rastreabilidade: `valor_empresa`, `valor_fornecedores`, `valor_equipamento`, `valor_despesas`
+- ✅ `data_pagamento` DATE
+
+**Tabela `orcamento_reparticoes`:**
+- ✅ `tipo` VARCHAR(20) (substituiu `entidade`)
+- ✅ FK `fornecedor_id` INTEGER (ON DELETE SET NULL)
+- ✅ FK `equipamento_id` INTEGER (ON DELETE SET NULL)
+
+**Tabela `equipamento`:**
+- ✅ `rendimento_acumulado` DECIMAL(10,2) DEFAULT 0
+
+**Verificação realizada:** 2025-11-17 via sqlite3 PRAGMA table_info
+
+---
+
+#### Migration 021 - Cliente Nome e Nome Formal (15/11/2025)
+- ✅ `clientes.nome` VARCHAR(120) - Nome curto
+- ✅ `clientes.nome_formal` VARCHAR(255) - Nome legal
+- ✅ Lógica: Se nome_formal vazio → usa nome
+
+---
+
+#### Migrations 022-023 - Orçamentos V2 (16-17/11/2025)
+- ✅ 022: Tabelas `orcamento_itens` e `orcamento_reparticoes` com sistema tipo-específico
+- ✅ 023: Campos nullable para tipos específicos (fix constraint errors)
+
+**Ver:** ARCHITECTURE.md, BUSINESS_LOGIC.md (Secção 1)
+
+---
+
+#### Migration 024 - Campo projeto_id em Orcamentos (17/11/2025)
+**Status:** ✅ Aplicada
+**Commit:** 18ee88f
+
+**Alterações:**
+- ✅ `orcamentos.projeto_id` INTEGER NULL (FK para projetos.id)
+- ✅ Índice `idx_orcamentos_projeto` para performance
+- ✅ Relationship bidirecional: `orcamento.projeto` ↔ `projeto.orcamentos`
+
+**Objetivo:**
+- Link bidirecional orçamento ↔ projeto
+- Prevenir conversão dupla (verificar se `projeto_id` já existe)
+- Rastreabilidade completa de conversões
+- Histórico de qual projeto foi criado de qual orçamento
+
+**Ficheiros:**
+- Migration: `database/migrations/024_add_projeto_id_to_orcamento.py`
+- Script: `scripts/run_migration_024.py`
+- Modelos: `database/models/orcamento.py:41`, `database/models/projeto.py:71`
+
+**Ver:** memory/CHANGELOG.md (17/11/2025 - Migration 024)
+
+---
+
+### 📋 Planeadas (Futuro)
+
+#### Migration 025 - Freelancers e Fornecedores (PLANEADO)
+**Prioridade:** 🟡 Média  
+**Status:** 📝 Documentado, aguarda implementação
+
+**Novas tabelas:**
+
+**`freelancers` - Profissionais Externos:**
+- Campos: id, numero (#F0001), nome, nif, email, telefone, iban, morada, especialidade, notas, ativo
+- Índices: ativo, nome
+- Relação: trabalhos → freelancer_trabalhos (one-to-many)
+
+**`freelancer_trabalhos` - Histórico Trabalhos:**
+- Campos: id, freelancer_id (FK), orcamento_id (FK), projeto_id (FK), descricao, valor, data, status (a_pagar/pago/cancelado), data_pagamento, nota
+- Gerados automaticamente ao aprovar orçamentos
+- Índices: freelancer_id, status, data
+
+**`fornecedor_compras` - Histórico Compras:**
+- Estrutura idêntica a freelancer_trabalhos
+- `fornecedor_id` em vez de `freelancer_id`
+
+**Expansões:**
+
+**`fornecedores` (adicionar campos):**
+- `numero` VARCHAR(20) UNIQUE (#FN0001)
+- `categoria` VARCHAR(50) (ex: "Aluguer Equipamento")
+- `iban` VARCHAR(50)
+
+**`orcamento_reparticoes` (beneficiario):**
+- Suporte completo para FREELANCER_[id] e FORNECEDOR_[id]
+
+**Ver:** Secção "FREELANCERS E FORNECEDORES - Spec Detalhada" (fim deste ficheiro)
+
+---
+
+#### Migration 025 - Sistema Fiscal - Receitas (PLANEADO)
+**Prioridade:** 🔴 Alta  
+**Status:** 📝 Documentado em FISCAL.md (39KB), aguarda validação TOC
+
+**Nova tabela:**
+receitas (
+  id, numero (#R000001), projeto_id, cliente_id,
+  fatura_numero, valor_sem_iva, iva_liquidado, valor_c_iva,
+  data_fatura, data_recebimento, estado (ATIVO/CANCELADO),
+  tipo (PROJETO/OUTRO), metodo_pagamento, referencia, nota
+)
+
+**Comportamento:**
+- Ao marcar projeto PAGO → criar receita ATIVO automaticamente
+- Ao reverter PAGO → FINALIZADO → marcar receita CANCELADO (não apagar)
+- Suporta receitas avulsas sem projeto (subsídios, vendas equipamento)
+
+**Decisões pendentes:**
+- Receita = valor total projeto? Ou pode ser parcial?
+- Múltiplas receitas por projeto? (pagamentos faseados)
+- Campos adicionais de IVA?
+
+**Ver:** 
+- FISCAL.md (Secção 1.1 - Receitas e Faturação)
+- TODO.md (tarefa "💰 Sistema Fiscal Completo")
+- BUSINESS_LOGIC.md (Secção 3.4)
 
 ---
 
 ## 💾 Backup
 
 ### Backup Manual
-```bash
 cp agora_media.db agora_media_backup_$(date +%Y%m%d).db
-```
 
 ### Backup Automático (futura implementação)
 - Backup diário automático
-- Rotação de backups (manter últimos 7 dias)
-- Armazenamento em cloud (opcional)
+- Rotação de backups (últimos 7 dias)
+- Armazenamento cloud (opcional)
 
 ---
 
-**Mantido por:** Equipa Agora
-**Última atualização:** 2025-11-09
-# 🗄️ DATABASE_SCHEMA.md - ATUALIZAÇÕES (15/11/2025)
+## 👥 FREELANCERS E FORNECEDORES - Especificação Completa (Migration 024)
 
-## ⚠️ INSTRUÇÕES
-Adicionar esta secção ao final do ficheiro `DATABASE_SCHEMA.md` existente, antes de qualquer secção de "Histórico" ou "Changelog".
+Esta secção documenta em detalhe as tabelas planeadas para gestão de freelancers e fornecedores externos.
 
----
+### Tabela: freelancers - Profissionais Externos
 
-## 📋 ATUALIZAÇÕES PENDENTES
+**Descrição:** Freelancers contratados para projetos específicos (cameramen, editores, designers, motion graphics, locutores, etc).
 
-As seguintes alterações foram documentadas em `BUSINESS_LOGIC.md` e precisam ser implementadas via migrations.
-
----
-
-### 1. Tabela `orcamentos` - Adicionar Coluna
-
-**Coluna a adicionar:**
-```sql
-owner VARCHAR(2) NOT NULL  -- 'BA' ou 'RR'
-```
-
-**Migration:** 020
-**Razão:** Todo orçamento precisa de um responsável (owner) definido. Determina quem gere o orçamento e posteriormente o projeto.
-
-**Default para dados existentes:** 
-- Pode usar 'BA' como default ou inferir do cliente
-- Avaliar caso a caso durante migration
-
----
-
-### 2. Tabela `projetos` - Múltiplas Alterações
-
-**Colunas a adicionar:**
-```sql
--- Owner (responsável pelo projeto)
-owner VARCHAR(2) NOT NULL  -- 'BA' ou 'RR'
-
--- Rastreabilidade financeira (valores decompostos de orçamento)
-valor_empresa DECIMAL(10,2) DEFAULT 0        -- Parcela da empresa
-valor_fornecedores DECIMAL(10,2) DEFAULT 0   -- Total pago a fornecedores
-valor_equipamento DECIMAL(10,2) DEFAULT 0    -- Rendimento de equipamento usado
-valor_despesas DECIMAL(10,2) DEFAULT 0       -- Despesas do projeto
-
--- Data de pagamento
-data_pagamento DATE NULL  -- Quando projeto foi marcado como PAGO
-```
-
-**Coluna a alterar:**
-```sql
--- ANTES:
-estado VARCHAR(20)  -- 'ativo' | 'concluido' | 'cancelado'
-
--- DEPOIS:
-estado VARCHAR(20)  -- 'ATIVO' | 'FINALIZADO' | 'PAGO' | 'ANULADO'
-```
-
-**Migration:** 020
-
-**Mapeamento de estados existentes:**
-```python
-# Durante migration:
-'ativo' → 'ATIVO'
-'concluido' → 'FINALIZADO'
-'cancelado' → 'ANULADO'
-```
-
-**Razão das alterações:**
-- **owner:** Necessário para gestão e cálculo de saldos pessoais
-- **Estados:** 
-  - ATIVO: Projeto em curso
-  - FINALIZADO: Concluído mas não pago (transição automática por `data_fim`)
-  - PAGO: Cliente pagou, prémios distribuídos
-  - ANULADO: Cancelado
-- **Rastreabilidade:** Permite saber distribuição de valores vindos de orçamentos
-- **data_pagamento:** Rastrear quando projeto foi efetivamente pago
-
-**Regra de transição automática:**
-```python
-# Job diário ou ao carregar dashboard/projetos:
-for projeto in projetos:
-    if projeto.estado == 'ATIVO' and projeto.data_fim and projeto.data_fim < hoje:
-        projeto.estado = 'FINALIZADO'
-        projeto.save()
-```
-
----
-
-### 3. Tabela `proposta_reparticoes` - Reestruturação
-
-**Coluna a remover:**
-```sql
-entidade VARCHAR(10)  -- 'BA' ou 'RR' (DEPRECADO)
-```
-
-**Colunas a adicionar:**
-```sql
-tipo VARCHAR(20) NOT NULL  -- 'BA' | 'RR' | 'EMPRESA' | 'FORNECEDOR' | 'EQUIPAMENTO' | 'DESPESA'
-fornecedor_id INTEGER NULL
-equipamento_id INTEGER NULL
-```
-
-**Constraints a adicionar:**
-```sql
-FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE SET NULL
-FOREIGN KEY (equipamento_id) REFERENCES equipamento(id) ON DELETE SET NULL
-```
-
-**Migration:** 020
-
-**Mapeamento de dados existentes:**
-```python
-# Durante migration:
-# Repartições antigas com entidade='BA' → tipo='BA', fornecedor_id=NULL, equipamento_id=NULL
-# Repartições antigas com entidade='RR' → tipo='RR', fornecedor_id=NULL, equipamento_id=NULL
-```
-
-**Razão:** 
-- Repartições precisam suportar 6 tipos diferentes
-- Tipos FORNECEDOR e EQUIPAMENTO precisam de FKs para rastreabilidade
-- Sistema expandido permite distribuição completa de valores de orçamento
-
-**Tipos de repartição:**
-- **BA:** Prémio para Bruno Amaral
-- **RR:** Prémio para Rafael Reigota  
-- **EMPRESA:** Valor que fica na empresa
-- **FORNECEDOR:** Pago a fornecedor específico (requer `fornecedor_id`)
-- **EQUIPAMENTO:** Rendimento de equipamento usado (requer `equipamento_id`)
-- **DESPESA:** Outras despesas do orçamento
-
----
-
-### 4. Tabela `equipamento` - Adicionar Coluna
-
-**Coluna a adicionar:**
-```sql
-rendimento_acumulado DECIMAL(10,2) DEFAULT 0
-```
-
-**Migration:** 020
-
-**Razão:** Rastrear quanto cada equipamento já rendeu ao longo do tempo através de repartições em orçamentos.
-
-**Atualização:**
-- Ao aprovar orçamento com repartição tipo='EQUIPAMENTO' → incrementa rendimento
-- Não reverte se projeto/orçamento anulado (mantém histórico)
-
----
-
-### 5. Sistema de Templates de Boletins - A REMOVER
-
-**Status:** Sistema será removido da UI mas tabelas podem permanecer (legacy)
-
-**Tabelas afetadas:**
-- `boletim_templates` (pode manter ou remover em limpeza futura)
-
-**Razão:** Sistema de templates é demasiado complexo. Substituído por funcionalidade "Duplicar Boletim".
-
-**Ver:** DECISIONS.md, TODO.md
-
----
-
-### 6. NOVA Tabela `receitas` - A IMPLEMENTAR (Futuro)
-
-**Status:** ⏳ Documentado mas não implementado
-**Prioridade:** Média
-**Migration:** 021 (futura)
-
-**Estrutura proposta (a discutir):**
-```sql
-CREATE TABLE receitas (
+**Estrutura completa:**
+CREATE TABLE freelancers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    numero VARCHAR(20) UNIQUE NOT NULL,  -- #R000001, #R000002, etc
-    
-    -- Relações
+    numero VARCHAR(20) UNIQUE NOT NULL,
+    nome VARCHAR(200) NOT NULL,
+    nif VARCHAR(20) NULL,
+    email VARCHAR(200) NULL,
+    telefone VARCHAR(50) NULL,
+    iban VARCHAR(50) NULL,
+    morada TEXT NULL,
+    especialidade VARCHAR(100) NULL,
+    notas TEXT NULL,
+    ativo BOOLEAN DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_freelancers_ativo ON freelancers(ativo);
+CREATE INDEX idx_freelancers_nome ON freelancers(nome);
+
+**Regras de negócio:**
+- Número gerado automaticamente (#F0001, #F0002, etc)
+- Podem estar inativos (não apagados, mantém histórico)
+- IBAN obrigatório para processamento pagamentos
+
+**Relações:**
+- `trabalhos` → freelancer_trabalhos (one-to-many)
+- `reparticoes` → orcamento_reparticoes (via beneficiario='FREELANCER_[id]')
+
+---
+
+### Tabela: freelancer_trabalhos - Histórico de Trabalhos
+
+**Descrição:** Registo de trabalhos realizados por freelancers. Gerados automaticamente ao aprovar orçamentos.
+
+**Estrutura completa:**
+CREATE TABLE freelancer_trabalhos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    freelancer_id INTEGER NOT NULL,
+    orcamento_id INTEGER NULL,
     projeto_id INTEGER NULL,
-    cliente_id INTEGER NULL,
-    
-    -- Dados principais
     descricao TEXT NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
     data DATE NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    data_pagamento DATE NULL,
+    nota TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- Estado
-    estado VARCHAR(20) NOT NULL,  -- 'ATIVO' | 'CANCELADO'
-    tipo VARCHAR(20) NOT NULL,    -- 'PROJETO' | 'OUTRO'
-    
-    -- Metadata
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
-    -- Constraints
-    FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL,
-    FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL
+    FOREIGN KEY (freelancer_id) REFERENCES freelancers(id) ON DELETE CASCADE,
+    FOREIGN KEY (orcamento_id) REFERENCES orcamentos(id) ON DELETE SET NULL,
+    FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_receitas_projeto ON receitas(projeto_id);
-CREATE INDEX idx_receitas_cliente ON receitas(cliente_id);
-CREATE INDEX idx_receitas_data ON receitas(data);
-CREATE INDEX idx_receitas_estado ON receitas(estado);
-```
+CREATE INDEX idx_freelancer_trabalhos_freelancer ON freelancer_trabalhos(freelancer_id);
+CREATE INDEX idx_freelancer_trabalhos_status ON freelancer_trabalhos(status);
+CREATE INDEX idx_freelancer_trabalhos_data ON freelancer_trabalhos(data);
+
+**Enums:**
+StatusTrabalho:
+  - a_pagar   # Trabalho concluído, aguarda pagamento
+  - pago      # Freelancer já recebeu
+  - cancelado # Orçamento anulado ou trabalho cancelado
 
 **Comportamento:**
-- Ao marcar projeto como PAGO → criar receita ATIVO automaticamente
-- Ao reverter projeto para FINALIZADO → marcar receita como CANCELADO (não apagar)
-- Permite receitas avulsas (sem projeto): subsídios, vendas de equipamento, etc
-
-**Decisões pendentes:**
-- Receita sempre = valor total do projeto? Ou pode ser parcial?
-- Permitir múltiplas receitas por projeto? (pagamentos faseados)
-- Campos adicionais? (método pagamento, referência, etc)
-
-**Ver:** 
-- TODO.md (tarefa de implementação)
-- DECISIONS.md (decisão sobre necessidade de receitas)
-- BUSINESS_LOGIC.md Secção 3.4
+- Criado automaticamente quando orçamento aprovado tem repartição FREELANCER_[id]
+- FK com SET NULL: se orçamento/projeto apagado → mantém registo histórico
 
 ---
 
-## 📊 Resumo de Alterações
+### Tabela: fornecedor_compras - Histórico de Compras
 
-**Migration 020 (Prioritária):**
-- ✅ `orcamentos.owner` (novo)
-- ✅ `projetos.owner` (novo)
-- ✅ `projetos.estado` (atualizar enum)
-- ✅ `projetos.valor_empresa` (novo)
-- ✅ `projetos.valor_fornecedores` (novo)
-- ✅ `projetos.valor_equipamento` (novo)
-- ✅ `projetos.valor_despesas` (novo)
-- ✅ `projetos.data_pagamento` (novo)
-- ✅ `proposta_reparticoes.entidade` (remover)
-- ✅ `proposta_reparticoes.tipo` (novo)
-- ✅ `proposta_reparticoes.fornecedor_id` (novo + FK)
-- ✅ `proposta_reparticoes.equipamento_id` (novo + FK)
-- ✅ `equipamento.rendimento_acumulado` (novo)
+**Descrição:** Registo de compras/serviços contratados a fornecedores. Gerados ao aprovar orçamentos.
 
-**Migration 021 (Futura):**
-- ⏳ Criar tabela `receitas` completa
+**Estrutura completa:**
+CREATE TABLE fornecedor_compras (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fornecedor_id INTEGER NOT NULL,
+    orcamento_id INTEGER NULL,
+    projeto_id INTEGER NULL,
+    descricao TEXT NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    data DATE NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    data_pagamento DATE NULL,
+    nota TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE CASCADE,
+    FOREIGN KEY (orcamento_id) REFERENCES orcamentos(id) ON DELETE SET NULL,
+    FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_fornecedor_compras_fornecedor ON fornecedor_compras(fornecedor_id);
+CREATE INDEX idx_fornecedor_compras_status ON fornecedor_compras(status);
+CREATE INDEX idx_fornecedor_compras_data ON fornecedor_compras(data);
+
+**Enums:**
+StatusCompra:
+  - a_pagar   # Serviço contratado, aguarda pagamento
+  - pago      # Fornecedor já recebeu
+  - cancelado # Orçamento anulado ou compra cancelada
 
 ---
 
-## 🔗 Referências
+### Expansão: fornecedores (ATUALIZAÇÃO em Migration 024)
 
-- **BUSINESS_LOGIC.md:** Lógica de negócio detalhada
-- **DECISIONS.md:** Decisões técnicas e trade-offs
-- **TODO.md:** Tarefas de implementação priorizadas
+**Campos a adicionar:**
+ALTER TABLE fornecedores ADD COLUMN numero VARCHAR(20) UNIQUE;
+ALTER TABLE fornecedores ADD COLUMN categoria VARCHAR(50) NULL;
+ALTER TABLE fornecedores ADD COLUMN iban VARCHAR(50) NULL;
+
+CREATE INDEX idx_fornecedores_categoria ON fornecedores(categoria);
+
+**Campos existentes mantidos:**
+- id, nome, nif, email, telefone, morada, website, ativo, estatuto
+
+**Relações novas:**
+- `compras` → fornecedor_compras (one-to-many)
+- `reparticoes` → orcamento_reparticoes (via fornecedor_id FK e beneficiario)
 
 ---
 
-_Última atualização: 15/11/2025_
+### Integração: orcamento_reparticoes - Validações Expandidas
+
+**Campo beneficiario - Validações completas:**
+
+**Formatos suportados:**
+- `BA` / `RR` / `AGORA` → Sempre válidos
+- `FREELANCER_[id]` → Verificar se existe e está ativo
+- `FORNECEDOR_[id]` → Verificar se existe e está ativo
+
+**Lógica de validação (pseudo-código):**
+def validar_beneficiario(beneficiario):
+    if beneficiario in ['BA', 'RR', 'AGORA']:
+        return True
+    
+    if beneficiario.startswith('FREELANCER_'):
+        id = int(beneficiario.split('_')[1])
+        freelancer = FreelancerManager.obter(id)
+        if not freelancer:
+            raise ValueError(f"Freelancer #{id} não existe")
+        if not freelancer.ativo:
+            avisar(f"Freelancer '{freelancer.nome}' está inativo")
+        return True
+    
+    if beneficiario.startswith('FORNECEDOR_'):
+        id = int(beneficiario.split('_')[1])
+        fornecedor = FornecedorManager.obter(id)
+        if not fornecedor:
+            raise ValueError(f"Fornecedor #{id} não existe")
+        if not fornecedor.ativo:
+            avisar(f"Fornecedor '{fornecedor.nome}' está inativo")
+        return True
+    
+    raise ValueError(f"Formato inválido: {beneficiario}")
+
+**Criação de registos ao aprovar orçamento:**
+def aprovar_orcamento(orcamento_id):
+    # ... validações totais ...
+    
+    for reparticao in reparticoes:
+        if reparticao.beneficiario.startswith('FREELANCER_'):
+            FreelancerTrabalhoManager.criar(
+                freelancer_id=extract_id(reparticao.beneficiario),
+                orcamento_id=orcamento_id,
+                descricao=reparticao.descricao,
+                valor=reparticao.valor,
+                status='a_pagar'
+            )
+        
+        elif reparticao.beneficiario.startswith('FORNECEDOR_'):
+            FornecedorCompraManager.criar(
+                fornecedor_id=extract_id(reparticao.beneficiario),
+                orcamento_id=orcamento_id,
+                descricao=reparticao.descricao,
+                valor=reparticao.valor,
+                status='a_pagar'
+            )
+
+---
+
+## 🔗 Referências Cruzadas
+
+- **BUSINESS_LOGIC.md** - Lógica de negócio detalhada (33KB)
+- **ARCHITECTURE.md** - Arquitetura e fluxos (15KB)
+- **DECISIONS.md** - Decisões técnicas e trade-offs (30KB)
+- **FISCAL.md** - Sistema fiscal (39KB, 9 secções)
+- **TODO.md** - Tarefas priorizadas (34KB)
+- **CHANGELOG.md** - Histórico completo (53KB)
+
+---
+
+**Mantido por:** Equipa Agora  
+**Última atualização:** 2025-11-17 09:10 WET

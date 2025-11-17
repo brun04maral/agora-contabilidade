@@ -1,30 +1,31 @@
 # -*- coding: utf-8 -*-
 """
-ServicoEmpresaDialog - Dialog para criar/editar serviços EMPRESA (LADO EMPRESA)
+ServicoDialog - Dialog para criar/editar serviços tipo SERVICO (LADO CLIENTE)
 """
 import customtkinter as ctk
 from tkinter import messagebox
 from sqlalchemy.orm import Session
 from logic.orcamentos import OrcamentoManager
-from database.models.orcamento import OrcamentoReparticao
 from decimal import Decimal
 from typing import Optional
 
 
-class ServicoEmpresaDialog(ctk.CTkToplevel):
+class ServicoDialog(ctk.CTkToplevel):
     """
-    Dialog para adicionar/editar serviço no LADO EMPRESA
+    Dialog para adicionar/editar serviço tipo SERVICO no LADO CLIENTE
 
     Campos:
-    - Beneficiário (dropdown obrigatório: BA, RR, AGORA)
     - Descrição (obrigatório)
-    - Quantidade (inteiro, obrigatório)
-    - Dias (inteiro, obrigatório)
-    - Valor Unitário (decimal, obrigatório)
+    - Quantidade (inteiro, default 1)
+    - Dias (inteiro, default 1)
+    - Preço Unitário (decimal, obrigatório)
+    - Desconto (decimal 0-100%, default 0)
+    - Total (readonly, auto-calculado)
 
     Cálculo:
-    total = quantidade × dias × valor_unitário
-    (SEM desconto no lado EMPRESA)
+    subtotal = quantidade × dias × preço_unitário
+    desconto_valor = subtotal × (desconto / 100)
+    total = subtotal - desconto_valor
     """
 
     def __init__(
@@ -32,6 +33,7 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
         parent,
         db_session: Session,
         orcamento_id: int,
+        secao_id: int,
         item_id: Optional[int] = None
     ):
         super().__init__(parent)
@@ -39,12 +41,13 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
         self.db_session = db_session
         self.manager = OrcamentoManager(db_session)
         self.orcamento_id = orcamento_id
+        self.secao_id = secao_id
         self.item_id = item_id
         self.success = False
 
         # Configurar janela
-        self.title("Adicionar Serviço EMPRESA" if not item_id else "Editar Serviço EMPRESA")
-        self.geometry("500x580")
+        self.title("Adicionar Serviço" if not item_id else "Editar Serviço")
+        self.geometry("500x650")
         self.resizable(False, False)
 
         # Modal
@@ -57,6 +60,14 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
         # Se edição, carregar dados
         if item_id:
             self.carregar_dados()
+        else:
+            # Valores default para novo item
+            self.quantidade_entry.insert(0, "1")
+            self.dias_entry.insert(0, "1")
+            self.desconto_entry.insert(0, "0")
+
+        # Calcular total inicial
+        self.atualizar_total()
 
     def create_widgets(self):
         """Cria widgets do dialog"""
@@ -67,27 +78,10 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
         # Título
         title_label = ctk.CTkLabel(
             main_frame,
-            text="Serviço - LADO EMPRESA",
+            text="Serviço Manual",
             font=ctk.CTkFont(size=16, weight="bold")
         )
         title_label.pack(pady=(0, 20))
-
-        # Beneficiário (OBRIGATÓRIO)
-        ctk.CTkLabel(
-            main_frame,
-            text="Beneficiário: *",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#f44336"
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.beneficiario_var = ctk.StringVar(value="")
-        self.beneficiario_dropdown = ctk.CTkOptionMenu(
-            main_frame,
-            variable=self.beneficiario_var,
-            values=["BA", "RR", "AGORA"],
-            height=35
-        )
-        self.beneficiario_dropdown.pack(fill="x", pady=(0, 15))
 
         # Descrição
         ctk.CTkLabel(
@@ -98,7 +92,7 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
 
         self.descricao_entry = ctk.CTkEntry(
             main_frame,
-            placeholder_text="Ex: Edição de vídeo",
+            placeholder_text="Ex: Desenvolvimento de funcionalidade X",
             height=35
         )
         self.descricao_entry.pack(fill="x", pady=(0, 15))
@@ -121,10 +115,11 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
 
         self.quantidade_entry = ctk.CTkEntry(
             quantidade_frame,
-            placeholder_text="Ex: 2",
+            placeholder_text="Ex: 1",
             height=35
         )
         self.quantidade_entry.pack(fill="x")
+        self.quantidade_entry.bind("<KeyRelease>", lambda e: self.atualizar_total())
 
         # Dias
         dias_frame = ctk.CTkFrame(grid_frame, fg_color="transparent")
@@ -138,32 +133,60 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
 
         self.dias_entry = ctk.CTkEntry(
             dias_frame,
-            placeholder_text="Ex: 3",
+            placeholder_text="Ex: 1",
             height=35
         )
         self.dias_entry.pack(fill="x")
+        self.dias_entry.bind("<KeyRelease>", lambda e: self.atualizar_total())
 
-        # Valor Unitário
+        # Preço Unitário
         ctk.CTkLabel(
             main_frame,
-            text="Valor Unitário (€):",
+            text="Preço Unitário (€):",
             font=ctk.CTkFont(size=13, weight="bold")
         ).pack(anchor="w", pady=(0, 5))
 
-        self.valor_entry = ctk.CTkEntry(
+        self.preco_unitario_entry = ctk.CTkEntry(
             main_frame,
-            placeholder_text="Ex: 100.00",
+            placeholder_text="Ex: 250.00",
             height=35
         )
-        self.valor_entry.pack(fill="x", pady=(0, 20))
+        self.preco_unitario_entry.pack(fill="x", pady=(0, 15))
+        self.preco_unitario_entry.bind("<KeyRelease>", lambda e: self.atualizar_total())
 
-        # Nota informativa
+        # Desconto
         ctk.CTkLabel(
             main_frame,
-            text="ℹ️ Sem desconto no lado EMPRESA",
-            font=ctk.CTkFont(size=11),
-            text_color=("#666", "#999")
-        ).pack(pady=(0, 20))
+            text="Desconto (%):",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.desconto_entry = ctk.CTkEntry(
+            main_frame,
+            placeholder_text="Ex: 10 (para 10%)",
+            height=35
+        )
+        self.desconto_entry.pack(fill="x", pady=(0, 15))
+        self.desconto_entry.bind("<KeyRelease>", lambda e: self.atualizar_total())
+
+        # Total (readonly)
+        ctk.CTkLabel(
+            main_frame,
+            text="Total:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.total_label = ctk.CTkLabel(
+            main_frame,
+            text="€0.00",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            fg_color=("#e8f5e0", "#2b4a2b"),
+            corner_radius=6,
+            padx=15,
+            pady=10,
+            anchor="w"
+        )
+        self.total_label.pack(fill="x", pady=(0, 20))
 
         # Botões
         btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
@@ -184,15 +207,49 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
             text="Gravar",
             command=self.gravar,
             width=120,
-            fg_color="#4CAF50",
-            hover_color="#45a049"
+            fg_color="#FF9800",
+            hover_color="#e68900"
         )
         btn_gravar.pack(side="right")
 
+    def atualizar_total(self):
+        """
+        Atualiza total calculado em tempo real
+        Fórmula: total = (quantidade × dias × preço_unitário) - desconto%
+        """
+        try:
+            quantidade_str = self.quantidade_entry.get().strip()
+            dias_str = self.dias_entry.get().strip()
+            preco_unitario_str = self.preco_unitario_entry.get().strip()
+            desconto_str = self.desconto_entry.get().strip() or "0"
+
+            if quantidade_str and dias_str and preco_unitario_str:
+                quantidade = int(quantidade_str)
+                dias = int(dias_str)
+                preco_unitario = Decimal(preco_unitario_str.replace(',', '.'))
+                desconto = Decimal(desconto_str.replace(',', '.'))
+
+                # Calcular subtotal
+                subtotal = quantidade * dias * preco_unitario
+
+                # Calcular desconto
+                desconto_valor = subtotal * (desconto / Decimal('100'))
+
+                # Calcular total
+                total = subtotal - desconto_valor
+
+                self.total_label.configure(text=f"€{float(total):.2f}")
+            else:
+                self.total_label.configure(text="€0.00")
+        except (ValueError, Exception):
+            self.total_label.configure(text="€0.00")
+
     def carregar_dados(self):
         """Carrega dados do item para edição"""
-        item = self.db_session.query(OrcamentoReparticao).filter(
-            OrcamentoReparticao.id == self.item_id
+        from database.models.orcamento import OrcamentoItem
+
+        item = self.db_session.query(OrcamentoItem).filter(
+            OrcamentoItem.id == self.item_id
         ).first()
 
         if not item:
@@ -201,9 +258,6 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
             return
 
         # Preencher campos
-        if item.beneficiario:
-            self.beneficiario_var.set(item.beneficiario)
-
         if item.descricao:
             self.descricao_entry.delete(0, "end")
             self.descricao_entry.insert(0, item.descricao)
@@ -216,19 +270,24 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
             self.dias_entry.delete(0, "end")
             self.dias_entry.insert(0, str(item.dias))
 
-        if item.valor_unitario:
-            self.valor_entry.delete(0, "end")
-            self.valor_entry.insert(0, str(float(item.valor_unitario)))
+        if item.preco_unitario:
+            self.preco_unitario_entry.delete(0, "end")
+            self.preco_unitario_entry.insert(0, str(float(item.preco_unitario)))
+
+        if item.desconto:
+            self.desconto_entry.delete(0, "end")
+            # Converter de decimal (0.10) para percentagem (10)
+            desconto_pct = float(item.desconto) * 100
+            self.desconto_entry.insert(0, str(desconto_pct))
+        else:
+            self.desconto_entry.insert(0, "0")
+
+        # Atualizar total
+        self.atualizar_total()
 
     def gravar(self):
-        """Grava o serviço EMPRESA"""
+        """Grava o serviço"""
         try:
-            # Validar beneficiário (OBRIGATÓRIO)
-            beneficiario = self.beneficiario_var.get()
-            if not beneficiario:
-                messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
-                return
-
             # Validar descrição
             descricao = self.descricao_entry.get().strip()
             if not descricao:
@@ -247,17 +306,21 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
                 messagebox.showwarning("Aviso", "Dias é obrigatório!")
                 return
 
-            # Validar valor unitário
-            valor_str = self.valor_entry.get().strip()
-            if not valor_str:
-                messagebox.showwarning("Aviso", "Valor unitário é obrigatório!")
+            # Validar preço unitário
+            preco_unitario_str = self.preco_unitario_entry.get().strip()
+            if not preco_unitario_str:
+                messagebox.showwarning("Aviso", "Preço unitário é obrigatório!")
                 return
+
+            # Validar desconto (opcional, default 0)
+            desconto_str = self.desconto_entry.get().strip() or "0"
 
             # Converter valores
             try:
                 quantidade = int(quantidade_str)
                 dias = int(dias_str)
-                valor_unitario = Decimal(valor_str.replace(',', '.'))
+                preco_unitario = Decimal(preco_unitario_str.replace(',', '.'))
+                desconto_pct = Decimal(desconto_str.replace(',', '.'))
             except ValueError:
                 messagebox.showerror("Erro", "Valores numéricos inválidos!")
                 return
@@ -271,49 +334,51 @@ class ServicoEmpresaDialog(ctk.CTkToplevel):
                 messagebox.showwarning("Aviso", "Dias deve ser maior que 0!")
                 return
 
-            if valor_unitario <= 0:
-                messagebox.showwarning("Aviso", "Valor unitário deve ser maior que 0!")
+            if preco_unitario <= 0:
+                messagebox.showwarning("Aviso", "Preço unitário deve ser maior que 0!")
                 return
+
+            if desconto_pct < 0 or desconto_pct > 100:
+                messagebox.showwarning("Aviso", "Desconto deve estar entre 0 e 100%!")
+                return
+
+            # Converter desconto de percentagem para decimal (10% -> 0.10)
+            desconto_decimal = desconto_pct / Decimal('100')
 
             # Gravar no banco
             if self.item_id:
                 # Editar existente
-                sucesso, item, erro = self.manager.atualizar_reparticao(
-                    reparticao_id=self.item_id,
-                    tipo='servico',
-                    beneficiario=beneficiario,
+                sucesso, item, erro = self.manager.atualizar_item_v2(
+                    item_id=self.item_id,
                     descricao=descricao,
                     quantidade=quantidade,
                     dias=dias,
-                    valor_unitario=valor_unitario
+                    preco_unitario=preco_unitario,
+                    desconto=desconto_decimal
                 )
                 if sucesso:
-                    item.total = item.calcular_total()
-                    self.db_session.commit()
+                    self.item_created_id = self.item_id
             else:
                 # Criar novo
-                reparticao = OrcamentoReparticao(
+                sucesso, item, erro = self.manager.adicionar_item_v2(
                     orcamento_id=self.orcamento_id,
+                    secao_id=self.secao_id,
                     tipo='servico',
-                    beneficiario=beneficiario,
                     descricao=descricao,
                     quantidade=quantidade,
                     dias=dias,
-                    valor_unitario=valor_unitario,
-                    total=Decimal('0')
+                    preco_unitario=preco_unitario,
+                    desconto=desconto_decimal
                 )
-                reparticao.total = reparticao.calcular_total()
-                self.db_session.add(reparticao)
-                self.db_session.commit()
-                sucesso = True
+                if sucesso:
+                    self.item_created_id = item.id
 
             if sucesso:
                 self.success = True
-                messagebox.showinfo("Sucesso", "Serviço EMPRESA gravado com sucesso!")
+                messagebox.showinfo("Sucesso", "Serviço gravado com sucesso!")
                 self.destroy()
             else:
-                messagebox.showerror("Erro", f"Erro ao gravar: {erro if 'erro' in locals() else 'Desconhecido'}")
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
 
         except Exception as e:
-            self.db_session.rollback()
             messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")

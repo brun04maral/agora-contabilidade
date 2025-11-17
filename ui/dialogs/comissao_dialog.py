@@ -1,19 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-ComissaoDialog - Diálogo para adicionar/editar comissões EMPRESA em orçamentos
-Dialog para o lado EMPRESA com cálculo baseado em percentagem sobre base de cálculo
+ComissaoDialog - Dialog para criar/editar comissões EMPRESA (LADO EMPRESA)
 """
 import customtkinter as ctk
 from tkinter import messagebox
-from typing import Optional
 from sqlalchemy.orm import Session
-from database.models.orcamento import OrcamentoItem
+from logic.orcamentos import OrcamentoManager
+from database.models.orcamento import OrcamentoReparticao
+from decimal import Decimal
+from typing import Optional
 
 
 class ComissaoDialog(ctk.CTkToplevel):
     """
-    Diálogo para adicionar ou editar comissão do lado EMPRESA
-    Calcula automaticamente total = base_calculo × (percentagem / 100)
+    Dialog para adicionar/editar comissão no LADO EMPRESA
+
+    Campos:
+    - Beneficiário (dropdown obrigatório: BA, RR, AGORA)
+    - Descrição (obrigatório)
+    - Percentagem (decimal 0-100, 3 casas decimais, obrigatório)
+    - Base de Cálculo (readonly, display only)
+    - Total Calculado (readonly, auto-calculado)
+
+    Cálculo:
+    total = base_calculo × (percentagem / 100)
+    Suporta 3 casas decimais (ex: 5.125%)
     """
 
     def __init__(
@@ -21,269 +32,281 @@ class ComissaoDialog(ctk.CTkToplevel):
         parent,
         db_session: Session,
         orcamento_id: int,
-        secao_id: int,
-        item: Optional[OrcamentoItem] = None
+        base_calculo: Decimal,
+        item_id: Optional[int] = None
     ):
         super().__init__(parent)
 
-        self.db = db_session
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
         self.orcamento_id = orcamento_id
-        self.secao_id = secao_id
-        self.item = item
-        self.is_edit = item is not None
+        self.base_calculo = base_calculo  # Base para cálculo da comissão
+        self.item_id = item_id
+        self.success = False
 
         # Configurar janela
-        self.title("Editar Comissão EMPRESA" if self.is_edit else "Adicionar Comissão EMPRESA")
-        self.geometry("600x550")
+        self.title("Adicionar Comissão" if not item_id else "Editar Comissão")
+        self.geometry("500x520")
         self.resizable(False, False)
 
-        # Tornar modal
+        # Modal
         self.transient(parent)
         self.grab_set()
 
-        # Centrar na tela
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (600 // 2)
-        y = (self.winfo_screenheight() // 2) - (550 // 2)
-        self.geometry(f"600x550+{x}+{y}")
-
+        # Criar widgets
         self.create_widgets()
 
-        # Carregar dados se for edição
-        if self.is_edit:
-            self.load_data()
+        # Se edição, carregar dados
+        if item_id:
+            self.carregar_dados()
+
+        # Calcular total inicial
+        self.atualizar_total()
 
     def create_widgets(self):
-        """Cria widgets do diálogo"""
-
-        # Main frame
-        main_frame = ctk.CTkFrame(self)
+        """Cria widgets do dialog"""
+        # Container principal
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Header
-        header_label = ctk.CTkLabel(
+        # Título
+        title_label = ctk.CTkLabel(
             main_frame,
-            text="💰 " + ("Editar Comissão EMPRESA" if self.is_edit else "Nova Comissão EMPRESA"),
-            font=ctk.CTkFont(size=18, weight="bold")
+            text="Comissão - LADO EMPRESA",
+            font=ctk.CTkFont(size=16, weight="bold")
         )
-        header_label.pack(pady=(0, 20))
+        title_label.pack(pady=(0, 20))
 
-        # Scrollable form
-        scroll = ctk.CTkScrollableFrame(main_frame)
-        scroll.pack(fill="both", expand=True)
+        # Beneficiário (OBRIGATÓRIO)
+        ctk.CTkLabel(
+            main_frame,
+            text="Beneficiário: *",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#f44336"
+        ).pack(anchor="w", pady=(0, 5))
 
-        # Descrição *
-        ctk.CTkLabel(scroll, text="Descrição *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.descricao_textbox = ctk.CTkTextbox(scroll, height=80)
-        self.descricao_textbox.pack(fill="x", pady=(0, 10))
-
-        # Beneficiário *
-        ctk.CTkLabel(scroll, text="Beneficiário *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.beneficiario_combo = ctk.CTkComboBox(
-            scroll,
-            values=["BA", "RR"],
-            height=35,
-            state="readonly"
+        self.beneficiario_var = ctk.StringVar(value="")
+        self.beneficiario_dropdown = ctk.CTkOptionMenu(
+            main_frame,
+            variable=self.beneficiario_var,
+            values=["BA", "RR", "AGORA"],
+            height=35
         )
-        self.beneficiario_combo.set("BA")  # Default
-        self.beneficiario_combo.pack(fill="x", pady=(0, 10))
+        self.beneficiario_dropdown.pack(fill="x", pady=(0, 15))
 
-        # Percentagem e Base de Cálculo (lado a lado)
-        calc_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        calc_frame.pack(fill="x", pady=(10, 10))
+        # Descrição
+        ctk.CTkLabel(
+            main_frame,
+            text="Descrição:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
 
-        # Percentagem
-        pct_col = ctk.CTkFrame(calc_frame, fg_color="transparent")
-        pct_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
-        ctk.CTkLabel(pct_col, text="Percentagem (%) *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.percentagem_entry = ctk.CTkEntry(pct_col, placeholder_text="Ex: 10 ou 7.5", height=35)
-        self.percentagem_entry.pack(fill="x")
-        self.percentagem_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
-
-        # Base de Cálculo
-        base_col = ctk.CTkFrame(calc_frame, fg_color="transparent")
-        base_col.pack(side="left", fill="x", expand=True)
-        ctk.CTkLabel(base_col, text="Base de Cálculo (€) *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.base_calculo_entry = ctk.CTkEntry(base_col, placeholder_text="Ex: 5000.00", height=35)
-        self.base_calculo_entry.pack(fill="x")
-        self.base_calculo_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
-
-        # Info de cálculo
-        info_label = ctk.CTkLabel(
-            scroll,
-            text="💡 Total calculado automaticamente: Base de Cálculo × (Percentagem / 100)",
-            font=ctk.CTkFont(size=11),
-            text_color="gray"
+        self.descricao_entry = ctk.CTkEntry(
+            main_frame,
+            placeholder_text="Ex: Comissão de Venda",
+            height=35
         )
-        info_label.pack(pady=(10, 5))
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
 
-        # Total (readonly, calculado)
-        ctk.CTkLabel(scroll, text="Total (Calculado)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.total_entry = ctk.CTkEntry(
-            scroll,
-            placeholder_text="0.00 €",
-            height=35,
-            state="readonly",
-            fg_color=("#F0F0F0", "#2b2b2b")
+        # Percentagem (3 casas decimais)
+        ctk.CTkLabel(
+            main_frame,
+            text="Percentagem (%):",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.percentagem_entry = ctk.CTkEntry(
+            main_frame,
+            placeholder_text="Ex: 5.125 (suporta 3 decimais)",
+            height=35
         )
-        self.total_entry.pack(fill="x", pady=(0, 10))
+        self.percentagem_entry.pack(fill="x", pady=(0, 15))
+        self.percentagem_entry.bind("<KeyRelease>", lambda e: self.atualizar_total())
 
-        # Exemplo visual
-        exemplo_frame = ctk.CTkFrame(scroll, fg_color=("#E3F2FD", "#1E3A5F"))
-        exemplo_frame.pack(fill="x", pady=(10, 10), padx=10)
+        # Base de cálculo (display only)
+        ctk.CTkLabel(
+            main_frame,
+            text="Base de Cálculo:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
 
-        exemplo_label = ctk.CTkLabel(
-            exemplo_frame,
-            text="📝 Exemplo:\n"
-                 "Percentagem: 10% | Base: 5000€ → Total: 500€\n"
-                 "Percentagem: 7.5% | Base: 2000€ → Total: 150€",
-            font=ctk.CTkFont(size=11),
-            justify="left"
+        self.base_label = ctk.CTkLabel(
+            main_frame,
+            text=f"€{float(self.base_calculo):.2f}",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=("#e3f2fd", "#1e3a5f"),
+            corner_radius=6,
+            padx=15,
+            pady=10,
+            anchor="w"
         )
-        exemplo_label.pack(pady=10, padx=10)
+        self.base_label.pack(fill="x", pady=(0, 15))
 
-        # Buttons
+        # Total Calculado (readonly, auto-calculado)
+        ctk.CTkLabel(
+            main_frame,
+            text="Total Calculado:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.total_label = ctk.CTkLabel(
+            main_frame,
+            text="€0.00",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            fg_color=("#e8f5e0", "#2b4a2b"),
+            corner_radius=6,
+            padx=15,
+            pady=10,
+            anchor="w"
+        )
+        self.total_label.pack(fill="x", pady=(0, 20))
+
+        # Botões
         btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(10, 0))
+        btn_frame.pack(fill="x")
 
-        cancel_btn = ctk.CTkButton(
+        btn_cancelar = ctk.CTkButton(
             btn_frame,
             text="Cancelar",
             command=self.destroy,
             width=120,
-            height=35,
             fg_color="gray",
-            hover_color="darkgray"
+            hover_color="#5a5a5a"
         )
-        cancel_btn.pack(side="right")
+        btn_cancelar.pack(side="left", padx=(0, 10))
 
-        save_btn = ctk.CTkButton(
+        btn_gravar = ctk.CTkButton(
             btn_frame,
-            text="Guardar",
-            command=self.save,
+            text="Gravar",
+            command=self.gravar,
             width=120,
-            height=35,
-            fg_color="#4CAF50",
-            hover_color="#45a049"
+            fg_color="#9C27B0",
+            hover_color="#7B1FA2"
         )
-        save_btn.pack(side="right", padx=(0, 10))
+        btn_gravar.pack(side="right")
 
-    def calcular_total(self):
-        """Calcula o total da comissão"""
+    def atualizar_total(self):
+        """
+        Atualiza total calculado em tempo real
+        Fórmula: total = base_calculo × (percentagem / 100)
+        """
         try:
-            percentagem = float(self.percentagem_entry.get() or 0)
-            base_calculo = float(self.base_calculo_entry.get() or 0)
+            percentagem_str = self.percentagem_entry.get().strip()
 
-            # Calcular total: base × (percentagem / 100)
-            total = base_calculo * (percentagem / 100)
+            if percentagem_str:
+                percentagem = Decimal(percentagem_str.replace(',', '.'))
+                total = self.base_calculo * (percentagem / Decimal('100'))
+                self.total_label.configure(text=f"€{float(total):.2f}")
+            else:
+                self.total_label.configure(text="€0.00")
+        except (ValueError, Exception):
+            self.total_label.configure(text="€0.00")
 
-            # Atualizar campo total
-            self.total_entry.configure(state="normal")
-            self.total_entry.delete(0, "end")
-            self.total_entry.insert(0, f"{total:.2f} €")
-            self.total_entry.configure(state="readonly")
-        except ValueError:
-            # Se houver erro de conversão, não fazer nada
-            pass
-
-    def load_data(self):
+    def carregar_dados(self):
         """Carrega dados do item para edição"""
-        if not self.item:
+        item = self.db_session.query(OrcamentoReparticao).filter(
+            OrcamentoReparticao.id == self.item_id
+        ).first()
+
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
+            self.destroy()
             return
 
         # Preencher campos
-        self.descricao_textbox.insert("1.0", self.item.descricao)
+        if item.beneficiario:
+            self.beneficiario_var.set(item.beneficiario)
 
-        # Beneficiário (afetacao)
-        if self.item.afetacao:
-            self.beneficiario_combo.set(self.item.afetacao)
+        if item.descricao:
+            self.descricao_entry.delete(0, "end")
+            self.descricao_entry.insert(0, item.descricao)
 
-        # Para edição, precisamos recalcular percentagem a partir do valor unitário
-        # Assumindo que preco_unitario armazena a percentagem
-        # e quantidade armazena a base de cálculo
-        if self.item.quantidade and self.item.preco_unitario:
-            # Reconstituir percentagem e base
-            base_calculo = float(self.item.quantidade)
-            total = float(self.item.total)
-            percentagem = (total / base_calculo * 100) if base_calculo > 0 else 0
-
+        if item.percentagem:
             self.percentagem_entry.delete(0, "end")
-            self.percentagem_entry.insert(0, f"{percentagem:.2f}")
+            # Mostrar com 3 casas decimais se tiver
+            self.percentagem_entry.insert(0, str(float(item.percentagem)))
 
-            self.base_calculo_entry.delete(0, "end")
-            self.base_calculo_entry.insert(0, f"{base_calculo:.2f}")
+        if item.base_calculo:
+            self.base_calculo = item.base_calculo
+            self.base_label.configure(text=f"€{float(self.base_calculo):.2f}")
 
-        # Calcular total
-        self.calcular_total()
+        # Atualizar total
+        self.atualizar_total()
 
-    def save(self):
-        """Guarda comissão EMPRESA"""
-        # Validação
-        descricao = self.descricao_textbox.get("1.0", "end").strip()
-        if not descricao:
-            messagebox.showerror("Erro", "Por favor, preencha a descrição.")
-            return
-
-        beneficiario = self.beneficiario_combo.get()
-        if not beneficiario or beneficiario not in ["BA", "RR"]:
-            messagebox.showerror("Erro", "Por favor, selecione um beneficiário válido (BA ou RR).")
-            return
-
+    def gravar(self):
+        """Grava a comissão"""
         try:
-            percentagem = float(self.percentagem_entry.get())
+            # Validar beneficiário (OBRIGATÓRIO)
+            beneficiario = self.beneficiario_var.get()
+            if not beneficiario:
+                messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
+                return
+
+            # Validar descrição
+            descricao = self.descricao_entry.get().strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            # Validar percentagem
+            percentagem_str = self.percentagem_entry.get().strip()
+            if not percentagem_str:
+                messagebox.showwarning("Aviso", "Percentagem é obrigatória!")
+                return
+
+            # Converter valores
+            try:
+                percentagem = Decimal(percentagem_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Percentagem inválida!")
+                return
+
+            # Validar valores
             if percentagem <= 0:
-                messagebox.showerror("Erro", "Percentagem deve ser maior que 0.")
+                messagebox.showwarning("Aviso", "Percentagem deve ser maior que 0!")
                 return
 
-            base_calculo = float(self.base_calculo_entry.get())
-            if base_calculo <= 0:
-                messagebox.showerror("Erro", "Base de cálculo deve ser maior que 0.")
+            if percentagem > 100:
+                messagebox.showwarning("Aviso", "Percentagem não pode ser maior que 100%!")
                 return
-        except ValueError:
-            messagebox.showerror("Erro", "Por favor, insira valores numéricos válidos.")
-            return
 
-        # Calcular total
-        total = base_calculo * (percentagem / 100)
-
-        try:
-            if self.is_edit:
-                # Atualizar item existente
-                self.item.descricao = descricao
-                self.item.afetacao = beneficiario
-                # Armazenar base_calculo em quantidade
-                self.item.quantidade = int(base_calculo)
-                self.item.dias = 1  # Comissão não usa dias
-                # Armazenar percentagem em preco_unitario
-                self.item.preco_unitario = percentagem
-                self.item.desconto = 0  # Sem desconto
-                self.item.total = total
-            else:
-                # Criar novo item
-                # Obter próxima ordem
-                ultimo_item = self.db.query(OrcamentoItem).filter(
-                    OrcamentoItem.secao_id == self.secao_id
-                ).order_by(OrcamentoItem.ordem.desc()).first()
-
-                ordem = (ultimo_item.ordem + 1) if ultimo_item else 0
-
-                novo_item = OrcamentoItem(
-                    orcamento_id=self.orcamento_id,
-                    secao_id=self.secao_id,
+            # Gravar no banco
+            if self.item_id:
+                # Editar existente
+                sucesso, item, erro = self.manager.atualizar_reparticao(
+                    reparticao_id=self.item_id,
+                    tipo='comissao',
+                    beneficiario=beneficiario,
                     descricao=descricao,
-                    afetacao=beneficiario,
-                    quantidade=int(base_calculo),  # Armazena base_calculo
-                    dias=1,  # Comissão não usa dias
-                    preco_unitario=percentagem,  # Armazena percentagem
-                    desconto=0,  # Sem desconto
-                    total=total,
-                    ordem=ordem
+                    percentagem=percentagem,
+                    base_calculo=self.base_calculo
                 )
-                self.db.add(novo_item)
+                if sucesso:
+                    item.total = item.calcular_total()
+                    self.db_session.commit()
+            else:
+                # Criar novo
+                reparticao = OrcamentoReparticao(
+                    orcamento_id=self.orcamento_id,
+                    tipo='comissao',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    percentagem=percentagem,
+                    base_calculo=self.base_calculo,
+                    total=Decimal('0')
+                )
+                reparticao.total = reparticao.calcular_total()
+                self.db_session.add(reparticao)
+                self.db_session.commit()
+                sucesso = True
 
-            self.db.commit()
-            messagebox.showinfo("Sucesso", "Comissão EMPRESA guardada com sucesso!")
-            self.destroy()
+            if sucesso:
+                self.success = True
+                messagebox.showinfo("Sucesso", "Comissão gravada com sucesso!")
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro if 'erro' in locals() else 'Desconhecido'}")
+
         except Exception as e:
-            self.db.rollback()
-            messagebox.showerror("Erro", f"Erro ao guardar comissão EMPRESA: {str(e)}")
+            self.db_session.rollback()
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")

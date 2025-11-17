@@ -4,6 +4,313 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-17] Sistema Aprovação e Conversão Orçamentos
+
+### ✨ Feature: Aprovar Orçamento
+
+**Método aprovar_orcamento() no OrcamentoManager** (Commit: 23c399c)
+- Ficheiro: `logic/orcamentos.py:904-960`
+- Validações completas antes de aprovar:
+  1. Orçamento existe
+  2. Tem pelo menos 1 item CLIENTE
+  3. Tem pelo menos 1 item EMPRESA
+  4. TOTAL_CLIENTE == TOTAL_EMPRESA (tolerância ±0.01€)
+- Atualiza `status = 'aprovado'` e `updated_at`
+- Retorna tupla: `(sucesso, orcamento, mensagem_erro)`
+
+**Botão Aprovar Orçamento na UI** (Commit: f892656)
+- Ficheiro: `ui/screens/orcamento_form.py:1272-1318`
+- Fluxo completo:
+  1. Validar totais (método existente `validar_totais()`)
+  2. Confirmar com user (messagebox.askyesno)
+  3. Chamar `manager.aprovar_orcamento()`
+  4. Atualizar badge de estado (verde "APROVADO")
+  5. Mostrar mensagem de sucesso
+- Mensagem: "Orçamento aprovado com sucesso! Use o botão 'Converter em Projeto' para criar o projeto correspondente."
+
+---
+
+### ✨ Feature: Converter Orçamento em Projeto
+
+**Botão UI** (Commit: 6e86259)
+- Ficheiro: `ui/screens/orcamento_form.py:405-416`
+- Botão roxo (#9C27B0) no footer após "Aprovar"
+- Estado: `disabled` (habilitado apenas quando status = "aprovado")
+- Controle automático em `atualizar_estado_badge()`
+
+**Conversão Completa** (Commit: 31b4166)
+- Ficheiro: `ui/screens/orcamento_form.py:1333-1413`
+- Cálculo automático de prémios:
+  - `premio_ba = sum(r.total for r in reparticoes if r.beneficiario == 'BA')`
+  - `premio_rr = sum(r.total for r in reparticoes if r.beneficiario == 'RR')`
+- Cria projeto via `ProjetoManager.criar()`:
+  - Tipo: `TipoProjeto.EMPRESA`
+  - Estado: `EstadoProjeto.ATIVO`
+  - Data início: `date.today()`
+  - Descrição: "Projeto criado a partir do orçamento [código]"
+- Grava link `orcamento.projeto_id = projeto.id`
+- Previne conversão dupla (verifica `projeto_id` existente)
+- Desabilita botão após conversão
+- Mensagem sucesso: mostra número, valor, prémios BA/RR
+
+**Exemplo de Cálculo:**
+```python
+# Repartições EMPRESA:
+- BA: €800 (serviço) + €200 (equipamento) = €1000
+- RR: €500 (serviço) + €100 (equipamento) = €600
+- AGORA: €400 (comissão)
+
+# Projeto criado:
+- Número: #P0042
+- Valor: €2000.00 (total CLIENTE)
+- Prémio BA: €1000.00 (calculado automaticamente)
+- Prémio RR: €600.00 (calculado automaticamente)
+- Estado: ATIVO
+```
+
+---
+
+### 🗄️ Migration 024 - Campo projeto_id em Orcamentos
+
+**Migration** (Commit: 18ee88f)
+- Ficheiro: `database/migrations/024_add_projeto_id_to_orcamento.py`
+- Adiciona coluna `projeto_id INTEGER NULL` à tabela `orcamentos`
+- FK para `projetos.id`
+- Índice: `idx_orcamentos_projeto`
+- Suporta `upgrade()` e `downgrade()`
+
+**Modelos Atualizados:**
+- `database/models/orcamento.py:41`
+  - Campo: `projeto_id = Column(Integer, ForeignKey('projetos.id'), nullable=True)`
+  - Relationship: `projeto = relationship("Projeto", back_populates="orcamentos")`
+- `database/models/projeto.py:71`
+  - Relationship: `orcamentos = relationship("Orcamento", back_populates="projeto")`
+
+**Script de Execução:**
+- `scripts/run_migration_024.py`
+- Aplica migration com verificação
+- Valida campo foi criado
+- Instruções de próximos passos
+
+**Benefícios:**
+- Link bidirecional orçamento ↔ projeto
+- Prevenir conversão dupla
+- Rastreabilidade completa
+- Histórico de conversões
+
+**Ver:** memory/DATABASE_SCHEMA.md (Migration 024)
+
+---
+
+## [2025-11-17] Orçamentos V2 - Dialogs CRUD Completos
+
+### ✨ Dialogs CLIENTE - 5/5 Implementados
+
+**TransporteDialog** (Commit: 7baf6d1)
+- Ficheiro: `ui/dialogs/transporte_dialog.py`
+- Campos: Descrição, Kms, Valor/Km (0.40€), Total calculado
+- Cálculo: `total = kms × valor_km`
+- Validações: kms > 0, valor_km > 0, descrição obrigatória
+- KeyRelease bindings, mensagem sucesso, attribute `item_created_id`
+
+**RefeicaoDialog** (Commit: 86be721)
+- Ficheiro: `ui/dialogs/refeicao_dialog.py`
+- Campos: Descrição (default "Refeições"), Num Refeições, Valor/Refeição, Total
+- Cálculo: `total = num_refeicoes × valor_por_refeicao`
+- Validações: campos > 0
+- KeyRelease bindings, mensagem sucesso
+
+**OutroDialog** (Commit: 48eec23)
+- Ficheiro: `ui/dialogs/outro_dialog.py`
+- Campos: Descrição, Valor Fixo, Total (= Valor Fixo)
+- Validações: descrição obrigatória, valor_fixo > 0
+- CTkEntry para descrição, altura 500x470px
+- KeyRelease binding, mensagem sucesso
+
+**ServicoDialog** (Commit: 59e4504)
+- Ficheiro: `ui/dialogs/servico_dialog.py`
+- Campos: Descrição, Quantidade (1), Dias (1), Preço, Desconto% (0), Total
+- Cálculo: `total = (qtd × dias × preço) - (subtotal × desconto/100)`
+- Validações completas: descrição, qtd/dias/preço > 0, desconto 0-100%
+- Grid layout, KeyRelease bindings, conversão % ↔ decimal
+- CTkEntry, altura 500x650px, label verde
+
+**EquipamentoDialog** (Commit: 75085bd)
+- Ficheiro: `ui/dialogs/equipamento_dialog.py`
+- Dropdown: Equipamentos com `preco_aluguer > 0`
+- Display: "numero - produto (€preço/dia)"
+- Auto-preenchimento: descrição + preço ao selecionar
+- Campos editáveis após seleção
+- Cálculo igual ServicoDialog, FK opcional `equipamento_id`
+- Integração com EquipamentoManager
+- Altura 500x700px, grid layout
+
+---
+
+### ✨ Dialogs EMPRESA - 3/3 Implementados
+
+**ServicoEmpresaDialog** (Commit: 7bf6580)
+- Ficheiro: `ui/dialogs/servico_empresa_dialog.py`
+- Beneficiário obrigatório: BA, RR, AGORA
+- Campos: Descrição, Quantidade, Dias, Valor Unitário, Total
+- Cálculo: `total = qtd × dias × valor` (SEM desconto)
+- Nota: "ℹ️ Sem desconto no lado EMPRESA"
+- Grid layout, CTkEntry, altura 580px
+
+**EquipamentoEmpresaDialog** (Commit: 7bf6580)
+- Ficheiro: `ui/dialogs/equipamento_empresa_dialog.py`
+- Estrutura idêntica a ServicoEmpresaDialog
+- Beneficiário obrigatório, mesmo cálculo SEM desconto
+- Grid layout, altura 580px
+
+**ComissaoDialog** (Commit: febbff8)
+- Ficheiro: `ui/dialogs/comissao_dialog.py`
+- Beneficiário obrigatório: BA, RR, AGORA
+- Campos: Descrição, Percentagem (3 decimais), Base Cálculo, Total
+- Base de Cálculo: readonly, passada como parâmetro (TOTAL CLIENTE)
+- Cálculo: `total = base × (percentagem / 100)`
+- Exemplo: €1000 × 5.125% = €51.25
+- KeyRelease para atualização instantânea
+- Labels: Base (azul), Total (verde)
+- Altura 520px, placeholder "Ex: 5.125 (suporta 3 decimais)"
+
+---
+
+### 🔧 Refatorações
+
+**Extração de Dialogs** (Commits: 7bf6580, febbff8)
+- **Antes:** Todas classes inline em `orcamento_form.py` (1999 linhas)
+- **Depois:** 8 ficheiros separados (1391 linhas)
+- **Redução:** -608 linhas (-30%)
+- Imports adicionados para todos os 8 dialogs
+- Aliases: `ServicoDialogCliente = ServicoDialog`
+- Benefícios: modularidade, testabilidade, legibilidade
+
+---
+
+### 🐛 Bugs Corrigidos
+
+**Migration 023 - Nullable Fields** (Commit: dba655d)
+- Problema: `NOT NULL constraint failed: orcamento_itens.quantidade`
+- Causa: Tipos 'transporte', 'refeicao', 'outro' não usam todos os campos
+- Solução: Recria tabela com `quantidade`, `dias`, `preco_unitario`, `desconto` NULL
+- Preserva dados, recria índices
+- Resultado: Todos dialogs funcionam sem erros
+
+**DatePickerDropdown Parameter** (Commit: 7baf6d1)
+- Problema: `TypeError` com `initial_date`
+- Solução: Renomear para `default_date` em orcamento_form.py linha 179
+
+**AutocompleteEntry Parameter** (Commit: f53bb3c)
+- Problema: `TypeError` com `completevalues`
+- Solução: Renomear para `options` em create_cliente_autocomplete() linha 219
+
+---
+
+### 📝 Documentação Atualizada
+
+**BUSINESS_LOGIC.md** (Commit: c7e9b43)
+- Secções 1-7 atualizadas: Orçamentos V2
+- Fluxos de cada tipo de item
+- Regras de cálculo e validação
+
+**DATABASE_SCHEMA.md** (Commit: e77796f)
+- Schema `orcamento_itens` e `orcamento_reparticoes`
+- Tabelas `freelancers` e `fornecedores`
+- Enums e índices
+
+**ARCHITECTURE.md** (Commit: 2ba844a)
+- Fluxos de beneficiários
+- Sincronização CLIENTE→EMPRESA
+- Validações críticas
+
+---
+
+### 📦 Commits
+- `7bf6580` - refactor: Extrair dialogs EMPRESA para ficheiros separados
+- `febbff8` - feat: Extrair ComissaoDialog para ficheiro separado
+- `75085bd` - feat: Implementar EquipamentoDialog com seleção
+- `59e4504` - feat: Implementar ServicoDialog
+- `48eec23` - feat: Implementar OutroDialog
+- `86be721` - feat: Implementar RefeicaoDialog
+- `7baf6d1` - feat: TransporteDialog + fix DatePickerDropdown
+- `dba655d` - fix: Migration 023 nullable fields
+- `f53bb3c` - fix: AutocompleteEntry parameter
+- `c7e9b43` - docs: Update BUSINESS_LOGIC.md
+- `e77796f` - docs: Schema Freelancers e Fornecedores
+- `2ba844a` - docs: Fluxos beneficiários ARCHITECTURE.md
+
+---
+
+### 🎯 Próximos Passos
+
+**Logic Layer (2-3 dias):**
+- Expandir `OrcamentoItemManager` (validações + métodos específicos)
+- Criar `OrcamentoReparticaoManager`
+- Expandir `OrcamentoManager` (aprovar + comissões)
+
+**UI Integration (1-2 dias):**
+- Conectar 8 dialogs ao form
+- Tabs CLIENTE/EMPRESA funcionais
+- Preview totais tempo real
+- Validação visual
+
+**Testes (1 dia):**
+- Criar orçamento completo
+- Testar sincronização
+- Testar validação totais
+- Edge cases
+
+---
+
+
+## [2025-11-16] Orçamentos V2 - Arquitetura Base Implementada
+
+### ✨ Modelos de Dados Atualizados (Commit: 087fb08)
+- **Orcamento:** Campo `owner` adicionado (BA/RR)
+- **OrcamentoItem:** Campo `tipo` + campos específicos por tipo (kms, num_refeicoes, valor_fixo, etc)
+- **OrcamentoReparticao:** Campo `beneficiario` + suporte para comissões e todos os tipos
+- Removidas classes legacy: PropostaSecao, PropostaItem
+
+### 🗄️ Migration 022 - Schema V2 (Commits: d4afcf6, 3b589f7)
+**LADO CLIENTE (orcamento_itens):** +7 colunas
+- tipo, kms, valor_por_km, num_refeicoes, valor_por_refeicao, valor_fixo
+
+**LADO EMPRESA (orcamento_reparticoes):** +13 colunas
+- tipo, beneficiario, descricao, quantidade, dias, valor_unitario, base_calculo, kms, valor_por_km, num_refeicoes, valor_por_refeicao, valor_fixo, item_cliente_id
+
+**Features:**
+- Migração automática de dados existentes
+- Inferência de tipos baseada em secções
+- Tabelas legacy marcadas para remoção
+
+### 🎨 OrcamentoFormScreen V2 - Reescrita Completa (Commit: 2882cdc)
+**Estrutura:**
+- Tabs CLIENTE/EMPRESA totalmente separadas
+- Header com campos obrigatórios (owner, cliente, datas)
+- Validação de totais em tempo real com feedback visual
+- Footer com botões "Gravar Rascunho" e "Aprovar Orçamento"
+
+**Preparado para:**
+- Dialogs específicos por tipo (8 dialogs)
+- Renderização de items
+- Sincronização despesas CLIENTE→EMPRESA
+- Auto-preenchimento de comissões
+
+**Referências:**
+- BUSINESS_LOGIC.md (Secção 1-7)
+- DATABASE_SCHEMA.md (Modelo V2)
+- ARCHITECTURE.md (Fluxos e managers)
+
+### 📦 Commits
+- `087fb08` - Modelos V2
+- `d4afcf6` - Migration 022
+- `2882cdc` - OrcamentoFormScreen V2
+- `3b589f7` - Migration aplicada
+
+---
+
+
 ## [2025-11-15 - Noite 21:30] Session 011Nxway2rBVpU2mvorwQDGJ
 
 ### ✨ Migration 021 - Cliente Nome e Nome Formal

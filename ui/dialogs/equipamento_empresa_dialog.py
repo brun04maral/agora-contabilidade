@@ -1,19 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-EquipamentoEmpresaDialog - Diálogo para adicionar/editar equipamento EMPRESA em orçamentos
-Dialog para o lado EMPRESA com campos: equipamento_id, beneficiário (BA/RR), quantidade, valor_unitario, total
+EquipamentoEmpresaDialog - Dialog para criar/editar equipamento EMPRESA (LADO EMPRESA)
 """
 import customtkinter as ctk
 from tkinter import messagebox
-from typing import Optional
 from sqlalchemy.orm import Session
-from database.models.orcamento import OrcamentoItem
-from logic.equipamento import EquipamentoManager
+from logic.orcamentos import OrcamentoManager
+from database.models.orcamento import OrcamentoReparticao
+from decimal import Decimal
+from typing import Optional
 
 
 class EquipamentoEmpresaDialog(ctk.CTkToplevel):
     """
-    Diálogo para adicionar ou editar equipamento do lado EMPRESA
+    Dialog para adicionar/editar equipamento no LADO EMPRESA
+
+    Campos:
+    - Beneficiário (dropdown obrigatório: BA, RR, AGORA)
+    - Descrição (obrigatório)
+    - Quantidade (inteiro, obrigatório)
+    - Dias (inteiro, obrigatório)
+    - Valor Unitário (decimal, obrigatório)
+
+    Cálculo:
+    total = quantidade × dias × valor_unitário
+    (SEM desconto no lado EMPRESA)
     """
 
     def __init__(
@@ -21,277 +32,288 @@ class EquipamentoEmpresaDialog(ctk.CTkToplevel):
         parent,
         db_session: Session,
         orcamento_id: int,
-        secao_id: int,
-        item: Optional[OrcamentoItem] = None
+        item_id: Optional[int] = None
     ):
         super().__init__(parent)
 
-        self.db = db_session
+        self.db_session = db_session
+        self.manager = OrcamentoManager(db_session)
         self.orcamento_id = orcamento_id
-        self.secao_id = secao_id
-        self.item = item
-        self.is_edit = item is not None
-
-        # Manager de equipamento
-        self.equipamento_manager = EquipamentoManager(db_session)
+        self.item_id = item_id
+        self.success = False
 
         # Configurar janela
-        self.title("Editar Equipamento EMPRESA" if self.is_edit else "Adicionar Equipamento EMPRESA")
-        self.geometry("600x500")
+        self.title("Adicionar Equipamento EMPRESA" if not item_id else "Editar Equipamento EMPRESA")
+        self.geometry("500x580")
         self.resizable(False, False)
 
-        # Tornar modal
+        # Modal
         self.transient(parent)
         self.grab_set()
 
-        # Centrar na tela
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (600 // 2)
-        y = (self.winfo_screenheight() // 2) - (500 // 2)
-        self.geometry(f"600x500+{x}+{y}")
-
+        # Criar widgets
         self.create_widgets()
 
-        # Carregar dados se for edição
-        if self.is_edit:
-            self.load_data()
+        # Se edição, carregar dados
+        if item_id:
+            self.carregar_dados()
 
     def create_widgets(self):
-        """Cria widgets do diálogo"""
-
-        # Main frame
-        main_frame = ctk.CTkFrame(self)
+        """Cria widgets do dialog"""
+        # Container principal
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Header
-        header_label = ctk.CTkLabel(
+        # Título
+        title_label = ctk.CTkLabel(
             main_frame,
-            text="📦 " + ("Editar Equipamento EMPRESA" if self.is_edit else "Novo Equipamento EMPRESA"),
-            font=ctk.CTkFont(size=18, weight="bold")
+            text="Equipamento - LADO EMPRESA",
+            font=ctk.CTkFont(size=16, weight="bold")
         )
-        header_label.pack(pady=(0, 20))
+        title_label.pack(pady=(0, 20))
 
-        # Scrollable form
-        scroll = ctk.CTkScrollableFrame(main_frame)
-        scroll.pack(fill="both", expand=True)
+        # Beneficiário (OBRIGATÓRIO)
+        ctk.CTkLabel(
+            main_frame,
+            text="Beneficiário: *",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#f44336"
+        ).pack(anchor="w", pady=(0, 5))
 
-        # Equipamento *
-        ctk.CTkLabel(scroll, text="Equipamento *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-
-        # Carregar lista de equipamentos
-        equipamentos = self.equipamento_manager.listar_equipamentos()
-
-        # Criar mapa id -> nome e lista de nomes
-        self.equipamentos_map = {f"{eq.numero} - {eq.produto}": eq.id for eq in equipamentos}
-        equipamento_names = list(self.equipamentos_map.keys())
-
-        if not equipamento_names:
-            equipamento_names = ["Nenhum equipamento disponível"]
-
-        self.equipamento_combo = ctk.CTkComboBox(
-            scroll,
-            values=equipamento_names,
-            height=35,
-            state="readonly" if equipamento_names[0] != "Nenhum equipamento disponível" else "disabled"
+        self.beneficiario_var = ctk.StringVar(value="")
+        self.beneficiario_dropdown = ctk.CTkOptionMenu(
+            main_frame,
+            variable=self.beneficiario_var,
+            values=["BA", "RR", "AGORA"],
+            height=35
         )
-        if equipamento_names and equipamento_names[0] != "Nenhum equipamento disponível":
-            self.equipamento_combo.set(equipamento_names[0])
-        self.equipamento_combo.pack(fill="x", pady=(0, 10))
+        self.beneficiario_dropdown.pack(fill="x", pady=(0, 15))
 
-        # Beneficiário *
-        ctk.CTkLabel(scroll, text="Beneficiário *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.beneficiario_combo = ctk.CTkComboBox(
-            scroll,
-            values=["BA", "RR"],
-            height=35,
-            state="readonly"
+        # Descrição
+        ctk.CTkLabel(
+            main_frame,
+            text="Descrição:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.descricao_entry = ctk.CTkEntry(
+            main_frame,
+            placeholder_text="Ex: Câmara Sony FX3",
+            height=35
         )
-        self.beneficiario_combo.set("BA")  # Default
-        self.beneficiario_combo.pack(fill="x", pady=(0, 10))
+        self.descricao_entry.pack(fill="x", pady=(0, 15))
 
-        # Quantidade e Valor Unitário (lado a lado)
-        qtd_valor_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        qtd_valor_frame.pack(fill="x", pady=(10, 10))
+        # Grid para Quantidade e Dias (lado a lado)
+        grid_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        grid_frame.pack(fill="x", pady=(0, 15))
+        grid_frame.columnconfigure(0, weight=1)
+        grid_frame.columnconfigure(1, weight=1)
 
         # Quantidade
-        qtd_col = ctk.CTkFrame(qtd_valor_frame, fg_color="transparent")
-        qtd_col.pack(side="left", fill="x", expand=True, padx=(0, 10))
-        ctk.CTkLabel(qtd_col, text="Quantidade *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.quantidade_entry = ctk.CTkEntry(qtd_col, placeholder_text="Ex: 1", height=35)
+        quantidade_frame = ctk.CTkFrame(grid_frame, fg_color="transparent")
+        quantidade_frame.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+
+        ctk.CTkLabel(
+            quantidade_frame,
+            text="Quantidade:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.quantidade_entry = ctk.CTkEntry(
+            quantidade_frame,
+            placeholder_text="Ex: 4",
+            height=35
+        )
         self.quantidade_entry.pack(fill="x")
-        self.quantidade_entry.insert(0, "1")
-        self.quantidade_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
+
+        # Dias
+        dias_frame = ctk.CTkFrame(grid_frame, fg_color="transparent")
+        dias_frame.grid(row=0, column=1, sticky="ew", padx=(5, 0))
+
+        ctk.CTkLabel(
+            dias_frame,
+            text="Dias:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.dias_entry = ctk.CTkEntry(
+            dias_frame,
+            placeholder_text="Ex: 2",
+            height=35
+        )
+        self.dias_entry.pack(fill="x")
 
         # Valor Unitário
-        valor_col = ctk.CTkFrame(qtd_valor_frame, fg_color="transparent")
-        valor_col.pack(side="left", fill="x", expand=True)
-        ctk.CTkLabel(valor_col, text="Valor Unitário (€) *", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.valor_unitario_entry = ctk.CTkEntry(valor_col, placeholder_text="Ex: 100.00", height=35)
-        self.valor_unitario_entry.pack(fill="x")
-        self.valor_unitario_entry.bind("<KeyRelease>", lambda e: self.calcular_total())
+        ctk.CTkLabel(
+            main_frame,
+            text="Valor Unitário (€):",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
 
-        # Total (readonly, calculado)
-        ctk.CTkLabel(scroll, text="Total (Calculado)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
-        self.total_entry = ctk.CTkEntry(
-            scroll,
-            placeholder_text="0.00 €",
-            height=35,
-            state="readonly",
-            fg_color=("#F0F0F0", "#2b2b2b")
+        self.valor_entry = ctk.CTkEntry(
+            main_frame,
+            placeholder_text="Ex: 50.00",
+            height=35
         )
-        self.total_entry.pack(fill="x", pady=(0, 10))
+        self.valor_entry.pack(fill="x", pady=(0, 20))
 
-        # Buttons
+        # Nota informativa
+        ctk.CTkLabel(
+            main_frame,
+            text="ℹ️ Sem desconto no lado EMPRESA",
+            font=ctk.CTkFont(size=11),
+            text_color=("#666", "#999")
+        ).pack(pady=(0, 20))
+
+        # Botões
         btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(10, 0))
+        btn_frame.pack(fill="x")
 
-        cancel_btn = ctk.CTkButton(
+        btn_cancelar = ctk.CTkButton(
             btn_frame,
             text="Cancelar",
             command=self.destroy,
             width=120,
-            height=35,
             fg_color="gray",
-            hover_color="darkgray"
+            hover_color="#5a5a5a"
         )
-        cancel_btn.pack(side="right")
+        btn_cancelar.pack(side="left", padx=(0, 10))
 
-        save_btn = ctk.CTkButton(
+        btn_gravar = ctk.CTkButton(
             btn_frame,
-            text="Guardar",
-            command=self.save,
+            text="Gravar",
+            command=self.gravar,
             width=120,
-            height=35,
-            fg_color="#4CAF50",
-            hover_color="#45a049"
+            fg_color="#2196F3",
+            hover_color="#0b7dda"
         )
-        save_btn.pack(side="right", padx=(0, 10))
+        btn_gravar.pack(side="right")
 
-    def calcular_total(self):
-        """Calcula o total do item"""
-        try:
-            quantidade = int(self.quantidade_entry.get() or 0)
-            valor_unitario = float(self.valor_unitario_entry.get() or 0)
-
-            # Calcular total
-            total = quantidade * valor_unitario
-
-            # Atualizar campo total
-            self.total_entry.configure(state="normal")
-            self.total_entry.delete(0, "end")
-            self.total_entry.insert(0, f"{total:.2f} €")
-            self.total_entry.configure(state="readonly")
-        except ValueError:
-            # Se houver erro de conversão, não fazer nada
-            pass
-
-    def load_data(self):
+    def carregar_dados(self):
         """Carrega dados do item para edição"""
-        if not self.item:
-            return
+        item = self.db_session.query(OrcamentoReparticao).filter(
+            OrcamentoReparticao.id == self.item_id
+        ).first()
 
-        # Selecionar equipamento
-        if self.item.equipamento_id:
-            equipamento = self.equipamento_manager.obter_equipamento(self.item.equipamento_id)
-            if equipamento:
-                equipamento_key = f"{equipamento.numero} - {equipamento.produto}"
-                if equipamento_key in self.equipamentos_map:
-                    self.equipamento_combo.set(equipamento_key)
-
-        # Beneficiário (afetacao)
-        if self.item.afetacao:
-            self.beneficiario_combo.set(self.item.afetacao)
-
-        self.quantidade_entry.delete(0, "end")
-        self.quantidade_entry.insert(0, str(self.item.quantidade))
-
-        self.valor_unitario_entry.delete(0, "end")
-        self.valor_unitario_entry.insert(0, str(float(self.item.preco_unitario)))
-
-        # Calcular total
-        self.calcular_total()
-
-    def save(self):
-        """Guarda equipamento EMPRESA"""
-        # Validação
-        equipamento_nome = self.equipamento_combo.get()
-        if not equipamento_nome or equipamento_nome == "Nenhum equipamento disponível":
-            messagebox.showerror("Erro", "Por favor, selecione um equipamento.")
-            return
-
-        equipamento_id = self.equipamentos_map.get(equipamento_nome)
-        if not equipamento_id:
-            messagebox.showerror("Erro", "Equipamento inválido.")
-            return
-
-        beneficiario = self.beneficiario_combo.get()
-        if not beneficiario or beneficiario not in ["BA", "RR"]:
-            messagebox.showerror("Erro", "Por favor, selecione um beneficiário válido (BA ou RR).")
-            return
-
-        try:
-            quantidade = int(self.quantidade_entry.get())
-            if quantidade <= 0:
-                messagebox.showerror("Erro", "Quantidade deve ser maior que 0.")
-                return
-
-            valor_unitario = float(self.valor_unitario_entry.get())
-            if valor_unitario <= 0:
-                messagebox.showerror("Erro", "Valor unitário deve ser maior que 0.")
-                return
-        except ValueError:
-            messagebox.showerror("Erro", "Por favor, insira valores numéricos válidos.")
-            return
-
-        # Calcular total
-        total = quantidade * valor_unitario
-
-        # Obter equipamento para descrição
-        equipamento = self.equipamento_manager.obter_equipamento(equipamento_id)
-        if not equipamento:
-            messagebox.showerror("Erro", "Equipamento não encontrado.")
-            return
-
-        descricao = f"{equipamento.numero} - {equipamento.produto}"
-
-        try:
-            if self.is_edit:
-                # Atualizar item existente
-                self.item.equipamento_id = equipamento_id
-                self.item.descricao = descricao
-                self.item.afetacao = beneficiario
-                self.item.quantidade = quantidade
-                self.item.dias = 1  # Equipamento EMPRESA não usa dias
-                self.item.preco_unitario = valor_unitario
-                self.item.desconto = 0  # Sem desconto no lado EMPRESA
-                self.item.total = total
-            else:
-                # Criar novo item
-                # Obter próxima ordem
-                ultimo_item = self.db.query(OrcamentoItem).filter(
-                    OrcamentoItem.secao_id == self.secao_id
-                ).order_by(OrcamentoItem.ordem.desc()).first()
-
-                ordem = (ultimo_item.ordem + 1) if ultimo_item else 0
-
-                novo_item = OrcamentoItem(
-                    orcamento_id=self.orcamento_id,
-                    secao_id=self.secao_id,
-                    equipamento_id=equipamento_id,
-                    descricao=descricao,
-                    afetacao=beneficiario,
-                    quantidade=quantidade,
-                    dias=1,  # Equipamento EMPRESA não usa dias
-                    preco_unitario=valor_unitario,
-                    desconto=0,  # Sem desconto no lado EMPRESA
-                    total=total,
-                    ordem=ordem
-                )
-                self.db.add(novo_item)
-
-            self.db.commit()
-            messagebox.showinfo("Sucesso", "Equipamento EMPRESA guardado com sucesso!")
+        if not item:
+            messagebox.showerror("Erro", "Item não encontrado!")
             self.destroy()
+            return
+
+        # Preencher campos
+        if item.beneficiario:
+            self.beneficiario_var.set(item.beneficiario)
+
+        if item.descricao:
+            self.descricao_entry.delete(0, "end")
+            self.descricao_entry.insert(0, item.descricao)
+
+        if item.quantidade:
+            self.quantidade_entry.delete(0, "end")
+            self.quantidade_entry.insert(0, str(item.quantidade))
+
+        if item.dias:
+            self.dias_entry.delete(0, "end")
+            self.dias_entry.insert(0, str(item.dias))
+
+        if item.valor_unitario:
+            self.valor_entry.delete(0, "end")
+            self.valor_entry.insert(0, str(float(item.valor_unitario)))
+
+    def gravar(self):
+        """Grava o equipamento EMPRESA"""
+        try:
+            # Validar beneficiário (OBRIGATÓRIO)
+            beneficiario = self.beneficiario_var.get()
+            if not beneficiario:
+                messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
+                return
+
+            # Validar descrição
+            descricao = self.descricao_entry.get().strip()
+            if not descricao:
+                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
+                return
+
+            # Validar quantidade
+            quantidade_str = self.quantidade_entry.get().strip()
+            if not quantidade_str:
+                messagebox.showwarning("Aviso", "Quantidade é obrigatória!")
+                return
+
+            # Validar dias
+            dias_str = self.dias_entry.get().strip()
+            if not dias_str:
+                messagebox.showwarning("Aviso", "Dias é obrigatório!")
+                return
+
+            # Validar valor unitário
+            valor_str = self.valor_entry.get().strip()
+            if not valor_str:
+                messagebox.showwarning("Aviso", "Valor unitário é obrigatório!")
+                return
+
+            # Converter valores
+            try:
+                quantidade = int(quantidade_str)
+                dias = int(dias_str)
+                valor_unitario = Decimal(valor_str.replace(',', '.'))
+            except ValueError:
+                messagebox.showerror("Erro", "Valores numéricos inválidos!")
+                return
+
+            # Validar valores positivos
+            if quantidade <= 0:
+                messagebox.showwarning("Aviso", "Quantidade deve ser maior que 0!")
+                return
+
+            if dias <= 0:
+                messagebox.showwarning("Aviso", "Dias deve ser maior que 0!")
+                return
+
+            if valor_unitario <= 0:
+                messagebox.showwarning("Aviso", "Valor unitário deve ser maior que 0!")
+                return
+
+            # Gravar no banco
+            if self.item_id:
+                # Editar existente
+                sucesso, item, erro = self.manager.atualizar_reparticao(
+                    reparticao_id=self.item_id,
+                    tipo='equipamento',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    valor_unitario=valor_unitario
+                )
+                if sucesso:
+                    item.total = item.calcular_total()
+                    self.db_session.commit()
+            else:
+                # Criar novo
+                reparticao = OrcamentoReparticao(
+                    orcamento_id=self.orcamento_id,
+                    tipo='equipamento',
+                    beneficiario=beneficiario,
+                    descricao=descricao,
+                    quantidade=quantidade,
+                    dias=dias,
+                    valor_unitario=valor_unitario,
+                    total=Decimal('0')
+                )
+                reparticao.total = reparticao.calcular_total()
+                self.db_session.add(reparticao)
+                self.db_session.commit()
+                sucesso = True
+
+            if sucesso:
+                self.success = True
+                messagebox.showinfo("Sucesso", "Equipamento EMPRESA gravado com sucesso!")
+                self.destroy()
+            else:
+                messagebox.showerror("Erro", f"Erro ao gravar: {erro if 'erro' in locals() else 'Desconhecido'}")
+
         except Exception as e:
-            self.db.rollback()
-            messagebox.showerror("Erro", f"Erro ao guardar equipamento EMPRESA: {str(e)}")
+            self.db_session.rollback()
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")

@@ -9,39 +9,36 @@ from database.models.base import Base
 
 class Orcamento(Base):
     """
-    Modelo para Orçamentos (Budgets)
-    Orçamento único com dados económicos completos e versão cliente opcional
+    Modelo para Orçamentos V2
+    Sistema dual: LADO CLIENTE (proposta comercial) + LADO EMPRESA (repartição interna)
     """
     __tablename__ = 'orcamentos'
 
     id = Column(Integer, primary_key=True)
 
     # Identificação
-    codigo = Column(String(100), nullable=False, unique=True)  # Ex: "20250909_Orçamento-SGS_Conf"
+    codigo = Column(String(100), nullable=False, unique=True)
+
+    # Owner (BA ou RR) - responsável pelo orçamento
+    owner = Column(String(2), nullable=False)  # 'BA' ou 'RR'
 
     # Dados do cliente
-    cliente_id = Column(Integer, ForeignKey('clientes.id'), nullable=True)
+    cliente_id = Column(Integer, ForeignKey('clientes.id'), nullable=False)
     cliente = relationship("Cliente", back_populates="orcamentos")
 
     # Metadados do orçamento
-    data_criacao = Column(Date, nullable=False)  # Data da proposta
-    data_evento = Column(String(200), nullable=True)  # Pode ter múltiplas datas
+    data_criacao = Column(Date, nullable=False)
+    data_evento = Column(String(200), nullable=True)  # Texto livre com datas
     local_evento = Column(String(200), nullable=True)
-    descricao_proposta = Column(Text, nullable=True)
 
-    # Valores
-    valor_total = Column(Numeric(10, 2), nullable=True)
-    total_parcial_1 = Column(Numeric(10, 2), nullable=True)  # Serviços + Equipamento
-    total_parcial_2 = Column(Numeric(10, 2), nullable=True)  # Despesas
+    # Valores (calculados automaticamente)
+    valor_total = Column(Numeric(10, 2), nullable=True)  # TOTAL CLIENTE
 
-    # Notas e status
-    notas_contratuais = Column(Text, nullable=True)
-    status = Column(String(20), nullable=False, default='rascunho')  # rascunho, enviado, aprovado, rejeitado
+    # Status do orçamento
+    status = Column(String(20), nullable=False, default='rascunho')  # 'rascunho', 'aprovado', 'rejeitado'
 
-    # Versão Cliente (opcional - para exportação PDF)
-    tem_versao_cliente = Column(Boolean, nullable=False, default=False)
-    titulo_cliente = Column(String(255), nullable=True)  # Título bonito para PDF
-    descricao_cliente = Column(Text, nullable=True)  # Descrição simplificada para cliente
+    # Link para projeto (quando convertido)
+    projeto_id = Column(Integer, ForeignKey('projetos.id'), nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.now)
@@ -51,11 +48,10 @@ class Orcamento(Base):
     secoes = relationship("OrcamentoSecao", back_populates="orcamento", cascade="all, delete-orphan")
     itens = relationship("OrcamentoItem", back_populates="orcamento", cascade="all, delete-orphan")
     reparticoes = relationship("OrcamentoReparticao", back_populates="orcamento", cascade="all, delete-orphan")
-    proposta_secoes = relationship("PropostaSecao", back_populates="orcamento", cascade="all, delete-orphan")
-    proposta_itens = relationship("PropostaItem", back_populates="orcamento", cascade="all, delete-orphan")
+    projeto = relationship("Projeto", back_populates="orcamentos")
 
     def __repr__(self):
-        return f"<Orcamento(codigo='{self.codigo}', cliente='{self.cliente.nome if self.cliente else 'N/A'}')>"
+        return f"<Orcamento(codigo='{self.codigo}', owner='{self.owner}', cliente='{self.cliente.nome if self.cliente else 'N/A'}')>"
 
 
 class OrcamentoSecao(Base):
@@ -90,8 +86,8 @@ class OrcamentoSecao(Base):
 
 class OrcamentoItem(Base):
     """
-    Modelo para Items/Linhas do Orçamento
-    Cada item representa uma linha no orçamento (serviço, equipamento, ou despesa)
+    Modelo para Items do LADO CLIENTE
+    Tipos: servico, equipamento, transporte, refeicao, outro
     """
     __tablename__ = 'orcamento_itens'
 
@@ -99,121 +95,132 @@ class OrcamentoItem(Base):
     orcamento_id = Column(Integer, ForeignKey('orcamentos.id'), nullable=False)
     secao_id = Column(Integer, ForeignKey('orcamento_secoes.id'), nullable=False)
 
-    # Dados do item
-    descricao = Column(Text, nullable=False)
-    quantidade = Column(Integer, nullable=False, default=1)
-    dias = Column(Integer, nullable=False, default=1)
-    preco_unitario = Column(Numeric(10, 2), nullable=False)
-    desconto = Column(Numeric(5, 4), nullable=False, default=0)  # 0.1 = 10%
-    total = Column(Numeric(10, 2), nullable=False)  # Calculado: (quantidade * dias * preco_unitario) * (1 - desconto)
+    # Tipo de item (V2)
+    tipo = Column(String(20), nullable=False)  # 'servico', 'equipamento', 'transporte', 'refeicao', 'outro'
 
-    # Ordem
+    # Dados comuns
+    descricao = Column(Text, nullable=False)
     ordem = Column(Integer, nullable=False, default=0)
 
-    # Relação com equipamento (opcional, para items de equipamento)
+    # Para serviços e equipamento
+    quantidade = Column(Integer, nullable=True)
+    dias = Column(Integer, nullable=True)
+    preco_unitario = Column(Numeric(10, 2), nullable=True)
+    desconto = Column(Numeric(5, 4), nullable=True, default=0)  # 0-1 (ex: 0.1 = 10%)
+
+    # Para despesas tipo transporte (campos específicos)
+    kms = Column(Numeric(10, 2), nullable=True)
+    valor_por_km = Column(Numeric(10, 2), nullable=True)
+
+    # Para despesas tipo refeição (campos específicos)
+    num_refeicoes = Column(Integer, nullable=True)
+    valor_por_refeicao = Column(Numeric(10, 2), nullable=True)
+
+    # Para despesas tipo outro (valor fixo)
+    valor_fixo = Column(Numeric(10, 2), nullable=True)
+
+    # Total calculado
+    total = Column(Numeric(10, 2), nullable=False)
+
+    # Relação com equipamento (opcional)
     equipamento_id = Column(Integer, ForeignKey('equipamento.id'), nullable=True)
     equipamento = relationship("Equipamento")
-
-    # Campos económicos (internos - não mostrados na versão cliente)
-    reparticao = Column(Numeric(5, 2), nullable=True)  # % de distribuição
-    afetacao = Column(String(50), nullable=True)  # BA, RR, Agora, Freelancers, Despesa
-    investimento = Column(Numeric(10, 2), nullable=True)
-    amortizacao = Column(Numeric(10, 2), nullable=True)
 
     # Relacionamentos
     orcamento = relationship("Orcamento", back_populates="itens")
     secao = relationship("OrcamentoSecao", back_populates="itens")
 
     def calcular_total(self):
-        """Calcula o total do item"""
-        return (self.quantidade * self.dias * self.preco_unitario) * (1 - self.desconto)
+        """Calcula o total do item baseado no tipo"""
+        if self.tipo in ['servico', 'equipamento']:
+            # Total = Quantidade × Dias × Preço_Unitário × (1 - Desconto)
+            return (self.quantidade or 0) * (self.dias or 1) * (self.preco_unitario or 0) * (1 - (self.desconto or 0))
+        elif self.tipo == 'transporte':
+            # Total = Kms × Valor_por_Km
+            return (self.kms or 0) * (self.valor_por_km or 0)
+        elif self.tipo == 'refeicao':
+            # Total = Nº_Refeições × Valor_por_Refeição
+            return (self.num_refeicoes or 0) * (self.valor_por_refeicao or 0)
+        elif self.tipo == 'outro':
+            # Total = Valor fixo
+            return self.valor_fixo or 0
+        return 0
 
     def __repr__(self):
-        return f"<OrcamentoItem(descricao='{self.descricao[:30]}...', total={self.total})>"
+        return f"<OrcamentoItem(tipo='{self.tipo}', descricao='{self.descricao[:30]}...', total={self.total})>"
 
 
 class OrcamentoReparticao(Base):
     """
-    Modelo para Repartição/Distribuição do Orçamento
-    Representa a secção "Contas finais" (económico interno - não mostrado ao cliente)
-    Mostra a distribuição por entidade: BA, RR, Agora, Freelancers, Despesas
+    Modelo para Items do LADO EMPRESA
+    Tipos: servico, equipamento, despesa (espelhada), comissao
     """
     __tablename__ = 'orcamento_reparticoes'
 
     id = Column(Integer, primary_key=True)
     orcamento_id = Column(Integer, ForeignKey('orcamentos.id'), nullable=False)
 
-    # Entidade
-    entidade = Column(String(50), nullable=False)  # 'BA', 'RR', 'Agora', 'Freelancers', 'Despesas'
+    # Tipo de item empresa (V2)
+    tipo = Column(String(20), nullable=False)  # 'servico', 'equipamento', 'despesa', 'comissao'
 
-    # Valores
-    valor = Column(Numeric(10, 2), nullable=False)
-    percentagem = Column(Numeric(5, 2), nullable=True)  # % do total
-
-    # Ordem
+    # Dados comuns
+    descricao = Column(Text, nullable=False)
     ordem = Column(Integer, nullable=False, default=0)
+
+    # Beneficiário (obrigatório exceto para despesas espelhadas)
+    beneficiario = Column(String(50), nullable=True)  # 'BA', 'RR', 'AGORA', 'FREELANCER_[id]', 'FORNECEDOR_[id]'
+
+    # Para serviços e equipamento
+    quantidade = Column(Integer, nullable=True)
+    dias = Column(Integer, nullable=True)
+    valor_unitario = Column(Numeric(10, 2), nullable=True)
+
+    # Para comissões
+    percentagem = Column(Numeric(8, 3), nullable=True)  # Ex: 5.125% = 5.125
+    base_calculo = Column(Numeric(10, 2), nullable=True)  # Base para cálculo da comissão
+
+    # Para despesas espelhadas (campos replicados do lado CLIENTE)
+    kms = Column(Numeric(10, 2), nullable=True)
+    valor_por_km = Column(Numeric(10, 2), nullable=True)
+    num_refeicoes = Column(Integer, nullable=True)
+    valor_por_refeicao = Column(Numeric(10, 2), nullable=True)
+    valor_fixo = Column(Numeric(10, 2), nullable=True)
+
+    # ID do item cliente correspondente (para despesas espelhadas)
+    item_cliente_id = Column(Integer, ForeignKey('orcamento_itens.id'), nullable=True)
+
+    # Total calculado
+    total = Column(Numeric(10, 2), nullable=False)
+
+    # Relações opcionais
+    equipamento_id = Column(Integer, ForeignKey('equipamento.id'), nullable=True)
+    equipamento = relationship("Equipamento")
+
+    fornecedor_id = Column(Integer, ForeignKey('fornecedores.id'), nullable=True)
+    fornecedor = relationship("Fornecedor")
 
     # Relacionamento
     orcamento = relationship("Orcamento", back_populates="reparticoes")
 
-    def __repr__(self):
-        return f"<OrcamentoReparticao(entidade='{self.entidade}', valor={self.valor})>"
-
-
-class PropostaSecao(Base):
-    """
-    Modelo para Secções da Proposta (versão cliente)
-    Estrutura simplificada sem hierarquia - apenas secções flat
-    """
-    __tablename__ = 'proposta_secoes'
-
-    id = Column(Integer, primary_key=True)
-    orcamento_id = Column(Integer, ForeignKey('orcamentos.id'), nullable=False)
-
-    # Dados da secção
-    nome = Column(String(100), nullable=False)  # Ex: "Equipamento", "Serviços", "Despesas"
-    ordem = Column(Integer, nullable=False, default=0)  # Ordem de apresentação
-
-    # Subtotal (calculado)
-    subtotal = Column(Numeric(10, 2), nullable=True)
-
-    # Relacionamentos
-    orcamento = relationship("Orcamento", back_populates="proposta_secoes")
-    itens = relationship("PropostaItem", back_populates="secao", cascade="all, delete-orphan")
-
-    def __repr__(self):
-        return f"<PropostaSecao(nome='{self.nome}', subtotal={self.subtotal})>"
-
-
-class PropostaItem(Base):
-    """
-    Modelo para Items da Proposta (versão cliente)
-    Versão simplificada sem campos económicos internos (afetacao, investimento, etc.)
-    """
-    __tablename__ = 'proposta_itens'
-
-    id = Column(Integer, primary_key=True)
-    orcamento_id = Column(Integer, ForeignKey('orcamentos.id'), nullable=False)
-    secao_id = Column(Integer, ForeignKey('proposta_secoes.id'), nullable=False)
-
-    # Dados do item
-    descricao = Column(Text, nullable=False)
-    quantidade = Column(Integer, nullable=False, default=1)
-    dias = Column(Integer, nullable=False, default=1)
-    preco_unitario = Column(Numeric(10, 2), nullable=False)
-    desconto = Column(Numeric(5, 4), nullable=False, default=0)  # 0.1 = 10%
-    total = Column(Numeric(10, 2), nullable=False)  # Calculado: (quantidade * dias * preco_unitario) * (1 - desconto)
-
-    # Ordem
-    ordem = Column(Integer, nullable=False, default=0)
-
-    # Relacionamentos
-    orcamento = relationship("Orcamento", back_populates="proposta_itens")
-    secao = relationship("PropostaSecao", back_populates="itens")
-
     def calcular_total(self):
-        """Calcula o total do item"""
-        return (self.quantidade * self.dias * self.preco_unitario) * (1 - self.desconto)
+        """Calcula o total baseado no tipo"""
+        if self.tipo in ['servico', 'equipamento']:
+            # Total = Quantidade × Dias × Valor_Unitário
+            return (self.quantidade or 0) * (self.dias or 1) * (self.valor_unitario or 0)
+        elif self.tipo == 'comissao':
+            # Total = Base × (Percentagem / 100)
+            return (self.base_calculo or 0) * ((self.percentagem or 0) / 100)
+        elif self.tipo == 'despesa':
+            # Replicado do item cliente - calcular baseado nos campos
+            if self.kms is not None:
+                return (self.kms or 0) * (self.valor_por_km or 0)
+            elif self.num_refeicoes is not None:
+                return (self.num_refeicoes or 0) * (self.valor_por_refeicao or 0)
+            elif self.valor_fixo is not None:
+                return self.valor_fixo or 0
+        return 0
 
     def __repr__(self):
-        return f"<PropostaItem(descricao='{self.descricao[:30]}...', total={self.total})>"
+        return f"<OrcamentoReparticao(tipo='{self.tipo}', beneficiario='{self.beneficiario}', total={self.total})>"
+
+

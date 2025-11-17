@@ -68,6 +68,7 @@ class Projeto(Base):
 
     # Relacionamentos
     despesas = relationship("Despesa", back_populates="projeto")
+    orcamentos = relationship("Orcamento", back_populates="projeto")
 
     def __repr__(self):
         return f"<Projeto(id={self.id}, numero='{self.numero}', tipo='{self.tipo.value}', valor={self.valor_sem_iva})>"

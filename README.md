@@ -251,5 +251,19 @@ Toda a documentação técnica está em `/memory/`:
 
 ---
 
+## 📚 Sistema Memory - Documentação
+
+Toda a documentação técnica está em `/memory/`.
+
+**Para novas sessões:** Lê `memory/CURRENT_STATE.md` primeiro.
+
+**Para atualizar docs:** Usa a chave mágica:
+
+"Atualiza memory/. Segue HOW_TO_UPDATE.md."
+
+Ver `memory/HOW_TO_UPDATE.md` para detalhes completos.
+
+---
+
 **© 2025 Agora Media Production**
 **Status:** ✅ Produção Ready
