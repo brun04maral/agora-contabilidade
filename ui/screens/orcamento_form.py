@@ -860,13 +860,13 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             return
 
         if tipo == 'servico':
-            dialog = ServicoDialogEmpresa(self, self.db_session, self.orcamento_id)
+            dialog = ServicoEmpresaDialog(self, self.db_session, self.orcamento_id)
             self.wait_window(dialog)
             if dialog.success:
                 self.carregar_items_empresa()
 
         elif tipo == 'equipamento':
-            dialog = EquipamentoDialogEmpresa(self, self.db_session, self.orcamento_id)
+            dialog = EquipamentoEmpresaDialog(self, self.db_session, self.orcamento_id)
             self.wait_window(dialog)
             if dialog.success:
                 self.carregar_items_empresa()
@@ -1173,9 +1173,9 @@ class OrcamentoFormScreen(ctk.CTkFrame):
     def editar_item_empresa(self, rep: OrcamentoReparticao):
         """Abre dialog para editar item EMPRESA"""
         if rep.tipo == 'servico':
-            dialog = ServicoDialogEmpresa(self, self.db_session, self.orcamento_id, rep.id)
+            dialog = ServicoEmpresaDialog(self, self.db_session, self.orcamento_id, rep.id)
         elif rep.tipo == 'equipamento':
-            dialog = EquipamentoDialogEmpresa(self, self.db_session, self.orcamento_id, rep.id)
+            dialog = EquipamentoEmpresaDialog(self, self.db_session, self.orcamento_id, rep.id)
         elif rep.tipo == 'comissao':
             # Passar base de cálculo atual
             dialog = ComissaoDialog(self, self.db_session, self.orcamento_id, rep.base_calculo or Decimal('0'), rep.id)
