@@ -440,7 +440,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         # Criar janela de escolha
         dialog = ctk.CTkToplevel(self)
         dialog.title("Escolher Tipo de Despesa")
-        dialog.geometry("350x280")
+        dialog.geometry("350x360")
         dialog.resizable(False, False)
         dialog.transient(self)
         dialog.grab_set()
