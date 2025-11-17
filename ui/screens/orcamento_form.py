@@ -885,7 +885,8 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             if not messagebox.askyesno("Confirmar", "Existem alterações não guardadas. Deseja sair sem gravar?"):
                 return
 
-        self.master.show_screen("orcamentos")
+        # Navigate to MainWindow (self.master.master) to access show_screen
+        self.master.master.show_screen("orcamentos")
 
     def atualizar_botoes_acao(self):
         """Atualiza botões baseado no estado"""

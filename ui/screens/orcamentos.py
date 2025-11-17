@@ -303,7 +303,8 @@ class OrcamentosScreen(ctk.CTkFrame):
 
     def adicionar_orcamento(self):
         """Add new orcamento"""
-        self.master.show_screen("orcamento_form", orcamento_id=None)
+        # Navigate to MainWindow (self.master.master) to access show_screen
+        self.master.master.show_screen("orcamento_form", orcamento_id=None)
 
     def editar_orcamento(self, data=None):
         """Edit selected orcamento"""
@@ -317,7 +318,8 @@ class OrcamentosScreen(ctk.CTkFrame):
                 return
             orcamento_id = selected[0]["id"]
 
-        self.master.show_screen("orcamento_form", orcamento_id=orcamento_id)
+        # Navigate to MainWindow (self.master.master) to access show_screen
+        self.master.master.show_screen("orcamento_form", orcamento_id=orcamento_id)
 
     def visualizar_orcamento(self):
         """View selected orcamento details"""
