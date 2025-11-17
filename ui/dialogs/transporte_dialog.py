@@ -40,7 +40,7 @@ class TransporteDialog(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Transporte" if not item_id else "Editar Transporte")
-        self.geometry("500x450")
+        self.geometry("500x470")
         self.resizable(False, False)
 
         # Modal
