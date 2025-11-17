@@ -4,6 +4,168 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-17] Orçamentos V2 - Dialogs CRUD Completos
+
+### ✨ Dialogs CLIENTE - 5/5 Implementados
+
+**TransporteDialog** (Commit: 7baf6d1)
+- Ficheiro: `ui/dialogs/transporte_dialog.py`
+- Campos: Descrição, Kms, Valor/Km (0.40€), Total calculado
+- Cálculo: `total = kms × valor_km`
+- Validações: kms > 0, valor_km > 0, descrição obrigatória
+- KeyRelease bindings, mensagem sucesso, attribute `item_created_id`
+
+**RefeicaoDialog** (Commit: 86be721)
+- Ficheiro: `ui/dialogs/refeicao_dialog.py`
+- Campos: Descrição (default "Refeições"), Num Refeições, Valor/Refeição, Total
+- Cálculo: `total = num_refeicoes × valor_por_refeicao`
+- Validações: campos > 0
+- KeyRelease bindings, mensagem sucesso
+
+**OutroDialog** (Commit: 48eec23)
+- Ficheiro: `ui/dialogs/outro_dialog.py`
+- Campos: Descrição, Valor Fixo, Total (= Valor Fixo)
+- Validações: descrição obrigatória, valor_fixo > 0
+- CTkEntry para descrição, altura 500x470px
+- KeyRelease binding, mensagem sucesso
+
+**ServicoDialog** (Commit: 59e4504)
+- Ficheiro: `ui/dialogs/servico_dialog.py`
+- Campos: Descrição, Quantidade (1), Dias (1), Preço, Desconto% (0), Total
+- Cálculo: `total = (qtd × dias × preço) - (subtotal × desconto/100)`
+- Validações completas: descrição, qtd/dias/preço > 0, desconto 0-100%
+- Grid layout, KeyRelease bindings, conversão % ↔ decimal
+- CTkEntry, altura 500x650px, label verde
+
+**EquipamentoDialog** (Commit: 75085bd)
+- Ficheiro: `ui/dialogs/equipamento_dialog.py`
+- Dropdown: Equipamentos com `preco_aluguer > 0`
+- Display: "numero - produto (€preço/dia)"
+- Auto-preenchimento: descrição + preço ao selecionar
+- Campos editáveis após seleção
+- Cálculo igual ServicoDialog, FK opcional `equipamento_id`
+- Integração com EquipamentoManager
+- Altura 500x700px, grid layout
+
+---
+
+### ✨ Dialogs EMPRESA - 3/3 Implementados
+
+**ServicoEmpresaDialog** (Commit: 7bf6580)
+- Ficheiro: `ui/dialogs/servico_empresa_dialog.py`
+- Beneficiário obrigatório: BA, RR, AGORA
+- Campos: Descrição, Quantidade, Dias, Valor Unitário, Total
+- Cálculo: `total = qtd × dias × valor` (SEM desconto)
+- Nota: "ℹ️ Sem desconto no lado EMPRESA"
+- Grid layout, CTkEntry, altura 580px
+
+**EquipamentoEmpresaDialog** (Commit: 7bf6580)
+- Ficheiro: `ui/dialogs/equipamento_empresa_dialog.py`
+- Estrutura idêntica a ServicoEmpresaDialog
+- Beneficiário obrigatório, mesmo cálculo SEM desconto
+- Grid layout, altura 580px
+
+**ComissaoDialog** (Commit: febbff8)
+- Ficheiro: `ui/dialogs/comissao_dialog.py`
+- Beneficiário obrigatório: BA, RR, AGORA
+- Campos: Descrição, Percentagem (3 decimais), Base Cálculo, Total
+- Base de Cálculo: readonly, passada como parâmetro (TOTAL CLIENTE)
+- Cálculo: `total = base × (percentagem / 100)`
+- Exemplo: €1000 × 5.125% = €51.25
+- KeyRelease para atualização instantânea
+- Labels: Base (azul), Total (verde)
+- Altura 520px, placeholder "Ex: 5.125 (suporta 3 decimais)"
+
+---
+
+### 🔧 Refatorações
+
+**Extração de Dialogs** (Commits: 7bf6580, febbff8)
+- **Antes:** Todas classes inline em `orcamento_form.py` (1999 linhas)
+- **Depois:** 8 ficheiros separados (1391 linhas)
+- **Redução:** -608 linhas (-30%)
+- Imports adicionados para todos os 8 dialogs
+- Aliases: `ServicoDialogCliente = ServicoDialog`
+- Benefícios: modularidade, testabilidade, legibilidade
+
+---
+
+### 🐛 Bugs Corrigidos
+
+**Migration 023 - Nullable Fields** (Commit: dba655d)
+- Problema: `NOT NULL constraint failed: orcamento_itens.quantidade`
+- Causa: Tipos 'transporte', 'refeicao', 'outro' não usam todos os campos
+- Solução: Recria tabela com `quantidade`, `dias`, `preco_unitario`, `desconto` NULL
+- Preserva dados, recria índices
+- Resultado: Todos dialogs funcionam sem erros
+
+**DatePickerDropdown Parameter** (Commit: 7baf6d1)
+- Problema: `TypeError` com `initial_date`
+- Solução: Renomear para `default_date` em orcamento_form.py linha 179
+
+**AutocompleteEntry Parameter** (Commit: f53bb3c)
+- Problema: `TypeError` com `completevalues`
+- Solução: Renomear para `options` em create_cliente_autocomplete() linha 219
+
+---
+
+### 📝 Documentação Atualizada
+
+**BUSINESS_LOGIC.md** (Commit: c7e9b43)
+- Secções 1-7 atualizadas: Orçamentos V2
+- Fluxos de cada tipo de item
+- Regras de cálculo e validação
+
+**DATABASE_SCHEMA.md** (Commit: e77796f)
+- Schema `orcamento_itens` e `orcamento_reparticoes`
+- Tabelas `freelancers` e `fornecedores`
+- Enums e índices
+
+**ARCHITECTURE.md** (Commit: 2ba844a)
+- Fluxos de beneficiários
+- Sincronização CLIENTE→EMPRESA
+- Validações críticas
+
+---
+
+### 📦 Commits
+- `7bf6580` - refactor: Extrair dialogs EMPRESA para ficheiros separados
+- `febbff8` - feat: Extrair ComissaoDialog para ficheiro separado
+- `75085bd` - feat: Implementar EquipamentoDialog com seleção
+- `59e4504` - feat: Implementar ServicoDialog
+- `48eec23` - feat: Implementar OutroDialog
+- `86be721` - feat: Implementar RefeicaoDialog
+- `7baf6d1` - feat: TransporteDialog + fix DatePickerDropdown
+- `dba655d` - fix: Migration 023 nullable fields
+- `f53bb3c` - fix: AutocompleteEntry parameter
+- `c7e9b43` - docs: Update BUSINESS_LOGIC.md
+- `e77796f` - docs: Schema Freelancers e Fornecedores
+- `2ba844a` - docs: Fluxos beneficiários ARCHITECTURE.md
+
+---
+
+### 🎯 Próximos Passos
+
+**Logic Layer (2-3 dias):**
+- Expandir `OrcamentoItemManager` (validações + métodos específicos)
+- Criar `OrcamentoReparticaoManager`
+- Expandir `OrcamentoManager` (aprovar + comissões)
+
+**UI Integration (1-2 dias):**
+- Conectar 8 dialogs ao form
+- Tabs CLIENTE/EMPRESA funcionais
+- Preview totais tempo real
+- Validação visual
+
+**Testes (1 dia):**
+- Criar orçamento completo
+- Testar sincronização
+- Testar validação totais
+- Edge cases
+
+---
+
+
 ## [2025-11-16] Orçamentos V2 - Arquitetura Base Implementada
 
 ### ✨ Modelos de Dados Atualizados (Commit: 087fb08)
