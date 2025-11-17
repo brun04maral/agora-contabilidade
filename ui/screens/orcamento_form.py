@@ -400,7 +400,20 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             fg_color="#4CAF50",
             hover_color="#45a049"
         )
-        btn_aprovar.grid(row=0, column=2, sticky="e")
+        btn_aprovar.grid(row=0, column=2, sticky="e", padx=(0, 10))
+
+        # Botão Converter em Projeto (visível apenas quando aprovado)
+        self.btn_converter = ctk.CTkButton(
+            footer_frame,
+            text="🔄 Converter em Projeto",
+            command=self.converter_em_projeto,
+            width=190,
+            height=40,
+            fg_color="#9C27B0",
+            hover_color="#7B1FA2",
+            state="disabled"
+        )
+        self.btn_converter.grid(row=0, column=3, sticky="e")
 
     # ========================================
     # MÉTODOS DE NEGÓCIO - TAB CLIENTE
@@ -1317,6 +1330,27 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             # Mostrar erro
             messagebox.showerror("Erro ao Aprovar", erro or "Erro desconhecido ao aprovar orçamento")
 
+    def converter_em_projeto(self):
+        """Converte orçamento aprovado em projeto (placeholder - próximo sprint)"""
+        if not self.orcamento_id:
+            messagebox.showwarning("Aviso", "Grave o orçamento primeiro!")
+            return
+
+        if not self.orcamento or self.orcamento.status != "aprovado":
+            messagebox.showwarning(
+                "Aviso",
+                "Apenas orçamentos aprovados podem ser convertidos em projeto!"
+            )
+            return
+
+        # Placeholder - implementar próximo sprint
+        messagebox.showinfo(
+            "Em Desenvolvimento",
+            "Converter em projeto - próximo sprint\n\n"
+            "Esta funcionalidade irá criar um projeto a partir do orçamento aprovado,\n"
+            "replicando valores, datas e informações do cliente."
+        )
+
     def carregar_orcamento(self):
         """Carrega dados do orçamento para edição"""
         self.orcamento = self.manager.obter_orcamento(self.orcamento_id)
@@ -1359,7 +1393,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         self.alteracoes_pendentes = False
 
     def atualizar_estado_badge(self):
-        """Atualiza badge de estado visual"""
+        """Atualiza badge de estado visual e controla botão Converter"""
         if not self.orcamento:
             return
 
@@ -1371,18 +1405,24 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 fg_color="#4CAF50",
                 text_color="white"
             )
+            # Habilitar botão Converter em Projeto
+            self.btn_converter.configure(state="normal")
         elif status == "rejeitado":
             self.estado_badge.configure(
                 text="REJEITADO",
                 fg_color="#f44336",
                 text_color="white"
             )
+            # Desabilitar botão Converter
+            self.btn_converter.configure(state="disabled")
         else:  # rascunho
             self.estado_badge.configure(
                 text="RASCUNHO",
                 fg_color=("#e0e0e0", "#3a3a3a"),
                 text_color=("#2c3e50", "#ecf0f1")
             )
+            # Desabilitar botão Converter
+            self.btn_converter.configure(state="disabled")
 
     def voltar(self):
         """Volta para listagem de orçamentos"""
