@@ -15,6 +15,7 @@ from ui.components.autocomplete_entry import AutocompleteEntry
 from ui.components.date_picker_dropdown import DatePickerDropdown
 from ui.dialogs.transporte_dialog import TransporteDialog
 from ui.dialogs.refeicao_dialog import RefeicaoDialog
+from ui.dialogs.outro_dialog import OutroDialog
 from database.models.orcamento import OrcamentoItem, OrcamentoReparticao
 from typing import Optional
 from datetime import date
@@ -1763,150 +1764,7 @@ class EquipamentoDialogCliente(ctk.CTkToplevel):
             messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
 
 
-# TransporteDialog and RefeicaoDialog are now imported from ui.dialogs
-
-
-class OutroDialog(ctk.CTkToplevel):
-    """Dialog para adicionar/editar Outro (Despesa) no LADO CLIENTE"""
-
-    def __init__(self, parent, db_session: Session, orcamento_id: int, secao_id: int, item_id: Optional[int] = None):
-        super().__init__(parent)
-
-        self.db_session = db_session
-        self.manager = OrcamentoManager(db_session)
-        self.orcamento_id = orcamento_id
-        self.secao_id = secao_id
-        self.item_id = item_id
-        self.success = False
-
-        # Configurar janela
-        self.title("Adicionar Outro" if not item_id else "Editar Outro")
-        self.geometry("500x550")
-        self.resizable(True, True)
-
-        # Modal
-        self.transient(parent)
-        self.grab_set()
-
-        self.create_widgets()
-
-        if item_id:
-            self.carregar_dados()
-
-    def create_widgets(self):
-        """Cria widgets do dialog"""
-        main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # Título
-        title_label = ctk.CTkLabel(
-            main_frame,
-            text="Despesa: Outro (Valor Fixo)",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        title_label.pack(pady=(0, 20))
-
-        # Descrição
-        ctk.CTkLabel(main_frame, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
-        self.descricao_entry = ctk.CTkTextbox(main_frame, height=80)
-        self.descricao_entry.pack(fill="x", pady=(0, 15))
-
-        # Valor Fixo
-        ctk.CTkLabel(main_frame, text="Valor Fixo (€):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
-        self.valor_fixo_entry = ctk.CTkEntry(main_frame, placeholder_text="Ex: 50.00")
-        self.valor_fixo_entry.pack(fill="x", pady=(0, 20))
-
-        # Botões
-        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        btn_frame.pack(fill="x")
-
-        btn_cancelar = ctk.CTkButton(
-            btn_frame,
-            text="Cancelar",
-            command=self.destroy,
-            width=120,
-            fg_color="gray",
-            hover_color="#5a5a5a"
-        )
-        btn_cancelar.pack(side="left", padx=(0, 10))
-
-        btn_gravar = ctk.CTkButton(
-            btn_frame,
-            text="Gravar",
-            command=self.gravar,
-            width=120,
-            fg_color="#FF9800",
-            hover_color="#e68900"
-        )
-        btn_gravar.pack(side="right")
-
-    def carregar_dados(self):
-        """Carrega dados do item para edição"""
-        item = self.db_session.query(OrcamentoItem).filter(OrcamentoItem.id == self.item_id).first()
-        if not item:
-            messagebox.showerror("Erro", "Item não encontrado!")
-            self.destroy()
-            return
-
-        self.descricao_entry.delete("1.0", "end")
-        self.descricao_entry.insert("1.0", item.descricao or "")
-        if item.valor_fixo:
-            self.valor_fixo_entry.insert(0, str(float(item.valor_fixo)))
-
-    def gravar(self):
-        """Grava outro tipo de despesa"""
-        try:
-            # Validar campos
-            descricao = self.descricao_entry.get("1.0", "end").strip()
-            if not descricao:
-                messagebox.showwarning("Aviso", "Descrição é obrigatória!")
-                return
-
-            valor_fixo_str = self.valor_fixo_entry.get().strip()
-            if not valor_fixo_str:
-                messagebox.showwarning("Aviso", "Valor fixo é obrigatório!")
-                return
-
-            # Converter valores
-            try:
-                valor_fixo = Decimal(valor_fixo_str.replace(',', '.'))
-            except ValueError:
-                messagebox.showerror("Erro", "Valor numérico inválido!")
-                return
-
-            # Validar valores
-            if valor_fixo <= 0:
-                messagebox.showwarning("Aviso", "Valor fixo deve ser maior que 0!")
-                return
-
-            # Gravar no banco
-            if self.item_id:
-                sucesso, item, erro = self.manager.atualizar_item_v2(
-                    item_id=self.item_id,
-                    descricao=descricao,
-                    valor_fixo=valor_fixo
-                )
-                if sucesso:
-                    self.item_created_id = self.item_id
-            else:
-                sucesso, item, erro = self.manager.adicionar_item_v2(
-                    orcamento_id=self.orcamento_id,
-                    secao_id=self.secao_id,
-                    tipo='outro',
-                    descricao=descricao,
-                    valor_fixo=valor_fixo
-                )
-                if sucesso:
-                    self.item_created_id = item.id
-
-            if sucesso:
-                self.success = True
-                self.destroy()
-            else:
-                messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
-
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+# TransporteDialog, RefeicaoDialog, and OutroDialog are now imported from ui.dialogs
 
 
 # ========================================
