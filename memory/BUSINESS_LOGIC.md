@@ -301,7 +301,13 @@ PENDENTE ──marcar pago──> PAGO
    - Útil para boletins mensais repetidos
    - Permite editar depois de duplicar
 
-**Removido:** Sistema de templates recorrentes (demasiado complexo)
+**⚠️ NOTA HISTÓRICA - Sistema de Templates Recorrentes:**
+- **Implementado:** Tabela `boletim_templates` criada via Migrations 016-019 (13/11/2025)
+- **Removido da UI:** 13/11/2025 - Funcionalidade considerada demasiado complexa
+- **Substituído por:** "Duplicar Boletim" (mais simples e direto)
+- **Estado da tabela:** Existe na BD mas não é utilizada (pode conter dados legacy)
+- **Decisão:** Manter tabela por enquanto (baixa prioridade para remoção)
+- **Ver:** DECISIONS.md, CHANGELOG.md (13/11/2025), DATABASE_SCHEMA.md (secção boletim_templates)
 
 ---
 
