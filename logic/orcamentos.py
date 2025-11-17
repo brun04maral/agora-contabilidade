@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from database.models.orcamento import Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
 from database.models.cliente import Cliente
+from database.models.freelancer_trabalho import StatusTrabalho
 from typing import List, Optional, Tuple, Dict
 from datetime import date, datetime
 from decimal import Decimal
@@ -945,6 +946,53 @@ class OrcamentoManager:
                     f"Totais não coincidem: CLIENTE €{float(total_cliente):.2f} vs "
                     f"EMPRESA €{float(total_empresa):.2f} (diferença: €{float(diferenca):.2f})"
                 )
+
+            # 4.5. Criar registos históricos para beneficiários externos (freelancers/fornecedores)
+            # Import managers here to avoid circular imports
+            from logic.freelancer_trabalhos import FreelancerTrabalhosManager
+            from logic.fornecedor_compras import FornecedorComprasManager
+
+            freelancer_manager = FreelancerTrabalhosManager(self.db)
+            fornecedor_manager = FornecedorComprasManager(self.db)
+
+            for reparticao in itens_empresa:
+                beneficiario = reparticao.beneficiario
+
+                # Criar registo para Freelancer
+                if beneficiario and beneficiario.startswith("FREELANCER_"):
+                    try:
+                        freelancer_id = int(beneficiario.replace("FREELANCER_", ""))
+                        sucesso, trabalho, msg = freelancer_manager.criar(
+                            freelancer_id=freelancer_id,
+                            orcamento_id=orcamento_id,
+                            projeto_id=orcamento.projeto_id,
+                            descricao=reparticao.descricao or "Trabalho do orçamento",
+                            valor=reparticao.total,
+                            data=date.today(),
+                            status=StatusTrabalho.A_PAGAR
+                        )
+                        if not sucesso:
+                            return False, None, f"Erro ao criar trabalho freelancer: {msg}"
+                    except ValueError as e:
+                        return False, None, f"Erro ao processar beneficiário freelancer: {str(e)}"
+
+                # Criar registo para Fornecedor
+                elif beneficiario and beneficiario.startswith("FORNECEDOR_"):
+                    try:
+                        fornecedor_id = int(beneficiario.replace("FORNECEDOR_", ""))
+                        sucesso, compra, msg = fornecedor_manager.criar(
+                            fornecedor_id=fornecedor_id,
+                            orcamento_id=orcamento_id,
+                            projeto_id=orcamento.projeto_id,
+                            descricao=reparticao.descricao or "Compra do orçamento",
+                            valor=reparticao.total,
+                            data=date.today(),
+                            status=StatusTrabalho.A_PAGAR
+                        )
+                        if not sucesso:
+                            return False, None, f"Erro ao criar compra fornecedor: {msg}"
+                    except ValueError as e:
+                        return False, None, f"Erro ao processar beneficiário fornecedor: {str(e)}"
 
             # 5. Atualizar status = "aprovado"
             orcamento.status = 'aprovado'
