@@ -4,6 +4,94 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-17] Integração CLIENTE + EMPRESA e Correções
+
+### 🔀 Merge: Integração Completa CLIENTE + EMPRESA
+
+**Merge Commit** (Commit: a0cd275)
+- Integração completa dos sistemas LADO CLIENTE e LADO EMPRESA
+- Resolução de conflitos em 5 arquivos aceitando implementação THEIRS:
+  - `ui/screens/orcamento_form.py`
+  - `ui/dialogs/servico_empresa_dialog.py`
+  - `ui/dialogs/equipamento_empresa_dialog.py`
+  - `ui/dialogs/comissao_dialog.py`
+  - `database/models/orcamento.py`
+- Arquitetura final: 5 dialogs CLIENTE + 3 dialogs EMPRESA
+- Sistema de espelhamento automático de despesas funcionando
+- Modelo OrcamentoReparticao correto para LADO EMPRESA
+
+**Decisão de Merge:**
+- Aceita implementação THEIRS por ser a versão correta
+- Mantém separação clara: OrcamentoItem (CLIENTE) vs OrcamentoReparticao (EMPRESA)
+- Preserva cálculos automáticos e validações
+
+---
+
+### 🧹 Cleanup: Remoção de Dialogs Obsoletos
+
+**Limpeza de Código** (Commit: d217406)
+- Removidos 3 dialogs que usavam modelo incorreto:
+  - `ui/dialogs/aluguer_equipamento_dialog.py` (usado OrcamentoItem em vez de OrcamentoReparticao)
+  - `ui/dialogs/despesa_dialog.py` (espelhamento manual, obsoleto)
+  - `ui/dialogs/outro_empresa_dialog.py` (funcionalidade duplicada)
+- Total: ~600 linhas de código obsoleto removidas
+- Arquitetura limpa: apenas dialogs com modelo correto
+
+**Motivo:**
+- Dialogs removidos tentavam criar items EMPRESA usando OrcamentoItem
+- Modelo correto para EMPRESA é OrcamentoReparticao
+- Funcionalidades já cobertas pelos 3 dialogs EMPRESA corretos
+
+---
+
+### 🐛 Fix: Correção de Nomes das Classes Dialog EMPRESA
+
+**Problema:** NameError ao clicar em "➕ Serviço" ou "➕ Equipamento" no LADO EMPRESA
+
+**Erro:**
+```
+NameError: name 'ServicoDialogEmpresa' is not defined. Did you mean: 'ServicoDialogCliente'?
+```
+
+**Causa:**
+- Importações usavam nomes corretos: `ServicoEmpresaDialog`, `EquipamentoEmpresaDialog`
+- Código chamava nomes invertidos: `ServicoDialogEmpresa`, `EquipamentoDialogEmpresa`
+- Inconsistência entre imports e uso
+
+**Solução** (Commit: 231be26)
+Ficheiro: `ui/screens/orcamento_form.py`
+
+Correções aplicadas:
+```python
+# Linha 863 - Método adicionar_item_empresa()
+# ANTES: dialog = ServicoDialogEmpresa(...)
+# DEPOIS: dialog = ServicoEmpresaDialog(...)
+
+# Linha 869 - Método adicionar_item_empresa()
+# ANTES: dialog = EquipamentoDialogEmpresa(...)
+# DEPOIS: dialog = EquipamentoEmpresaDialog(...)
+
+# Linha 1176 - Método editar_item_empresa()
+# ANTES: dialog = ServicoDialogEmpresa(...)
+# DEPOIS: dialog = ServicoEmpresaDialog(...)
+
+# Linha 1178 - Método editar_item_empresa()
+# ANTES: dialog = EquipamentoDialogEmpresa(...)
+# DEPOIS: dialog = EquipamentoEmpresaDialog(...)
+```
+
+**Total:** 4 correções de nomes de classes
+
+**Resultado:**
+- ✅ Botões "➕ Serviço" e "➕ Equipamento" funcionam corretamente
+- ✅ Edição de items EMPRESA funciona sem erros
+- ✅ Nomenclatura consistente em todo o código
+
+**Ficheiros alterados:**
+- `ui/screens/orcamento_form.py` (linhas 863, 869, 1176, 1178)
+
+---
+
 ## [2025-11-17] Sistema Aprovação e Conversão Orçamentos
 
 ### ✨ Feature: Aprovar Orçamento

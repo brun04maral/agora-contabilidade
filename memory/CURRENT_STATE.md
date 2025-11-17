@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-17 09:25 WET  
-**Branch:** claude/sync-latest-updates-012SDyaYGLD1zvqARajAPDPC  
+**Última atualização:** 2025-11-17 16:30 WET
+**Branch:** claude/sync-latest-branch-015m9WoqWnfPgMYpDUTCxiko
 **Status Geral:** ✅ PRODUÇÃO READY
 
 ---
@@ -19,14 +19,15 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (17/11/2025):**
-- 🎯 **Orçamentos V2** - Dialogs CRUD completos (5/5 implementados)
-- 🎯 **Auditoria Sistema Memory** - Reorganização documentação
+- 🎯 **Orçamentos V2** - Dialogs CRUD completos (5 CLIENTE + 3 EMPRESA)
+- 🎯 **Integração e Correções** - Merge completo + cleanup + bug fixes
 
 **Última Feature Concluída:**
-- ✅ **Sistema Aprovação e Conversão Orçamentos** (17/11/2025) - Aprovar orçamentos com validações + converter automaticamente em projetos com cálculo de prémios. **Ver:** memory/CHANGELOG.md (17/11/2025)
+- ✅ **Integração CLIENTE + EMPRESA + Correções** (17/11/2025) - Merge de conflitos resolvido, cleanup de 3 dialogs obsoletos, correção de bug NameError nos nomes das classes Dialog EMPRESA. Sistema totalmente funcional. **Ver:** memory/CHANGELOG.md (17/11/2025 - Integração CLIENTE + EMPRESA e Correções)
 
 **Próximo Milestone:**
-- 📋 Implementar 5 dialogs EMPRESA (Serviço, Equipamento, Despesa, Comissão, Aluguer)
+- 📋 UX Improvements - Orçamentos (DateRangePicker + Context Menus)
+- 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins
@@ -145,7 +146,7 @@
 
 ## 🚧 Trabalho em Curso
 
-### Sprint Atual: Orçamentos V2 - Lado EMPRESA
+### Sprint Atual: Orçamentos V2 - Completo + UX Improvements
 
 **Concluído (17/11/2025):**
 - ✅ 5/5 Dialogs CLIENTE implementados:
@@ -155,15 +156,22 @@
   - RefeicaoDialog (Commit: 86be721)
   - OutroDialog (Commit: 48eec23)
 
-**Próximo (A Implementar):**
-- 📋 5 Dialogs EMPRESA:
-  - ServicoEmpresaDialog (com beneficiário)
-  - EquipamentoEmpresaDialog (com beneficiário)
-  - DespesaDialog (espelhamento automático)
-  - ComissaoDialog (% sobre base)
-  - AluguerEquipamentoDialog (equipamento + dias)
+- ✅ 3/3 Dialogs EMPRESA implementados:
+  - ServicoEmpresaDialog (Commit: 7bf6580)
+  - EquipamentoEmpresaDialog (Commit: 7bf6580)
+  - ComissaoDialog (Commit: febbff8)
 
-**Ver:** `memory/TODO.md` (Secção "🔥 AGORA")
+- ✅ Integração CLIENTE + EMPRESA (Commit: a0cd275)
+- ✅ Cleanup dialogs obsoletos (Commit: d217406)
+- ✅ Bug fix nomes classes (Commit: 231be26)
+
+**Próximo (Pendente desta sessão):**
+- 📋 DateRangePicker para campo "data do evento" em orçamentos
+- 📋 Context menus (right-click) em tabelas de items CLIENTE e EMPRESA
+  - Ações: Editar, Apagar, Duplicar
+  - Seguir padrão de outras screens
+
+**Ver:** `memory/TODO.md` (Tarefa 4 - UX/UI Improvements Orçamentos)
 
 ---
 

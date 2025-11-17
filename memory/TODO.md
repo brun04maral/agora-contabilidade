@@ -46,20 +46,31 @@ LEGENDA DE PRIORIDADES
 🔴 Alta Prioridade - Próximas 2 Semanas
 ====================================================================
 
-4. UX/UI Improvements - Orçamentos (18 melhorias)
-   
+4. UX/UI Improvements - Orçamentos (20 melhorias)
+
+   **Pendentes desta sessão:**
+   ├─ 🆕 DateRangePicker para "data do evento" (substituir Entry atual)
+   │   - Usar componente DateRangePickerDropdown existente
+   │   - Formato inteligente (DD-DD/MM/YYYY)
+   │   - Update em orcamento_form.py campo data_evento
+   └─ 🆕 Context menus (right-click) em tabelas de items
+       - Adicionar a tabelas CLIENTE (renderizar_item_cliente)
+       - Adicionar a tabelas EMPRESA (renderizar_item_empresa)
+       - Ações: Editar, Apagar, Duplicar
+       - Seguir padrão existente de outras screens
+
    Críticas:
    ├─ Wizard multi-step (Dados Gerais → Items → Repartições → Preview)
    ├─ Preview lateral ao editar items (recalcula totais live)
    ├─ Gráfico pizza repartições EMPRESA (visual distribuição)
    ├─ Validação inline com mensagens claras
    └─ Botão "Duplicar Orçamento" (copia completo)
-   
+
    Nice-to-have:
    ├─ Filtros avançados (cliente, status, período, owner)
    ├─ Export PDF melhorado (template profissional)
    └─ Histórico de versões (orçamentos editados)
-   
+
    Ver: memory/TODO.md (versão anterior, linha 80-120 para detalhes completos)
 
 5. UX/UI Improvements - Boletins (mínimo 10 melhorias)
