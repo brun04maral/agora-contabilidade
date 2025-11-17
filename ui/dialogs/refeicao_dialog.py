@@ -40,7 +40,7 @@ class RefeicaoDialog(ctk.CTkToplevel):
 
         # Configurar janela
         self.title("Adicionar Refeição" if not item_id else "Editar Refeição")
-        self.geometry("500x400")
+        self.geometry("500x450")
         self.resizable(False, False)
 
         # Modal
