@@ -1423,51 +1423,77 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         """
         try:
             # DEBUG: Log chamada do método
-            print(f"[DEBUG] ajustar_percentagem_comissao: rep_id={rep_id}, incremento={incremento}")
+            print(f"\n{'='*60}")
+            print(f"[DEBUG] >>> INÍCIO ajustar_percentagem_comissao")
+            print(f"[DEBUG] rep_id={rep_id}, incremento={incremento}")
 
             # Buscar repartição no BD
             reparticao = self.db_session.query(OrcamentoReparticao).filter_by(id=rep_id).first()
             if not reparticao or reparticao.tipo != 'comissao':
-                print(f"[DEBUG] Erro: Comissão não encontrada (rep_id={rep_id})")
+                print(f"[DEBUG] ERRO: Comissão não encontrada (rep_id={rep_id})")
                 messagebox.showerror("Erro", "Comissão não encontrada")
                 return
+
+            # ANTES: Verificar estado do objeto
+            print(f"[DEBUG] ANTES - reparticao.id: {reparticao.id}")
+            print(f"[DEBUG] ANTES - reparticao.percentagem (objeto): {reparticao.percentagem}")
+            print(f"[DEBUG] ANTES - reparticao.percentagem (float): {float(reparticao.percentagem):.4f}%")
+            print(f"[DEBUG] ANTES - reparticao.total: €{float(reparticao.total):.2f}")
+            print(f"[DEBUG] ANTES - reparticao.base_calculo: €{float(reparticao.base_calculo):.2f}")
 
             # Calcular nova percentagem
             percentagem_atual = float(reparticao.percentagem)
             nova_percentagem = percentagem_atual + incremento
 
-            print(f"[DEBUG] Percentagem: {percentagem_atual:.4f}% → {nova_percentagem:.4f}%")
+            print(f"[DEBUG] CÁLCULO: {percentagem_atual:.4f}% + {incremento} = {nova_percentagem:.4f}%")
 
             # Validar limites: 0.0000% - 100.0000%
             if nova_percentagem < 0.0000:
                 nova_percentagem = 0.0000
-                print(f"[DEBUG] Limitado a mínimo: 0.0000%")
+                print(f"[DEBUG] LIMITE: Fixado em mínimo 0.0000%")
             elif nova_percentagem > 100.0000:
                 nova_percentagem = 100.0000
-                print(f"[DEBUG] Limitado a máximo: 100.0000%")
+                print(f"[DEBUG] LIMITE: Fixado em máximo 100.0000%")
 
-            # Atualizar percentagem (arredondar a 4 decimais - décimos de milésima)
+            # Atualizar percentagem do objeto (arredondar a 4 decimais)
             reparticao.percentagem = Decimal(str(round(nova_percentagem, 4)))
+            print(f"[DEBUG] UPDATE: reparticao.percentagem = {reparticao.percentagem}")
 
-            # Recalcular total: base_calculo × (percentagem / 100)
+            # Recalcular total do objeto: base_calculo × (percentagem / 100)
             total_antigo = reparticao.total
             reparticao.total = reparticao.calcular_total()
+            print(f"[DEBUG] UPDATE: reparticao.total = {reparticao.total}")
 
-            print(f"[DEBUG] Total: €{float(total_antigo):.2f} → €{float(reparticao.total):.2f}")
+            # DEPOIS: Verificar estado do objeto (antes do commit)
+            print(f"[DEBUG] DEPOIS (antes commit) - reparticao.percentagem: {reparticao.percentagem}")
+            print(f"[DEBUG] DEPOIS (antes commit) - reparticao.total: €{float(reparticao.total):.2f}")
+
+            # Flush para garantir que mudanças são enviadas ao BD
+            self.db_session.flush()
+            print(f"[DEBUG] FLUSH: Mudanças enviadas ao BD (antes commit)")
 
             # Commit no BD
             self.db_session.commit()
+            print(f"[DEBUG] COMMIT: Mudanças persistidas no BD")
+
+            # Verificar se persistiu corretamente
+            self.db_session.refresh(reparticao)
+            print(f"[DEBUG] REFRESH: reparticao.percentagem = {reparticao.percentagem}")
+            print(f"[DEBUG] REFRESH: reparticao.total = €{float(reparticao.total):.2f}")
 
             # Recarregar UI para atualizar valor e totais em tempo real
-            print(f"[DEBUG] Recarregando UI...")
+            print(f"[DEBUG] >>> Recarregando UI...")
             self.carregar_items_empresa()
-            print(f"[DEBUG] Ajuste concluído com sucesso!")
+            print(f"[DEBUG] >>> AJUSTE CONCLUÍDO COM SUCESSO!")
+            print(f"{'='*60}\n")
 
         except Exception as e:
             self.db_session.rollback()
-            print(f"[DEBUG] ERRO: {str(e)}")
+            print(f"[DEBUG] !!! ERRO FATAL !!!")
+            print(f"[DEBUG] Exceção: {str(e)}")
             import traceback
             traceback.print_exc()
+            print(f"{'='*60}\n")
             messagebox.showerror("Erro", f"Erro ao ajustar percentagem: {str(e)}")
 
     def atualizar_total_empresa(self):
