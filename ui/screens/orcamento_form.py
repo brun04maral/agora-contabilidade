@@ -1238,8 +1238,64 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
         if tipo in ['servico', 'equipamento']:
             detail_text = f"{rep.quantidade} × {rep.dias}d × €{float(rep.valor_unitario):.2f}"
+            ctk.CTkLabel(
+                details_frame,
+                text=detail_text,
+                font=ctk.CTkFont(size=11),
+                text_color=("#555", "#aaa")
+            ).pack()
         elif tipo == 'comissao':
-            detail_text = f"{float(rep.percentagem):.3f}% × €{float(rep.base_calculo):.2f}"
+            # COMISSÃO: Layout especial com setas para ajuste de percentagem em tempo real
+            # Container horizontal: seta down | percentagem | seta up | base
+            comissao_control_frame = ctk.CTkFrame(details_frame, fg_color="transparent")
+            comissao_control_frame.pack()
+
+            # Seta para baixo (diminuir -0.01%)
+            btn_diminuir = ctk.CTkButton(
+                comissao_control_frame,
+                text="⬇️",
+                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, -0.01),
+                width=26,
+                height=24,
+                fg_color=("#FF9800", "#e65100"),
+                hover_color=("#F57C00", "#bf360c"),
+                font=ctk.CTkFont(size=13)
+            )
+            btn_diminuir.pack(side="left", padx=1)
+
+            # Label percentagem (2 decimais fixos)
+            percentagem_text = f"{float(rep.percentagem):.2f}%"
+
+            ctk.CTkLabel(
+                comissao_control_frame,
+                text=percentagem_text,
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color=("#9C27B0", "#CE93D8"),
+                width=60
+            ).pack(side="left", padx=3)
+
+            # Seta para cima (aumentar +0.01%)
+            btn_aumentar = ctk.CTkButton(
+                comissao_control_frame,
+                text="⬆️",
+                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, +0.01),
+                width=26,
+                height=24,
+                fg_color=("#4CAF50", "#2e7d32"),
+                hover_color=("#388E3C", "#1b5e20"),
+                font=ctk.CTkFont(size=13)
+            )
+            btn_aumentar.pack(side="left", padx=1)
+
+            # Base de cálculo (menor, cinza)
+            base_text = f"× €{float(rep.base_calculo):.2f}"
+            ctk.CTkLabel(
+                comissao_control_frame,
+                text=base_text,
+                font=ctk.CTkFont(size=10),
+                text_color=("#777", "#999")
+            ).pack(side="left", padx=(6, 0))
+
         elif tipo == 'despesa':
             # Despesas espelhadas - mostrar detalhes do tipo
             if rep.kms:
@@ -1250,15 +1306,20 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 detail_text = "Valor fixo"
             else:
                 detail_text = "Espelhado"
+            ctk.CTkLabel(
+                details_frame,
+                text=detail_text,
+                font=ctk.CTkFont(size=11),
+                text_color=("#555", "#aaa")
+            ).pack()
         else:
             detail_text = ""
-
-        ctk.CTkLabel(
-            details_frame,
-            text=detail_text,
-            font=ctk.CTkFont(size=11),
-            text_color=("#555", "#aaa")
-        ).pack()
+            ctk.CTkLabel(
+                details_frame,
+                text=detail_text,
+                font=ctk.CTkFont(size=11),
+                text_color=("#555", "#aaa")
+            ).pack()
 
         # Coluna 3: Total
         total_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
@@ -1334,6 +1395,47 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             self.carregar_items_empresa()
         else:
             messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
+
+    def ajustar_percentagem_comissao(self, rep_id: int, incremento: float):
+        """
+        Ajusta percentagem de comissão em tempo real (setas ⬆️⬇️)
+
+        Args:
+            rep_id: ID da repartição (comissão)
+            incremento: +0.01 ou -0.01 (pode acumular com cliques rápidos)
+        """
+        try:
+            # Buscar repartição no BD
+            reparticao = self.db_session.query(OrcamentoReparticao).filter_by(id=rep_id).first()
+            if not reparticao or reparticao.tipo != 'comissao':
+                messagebox.showerror("Erro", "Comissão não encontrada")
+                return
+
+            # Calcular nova percentagem
+            percentagem_atual = float(reparticao.percentagem)
+            nova_percentagem = percentagem_atual + incremento
+
+            # Validar limites: 0.00% - 100.00%
+            if nova_percentagem < 0.00:
+                nova_percentagem = 0.00
+            elif nova_percentagem > 100.00:
+                nova_percentagem = 100.00
+
+            # Atualizar percentagem (arredondar a 2 decimais)
+            reparticao.percentagem = Decimal(str(round(nova_percentagem, 2)))
+
+            # Recalcular total: base_calculo × (percentagem / 100)
+            reparticao.total = reparticao.calcular_total()
+
+            # Commit no BD
+            self.db_session.commit()
+
+            # Recarregar UI para atualizar valor e totais em tempo real
+            self.carregar_items_empresa()
+
+        except Exception as e:
+            self.db_session.rollback()
+            messagebox.showerror("Erro", f"Erro ao ajustar percentagem: {str(e)}")
 
     def atualizar_total_empresa(self):
         """Atualiza TOTAL EMPRESA"""
