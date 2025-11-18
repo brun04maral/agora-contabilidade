@@ -1180,9 +1180,9 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
         item_frame.pack(fill="x", padx=15, pady=2)
 
-        # Container principal
+        # Container principal (padding vertical reduzido para compactar)
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-        content_frame.pack(fill="x", padx=10, pady=8)
+        content_frame.pack(fill="x", padx=10, pady=5)
 
         # Coluna 1: Beneficiário badge + Descrição (largura fixa 280px)
         desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=280)
@@ -1245,47 +1245,58 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 text_color=("#555", "#aaa")
             ).pack()
         elif tipo == 'comissao':
-            # COMISSÃO: Layout especial com setas para ajuste de percentagem em tempo real
+            # COMISSÃO: Layout especial com setas discretas para ajuste fino de percentagem
             # Container horizontal: seta down | percentagem | seta up | base
             comissao_control_frame = ctk.CTkFrame(details_frame, fg_color="transparent")
             comissao_control_frame.pack()
 
-            # Seta para baixo (diminuir -0.01%)
+            # Seta para baixo (diminuir -0.001%) - discreta
             btn_diminuir = ctk.CTkButton(
                 comissao_control_frame,
-                text="⬇️",
-                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, -0.01),
-                width=26,
-                height=24,
-                fg_color=("#FF9800", "#e65100"),
-                hover_color=("#F57C00", "#bf360c"),
-                font=ctk.CTkFont(size=13)
+                text="▼",
+                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, -0.001),
+                width=18,
+                height=20,
+                fg_color="transparent",
+                hover_color=("#e0e0e0", "#3a3a3a"),
+                text_color=("#999", "#888"),
+                font=ctk.CTkFont(size=11),
+                border_width=0
             )
             btn_diminuir.pack(side="left", padx=1)
+            # Tooltip para seta diminuir
+            ToolTip(btn_diminuir, "Diminuir percentagem (−0.001%)", delay=300)
 
-            # Label percentagem (2 decimais fixos)
-            percentagem_text = f"{float(rep.percentagem):.2f}%"
+            # Label percentagem (3 decimais fixos - milésimas)
+            percentagem_text = f"{float(rep.percentagem):.3f}%"
 
-            ctk.CTkLabel(
+            percentagem_label = ctk.CTkLabel(
                 comissao_control_frame,
                 text=percentagem_text,
-                font=ctk.CTkFont(size=12, weight="bold"),
+                font=ctk.CTkFont(size=11, weight="bold"),
                 text_color=("#9C27B0", "#CE93D8"),
-                width=60
-            ).pack(side="left", padx=3)
+                width=70
+            )
+            percentagem_label.pack(side="left", padx=2)
+            # Tooltip para percentagem
+            ToolTip(percentagem_label, "Ajustar percentagem ao milésimo", delay=300)
 
-            # Seta para cima (aumentar +0.01%)
+            # Seta para cima (aumentar +0.001%) - discreta
             btn_aumentar = ctk.CTkButton(
                 comissao_control_frame,
-                text="⬆️",
-                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, +0.01),
-                width=26,
-                height=24,
-                fg_color=("#4CAF50", "#2e7d32"),
-                hover_color=("#388E3C", "#1b5e20"),
-                font=ctk.CTkFont(size=13)
+                text="▲",
+                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, +0.001),
+                width=18,
+                height=20,
+                fg_color="transparent",
+                hover_color=("#e0e0e0", "#3a3a3a"),
+                text_color=("#999", "#888"),
+                font=ctk.CTkFont(size=11),
+                border_width=0
             )
             btn_aumentar.pack(side="left", padx=1)
+            # Tooltip para seta aumentar
+            ToolTip(btn_aumentar, "Aumentar percentagem (+0.001%)", delay=300)
 
             # Base de cálculo (menor, cinza)
             base_text = f"× €{float(rep.base_calculo):.2f}"
@@ -1294,7 +1305,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 text=base_text,
                 font=ctk.CTkFont(size=10),
                 text_color=("#777", "#999")
-            ).pack(side="left", padx=(6, 0))
+            ).pack(side="left", padx=(5, 0))
 
         elif tipo == 'despesa':
             # Despesas espelhadas - mostrar detalhes do tipo
@@ -1398,11 +1409,11 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
     def ajustar_percentagem_comissao(self, rep_id: int, incremento: float):
         """
-        Ajusta percentagem de comissão em tempo real (setas ⬆️⬇️)
+        Ajusta percentagem de comissão em tempo real (setas ▲▼ discretas)
 
         Args:
             rep_id: ID da repartição (comissão)
-            incremento: +0.01 ou -0.01 (pode acumular com cliques rápidos)
+            incremento: +0.001 ou -0.001 (precisão de milésimas)
         """
         try:
             # Buscar repartição no BD
@@ -1415,14 +1426,14 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             percentagem_atual = float(reparticao.percentagem)
             nova_percentagem = percentagem_atual + incremento
 
-            # Validar limites: 0.00% - 100.00%
-            if nova_percentagem < 0.00:
-                nova_percentagem = 0.00
-            elif nova_percentagem > 100.00:
-                nova_percentagem = 100.00
+            # Validar limites: 0.000% - 100.000%
+            if nova_percentagem < 0.000:
+                nova_percentagem = 0.000
+            elif nova_percentagem > 100.000:
+                nova_percentagem = 100.000
 
-            # Atualizar percentagem (arredondar a 2 decimais)
-            reparticao.percentagem = Decimal(str(round(nova_percentagem, 2)))
+            # Atualizar percentagem (arredondar a 3 decimais - milésimas)
+            reparticao.percentagem = Decimal(str(round(nova_percentagem, 3)))
 
             # Recalcular total: base_calculo × (percentagem / 100)
             reparticao.total = reparticao.calcular_total()
