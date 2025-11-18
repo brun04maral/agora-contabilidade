@@ -758,13 +758,14 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         # Cor de fundo alternada
         bg_color = ("#ffffff", "#1e1e1e") if index % 2 == 0 else ("#f9f9f9", "#252525")
 
-        # Frame do item (margem entre linhas MUITO reduzida)
-        item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
-        item_frame.pack(fill="x", padx=15, pady=1)
+        # Frame do item com ALTURA FIXA (ultra-compacto)
+        item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6, height=36)
+        item_frame.pack(fill="x", padx=15, pady=0)
+        item_frame.pack_propagate(False)  # FORÇAR altura fixa
 
-        # Container principal (padding vertical MÍNIMO para compactar lista)
+        # Container principal (SEM padding vertical)
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-        content_frame.pack(fill="x", padx=10, pady=4)
+        content_frame.pack(fill="both", expand=True, padx=10, pady=0)
 
         # Coluna 1: Descrição + Tipo (largura fixa 300px)
         desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=300)
@@ -1178,13 +1179,14 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         if is_espelhada:
             bg_color = ("#fff8e1", "#3e2723")
 
-        # Frame do item (margem entre linhas MUITO reduzida)
-        item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
-        item_frame.pack(fill="x", padx=15, pady=1)
+        # Frame do item com ALTURA FIXA (ultra-compacto)
+        item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6, height=36)
+        item_frame.pack(fill="x", padx=15, pady=0)
+        item_frame.pack_propagate(False)  # FORÇAR altura fixa
 
-        # Container principal (padding vertical MÍNIMO para compactar lista)
+        # Container principal (SEM padding vertical)
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-        content_frame.pack(fill="x", padx=10, pady=4)
+        content_frame.pack(fill="both", expand=True, padx=10, pady=0)
 
         # Coluna 1: Beneficiário badge + Descrição (largura fixa 280px)
         desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=280)
