@@ -176,7 +176,7 @@ class OrcamentoReparticao(Base):
     valor_unitario = Column(Numeric(10, 2), nullable=True)
 
     # Para comissões
-    percentagem = Column(Numeric(8, 3), nullable=True)  # Ex: 5.125% = 5.125
+    percentagem = Column(Numeric(8, 4), nullable=True)  # Ex: 5.1234% = 5.1234 (4 casas decimais)
     base_calculo = Column(Numeric(10, 2), nullable=True)  # Base para cálculo da comissão
 
     # Para despesas espelhadas (campos replicados do lado CLIENTE)
