@@ -7,6 +7,7 @@ from sqlalchemy import func
 from database.models.orcamento import Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
 from database.models.cliente import Cliente
 from database.models.freelancer_trabalho import StatusTrabalho
+from database.models.projeto import TipoProjeto, EstadoProjeto
 from typing import List, Optional, Tuple, Dict
 from datetime import date, datetime
 from decimal import Decimal
@@ -1042,3 +1043,115 @@ class OrcamentoManager:
             'por_status': por_status,
             'com_versao_cliente': com_versao_cliente
         }
+
+    def converter_em_projeto(self, orcamento_id: int) -> Tuple[bool, Optional[int], Optional[str]]:
+        """
+        Converte orçamento aprovado em projeto, distribuindo valores por beneficiário.
+
+        Args:
+            orcamento_id: ID do orçamento a converter
+
+        Returns:
+            Tuple (sucesso, projeto_id, mensagem_erro_ou_confirmacao)
+
+        Processo:
+            1. Verifica se orçamento está aprovado
+            2. Verifica se já foi convertido (projeto_id existe)
+            3. Calcula totais por tipo de beneficiário (BA, RR, AGORA, externos)
+            4. Cria projeto com campos rastreabilidade preenchidos
+            5. Atualiza orçamento.projeto_id
+            6. Retorna mensagem com distribuição de valores
+        """
+        # Import aqui para evitar circular imports
+        from logic.projetos import ProjetosManager
+
+        # 1. Obter orçamento
+        orcamento = self.obter_orcamento(orcamento_id)
+        if not orcamento:
+            return False, None, "Orçamento não encontrado"
+
+        # 2. Verificar se está aprovado
+        if orcamento.status != 'aprovado':
+            return False, None, "Orçamento precisa estar aprovado para converter em projeto"
+
+        # 3. Verificar se já foi convertido
+        if orcamento.projeto_id:
+            return False, None, f"Orçamento já foi convertido em projeto #P{orcamento.projeto_id:04d}"
+
+        # 4. Calcular totais por tipo de beneficiário
+        totais = {
+            'BA': Decimal('0'),
+            'RR': Decimal('0'),
+            'AGORA': Decimal('0'),
+            'freelancers': Decimal('0'),
+            'fornecedores': Decimal('0')
+        }
+
+        reparticoes = self.obter_reparticoes(orcamento_id)
+
+        for reparticao in reparticoes:
+            beneficiario = reparticao.beneficiario
+            if not beneficiario:
+                continue
+
+            if beneficiario == 'BA':
+                totais['BA'] += reparticao.total
+            elif beneficiario == 'RR':
+                totais['RR'] += reparticao.total
+            elif beneficiario == 'AGORA':
+                totais['AGORA'] += reparticao.total
+            elif beneficiario.startswith('FREELANCER_'):
+                totais['freelancers'] += reparticao.total
+            elif beneficiario.startswith('FORNECEDOR_'):
+                totais['fornecedores'] += reparticao.total
+
+        # 5. Validar soma de totais (tolerância 0.01€)
+        soma_totais = sum(totais.values())
+        if abs(soma_totais - orcamento.valor_total) > Decimal('0.01'):
+            return False, None, (
+                f"Erro na distribuição: Soma dos beneficiários (€{float(soma_totais):.2f}) "
+                f"difere do total do orçamento (€{float(orcamento.valor_total):.2f})"
+            )
+
+        # 6. Criar projeto
+        projetos_manager = ProjetosManager(self.db)
+
+        # Determinar tipo de projeto (usar FULLSTACK como padrão se não especificado)
+        tipo_projeto = TipoProjeto.FULLSTACK
+
+        sucesso, projeto, msg_erro = projetos_manager.criar_projeto(
+            codigo=None,  # Gerar automaticamente
+            cliente_id=orcamento.cliente_id,
+            socio_responsavel=orcamento.owner,
+            tipo=tipo_projeto,
+            nome=f"Projeto {orcamento.codigo}",
+            valor_frontend=Decimal('0'),  # Pode ajustar se necessário
+            valor_backend=Decimal('0'),   # Pode ajustar se necessário
+            valor_total=orcamento.valor_total,
+            premio_bruno=totais['BA'],
+            premio_rafael=totais['RR'],
+            valor_empresa=totais['AGORA'],
+            valor_fornecedores=totais['freelancers'] + totais['fornecedores'],
+            data_inicio=date.today(),
+            estado=EstadoProjeto.ATIVO
+        )
+
+        if not sucesso:
+            return False, None, f"Erro ao criar projeto: {msg_erro}"
+
+        # 7. Atualizar orçamento com link para projeto
+        orcamento.projeto_id = projeto.id
+        orcamento.updated_at = datetime.now()
+        self.db.commit()
+
+        # 8. Criar mensagem de confirmação com distribuição
+        mensagem = f"""Projeto criado com sucesso!
+{projeto.codigo} - Valor total: €{float(orcamento.valor_total):,.2f}
+
+Distribuição:
+- Bruno: €{float(totais['BA']):,.2f}
+- Rafael: €{float(totais['RR']):,.2f}
+- Empresa: €{float(totais['AGORA']):,.2f}
+- Externos: €{float(totais['freelancers'] + totais['fornecedores']):,.2f}"""
+
+        return True, projeto.id, mensagem
