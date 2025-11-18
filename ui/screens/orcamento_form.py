@@ -758,12 +758,13 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         # Cor de fundo alternada
         bg_color = ("#ffffff", "#1e1e1e") if index % 2 == 0 else ("#f9f9f9", "#252525")
 
+        # Frame do item (margem entre linhas MUITO reduzida)
         item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
-        item_frame.pack(fill="x", padx=15, pady=2)
+        item_frame.pack(fill="x", padx=15, pady=1)
 
-        # Container principal (padding vertical reduzido para compactar lista)
+        # Container principal (padding vertical MÍNIMO para compactar lista)
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-        content_frame.pack(fill="x", padx=10, pady=5)
+        content_frame.pack(fill="x", padx=10, pady=4)
 
         # Coluna 1: Descrição + Tipo (largura fixa 300px)
         desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=300)
@@ -1177,12 +1178,13 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         if is_espelhada:
             bg_color = ("#fff8e1", "#3e2723")
 
+        # Frame do item (margem entre linhas MUITO reduzida)
         item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
-        item_frame.pack(fill="x", padx=15, pady=2)
+        item_frame.pack(fill="x", padx=15, pady=1)
 
-        # Container principal (padding vertical reduzido para compactar)
+        # Container principal (padding vertical MÍNIMO para compactar lista)
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-        content_frame.pack(fill="x", padx=10, pady=5)
+        content_frame.pack(fill="x", padx=10, pady=4)
 
         # Coluna 1: Beneficiário badge + Descrição (largura fixa 280px)
         desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=280)
@@ -1251,10 +1253,12 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             comissao_control_frame.pack()
 
             # Seta para baixo (diminuir -0.0001%) - discreta
+            # IMPORTANTE: Capturar rep.id no momento da criação (closure fix)
+            rep_id = rep.id
             btn_diminuir = ctk.CTkButton(
                 comissao_control_frame,
                 text="▼",
-                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, -0.0001),
+                command=lambda rid=rep_id: self.ajustar_percentagem_comissao(rid, -0.0001),
                 width=18,
                 height=20,
                 fg_color="transparent",
@@ -1285,7 +1289,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             btn_aumentar = ctk.CTkButton(
                 comissao_control_frame,
                 text="▲",
-                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, +0.0001),
+                command=lambda rid=rep_id: self.ajustar_percentagem_comissao(rid, +0.0001),
                 width=18,
                 height=20,
                 fg_color="transparent",
@@ -1416,9 +1420,13 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             incremento: +0.0001 ou -0.0001 (precisão de décimos de milésima)
         """
         try:
+            # DEBUG: Log chamada do método
+            print(f"[DEBUG] ajustar_percentagem_comissao: rep_id={rep_id}, incremento={incremento}")
+
             # Buscar repartição no BD
             reparticao = self.db_session.query(OrcamentoReparticao).filter_by(id=rep_id).first()
             if not reparticao or reparticao.tipo != 'comissao':
+                print(f"[DEBUG] Erro: Comissão não encontrada (rep_id={rep_id})")
                 messagebox.showerror("Erro", "Comissão não encontrada")
                 return
 
@@ -1426,26 +1434,38 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             percentagem_atual = float(reparticao.percentagem)
             nova_percentagem = percentagem_atual + incremento
 
+            print(f"[DEBUG] Percentagem: {percentagem_atual:.4f}% → {nova_percentagem:.4f}%")
+
             # Validar limites: 0.0000% - 100.0000%
             if nova_percentagem < 0.0000:
                 nova_percentagem = 0.0000
+                print(f"[DEBUG] Limitado a mínimo: 0.0000%")
             elif nova_percentagem > 100.0000:
                 nova_percentagem = 100.0000
+                print(f"[DEBUG] Limitado a máximo: 100.0000%")
 
             # Atualizar percentagem (arredondar a 4 decimais - décimos de milésima)
             reparticao.percentagem = Decimal(str(round(nova_percentagem, 4)))
 
             # Recalcular total: base_calculo × (percentagem / 100)
+            total_antigo = reparticao.total
             reparticao.total = reparticao.calcular_total()
+
+            print(f"[DEBUG] Total: €{float(total_antigo):.2f} → €{float(reparticao.total):.2f}")
 
             # Commit no BD
             self.db_session.commit()
 
             # Recarregar UI para atualizar valor e totais em tempo real
+            print(f"[DEBUG] Recarregando UI...")
             self.carregar_items_empresa()
+            print(f"[DEBUG] Ajuste concluído com sucesso!")
 
         except Exception as e:
             self.db_session.rollback()
+            print(f"[DEBUG] ERRO: {str(e)}")
+            import traceback
+            traceback.print_exc()
             messagebox.showerror("Erro", f"Erro ao ajustar percentagem: {str(e)}")
 
     def atualizar_total_empresa(self):
