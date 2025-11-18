@@ -349,35 +349,59 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         )
         btn_comissao.pack(side="left")
 
-        # Área scrollável para items empresa
+        # ========================================
+        # CONTAINER PRINCIPAL (Grid Layout)
+        # Coluna 0: Lista de items (expansível)
+        # Coluna 1: Totais por beneficiário (fixo, largura ~240px)
+        # ========================================
+        content_container = ctk.CTkFrame(self.tab_empresa, fg_color="transparent")
+        content_container.pack(fill="both", expand=True, padx=20, pady=(0, 10))
+
+        # Configurar grid: coluna 0 expande, coluna 1 largura fixa
+        content_container.grid_columnconfigure(0, weight=1)
+        content_container.grid_columnconfigure(1, weight=0, minsize=240)
+        content_container.grid_rowconfigure(0, weight=1)
+
+        # Área scrollável para items empresa (COLUNA 0)
         self.empresa_scroll = ctk.CTkScrollableFrame(
-            self.tab_empresa,
+            content_container,
             fg_color="transparent"
         )
-        self.empresa_scroll.pack(fill="both", expand=True, padx=20, pady=(0, 10))
+        self.empresa_scroll.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
-        # Frame Totais por Beneficiário (novo)
+        # Frame Totais por Beneficiário (COLUNA 1 - Sticky à direita)
         self.totais_beneficiarios_frame = ctk.CTkFrame(
-            self.tab_empresa,
-            fg_color=("#f5f5f5", "#2d2d2d"),
-            corner_radius=10
+            content_container,
+            fg_color=("#e8f4f8", "#1e3a42"),  # Azul suave
+            corner_radius=12,
+            border_width=2,
+            border_color=("#b8d4e0", "#2d5361")
         )
-        self.totais_beneficiarios_frame.pack(fill="x", padx=20, pady=(0, 10))
+        self.totais_beneficiarios_frame.grid(row=0, column=1, sticky="ns", padx=(10, 0))
 
         # Título do frame
         titulo_totais = ctk.CTkLabel(
             self.totais_beneficiarios_frame,
-            text="💰 TOTAIS POR BENEFICIÁRIO",
-            font=ctk.CTkFont(size=14, weight="bold")
+            text="💰 Totais por Beneficiário",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=("#1976D2", "#64B5F6")
         )
-        titulo_totais.pack(pady=(10, 5))
+        titulo_totais.pack(pady=(15, 10), padx=15)
+
+        # Separador horizontal
+        separador = ctk.CTkFrame(
+            self.totais_beneficiarios_frame,
+            height=2,
+            fg_color=("#b8d4e0", "#2d5361")
+        )
+        separador.pack(fill="x", padx=15, pady=(0, 10))
 
         # Container para os labels de beneficiários (será preenchido dinamicamente)
         self.beneficiarios_container = ctk.CTkFrame(
             self.totais_beneficiarios_frame,
             fg_color="transparent"
         )
-        self.beneficiarios_container.pack(fill="x", padx=20, pady=(0, 10))
+        self.beneficiarios_container.pack(fill="both", expand=True, padx=15, pady=(0, 15))
 
         # Total EMPRESA + Validação
         total_frame = ctk.CTkFrame(self.tab_empresa, fg_color=("#e8f5e0", "#2b4a2b"))
@@ -1319,7 +1343,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         return beneficiario_id  # Fallback genérico
 
     def atualizar_totais_beneficiarios(self):
-        """Atualiza frame de totais por beneficiário"""
+        """Atualiza frame de totais por beneficiário (painel lateral direito)"""
         # Limpar container anterior
         for widget in self.beneficiarios_container.winfo_children():
             widget.destroy()
@@ -1331,11 +1355,12 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             # Nenhum item EMPRESA ainda
             label_vazio = ctk.CTkLabel(
                 self.beneficiarios_container,
-                text="Nenhum item EMPRESA adicionado ainda",
-                font=ctk.CTkFont(size=12),
-                text_color="gray"
+                text="Sem items ainda",
+                font=ctk.CTkFont(size=11),
+                text_color=("gray50", "gray60"),
+                wraplength=180
             )
-            label_vazio.pack(pady=10)
+            label_vazio.pack(pady=20)
             return
 
         # Ordenar beneficiários: Sócios → AGORA → Freelancers → Fornecedores
@@ -1358,7 +1383,10 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
         items_ordenados = sorted(self._totais_beneficiarios.items(), key=ordenar_beneficiarios)
 
-        # Criar labels coloridos
+        # Calcular total geral
+        total_geral = sum(total for total, _ in self._totais_beneficiarios.values())
+
+        # Criar cards para cada beneficiário
         for beneficiario_id, (total, nome_display) in items_ordenados:
             # Determinar cor baseada no tipo
             if beneficiario_id in ['BA', 'RR']:
@@ -1368,23 +1396,66 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             else:
                 cor = "#e67e22"  # Laranja (externos)
 
-            # Criar frame para cada beneficiário
+            # Card para cada beneficiário (layout vertical compacto)
             beneficiario_frame = ctk.CTkFrame(
                 self.beneficiarios_container,
                 fg_color="transparent"
             )
-            beneficiario_frame.pack(fill="x", pady=2)
+            beneficiario_frame.pack(fill="x", pady=3)
 
-            # Label com nome e valor
-            label_text = f"{nome_display}:".ljust(40) + f"€{float(total):>10,.2f}"
-            beneficiario_label = ctk.CTkLabel(
+            # Nome do beneficiário (truncar se muito longo)
+            nome_truncado = nome_display if len(nome_display) <= 25 else nome_display[:22] + "..."
+            label_nome = ctk.CTkLabel(
                 beneficiario_frame,
-                text=label_text,
-                font=ctk.CTkFont(size=13, family="Courier New"),  # Monospace para alinhamento
+                text=nome_truncado,
+                font=ctk.CTkFont(size=11),
                 text_color=cor,
                 anchor="w"
             )
-            beneficiario_label.pack(side="left", fill="x", expand=True)
+            label_nome.pack(side="left", fill="x", expand=True)
+
+            # Valor do beneficiário
+            label_valor = ctk.CTkLabel(
+                beneficiario_frame,
+                text=f"€{float(total):,.2f}",
+                font=ctk.CTkFont(size=11, weight="bold"),
+                text_color=cor,
+                anchor="e"
+            )
+            label_valor.pack(side="right")
+
+        # Separador antes do total
+        separador_total = ctk.CTkFrame(
+            self.beneficiarios_container,
+            height=2,
+            fg_color=("#b8d4e0", "#2d5361")
+        )
+        separador_total.pack(fill="x", pady=(10, 8))
+
+        # Label TOTAL EMPRESA (destacado)
+        total_frame = ctk.CTkFrame(
+            self.beneficiarios_container,
+            fg_color="transparent"
+        )
+        total_frame.pack(fill="x", pady=(0, 5))
+
+        label_total_texto = ctk.CTkLabel(
+            total_frame,
+            text="TOTAL",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=("#1565C0", "#42A5F5"),
+            anchor="w"
+        )
+        label_total_texto.pack(side="left")
+
+        label_total_valor = ctk.CTkLabel(
+            total_frame,
+            text=f"€{float(total_geral):,.2f}",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=("#1565C0", "#42A5F5"),
+            anchor="e"
+        )
+        label_total_valor.pack(side="right")
 
     def validar_totais(self):
         """Valida se TOTAL CLIENTE == TOTAL EMPRESA"""
