@@ -11,6 +11,8 @@ import customtkinter as ctk
 from sqlalchemy.orm import Session
 from logic.orcamentos import OrcamentoManager
 from logic.clientes import ClientesManager
+from logic.freelancers import FreelancersManager
+from logic.fornecedores import FornecedoresManager
 from ui.components.autocomplete_entry import AutocompleteEntry
 from ui.components.date_picker_dropdown import DatePickerDropdown
 from ui.dialogs.transporte_dialog import TransporteDialog
@@ -45,6 +47,8 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         self.orcamento_id = orcamento_id
         self.manager = OrcamentoManager(db_session)
         self.clientes_manager = ClientesManager(db_session)
+        self.freelancers_manager = FreelancersManager(db_session)
+        self.fornecedores_manager = FornecedoresManager(db_session)
 
         # Estado
         self.orcamento = None
@@ -54,6 +58,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         # Caches para evitar recálculos
         self._total_cliente = Decimal('0')
         self._total_empresa = Decimal('0')
+        self._totais_beneficiarios = {}  # {beneficiario_id: (total, nome_display)}
 
         # Configure
         self.configure(fg_color="transparent")
@@ -350,6 +355,29 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             fg_color="transparent"
         )
         self.empresa_scroll.pack(fill="both", expand=True, padx=20, pady=(0, 10))
+
+        # Frame Totais por Beneficiário (novo)
+        self.totais_beneficiarios_frame = ctk.CTkFrame(
+            self.tab_empresa,
+            fg_color=("#f5f5f5", "#2d2d2d"),
+            corner_radius=10
+        )
+        self.totais_beneficiarios_frame.pack(fill="x", padx=20, pady=(0, 10))
+
+        # Título do frame
+        titulo_totais = ctk.CTkLabel(
+            self.totais_beneficiarios_frame,
+            text="💰 TOTAIS POR BENEFICIÁRIO",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        titulo_totais.pack(pady=(10, 5))
+
+        # Container para os labels de beneficiários (será preenchido dinamicamente)
+        self.beneficiarios_container = ctk.CTkFrame(
+            self.totais_beneficiarios_frame,
+            fg_color="transparent"
+        )
+        self.beneficiarios_container.pack(fill="x", padx=20, pady=(0, 10))
 
         # Total EMPRESA + Validação
         total_frame = ctk.CTkFrame(self.tab_empresa, fg_color=("#e8f5e0", "#2b4a2b"))
@@ -1203,8 +1231,160 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         # _total_empresa já foi calculado em carregar_items_empresa()
         self.total_empresa_label.configure(text=f"TOTAL EMPRESA: €{float(self._total_empresa):.2f}")
 
+        # Atualizar totais por beneficiário
+        self.atualizar_totais_beneficiarios()
+
         # Validar contra TOTAL CLIENTE
         self.validar_totais()
+
+    def calcular_totais_beneficiarios(self):
+        """
+        Calcula totais por beneficiário e resolve nomes.
+
+        Retorna: Dict[str, Tuple[Decimal, str]]
+            {beneficiario_id: (total, nome_display)}
+
+        Exemplo:
+            {
+                'BA': (Decimal('1500.00'), 'BA - Bruno'),
+                'FREELANCER_2': (Decimal('500.00'), 'FREELANCER_2 - João Silva'),
+                'FORNECEDOR_5': (Decimal('200.00'), 'FORNECEDOR_5 - Rental Co')
+            }
+        """
+        if not self.orcamento:
+            return {}
+
+        # Obter reparticões do orçamento
+        reparticoes = self.manager.obter_reparticoes(self.orcamento.id)
+
+        # Agregar por beneficiário
+        totais = {}
+        for rep in reparticoes:
+            beneficiario = rep.beneficiario
+            if not beneficiario:
+                continue
+
+            if beneficiario not in totais:
+                totais[beneficiario] = Decimal('0')
+            totais[beneficiario] += rep.total
+
+        # Resolver nomes
+        totais_com_nomes = {}
+        for beneficiario_id, total in totais.items():
+            nome_display = self._resolver_nome_beneficiario(beneficiario_id)
+            totais_com_nomes[beneficiario_id] = (total, nome_display)
+
+        return totais_com_nomes
+
+    def _resolver_nome_beneficiario(self, beneficiario_id: str) -> str:
+        """
+        Resolve o ID do beneficiário para nome de exibição.
+
+        Args:
+            beneficiario_id: 'BA', 'RR', 'AGORA', 'FREELANCER_2', 'FORNECEDOR_5'
+
+        Returns:
+            Nome formatado: 'BA - Bruno', 'FREELANCER_2 - João Silva', etc
+        """
+        # Sócios fixos
+        if beneficiario_id == 'BA':
+            return 'BA - Bruno'
+        elif beneficiario_id == 'RR':
+            return 'RR - Rafael'
+        elif beneficiario_id == 'AGORA':
+            return 'AGORA - Empresa'
+
+        # Freelancers
+        if beneficiario_id.startswith('FREELANCER_'):
+            try:
+                freelancer_id = int(beneficiario_id.replace('FREELANCER_', ''))
+                freelancer = self.freelancers_manager.buscar_por_id(freelancer_id)
+                if freelancer:
+                    return f"{beneficiario_id} - {freelancer.nome}"
+            except (ValueError, AttributeError):
+                pass
+            return beneficiario_id  # Fallback: mostrar só o ID
+
+        # Fornecedores
+        if beneficiario_id.startswith('FORNECEDOR_'):
+            try:
+                fornecedor_id = int(beneficiario_id.replace('FORNECEDOR_', ''))
+                fornecedor = self.fornecedores_manager.obter(fornecedor_id)
+                if fornecedor:
+                    return f"{beneficiario_id} - {fornecedor.nome}"
+            except (ValueError, AttributeError):
+                pass
+            return beneficiario_id  # Fallback: mostrar só o ID
+
+        return beneficiario_id  # Fallback genérico
+
+    def atualizar_totais_beneficiarios(self):
+        """Atualiza frame de totais por beneficiário"""
+        # Limpar container anterior
+        for widget in self.beneficiarios_container.winfo_children():
+            widget.destroy()
+
+        # Calcular totais
+        self._totais_beneficiarios = self.calcular_totais_beneficiarios()
+
+        if not self._totais_beneficiarios:
+            # Nenhum item EMPRESA ainda
+            label_vazio = ctk.CTkLabel(
+                self.beneficiarios_container,
+                text="Nenhum item EMPRESA adicionado ainda",
+                font=ctk.CTkFont(size=12),
+                text_color="gray"
+            )
+            label_vazio.pack(pady=10)
+            return
+
+        # Ordenar beneficiários: Sócios → AGORA → Freelancers → Fornecedores
+        def ordenar_beneficiarios(item):
+            beneficiario_id = item[0]
+            if beneficiario_id == 'BA':
+                return (0, beneficiario_id)
+            elif beneficiario_id == 'RR':
+                return (1, beneficiario_id)
+            elif beneficiario_id == 'AGORA':
+                return (2, beneficiario_id)
+            elif beneficiario_id.startswith('FREELANCER_'):
+                # Ordenar freelancers alfabeticamente por nome
+                return (3, item[1][1])  # nome_display
+            elif beneficiario_id.startswith('FORNECEDOR_'):
+                # Ordenar fornecedores alfabeticamente por nome
+                return (4, item[1][1])  # nome_display
+            else:
+                return (5, beneficiario_id)
+
+        items_ordenados = sorted(self._totais_beneficiarios.items(), key=ordenar_beneficiarios)
+
+        # Criar labels coloridos
+        for beneficiario_id, (total, nome_display) in items_ordenados:
+            # Determinar cor baseada no tipo
+            if beneficiario_id in ['BA', 'RR']:
+                cor = "#2ecc71"  # Verde (sócios)
+            elif beneficiario_id == 'AGORA':
+                cor = "#3498db"  # Azul (empresa)
+            else:
+                cor = "#e67e22"  # Laranja (externos)
+
+            # Criar frame para cada beneficiário
+            beneficiario_frame = ctk.CTkFrame(
+                self.beneficiarios_container,
+                fg_color="transparent"
+            )
+            beneficiario_frame.pack(fill="x", pady=2)
+
+            # Label com nome e valor
+            label_text = f"{nome_display}:".ljust(40) + f"€{float(total):>10,.2f}"
+            beneficiario_label = ctk.CTkLabel(
+                beneficiario_frame,
+                text=label_text,
+                font=ctk.CTkFont(size=13, family="Courier New"),  # Monospace para alinhamento
+                text_color=cor,
+                anchor="w"
+            )
+            beneficiario_label.pack(side="left", fill="x", expand=True)
 
     def validar_totais(self):
         """Valida se TOTAL CLIENTE == TOTAL EMPRESA"""
