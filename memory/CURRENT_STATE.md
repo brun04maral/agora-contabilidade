@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-17 18:00 WET
+**Última atualização:** 2025-11-18 10:30 WET
 **Branch:** claude/sync-latest-branch-015m9WoqWnfPgMYpDUTCxiko
 **Status Geral:** ✅ PRODUÇÃO READY
 
@@ -18,11 +18,11 @@
 
 ## 📌 Resumo Executivo
 
-**Sprint Atual (17/11/2025):**
-- 🎯 **Orçamentos V2 - Sistema Multi-Entidade Completo** - Migration 025, beneficiários externos, registos históricos
+**Sprint Atual (18/11/2025):**
+- 🎯 **Orçamentos V2 - Bugs e Melhorias UI** - Setas percentagem, compactação UI, precisão 4 decimais
 
 **Última Feature Concluída:**
-- ✅ **Orçamentos V2 Sistema Multi-Entidade Completo** (17/11/2025) - Migration 025 aplicada (freelancers, trabalhos, compras). Beneficiários multi-entidade em todos dialogs EMPRESA (BA/RR/AGORA + FREELANCER_{id} + FORNECEDOR_{id}). Aprovação cria registos históricos automaticamente. Rastreabilidade completa de pagamentos a entidades externas. **Ver:** memory/CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade Completo)
+- ✅ **Migration 026 - Percentagem 4 Decimais** (18/11/2025) - Fix bug persistência: campo percentagem alterado de NUMERIC(8,3) para NUMERIC(8,4). Setas ▲▼ agora persistem ajustes com precisão total (±0.0001%). Valores não truncados após commit/reload. **Ver:** memory/CHANGELOG.md (18/11/2025 - Migration 026)
 
 **Próximo Milestone:**
 - 📋 UX Improvements - Orçamentos (DateRangePicker + Context Menus)
@@ -52,7 +52,7 @@
 
 ### 💾 Base de Dados
 **Status:** ✅ Completo
-**Última Migration:** 025 (17/11/2025)
+**Última Migration:** 026 (18/11/2025)
 
 **Tabelas Principais (16):**
 - Core: socios, clientes, fornecedores
@@ -68,6 +68,7 @@
 - ✅ 022-023: Orçamentos V2 - sistema tipo-específico (16-17/11)
 - ✅ 024: Campo projeto_id em orcamentos (17/11)
 - ✅ 025: Freelancers e fornecedores multi-entidade (17/11)
+- ✅ 026: Percentagem comissões 4 casas decimais (18/11)
 
 **Ver:** `memory/DATABASE_SCHEMA.md`
 

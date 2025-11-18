@@ -1,6 +1,6 @@
 # 📋 TODO.md - Tarefas Priorizadas
 
-Última atualização: 2025-11-17 09:55 WET
+Última atualização: 2025-11-18 10:30 WET
 
 ====================================================================
 LEGENDA DE PRIORIDADES
@@ -98,17 +98,17 @@ LEGENDA DE PRIORIDADES
    Estimativa: 2-3 sessões
    Ver: memory/BUSINESS_LOGIC.md (Secção 6), memory/ARCHITECTURE.md (Orçamentos V2)
 
-8. Implementar Tabela Receitas (Migration 026)
+8. Implementar Tabela Receitas (Migration 027)
 
    Após validação TOC:
-   ├─ Criar migration 026_receitas.py
+   ├─ Criar migration 027_receitas.py
    ├─ Adicionar modelo Receita (database/models/)
    ├─ Criar ReceitasManager (logic/)
    ├─ Implementar screen Receitas (ui/screens/)
    └─ Integrar com projetos (criar receita ao marcar PAGO)
 
    Estimativa: 1 semana após validação
-   Ver: memory/FISCAL.md (Secção 1), memory/DATABASE_SCHEMA.md (Migration 026)
+   Ver: memory/FISCAL.md (Secção 1), memory/DATABASE_SCHEMA.md (Migration 027)
 
 ====================================================================
 🟡 Média Prioridade - Próximo Mês
@@ -143,7 +143,7 @@ LEGENDA DE PRIORIDADES
     
     Ver: memory/DEV_SETUP.md (adicionar secção Build)
 
-12. Dashboard Fiscal (após Migration 025)
+12. Dashboard Fiscal (após Migration 027)
     
     ├─ Card IVA a pagar (trimestre atual)
     ├─ Card IRS retido (mês atual)

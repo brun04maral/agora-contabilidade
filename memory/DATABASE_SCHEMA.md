@@ -1,7 +1,7 @@
 # 🗄️ Database Schema - Agora Contabilidade
 
-**Última atualização:** 2025-11-17 09:10 WET  
-**Branch:** claude/sync-latest-updates-012SDyaYGLD1zvqARajAPDPC
+**Última atualização:** 2025-11-18 10:30 WET
+**Branch:** claude/sync-latest-branch-015m9WoqWnfPgMYpDUTCxiko
 
 Visão geral da estrutura da base de dados SQLite do sistema Agora Contabilidade.
 
@@ -273,8 +273,8 @@ CREATE INDEX idx_orcamento_itens_tipo ON orcamento_itens(tipo);
 - `fornecedor_id` - FK (nullable, desde Migration 020)
 
 **COMISSAO:**
-- `percentagem` - DECIMAL(6,3) (3 decimais, ex: 5.125%)
-- `base_calculo` - DECIMAL(10,2)
+- `percentagem` - NUMERIC(8,4) (4 decimais, ex: 5.1234% - desde Migration 026)
+- `base_calculo` - NUMERIC(10,2)
 - **Cálculo:** base × (percentagem / 100)
 
 **DESPESA (espelhadas do CLIENTE):**
@@ -739,43 +739,42 @@ session.query(Orcamento).filter(
 
 ---
 
-### 📋 Planeadas (Futuro)
+#### Migration 026 - Percentagem Comissões 4 Casas Decimais (18/11/2025)
+**Status:** ✅ Aplicada
+**Commit:** d9c95df
 
-#### Migration 026 - Sistema Fiscal - Receitas (PLANEADO)
-**Prioridade:** 🟡 Média  
-**Status:** 📝 Documentado, aguarda implementação
+**Problema:**
+- Setas ▲▼ ajustavam percentagem com 4 decimais (0.0001%), mas BD truncava para 3
+- Valores perdidos após commit/reload (5.1234% → 5.123%)
 
-**Novas tabelas:**
+**Solução:**
+- **Tabela `orcamento_reparticoes`:**
+  - ✅ Campo `percentagem`: NUMERIC(8,3) → **NUMERIC(8,4)**
+  - ✅ Suporta precisão de 0.0001% (4 casas decimais)
+  - ✅ Dados preservados durante migração (table recreation)
 
-**`freelancers` - Profissionais Externos:**
-- Campos: id, numero (#F0001), nome, nif, email, telefone, iban, morada, especialidade, notas, ativo
-- Índices: ativo, nome
-- Relação: trabalhos → freelancer_trabalhos (one-to-many)
+**Strategy:**
+- SQLite não suporta ALTER COLUMN
+- Migration recria tabela com nova precisão
+- Copia todos dados, remove antiga, renomeia nova
 
-**`freelancer_trabalhos` - Histórico Trabalhos:**
-- Campos: id, freelancer_id (FK), orcamento_id (FK), projeto_id (FK), descricao, valor, data, status (a_pagar/pago/cancelado), data_pagamento, nota
-- Gerados automaticamente ao aprovar orçamentos
-- Índices: freelancer_id, status, data
+**Ficheiros:**
+- Migration: `database/migrations/026_percentagem_4_decimais.py`
+- Script: `scripts/run_migration_026.py`
+- Modelo: `database/models/orcamento.py:179`
 
-**`fornecedor_compras` - Histórico Compras:**
-- Estrutura idêntica a freelancer_trabalhos
-- `fornecedor_id` em vez de `freelancer_id`
+**Impacto:**
+- ✅ Setas ▲▼ persistem ajustes com precisão total
+- ✅ Comissões ajustáveis com granularidade milésima (±0.0001%)
+- ✅ Cálculos financeiros mais precisos
 
-**Expansões:**
-
-**`fornecedores` (adicionar campos):**
-- `numero` VARCHAR(20) UNIQUE (#FN0001)
-- `categoria` VARCHAR(50) (ex: "Aluguer Equipamento")
-- `iban` VARCHAR(50)
-
-**`orcamento_reparticoes` (beneficiario):**
-- Suporte completo para FREELANCER_[id] e FORNECEDOR_[id]
-
-**Ver:** Secção "FREELANCERS E FORNECEDORES - Spec Detalhada" (fim deste ficheiro)
+**Ver:** memory/CHANGELOG.md (18/11/2025 - Migration 026)
 
 ---
 
-#### Migration 026 - Sistema Fiscal - Receitas (PLANEADO)
+### 📋 Planeadas (Futuro)
+
+#### Migration 027 - Sistema Fiscal - Receitas (PLANEADO)
 **Prioridade:** 🔴 Alta
 **Status:** 📝 Documentado em FISCAL.md (39KB), aguarda validação TOC
 

@@ -4,6 +4,68 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-18] Migration 026 - Percentagem Comissões 4 Casas Decimais
+
+### 🐛 Bug Fix - Persistência Percentagem com 4 Decimais
+
+**Problema:** (Commit: d9c95df)
+- Setas ▲▼ de ajuste de comissões incrementavam percentagem com precisão de 0.0001% (4 casas decimais)
+- Após commit/reload, valores eram truncados para 3 casas decimais
+- UI mostrava 5.1234%, mas BD persistia apenas 5.123%
+- Total recalculado com valor truncado, perdendo precisão
+
+**Causa Raiz:**
+- Campo `percentagem` em `orcamento_reparticoes` definido como `NUMERIC(8,3)` (apenas 3 casas decimais)
+- Aplicação calculava corretamente com 4 decimais, mas BD não suportava armazenar
+
+**Solução:** (Commit: d9c95df)
+- Alterado modelo ORM: `percentagem = Column(Numeric(8, 4))` (de 8,3 → 8,4)
+- Criada Migration 026 para alterar tabela SQLite
+- Strategy: Recreate table (SQLite não suporta ALTER COLUMN diretamente)
+- Todos dados preservados durante migração
+
+**Migration 026:**
+```sql
+-- Recria tabela com nova precisão
+CREATE TABLE orcamento_reparticoes_new (
+  ...
+  percentagem NUMERIC(8, 4),  -- Antes: NUMERIC(8, 3)
+  ...
+)
+-- Copia dados, remove antiga, renomeia nova
+```
+
+**Ficheiros Alterados:**
+- `database/models/orcamento.py:179` - Modelo ORM atualizado
+- `database/migrations/026_percentagem_4_decimais.py` - Nova migration
+- `scripts/run_migration_026.py` - Script de execução com validação
+
+**Validação:**
+- ✅ Sintaxe verificada com `python3 -m py_compile`
+- ✅ Migration inclui upgrade() e downgrade()
+- ✅ Script valida precisão após aplicação (PRAGMA table_info)
+- ✅ Preserva todos dados existentes (SELECT * FROM -> INSERT INTO)
+
+**Comportamento Após Fix:**
+1. Ajustar percentagem com setas ▲▼ (ex: 5.1234%)
+2. Commit persiste valor com 4 decimais
+3. Reload mantém 5.1234% (não trunca)
+4. Total calculado com precisão total
+
+**Impacto:**
+- Setas ▲▼ agora funcionam com precisão total (step=0.0001%)
+- Comissões podem ser ajustadas com granularidade milésima
+- Cálculos financeiros mais precisos
+
+**Commits:**
+- d9c95df: feat: Migration 026 - Percentagem comissões 4 casas decimais (NUMERIC 8,4)
+
+**Ver:**
+- memory/DATABASE_SCHEMA.md (Migration 026)
+- Sprint anterior: 17/11/2025 - Setas percentagem e UI compacta
+
+---
+
 ## [2025-11-17] Orçamentos V2 - Sistema Multi-Entidade Completo
 
 ### ✨ Migration 025 - Freelancers e Fornecedores
