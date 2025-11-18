@@ -761,9 +761,9 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         item_frame = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
         item_frame.pack(fill="x", padx=15, pady=2)
 
-        # Container principal (descrição + detalhes + ações)
+        # Container principal (padding vertical reduzido para compactar lista)
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-        content_frame.pack(fill="x", padx=10, pady=8)
+        content_frame.pack(fill="x", padx=10, pady=5)
 
         # Coluna 1: Descrição + Tipo (largura fixa 300px)
         desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=300)
@@ -1245,16 +1245,16 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 text_color=("#555", "#aaa")
             ).pack()
         elif tipo == 'comissao':
-            # COMISSÃO: Layout especial com setas discretas para ajuste fino de percentagem
+            # COMISSÃO: Layout especial com setas discretas para ajuste super-fino de percentagem
             # Container horizontal: seta down | percentagem | seta up | base
             comissao_control_frame = ctk.CTkFrame(details_frame, fg_color="transparent")
             comissao_control_frame.pack()
 
-            # Seta para baixo (diminuir -0.001%) - discreta
+            # Seta para baixo (diminuir -0.0001%) - discreta
             btn_diminuir = ctk.CTkButton(
                 comissao_control_frame,
                 text="▼",
-                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, -0.001),
+                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, -0.0001),
                 width=18,
                 height=20,
                 fg_color="transparent",
@@ -1265,27 +1265,27 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             )
             btn_diminuir.pack(side="left", padx=1)
             # Tooltip para seta diminuir
-            ToolTip(btn_diminuir, "Diminuir percentagem (−0.001%)", delay=300)
+            ToolTip(btn_diminuir, "Diminuir percentagem (−0.0001%)", delay=300)
 
-            # Label percentagem (3 decimais fixos - milésimas)
-            percentagem_text = f"{float(rep.percentagem):.3f}%"
+            # Label percentagem (4 decimais fixos - décimos de milésima)
+            percentagem_text = f"{float(rep.percentagem):.4f}%"
 
             percentagem_label = ctk.CTkLabel(
                 comissao_control_frame,
                 text=percentagem_text,
                 font=ctk.CTkFont(size=11, weight="bold"),
                 text_color=("#9C27B0", "#CE93D8"),
-                width=70
+                width=80
             )
             percentagem_label.pack(side="left", padx=2)
             # Tooltip para percentagem
-            ToolTip(percentagem_label, "Ajustar percentagem ao milésimo", delay=300)
+            ToolTip(percentagem_label, "Ajustar percentagem ao décimo de milésimo (0.0001%)", delay=300)
 
-            # Seta para cima (aumentar +0.001%) - discreta
+            # Seta para cima (aumentar +0.0001%) - discreta
             btn_aumentar = ctk.CTkButton(
                 comissao_control_frame,
                 text="▲",
-                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, +0.001),
+                command=lambda r=rep: self.ajustar_percentagem_comissao(r.id, +0.0001),
                 width=18,
                 height=20,
                 fg_color="transparent",
@@ -1296,7 +1296,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             )
             btn_aumentar.pack(side="left", padx=1)
             # Tooltip para seta aumentar
-            ToolTip(btn_aumentar, "Aumentar percentagem (+0.001%)", delay=300)
+            ToolTip(btn_aumentar, "Aumentar percentagem (+0.0001%)", delay=300)
 
             # Base de cálculo (menor, cinza)
             base_text = f"× €{float(rep.base_calculo):.2f}"
@@ -1413,7 +1413,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
 
         Args:
             rep_id: ID da repartição (comissão)
-            incremento: +0.001 ou -0.001 (precisão de milésimas)
+            incremento: +0.0001 ou -0.0001 (precisão de décimos de milésima)
         """
         try:
             # Buscar repartição no BD
@@ -1426,14 +1426,14 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             percentagem_atual = float(reparticao.percentagem)
             nova_percentagem = percentagem_atual + incremento
 
-            # Validar limites: 0.000% - 100.000%
-            if nova_percentagem < 0.000:
-                nova_percentagem = 0.000
-            elif nova_percentagem > 100.000:
-                nova_percentagem = 100.000
+            # Validar limites: 0.0000% - 100.0000%
+            if nova_percentagem < 0.0000:
+                nova_percentagem = 0.0000
+            elif nova_percentagem > 100.0000:
+                nova_percentagem = 100.0000
 
-            # Atualizar percentagem (arredondar a 3 decimais - milésimas)
-            reparticao.percentagem = Decimal(str(round(nova_percentagem, 3)))
+            # Atualizar percentagem (arredondar a 4 decimais - décimos de milésima)
+            reparticao.percentagem = Decimal(str(round(nova_percentagem, 4)))
 
             # Recalcular total: base_calculo × (percentagem / 100)
             reparticao.total = reparticao.calcular_total()
