@@ -28,6 +28,72 @@ from typing import Optional
 from datetime import date
 from tkinter import messagebox
 from decimal import Decimal
+import tkinter as tk
+
+
+class ToolTip:
+    """
+    Tooltip simples para mostrar texto completo quando truncado
+    Aparece ao passar o mouse sobre o widget
+    """
+    def __init__(self, widget, text: str, delay: int = 200):
+        self.widget = widget
+        self.text = text
+        self.delay = delay  # ms
+        self.tooltip_window = None
+        self._timer_id = None
+
+        # Bind eventos
+        self.widget.bind("<Enter>", self.on_enter)
+        self.widget.bind("<Leave>", self.on_leave)
+        self.widget.bind("<Button>", self.on_leave)  # Fechar ao clicar
+
+    def on_enter(self, event=None):
+        """Mouse entrou no widget - agendar tooltip"""
+        self._timer_id = self.widget.after(self.delay, self.show_tooltip)
+
+    def on_leave(self, event=None):
+        """Mouse saiu do widget - cancelar/fechar tooltip"""
+        if self._timer_id:
+            self.widget.after_cancel(self._timer_id)
+            self._timer_id = None
+        self.hide_tooltip()
+
+    def show_tooltip(self):
+        """Mostra o tooltip"""
+        if self.tooltip_window or not self.text:
+            return
+
+        # Posição do tooltip (abaixo do widget)
+        x = self.widget.winfo_rootx() + 10
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+
+        # Criar janela toplevel
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)  # Sem bordas/decorações
+        tw.wm_geometry(f"+{x}+{y}")
+
+        # Label com o texto completo
+        label = tk.Label(
+            tw,
+            text=self.text,
+            justify=tk.LEFT,
+            background="#ffffe0",  # Amarelo claro
+            foreground="#000000",
+            relief=tk.SOLID,
+            borderwidth=1,
+            font=("TkDefaultFont", 10),
+            padx=8,
+            pady=6,
+            wraplength=400  # Wrap em 400px
+        )
+        label.pack()
+
+    def hide_tooltip(self):
+        """Esconde o tooltip"""
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
 
 
 class OrcamentoFormScreen(ctk.CTkFrame):
@@ -699,9 +765,10 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
         content_frame.pack(fill="x", padx=10, pady=8)
 
-        # Coluna 1: Descrição + Tipo
-        desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
-        desc_frame.pack(side="left", fill="both", expand=True)
+        # Coluna 1: Descrição + Tipo (largura fixa 300px)
+        desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=300)
+        desc_frame.pack(side="left", fill="y")
+        desc_frame.pack_propagate(False)  # Manter largura fixa
 
         # Tipo badge
         tipo_colors = {
@@ -723,14 +790,22 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             pady=2
         ).pack(side="left", padx=(0, 8))
 
-        # Descrição
-        desc_text = item.descricao[:60] + "..." if len(item.descricao) > 60 else item.descricao
-        ctk.CTkLabel(
+        # Descrição (truncar + tooltip se necessário)
+        max_chars = 50  # Ajustado para largura fixa
+        is_truncated = len(item.descricao) > max_chars
+        desc_text = item.descricao[:max_chars] + "…" if is_truncated else item.descricao
+
+        desc_label = ctk.CTkLabel(
             desc_frame,
             text=desc_text,
             font=ctk.CTkFont(size=12),
             anchor="w"
-        ).pack(side="left", fill="x", expand=True)
+        )
+        desc_label.pack(side="left", fill="x", expand=True)
+
+        # Adicionar tooltip se truncado
+        if is_truncated:
+            ToolTip(desc_label, item.descricao, delay=200)
 
         # Coluna 2: Detalhes (campos específicos por tipo)
         details_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
@@ -1109,9 +1184,10 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
         content_frame.pack(fill="x", padx=10, pady=8)
 
-        # Coluna 1: Beneficiário badge + Descrição
-        desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
-        desc_frame.pack(side="left", fill="both", expand=True)
+        # Coluna 1: Beneficiário badge + Descrição (largura fixa 280px)
+        desc_frame = ctk.CTkFrame(content_frame, fg_color="transparent", width=280)
+        desc_frame.pack(side="left", fill="y")
+        desc_frame.pack_propagate(False)  # Manter largura fixa
 
         # Beneficiário badge
         beneficiario_colors = {
@@ -1135,17 +1211,26 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             pady=2
         ).pack(side="left", padx=(0, 8))
 
-        # Descrição
-        desc_text = rep.descricao[:50] + "..." if len(rep.descricao) > 50 else rep.descricao
+        # Descrição (truncar + tooltip se necessário)
+        max_chars = 40  # Ajustado para largura fixa (badge ocupa mais espaço)
+        desc_original = rep.descricao
+        is_truncated = len(desc_original) > max_chars
+        desc_text = desc_original[:max_chars] + "…" if is_truncated else desc_original
         if is_espelhada:
             desc_text = "🔗 " + desc_text  # Indicador visual de espelhado
 
-        ctk.CTkLabel(
+        desc_label = ctk.CTkLabel(
             desc_frame,
             text=desc_text,
             font=ctk.CTkFont(size=12),
             anchor="w"
-        ).pack(side="left", fill="x", expand=True)
+        )
+        desc_label.pack(side="left", fill="x", expand=True)
+
+        # Adicionar tooltip se truncado
+        if is_truncated:
+            tooltip_text = ("🔗 " if is_espelhada else "") + desc_original
+            ToolTip(desc_label, tooltip_text, delay=200)
 
         # Coluna 2: Detalhes
         details_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
