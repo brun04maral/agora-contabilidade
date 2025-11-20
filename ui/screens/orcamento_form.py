@@ -2020,12 +2020,12 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             premio_ba = sum(r.total for r in reparticoes if r.beneficiario == 'BA')
             premio_rr = sum(r.total for r in reparticoes if r.beneficiario == 'RR')
 
-            # 4. Criar projeto usando ProjetoManager
-            from logic.projetos import ProjetoManager
+            # 4. Criar projeto usando ProjetosManager
+            from logic.projetos import ProjetosManager
             from database.models.projeto import TipoProjeto, EstadoProjeto
             from datetime import date
 
-            projeto_manager = ProjetoManager(self.db_session)
+            projeto_manager = ProjetosManager(self.db_session)
 
             sucesso, projeto, erro = projeto_manager.criar(
                 tipo=TipoProjeto.EMPRESA,
