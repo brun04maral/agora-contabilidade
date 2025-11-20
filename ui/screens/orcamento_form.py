@@ -1254,13 +1254,13 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             comissao_control_frame = ctk.CTkFrame(details_frame, fg_color="transparent")
             comissao_control_frame.pack()
 
-            # Seta para baixo (diminuir -0.0001%) - discreta
+            # Seta para baixo (diminuir -0.0001%) - discreta com REPEAT
             # IMPORTANTE: Capturar rep.id no momento da criação (closure fix)
             rep_id = rep.id
             btn_diminuir = ctk.CTkButton(
                 comissao_control_frame,
                 text="▼",
-                command=lambda rid=rep_id: self.ajustar_percentagem_comissao(rid, -0.0001),
+                command=lambda: None,  # Desactivado - usamos bind
                 width=18,
                 height=20,
                 fg_color="transparent",
@@ -1270,10 +1270,13 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 border_width=0
             )
             btn_diminuir.pack(side="left", padx=1)
+            # Bind para repeat: press inicia, release para
+            btn_diminuir.bind("<ButtonPress-1>", lambda e, rid=rep_id: self.iniciar_repeat_seta(rid, -0.0001))
+            btn_diminuir.bind("<ButtonRelease-1>", self.parar_repeat_seta)
             # Tooltip para seta diminuir
-            ToolTip(btn_diminuir, "Diminuir percentagem (−0.0001%)", delay=300)
+            ToolTip(btn_diminuir, "Diminuir percentagem (−0.0001%) - Segurar para repeat", delay=300)
 
-            # Label percentagem (4 decimais fixos - décimos de milésima)
+            # Label percentagem (4 decimais fixos - décimos de milésima) - CLICÁVEL para input manual
             percentagem_text = f"{float(rep.percentagem):.4f}%"
 
             percentagem_label = ctk.CTkLabel(
@@ -1281,17 +1284,20 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 text=percentagem_text,
                 font=ctk.CTkFont(size=11, weight="bold"),
                 text_color=("#9C27B0", "#CE93D8"),
-                width=80
+                width=80,
+                cursor="hand2"  # Cursor de mão para indicar clicável
             )
             percentagem_label.pack(side="left", padx=2)
+            # Bind para input manual ao clicar
+            percentagem_label.bind("<Button-1>", lambda e, rid=rep_id: self.abrir_input_percentagem(rid, e))
             # Tooltip para percentagem
-            ToolTip(percentagem_label, "Ajustar percentagem ao décimo de milésimo (0.0001%)", delay=300)
+            ToolTip(percentagem_label, "Clicar para editar | Setas: ajuste fino (±0.0001%)", delay=300)
 
-            # Seta para cima (aumentar +0.0001%) - discreta
+            # Seta para cima (aumentar +0.0001%) - discreta com REPEAT
             btn_aumentar = ctk.CTkButton(
                 comissao_control_frame,
                 text="▲",
-                command=lambda rid=rep_id: self.ajustar_percentagem_comissao(rid, +0.0001),
+                command=lambda: None,  # Desactivado - usamos bind
                 width=18,
                 height=20,
                 fg_color="transparent",
@@ -1301,8 +1307,11 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 border_width=0
             )
             btn_aumentar.pack(side="left", padx=1)
+            # Bind para repeat: press inicia, release para
+            btn_aumentar.bind("<ButtonPress-1>", lambda e, rid=rep_id: self.iniciar_repeat_seta(rid, +0.0001))
+            btn_aumentar.bind("<ButtonRelease-1>", self.parar_repeat_seta)
             # Tooltip para seta aumentar
-            ToolTip(btn_aumentar, "Aumentar percentagem (+0.0001%)", delay=300)
+            ToolTip(btn_aumentar, "Aumentar percentagem (+0.0001%) - Segurar para repeat", delay=300)
 
             # Base de cálculo (menor, cinza)
             base_text = f"× €{float(rep.base_calculo):.2f}"
@@ -1412,6 +1421,153 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             self.carregar_items_empresa()
         else:
             messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
+
+    # ===== SETAS REPEAT - Hold para incremento contínuo =====
+
+    def iniciar_repeat_seta(self, rep_id: int, incremento: float):
+        """
+        Inicia o repeat das setas quando o botão é pressionado
+
+        Args:
+            rep_id: ID da repartição
+            incremento: +0.0001 ou -0.0001
+        """
+        # Cancelar repeat anterior se existir
+        self.parar_repeat_seta()
+
+        # Guardar estado do repeat
+        self._repeat_rep_id = rep_id
+        self._repeat_incremento = incremento
+        self._repeat_count = 0
+
+        # Executar primeiro ajuste imediatamente
+        self.ajustar_percentagem_comissao(rep_id, incremento)
+
+        # Agendar próximo ajuste com delay inicial (350ms)
+        self._repeat_timer = self.after(350, self.executar_repeat_seta)
+
+    def executar_repeat_seta(self):
+        """Executa o incremento contínuo enquanto o botão está pressionado"""
+        if hasattr(self, '_repeat_rep_id') and self._repeat_rep_id:
+            # Executar ajuste
+            self.ajustar_percentagem_comissao(self._repeat_rep_id, self._repeat_incremento)
+            self._repeat_count += 1
+
+            # Agendar próximo ajuste com intervalo rápido (90ms)
+            self._repeat_timer = self.after(90, self.executar_repeat_seta)
+
+    def parar_repeat_seta(self, event=None):
+        """Para o repeat das setas quando o botão é libertado"""
+        if hasattr(self, '_repeat_timer') and self._repeat_timer:
+            self.after_cancel(self._repeat_timer)
+            self._repeat_timer = None
+
+        # Limpar estado
+        self._repeat_rep_id = None
+        self._repeat_incremento = None
+        self._repeat_count = 0
+
+    # ===== INPUT MANUAL - Click no label para editar diretamente =====
+
+    def abrir_input_percentagem(self, rep_id: int, event=None):
+        """
+        Abre popup para input manual da percentagem
+
+        Args:
+            rep_id: ID da repartição
+            event: Evento do click (não usado)
+        """
+        # Buscar repartição atual
+        reparticao = self.db_session.query(OrcamentoReparticao).filter_by(id=rep_id).first()
+        if not reparticao or reparticao.tipo != 'comissao':
+            return
+
+        # Criar dialog simples para input
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Editar Percentagem")
+        dialog.geometry("300x150")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Centrar na janela pai
+        dialog.update_idletasks()
+        x = self.winfo_rootx() + (self.winfo_width() - 300) // 2
+        y = self.winfo_rooty() + (self.winfo_height() - 150) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        # Frame principal
+        main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Label
+        ctk.CTkLabel(
+            main_frame,
+            text="Percentagem (0-100):",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 5))
+
+        # Entry com valor atual
+        entry = ctk.CTkEntry(main_frame, height=35)
+        entry.pack(fill="x", pady=(0, 15))
+        entry.insert(0, f"{float(reparticao.percentagem):.4f}")
+        entry.select_range(0, "end")
+        entry.focus_set()
+
+        def aplicar():
+            """Aplica o valor manual"""
+            try:
+                valor_str = entry.get().strip().replace(',', '.')
+                novo_valor = float(valor_str)
+
+                # Validar limites
+                if novo_valor < 0:
+                    novo_valor = 0
+                elif novo_valor > 100:
+                    novo_valor = 100
+
+                # Calcular diferença e aplicar
+                valor_atual = float(reparticao.percentagem)
+                diferenca = novo_valor - valor_atual
+
+                if diferenca != 0:
+                    # Atualizar diretamente
+                    reparticao.percentagem = Decimal(str(round(novo_valor, 4)))
+                    reparticao.total = reparticao.calcular_total()
+                    self.db_session.commit()
+                    self.carregar_items_empresa()
+
+                dialog.destroy()
+
+            except ValueError:
+                messagebox.showerror("Erro", "Valor inválido! Use formato: 5.1234")
+
+        def cancelar():
+            dialog.destroy()
+
+        # Botões
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=cancelar,
+            width=80,
+            fg_color="gray"
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Aplicar",
+            command=aplicar,
+            width=80,
+            fg_color="#9C27B0"
+        ).pack(side="right")
+
+        # Bind Enter para aplicar
+        entry.bind("<Return>", lambda e: aplicar())
+        entry.bind("<Escape>", lambda e: cancelar())
 
     def ajustar_percentagem_comissao(self, rep_id: int, incremento: float):
         """
