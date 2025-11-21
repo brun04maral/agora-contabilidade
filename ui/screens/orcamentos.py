@@ -345,6 +345,26 @@ class OrcamentosScreen(ctk.CTkFrame):
         else:
             messagebox.showerror("Erro", "Não foi possível navegar para o formulário de orçamento")
 
+    def abrir_formulario(self, orcamento):
+        """
+        Abre formulário de edição para um orçamento
+
+        Args:
+            orcamento: Objecto Orcamento ou ID
+        """
+        # Extrair ID se for objecto
+        if hasattr(orcamento, 'id'):
+            orcamento_id = orcamento.id
+        else:
+            orcamento_id = orcamento
+
+        # Navegar para formulário
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            main_window.show_screen("orcamento_form", orcamento_id=orcamento_id)
+        else:
+            messagebox.showerror("Erro", "Não foi possível navegar para o formulário de orçamento")
+
     def visualizar_orcamento(self):
         """View selected orcamento details"""
         selected = self.table.get_selected_data()
