@@ -30,23 +30,27 @@ LEGENDA DE PRIORIDADES
 
 4. UX/UI Improvements - Orçamentos (20 melhorias)
 
-   **Pendentes desta sessão:**
+   **Concluído (21/11/2025):**
+   ├─ ✅ Menu right-click na lista de orçamentos (Visualizar, Editar, Duplicar, Status, Anular, Apagar)
+   ├─ ✅ Botão "Duplicar Orçamento" na barra inferior (seleção múltipla)
+   ├─ ✅ Input manual de percentagem nas comissões (click no label)
+   ├─ ✅ Setas repeat nas comissões (hold para incremento contínuo)
+   └─ ✅ Campo código editável no formulário
+
+   **Pendentes:**
    ├─ 🆕 DateRangePicker para "data do evento" (substituir Entry atual)
    │   - Usar componente DateRangePickerDropdown existente
    │   - Formato inteligente (DD-DD/MM/YYYY)
    │   - Update em orcamento_form.py campo data_evento
-   └─ 🆕 Context menus (right-click) em tabelas de items
-       - Adicionar a tabelas CLIENTE (renderizar_item_cliente)
-       - Adicionar a tabelas EMPRESA (renderizar_item_empresa)
-       - Ações: Editar, Apagar, Duplicar
-       - Seguir padrão existente de outras screens
+   └─ 🆕 Context menus (right-click) em tabelas de items CLIENTE/EMPRESA
+       - Adicionar a tabelas de items (renderizar_item_cliente/empresa)
+       - Ações: Editar, Apagar, Duplicar item
 
    Críticas:
    ├─ Wizard multi-step (Dados Gerais → Items → Repartições → Preview)
    ├─ Preview lateral ao editar items (recalcula totais live)
    ├─ Gráfico pizza repartições EMPRESA (visual distribuição)
-   ├─ Validação inline com mensagens claras
-   └─ Botão "Duplicar Orçamento" (copia completo)
+   └─ Validação inline com mensagens claras
 
    Nice-to-have:
    ├─ Filtros avançados (cliente, status, período, owner)

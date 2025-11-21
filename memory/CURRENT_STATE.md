@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-18 10:30 WET
-**Branch:** claude/sync-latest-branch-015m9WoqWnfPgMYpDUTCxiko
+**Última atualização:** 2025-11-21 15:00 WET
+**Branch:** claude/sync-branch-updates-01E272Kg4MfomDai3tRbLKDz
 **Status Geral:** ✅ PRODUÇÃO READY
 
 ---
@@ -18,15 +18,15 @@
 
 ## 📌 Resumo Executivo
 
-**Sprint Atual (18/11/2025):**
-- 🎯 **Orçamentos V2 - Bugs e Melhorias UI** - Setas percentagem, compactação UI, precisão 4 decimais
+**Sprint Atual (21/11/2025):**
+- 🎯 **Orçamentos V2 - Menu Context + UX Comissões** - Right-click menu, duplicar, input manual percentagem
 
 **Última Feature Concluída:**
-- ✅ **Migration 026 - Percentagem 4 Decimais** (18/11/2025) - Fix bug persistência: campo percentagem alterado de NUMERIC(8,3) para NUMERIC(8,4). Setas ▲▼ agora persistem ajustes com precisão total (±0.0001%). Valores não truncados após commit/reload. **Ver:** memory/CHANGELOG.md (18/11/2025 - Migration 026)
+- ✅ **Menu Right-Click Orçamentos** (21/11/2025) - Menu de contexto completo com todas acções (Visualizar, Editar, Duplicar, Marcar Aprovado/Pago, Anular, Apagar). Botão Duplicar na barra inferior. Backend: `duplicar_orcamento()`, `mudar_status()`. Input manual + setas repeat nas comissões. Campo código editável. **Ver:** memory/CHANGELOG.md (21/11/2025)
 
 **Próximo Milestone:**
-- 📋 UX Improvements - Orçamentos (DateRangePicker + Context Menus)
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
+- 📋 UI Gestão Freelancers (screen CRUD)
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins
