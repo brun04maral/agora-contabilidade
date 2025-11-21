@@ -795,14 +795,14 @@ class OrcamentoManager:
     def duplicar_orcamento(
         self,
         orcamento_id: int,
-        novo_codigo: str
+        novo_codigo: str = None
     ) -> Tuple[bool, Optional[Orcamento], Optional[str]]:
         """
         Duplica um orçamento com novo código
 
         Args:
             orcamento_id: ID do orçamento a duplicar
-            novo_codigo: Novo código para o orçamento duplicado
+            novo_codigo: Novo código para o orçamento duplicado (gera automaticamente se None)
 
         Returns:
             (sucesso, novo_orcamento, mensagem_erro)
@@ -812,92 +812,132 @@ class OrcamentoManager:
             if not orcamento_original:
                 return False, None, "Orçamento não encontrado"
 
+            # Gerar código automaticamente se não fornecido
+            if not novo_codigo:
+                novo_codigo = self._gerar_codigo_duplicado(orcamento_original.codigo)
+
             # Verificar se novo código já existe
             existe = self.obter_por_codigo(novo_codigo)
             if existe:
                 return False, None, f"Orçamento {novo_codigo} já existe"
 
             # Criar novo orçamento com dados duplicados
+            from datetime import date
             novo_orcamento = Orcamento(
                 codigo=novo_codigo,
+                owner=orcamento_original.owner,
                 cliente_id=orcamento_original.cliente_id,
-                data_criacao=orcamento_original.data_criacao,
+                data_criacao=date.today(),  # Data de hoje
                 data_evento=orcamento_original.data_evento,
                 local_evento=orcamento_original.local_evento,
-                descricao_proposta=orcamento_original.descricao_proposta,
-                notas_contratuais=orcamento_original.notas_contratuais,
-                tem_versao_cliente=orcamento_original.tem_versao_cliente,
-                titulo_cliente=orcamento_original.titulo_cliente,
-                descricao_cliente=orcamento_original.descricao_cliente,
-                status='rascunho'
+                valor_total=orcamento_original.valor_total,
+                status='rascunho'  # Sempre começa como rascunho
             )
 
             self.db.add(novo_orcamento)
             self.db.flush()  # Para obter o ID
 
-            # Duplicar secções
-            secoes_map = {}  # Mapear IDs antigos para novos
-            for secao in orcamento_original.secoes:
-                nova_secao = OrcamentoSecao(
-                    orcamento_id=novo_orcamento.id,
-                    tipo=secao.tipo,
-                    nome=secao.nome,
-                    ordem=secao.ordem,
-                    parent_id=None  # Será atualizado depois
-                )
-                self.db.add(nova_secao)
-                self.db.flush()
-                secoes_map[secao.id] = nova_secao.id
-
-            # Atualizar parent_ids das subsecções
-            for secao_antiga in orcamento_original.secoes:
-                if secao_antiga.parent_id:
-                    secao_nova_id = secoes_map[secao_antiga.id]
-                    secao_nova = self.db.query(OrcamentoSecao).get(secao_nova_id)
-                    secao_nova.parent_id = secoes_map.get(secao_antiga.parent_id)
-
-            # Duplicar items
+            # Duplicar items (LADO CLIENTE)
             for item in orcamento_original.itens:
                 novo_item = OrcamentoItem(
                     orcamento_id=novo_orcamento.id,
-                    secao_id=secoes_map[item.secao_id],
+                    tipo=item.tipo,
                     descricao=item.descricao,
                     quantidade=item.quantidade,
                     dias=item.dias,
-                    preco_unitario=item.preco_unitario,
-                    desconto=item.desconto,
-                    total=item.total,
-                    ordem=item.ordem,
-                    equipamento_id=item.equipamento_id,
-                    reparticao=item.reparticao,
-                    afetacao=item.afetacao,
-                    investimento=item.investimento,
-                    amortizacao=item.amortizacao
+                    valor_unitario=item.valor_unitario,
+                    kms=item.kms,
+                    valor_por_km=item.valor_por_km,
+                    num_refeicoes=item.num_refeicoes,
+                    valor_por_refeicao=item.valor_por_refeicao,
+                    valor_fixo=item.valor_fixo,
+                    total=item.total
                 )
                 self.db.add(novo_item)
 
-            # Duplicar repartições (se backend)
+            # Duplicar repartições (LADO EMPRESA)
             for reparticao in orcamento_original.reparticoes:
                 nova_reparticao = OrcamentoReparticao(
                     orcamento_id=novo_orcamento.id,
-                    entidade=reparticao.entidade,
-                    valor=reparticao.valor,
+                    tipo=reparticao.tipo,
+                    beneficiario=reparticao.beneficiario,
+                    descricao=reparticao.descricao,
+                    quantidade=reparticao.quantidade,
+                    dias=reparticao.dias,
+                    valor_unitario=reparticao.valor_unitario,
                     percentagem=reparticao.percentagem,
-                    ordem=reparticao.ordem
+                    base_calculo=reparticao.base_calculo,
+                    kms=reparticao.kms,
+                    valor_por_km=reparticao.valor_por_km,
+                    num_refeicoes=reparticao.num_refeicoes,
+                    valor_por_refeicao=reparticao.valor_por_refeicao,
+                    valor_fixo=reparticao.valor_fixo,
+                    total=reparticao.total,
+                    is_espelhada=reparticao.is_espelhada,
+                    item_cliente_ref=reparticao.item_cliente_ref
                 )
                 self.db.add(nova_reparticao)
 
             self.db.commit()
             self.db.refresh(novo_orcamento)
 
-            # Recalcular totais
-            self.recalcular_totais(novo_orcamento.id)
-
             return True, novo_orcamento, None
 
         except Exception as e:
             self.db.rollback()
             return False, None, str(e)
+
+    def _gerar_codigo_duplicado(self, codigo_original: str) -> str:
+        """
+        Gera código para orçamento duplicado
+
+        Ex: ORC-001 -> ORC-001-COPIA ou ORC-001-COPIA-2
+        """
+        base = f"{codigo_original}-COPIA"
+        novo_codigo = base
+
+        # Verificar se já existe e incrementar
+        contador = 1
+        while self.obter_por_codigo(novo_codigo):
+            contador += 1
+            novo_codigo = f"{base}-{contador}"
+
+        return novo_codigo
+
+    def mudar_status(
+        self,
+        orcamento_id: int,
+        novo_status: str
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Muda o status de um orçamento
+
+        Args:
+            orcamento_id: ID do orçamento
+            novo_status: Novo status ('rascunho', 'aprovado', 'pago', 'anulado', 'rejeitado')
+
+        Returns:
+            (sucesso, mensagem_erro)
+        """
+        try:
+            orcamento = self.obter_orcamento(orcamento_id)
+            if not orcamento:
+                return False, "Orçamento não encontrado"
+
+            # Validar status
+            status_validos = ['rascunho', 'aprovado', 'pago', 'anulado', 'rejeitado']
+            if novo_status not in status_validos:
+                return False, f"Status inválido. Use: {', '.join(status_validos)}"
+
+            # Atualizar status
+            orcamento.status = novo_status
+            self.db.commit()
+
+            return True, None
+
+        except Exception as e:
+            self.db.rollback()
+            return False, str(e)
 
     def obter_status(self) -> List[str]:
         """Obtém lista de status possíveis"""
