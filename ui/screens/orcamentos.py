@@ -370,7 +370,7 @@ class OrcamentosScreen(ctk.CTkFrame):
         info_frame.pack(fill="x", pady=(0, 20))
 
         info_data = [
-            ("Tipo", orcamento.tipo or "N/A"),
+            ("Owner", orcamento.owner or "N/A"),
             ("Status", orcamento.status or "rascunho"),
             ("Cliente", orcamento.cliente.nome if orcamento.cliente else "N/A"),
             ("Data Criação", orcamento.data_criacao.strftime("%Y-%m-%d") if orcamento.data_criacao else "N/A"),
