@@ -142,7 +142,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             self.codigo_entry.configure(state="normal")
             self.codigo_entry.delete(0, "end")
             self.codigo_entry.insert(0, self.manager.gerar_proximo_codigo())
-            self.codigo_entry.configure(state="disabled")
+            # Campo editável - utilizador pode alterar o código gerado
 
     def create_widgets(self):
         """Cria widgets da screen"""
@@ -2077,7 +2077,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         self.codigo_entry.configure(state="normal")
         self.codigo_entry.delete(0, "end")
         self.codigo_entry.insert(0, self.orcamento.codigo)
-        self.codigo_entry.configure(state="disabled")
+        # Campo editável - utilizador pode alterar o código
 
         self.owner_var.set(self.orcamento.owner)
 
