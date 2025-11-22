@@ -1,6 +1,6 @@
 # 📚 Sistema Memory - Documentação de Desenvolvimento
 
-Última atualização: 2025-11-17 09:50 WET
+Última atualização: 2025-11-22 10:44 WET
 
 Este diretório contém toda a documentação técnica e de contexto do projeto Agora Contabilidade.
 
@@ -60,6 +60,12 @@ FISCAL.md (39KB, 9 secções)
 ├─ 7. Calendário Fiscal
 ├─ Status: Planeado, aguarda validação TOC
 └─ Migration: 025 (estimativa 3-4 semanas)
+
+INTEGRACOES.md
+├─ Especificação integrações TOConline/BizDocs/BPI
+├─ Abordagem manual (CSV) e API futura
+├─ Matching associativo e reconciliação planeados
+└─ Status: Documentação completa, implementação backlog/baixa prioridade
 
 PLANO_SOCIOS.md
 ├─ Features específicas para gestão de sócios
@@ -179,6 +185,7 @@ IMPLEMENTAÇÃO:
 DECISÕES:
 → DECISIONS.md - Porquê desta forma?
 → FISCAL.md - Sistema fiscal (futuro)
+→ INTEGRACOES.md - Integrações externas (TOConline, BizDocs, BPI)
 
 AJUDA:
 → DEV_SETUP.md - Como configurar?

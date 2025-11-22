@@ -1,6 +1,6 @@
 # 📋 TODO.md - Tarefas Priorizadas
 
-Última atualização: 2025-11-18 10:30 WET
+Última atualização: 2025-11-22 10:36 WET
 
 ====================================================================
 LEGENDA DE PRIORIDADES
@@ -12,7 +12,7 @@ LEGENDA DE PRIORIDADES
 🟢 Baixa      - Backlog (nice-to-have)
 
 ====================================================================
-🔥 AGORA - Sprint Atual (17/11/2025)
+🔥 AGORA - Sprint Atual (22/11/2025)
 ====================================================================
 
 1. Testar Sistema Boletim Itinerário
@@ -30,23 +30,27 @@ LEGENDA DE PRIORIDADES
 
 4. UX/UI Improvements - Orçamentos (20 melhorias)
 
-   **Pendentes desta sessão:**
+   **Concluído (21/11/2025):**
+   ├─ ✅ Menu right-click na lista de orçamentos (Visualizar, Editar, Duplicar, Status, Anular, Apagar)
+   ├─ ✅ Botão "Duplicar Orçamento" na barra inferior (seleção múltipla)
+   ├─ ✅ Input manual de percentagem nas comissões (click no label)
+   ├─ ✅ Setas repeat nas comissões (hold para incremento contínuo)
+   └─ ✅ Campo código editável no formulário
+
+   **Pendentes:**
    ├─ 🆕 DateRangePicker para "data do evento" (substituir Entry atual)
    │   - Usar componente DateRangePickerDropdown existente
    │   - Formato inteligente (DD-DD/MM/YYYY)
    │   - Update em orcamento_form.py campo data_evento
-   └─ 🆕 Context menus (right-click) em tabelas de items
-       - Adicionar a tabelas CLIENTE (renderizar_item_cliente)
-       - Adicionar a tabelas EMPRESA (renderizar_item_empresa)
-       - Ações: Editar, Apagar, Duplicar
-       - Seguir padrão existente de outras screens
+   └─ 🆕 Context menus (right-click) em tabelas de items CLIENTE/EMPRESA
+       - Adicionar a tabelas de items (renderizar_item_cliente/empresa)
+       - Ações: Editar, Apagar, Duplicar item
 
    Críticas:
    ├─ Wizard multi-step (Dados Gerais → Items → Repartições → Preview)
    ├─ Preview lateral ao editar items (recalcula totais live)
    ├─ Gráfico pizza repartições EMPRESA (visual distribuição)
-   ├─ Validação inline com mensagens claras
-   └─ Botão "Duplicar Orçamento" (copia completo)
+   └─ Validação inline com mensagens claras
 
    Nice-to-have:
    ├─ Filtros avançados (cliente, status, período, owner)
@@ -157,30 +161,37 @@ LEGENDA DE PRIORIDADES
 🟢 Baixa Prioridade - Backlog
 ====================================================================
 
-13. Notificações e Alertas
+13. Integração TOConline, BizDocs, BPI Net Empresas (importação manual)
+    - Importação manual (CSV) de faturas TOConline, despesas BizDocs e movimentos da conta BPI Empresas
+    - Sem automação/API nesta fase (MVP)
+    - Matching associativo: sugestão automática de projeto/despesa/receita para reconciliação
+    - Referências: INTEGRACOES.md, FISCAL.md, DATABASE_SCHEMA.md
+    - Pendente revisão futura, não prioritário
+
+14. Notificações e Alertas
     - Despesas vencidas
     - Orçamentos aguardando aprovação há > 7 dias
     - Projetos sem movimento há > 30 dias
     - Prazos fiscais próximos
 
-14. Sistema de Backup Automático
+15. Sistema de Backup Automático
     - Backup diário da BD (agora_media.db)
     - Rotação (manter últimos 7 dias)
     - Opcional: upload cloud (Google Drive, Dropbox)
 
-15. Relatórios Avançados
+16. Relatórios Avançados
     - Relatório de rendibilidade por cliente
     - Relatório de custos por tipo
     - Análise de margens (receitas vs custos)
     - Export multi-formato (PDF, Excel, CSV)
 
-16. Multi-utilizador (Futuro distante)
+17. Multi-utilizador (Futuro distante)
     - Sistema de autenticação
     - Permissões por role
     - Auditoria de alterações
     - Nota: Não prioritário (apenas 2 sócios)
 
-17. App Mobile (Exploratório)
+18. App Mobile (Exploratório)
     - Consulta rápida de saldos
     - Adicionar despesas em movimento
     - Push notifications
@@ -208,15 +219,7 @@ Para contexto e decisões:
 Ver memory/CHANGELOG.md para histórico completo.
 
 Últimas 6 features (Novembro 2025):
-- ✅ 17/11: **Orçamentos V2 Sistema Multi-Entidade COMPLETO**
-  - Migration 025 (freelancers, trabalhos, compras)
-  - Beneficiários multi-entidade em todos dialogs EMPRESA (BA/RR/AGORA + FREELANCER_{id} + FORNECEDOR_{id})
-  - Managers: FreelancersManager, FreelancerTrabalhosManager, FornecedorComprasManager
-  - Aprovação cria registos históricos automaticamente
-  - Rastreabilidade completa de pagamentos a entidades externas
-  - Total: ~1455 linhas novas
-  - Ver CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade Completo)
-
+- ✅ 17/11: Orçamentos V2 Sistema Multi-Entidade COMPLETO
 - ✅ 17/11: Sistema Aprovação e Conversão Orçamentos
 - ✅ 17/11: Orçamentos V2 - 5/5 dialogs CLIENTE + 3/3 dialogs EMPRESA
 - ✅ 17/11: Auditoria Memory - DATABASE_SCHEMA, CURRENT_STATE, BUSINESS_LOGIC reorganizados
