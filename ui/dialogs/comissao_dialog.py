@@ -13,6 +13,25 @@ from decimal import Decimal
 from typing import Optional, Dict
 
 
+def _setup_mousewheel(widget, scroll_command):
+    """
+    Configura scroll com mouse wheel apenas quando cursor está sobre o widget.
+    Resolve propagação de scroll para widgets de fundo.
+    """
+    def on_enter(event):
+        widget.bind_all('<MouseWheel>', scroll_command)
+        widget.bind_all('<Button-4>', lambda e: scroll_command(e, -1))
+        widget.bind_all('<Button-5>', lambda e: scroll_command(e, 1))
+    
+    def on_leave(event):
+        widget.unbind_all('<MouseWheel>')
+        widget.unbind_all('<Button-4>')
+        widget.unbind_all('<Button-5>')
+    
+    widget.bind('<Enter>', on_enter)
+    widget.bind('<Leave>', on_leave)
+
+
 class ComissaoDialog(ctk.CTkToplevel):
     """
     Dialog para adicionar/editar comissão no LADO EMPRESA
@@ -106,6 +125,9 @@ class ComissaoDialog(ctk.CTkToplevel):
         # Container principal
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Configurar scroll fix
+        _setup_mousewheel(main_frame, self._on_mousewheel)
 
         # Título
         title_label = ctk.CTkLabel(
@@ -225,6 +247,13 @@ class ComissaoDialog(ctk.CTkToplevel):
             hover_color="#7B1FA2"
         )
         btn_gravar.pack(side="right")
+
+    def _on_mousewheel(self, event, direction=None):
+        """
+        Handler de scroll - impede propagação para widgets de fundo
+        """
+        # Para dialogs sem scrollable frame, apenas bloqueia propagação
+        return "break"
 
     def atualizar_total(self):
         """
