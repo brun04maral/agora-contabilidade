@@ -4,6 +4,50 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-21] Menu Context Orçamentos + UX Comissões
+
+### ✨ Features Implementadas
+
+**Menu Right-Click Orçamentos** (Commit: 469a591)
+- Menu de contexto completo semelhante a Projetos
+- Acções: Visualizar, Editar, Duplicar, Marcar Aprovado/Pago, Anular, Apagar
+- Botão Duplicar na barra inferior para seleção múltipla
+- Backend: `duplicar_orcamento()`, `mudar_status()`, `_gerar_codigo_duplicado()`
+
+**Input Manual + Setas Repeat nas Comissões** (Commit: 958260d)
+- Setas ▲▼ com "hold" para incremento contínuo (delay 350ms → 90ms)
+- Label percentagem clicável para input manual direto
+- Popup com validação (0-100, 4 decimais)
+- Cursor "hand2" e tooltips actualizados
+
+**Campo Código Editável** (Commit: 2bd5192)
+- Campo "código" agora editável no formulário de orçamento
+- Tanto em modo criação como edição
+- Persistência já garantida no método `gravar_rascunho()`
+
+### 🐛 Bugs Corrigidos
+
+**Migration 025 Aplicada** (Commit: 50fe2ff)
+- Tabelas `freelancers`, `freelancer_trabalhos`, `fornecedor_compras` criadas
+- Resolve erro ao aprovar orçamento com itens fornecedor
+
+**Import ProjetosManager** (Commit: 5889e3d)
+- Corrigido `ProjetoManager` para `ProjetosManager` conforme definição do módulo
+
+**Visualização Orçamento** (Commit: 7c758d6)
+- Campo `tipo` (inexistente) substituído por `owner` no info_data
+
+**Método abrir_formulario** (Commit: 77d01cc)
+- Criado em OrcamentosScreen para edição via menu de contexto
+
+**Ficheiros Alterados:**
+- `ui/screens/orcamento_form.py` - Setas repeat, input manual, código editável
+- `ui/screens/orcamentos.py` - Menu context, abrir_formulario, duplicar
+- `logic/orcamentos.py` - duplicar_orcamento, mudar_status
+- `agora_media.db` - Tabelas migration 025
+
+---
+
 ## [2025-11-18] Migration 026 - Percentagem Comissões 4 Casas Decimais
 
 ### 🐛 Bug Fix - Persistência Percentagem com 4 Decimais
