@@ -35,6 +35,46 @@
 
 ---
 
+## 🔴 PROBLEMAS ATIVOS (URGENTE)
+
+### BUG-001: BaseScreen - Chips Invisíveis + Espaçamento Excessivo
+
+**Severidade:** 🔴 CRÍTICA | **Status:** EM INVESTIGAÇÃO
+**Identificado:** 24/11/2025 20:00-20:40 WET
+**Tentativas de Fix:** 9 commits iterativos (NENHUM resolveu)
+
+**Sintomas:**
+1. ❌ Chips de filtros/pesquisa **não aparecem** na tela
+2. ❌ Espaçamento **excessivo** (~80-100px) entre toolbar e tabela
+3. ❌ Layout visual degradado no ProjectsScreen
+
+**Impacto:**
+- 🔴 Bloqueia UX adequada em ProjectsScreen
+- 🔴 Bloqueia migração de screens (Orçamentos, Despesas, Boletins)
+- 🟡 Reduz confiança na arquitetura BaseScreen
+
+**Abordagens Tentadas (Todas Falharam):**
+1. Reduzir padding → Melhorou mas não resolveu
+2. Ajustar containers → Chips invisíveis
+3. Overlays com place() → Chips desapareceram
+4. Adicionar lift() z-order → Ainda invisíveis
+5. Simplificar para pack() → Espaço gigante voltou
+6. Pack condicional containers → **Estado atual (não funciona)**
+
+**Próximos Passos (Próxima Sessão):**
+1. 🔍 Debug visual com cores de fundo (red/blue)
+2. 🔍 Print winfo_manager() estados
+3. 🔍 Testar sem `before=` parameter
+4. 🔄 Considerar grid() em vez de pack()
+5. 🔄 Alternativa: containers sempre visíveis com height=0
+
+**Documentação Completa:**
+- Ver: memory/BUGS.md (BUG-001)
+- Ver: memory/CHANGELOG.md (24/11/2025 20:00-20:40)
+- Screenshots: screenshots/ (20.08.33, 20.33.26, 20.33.41)
+
+---
+
 ## ✅ Módulos Implementados
 
 ### 🎨 Sistema de Assets e Ícones

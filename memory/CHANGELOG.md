@@ -4,6 +4,105 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-24 20:00-20:40] 🐛 BUG ATIVO: Refinamentos Visuais BaseScreen (Iterações Múltiplas)
+
+### ❌ PROBLEMA CRÍTICO NÃO RESOLVIDO
+
+**Status:** 🔴 BUG ATIVO - Requer atenção urgente
+**Afeta:** ui/components/base_screen.py
+**Impacto:** Experiência visual degradada no ProjectsScreen
+
+**Sintomas:**
+1. ❌ Chips de filtros/pesquisa **não aparecem** (invisíveis)
+2. ❌ Espaçamento **excessivo** entre toolbar e tabela (~80-100px)
+3. ❌ Layout inconsistente dependendo de haver chips ou não
+
+**Histórico de Tentativas (10 commits iterativos):**
+
+1. **b10b77a** - Tentativa 1: Reduzir pady header/toolbar
+   - Resultado: Melhorou, mas espaço ainda existe
+
+2. **9b7024e** - Tentativa 2: Corrigir chips e barra de ações
+   - Resultado: Chips continuam invisíveis
+
+3. **324ca8c, f22a8d1** - Tentativas 3-4: Ajustar padding + indicadores
+   - Resultado: Espaço reduzido mas ainda visível
+
+4. **57fd530** - Tentativa 5: Corrigir filtros e chips push tabela
+   - Resultado: Chips não empurram mas são invisíveis
+
+5. **c71d8b4** - Tentativa 6: Usar `place()` em vez de `pack()`
+   - Abordagem: Overlays com posicionamento absoluto
+   - Resultado: ❌ Chips desapareceram completamente
+
+6. **69f0470** - Tentativa 7: Adicionar `lift()` para z-order
+   - Abordagem: Trazer chips para frente com lift()
+   - Resultado: ❌ Ainda invisíveis
+
+7. **7865f70** - Tentativa 8: SIMPLIFICAÇÃO - reverter para pack()
+   - Abordagem: Remover overlays complexos, voltar ao básico
+   - Resultado: ❌ Espaço gigante voltou (containers sempre fazem pack)
+
+8. **84f66b0** - Tentativa 9: Pack condicional dos containers
+   - Abordagem: Containers só fazem pack() quando têm conteúdo
+   - Resultado: ❌ AINDA NÃO FUNCIONA (último estado)
+
+**Código Atual (Tentativa 9 - Não Funcional):**
+```python
+def _create_chips_area(self):
+    # Container SÓ faz pack quando houver chips
+    self.chips_container = ctk.CTkFrame(self, fg_color="transparent")
+    # NÃO fazer pack aqui!
+
+def _add_filter_chip(...):
+    # Pack container na primeira adição
+    if not self.chips_container.winfo_manager():
+        self.chips_container.pack(fill="x", padx=30, pady=0,
+                                  before=self.selection_container)
+    # Pack chips_frame
+    if not self.chips_frame.winfo_manager():
+        self.chips_frame.pack(fill="x", pady=(5, 0))
+```
+
+**Problemas Identificados:**
+1. ❓ `before=self.selection_container` pode estar a causar ordem errada
+2. ❓ selection_container também não faz pack inicial (pode não existir como referência)
+3. ❓ Lógica de show/hide dos containers tem race conditions
+4. ❓ pady=(5, 0) nos chips pode ainda estar a criar espaço
+
+**Screenshots Anexados:**
+- `screenshot/20.08.33.png` - Espaço excessivo visível
+- `screenshot/20.33.26.png` - Layout sem chips (espaço vazio)
+- `screenshot/20.33.41.png` - Chip de pesquisa presente mas mal posicionado
+
+**Próximos Passos (URGENTE):**
+1. 🔍 Debug visual com cores de fundo nos containers (verificar se estão a renderizar)
+2. 🔍 Print winfo_manager() para confirmar estado dos containers
+3. 🔍 Testar sem `before=` parameter (pode estar a causar problema)
+4. 🔍 Verificar order de criação: chips antes de selection na _create_layout()
+5. 🔄 Considerar abordagem diferente: grid() ou absolute positioning com coordenadas fixas
+6. 🔄 Alternativa: Manter containers sempre visíveis mas com height=0 quando vazios
+
+**Commits Desta Sessão (Ordem Cronológica):**
+- b10b77a: Reduzir espaçamento título↔pesquisa + debug
+- 9b7024e: Corrigir espaçamentos, expansão tabela, chips e barra
+- 4a9eec8: Docs atualização memory/
+- 324ca8c: Ajustar padding + indicador visual filtros
+- f22a8d1: Indicadores visuais + chip pesquisa
+- 57fd530: Corrigir espaçamento + chips push + indicador filtros
+- e6a5cd8: Screenshot
+- c71d8b4: Usar place() em vez de pack() (tentativa overlay)
+- 69f0470: Chips visíveis + lift() + espaçamento zero
+- 7865f70: SIMPLIFICAÇÃO reverter para pack()
+- eaa81df: Screenshots
+- 84f66b0: Containers com pack condicional (estado atual)
+
+**Ver:**
+- memory/BUGS.md (documentação detalhada do bug)
+- memory/UI_ARCHITECTURE.md (estado BaseScreen)
+
+---
+
 ## [2025-11-24] Sistema de Templates para UI - BaseScreen
 
 ### 🏗️ Feature: Template Reutilizável para Screens de Listagem
