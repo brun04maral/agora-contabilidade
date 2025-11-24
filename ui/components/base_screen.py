@@ -1,0 +1,626 @@
+# -*- coding: utf-8 -*-
+"""
+BaseScreen - Template base para screens de listagem principal
+
+Este módulo implementa um template reutilizável para screens de listagem
+(Projetos, Orçamentos, Despesas, Boletins) com layout consistente e
+funcionalidades comuns centralizadas.
+
+ARQUITETURA DE TEMPLATES:
+-------------------------
+1. BaseScreen (este ficheiro) - Template para screens de listagem
+2. BaseForm (futuro) - Template para forms de criação/edição
+
+COMO USAR:
+----------
+```python
+from ui.components.base_screen import BaseScreen
+
+class ProjectsScreen(BaseScreen):
+    def __init__(self, parent, db_session, **kwargs):
+        # Configuração antes do super().__init__
+        self.screen_config = {
+            'title': 'Projetos',
+            'icon_key': PROJETOS,
+            'icon_fallback': '📁',
+            'new_button_text': 'Novo Projeto',
+            'new_button_color': ('#4CAF50', '#388E3C'),
+            'search_placeholder': 'Pesquisar por cliente ou descrição...',
+        }
+
+        super().__init__(parent, db_session, **kwargs)
+
+    # Override métodos para personalizar
+    def get_table_columns(self):
+        return [
+            {'key': 'numero', 'label': 'ID', 'width': 80},
+            ...
+        ]
+
+    def get_filters_config(self):
+        return [
+            {'key': 'estado', 'label': 'Estado:', 'values': ['Todos', 'Ativo', 'Pago']},
+            ...
+        ]
+
+    def load_data(self):
+        return self.manager.listar_todos()
+
+    def item_to_dict(self, item):
+        return {'id': item.id, 'numero': item.numero, ...}
+```
+
+MÉTODOS PARA OVERRIDE:
+----------------------
+- get_table_columns() - Definir colunas da tabela
+- get_filters_config() - Definir filtros disponíveis
+- get_header_buttons() - Adicionar botões custom ao header
+- get_selection_actions() - Definir ações na barra de seleção
+- get_context_menu_items(item) - Definir itens do context menu
+- load_data() - Carregar dados da BD
+- item_to_dict(item) - Converter objeto para dict da tabela
+- on_item_double_click(data) - Ação ao duplo clique
+- on_new_item() - Ação do botão "Novo"
+- apply_filters(items) - Aplicar filtros aos dados
+
+SLOTS DISPONÍVEIS:
+------------------
+- header_slot - Frame para conteúdo custom no header
+- filters_slot - Frame para filtros adicionais
+- footer_slot - Frame para conteúdo no footer
+
+Autor: Agora Media Production
+Data: 2025-11-24
+"""
+
+import customtkinter as ctk
+import tkinter as tk
+from typing import Optional, List, Dict, Any, Callable
+from sqlalchemy.orm import Session
+from abc import abstractmethod
+
+from ui.components.data_table_v2 import DataTableV2
+from assets.resources import get_icon
+
+
+class BaseScreen(ctk.CTkFrame):
+    """
+    Template base para screens de listagem principal.
+
+    Fornece layout consistente com:
+    - Header (título + ícone + botões)
+    - Barra de pesquisa
+    - Filtros configuráveis
+    - Barra de seleção dinâmica
+    - DataTableV2
+    - Context menu
+
+    Subclasses devem implementar os métodos abstratos e podem
+    override métodos opcionais para personalização.
+    """
+
+    def __init__(
+        self,
+        parent,
+        db_session: Session,
+        initial_filters: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
+        """
+        Inicializa o BaseScreen.
+
+        Args:
+            parent: Widget pai
+            db_session: Sessão SQLAlchemy
+            initial_filters: Filtros iniciais {key: value}
+            **kwargs: Argumentos adicionais para CTkFrame
+        """
+        super().__init__(parent, **kwargs)
+
+        self.db_session = db_session
+        self.initial_filters = initial_filters or {}
+
+        # Configuração padrão (subclasse deve definir screen_config antes de super().__init__)
+        self.config = getattr(self, 'screen_config', {})
+
+        # Estado interno
+        self._filter_widgets = {}
+        self._selection_buttons = []
+
+        # Configure frame
+        self.configure(fg_color="transparent")
+
+        # Criar widgets
+        self._create_layout()
+
+        # Aplicar filtros iniciais e carregar dados
+        self._apply_initial_filters()
+        self.refresh_data()
+
+    def _create_layout(self):
+        """Cria o layout base do screen."""
+        # Header
+        self._create_header()
+
+        # Search bar
+        if self.config.get('show_search', True):
+            self._create_search_bar()
+
+        # Filters
+        self._create_filters()
+
+        # Selection bar (hidden by default)
+        self._create_selection_bar()
+
+        # Table
+        self._create_table()
+
+        # Footer slot
+        self.footer_slot = ctk.CTkFrame(self, fg_color="transparent")
+        self.footer_slot.pack(fill="x", padx=30, pady=(0, 10))
+
+    def _create_header(self):
+        """Cria o header com título e botões."""
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.pack(fill="x", padx=30, pady=(30, 20))
+
+        # Título com ícone
+        title = self.config.get('title', 'Screen')
+        icon_key = self.config.get('icon_key')
+        icon_fallback = self.config.get('icon_fallback', '')
+
+        if icon_key:
+            icon_pil = get_icon(icon_key, size=(28, 28))
+            if icon_pil:
+                icon_ctk = ctk.CTkImage(
+                    light_image=icon_pil,
+                    dark_image=icon_pil,
+                    size=(28, 28)
+                )
+                title_label = ctk.CTkLabel(
+                    header_frame,
+                    image=icon_ctk,
+                    text=f" {title}",
+                    compound="left",
+                    font=ctk.CTkFont(size=28, weight="bold")
+                )
+                # Keep reference to prevent garbage collection
+                title_label._icon_image = icon_ctk
+            else:
+                title_label = ctk.CTkLabel(
+                    header_frame,
+                    text=f"{icon_fallback} {title}",
+                    font=ctk.CTkFont(size=28, weight="bold")
+                )
+        else:
+            title_label = ctk.CTkLabel(
+                header_frame,
+                text=title,
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
+        title_label.pack(side="left")
+
+        # Slot para conteúdo custom no header
+        self.header_slot = ctk.CTkFrame(header_frame, fg_color="transparent")
+        self.header_slot.pack(side="left", padx=20)
+
+        # Botões de ação
+        btn_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        btn_frame.pack(side="right")
+
+        # Botão Atualizar
+        refresh_btn = ctk.CTkButton(
+            btn_frame,
+            text="🔄 Atualizar",
+            command=self.refresh_data,
+            width=120,
+            height=35,
+            font=ctk.CTkFont(size=13)
+        )
+        refresh_btn.pack(side="left", padx=5)
+
+        # Botões custom do header
+        for btn_config in self.get_header_buttons():
+            btn = ctk.CTkButton(
+                btn_frame,
+                text=btn_config.get('text', ''),
+                command=btn_config.get('command'),
+                width=btn_config.get('width', 140),
+                height=35,
+                font=ctk.CTkFont(size=13),
+                fg_color=btn_config.get('fg_color'),
+                hover_color=btn_config.get('hover_color')
+            )
+            btn.pack(side="left", padx=5)
+
+        # Botão Novo
+        new_text = self.config.get('new_button_text', '➕ Novo')
+        new_color = self.config.get('new_button_color', ('#4CAF50', '#388E3C'))
+        new_hover = self.config.get('new_button_hover', ('#66BB6A', '#2E7D32'))
+
+        new_btn = ctk.CTkButton(
+            btn_frame,
+            text=f"➕ {new_text}",
+            command=self.on_new_item,
+            width=150,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=new_color,
+            hover_color=new_hover
+        )
+        new_btn.pack(side="left", padx=5)
+
+    def _create_search_bar(self):
+        """Cria a barra de pesquisa."""
+        search_frame = ctk.CTkFrame(self, fg_color="transparent")
+        search_frame.pack(fill="x", padx=30, pady=(0, 15))
+
+        ctk.CTkLabel(
+            search_frame,
+            text="🔍 Pesquisar:",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(side="left", padx=(0, 10))
+
+        # Search entry com StringVar reactivo
+        self.search_var = ctk.StringVar()
+        self.search_var.trace_add("write", self._on_search_change)
+
+        placeholder = self.config.get('search_placeholder', 'Digite para pesquisar...')
+        self.search_entry = ctk.CTkEntry(
+            search_frame,
+            textvariable=self.search_var,
+            placeholder_text=placeholder,
+            width=500,
+            height=35,
+            font=ctk.CTkFont(size=13)
+        )
+        self.search_entry.pack(side="left", padx=(0, 10))
+
+        # Botão limpar
+        clear_btn = ctk.CTkButton(
+            search_frame,
+            text="✖",
+            command=self._clear_search,
+            width=35,
+            height=35,
+            font=ctk.CTkFont(size=14),
+            fg_color=("#E0E0E0", "#404040"),
+            hover_color=("#BDBDBD", "#606060")
+        )
+        clear_btn.pack(side="left")
+
+    def _create_filters(self):
+        """Cria os filtros configuráveis."""
+        filters_config = self.get_filters_config()
+        if not filters_config:
+            return
+
+        filters_frame = ctk.CTkFrame(self, fg_color="transparent")
+        filters_frame.pack(fill="x", padx=30, pady=(0, 20))
+
+        for filter_cfg in filters_config:
+            key = filter_cfg['key']
+            label = filter_cfg.get('label', f'{key}:')
+            values = filter_cfg.get('values', ['Todos'])
+            width = filter_cfg.get('width', 150)
+
+            # Label
+            ctk.CTkLabel(
+                filters_frame,
+                text=label,
+                font=ctk.CTkFont(size=13)
+            ).pack(side="left", padx=(0, 10))
+
+            # OptionMenu
+            option_menu = ctk.CTkOptionMenu(
+                filters_frame,
+                values=values,
+                command=lambda v, k=key: self._on_filter_change(k, v),
+                width=width
+            )
+            option_menu.pack(side="left", padx=(0, 20))
+
+            self._filter_widgets[key] = option_menu
+
+        # Slot para filtros adicionais
+        self.filters_slot = ctk.CTkFrame(filters_frame, fg_color="transparent")
+        self.filters_slot.pack(side="left")
+
+    def _create_selection_bar(self):
+        """Cria a barra de seleção (oculta por padrão)."""
+        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+
+        # Botão limpar seleção
+        self.cancel_btn = ctk.CTkButton(
+            self.selection_frame,
+            text="🗑️ Limpar Seleção",
+            command=self._clear_selection,
+            width=150,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color=("#757575", "#616161"),
+            hover_color=("#9E9E9E", "#757575")
+        )
+
+        # Label contagem
+        self.count_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="0 selecionados",
+            font=ctk.CTkFont(size=13)
+        )
+
+        # Botões de ação da seleção
+        for action_cfg in self.get_selection_actions():
+            btn = ctk.CTkButton(
+                self.selection_frame,
+                text=action_cfg.get('text', ''),
+                command=action_cfg.get('command'),
+                width=action_cfg.get('width', 160),
+                height=35,
+                font=ctk.CTkFont(size=13),
+                fg_color=action_cfg.get('fg_color'),
+                hover_color=action_cfg.get('hover_color')
+            )
+            self._selection_buttons.append(btn)
+
+        # Label total
+        self.total_label = ctk.CTkLabel(
+            self.selection_frame,
+            text="Total: €0,00",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+
+    def _create_table(self):
+        """Cria a tabela de dados."""
+        columns = self.get_table_columns()
+        height = self.config.get('table_height', 400)
+
+        self.table = DataTableV2(
+            self,
+            columns=columns,
+            height=height,
+            on_row_double_click=self._on_row_double_click,
+            on_selection_change=self._on_selection_change,
+            on_row_right_click=self._on_row_right_click
+        )
+        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+
+    # ========== Event Handlers ==========
+
+    def _on_search_change(self, *args):
+        """Handler para mudança na pesquisa."""
+        self.refresh_data()
+
+    def _clear_search(self):
+        """Limpa o campo de pesquisa."""
+        self.search_var.set("")
+        self.search_entry.focus()
+
+    def _on_filter_change(self, key: str, value: str):
+        """Handler para mudança em filtro."""
+        self.refresh_data()
+
+    def _apply_initial_filters(self):
+        """Aplica filtros iniciais."""
+        for key, value in self.initial_filters.items():
+            if key in self._filter_widgets:
+                self._filter_widgets[key].set(value)
+
+    def _on_selection_change(self, selected_data: list):
+        """Handler para mudança de seleção na tabela."""
+        num_selected = len(selected_data)
+
+        if num_selected > 0:
+            # Mostrar barra de seleção
+            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+            self.cancel_btn.pack(side="left", padx=5)
+
+            count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
+            self.count_label.configure(text=count_text)
+            self.count_label.pack(side="left", padx=15)
+
+            # Mostrar botões de ação
+            for btn in self._selection_buttons:
+                btn.pack(side="left", padx=5)
+
+            # Calcular e mostrar total
+            total = self.calculate_selection_total(selected_data)
+            self.total_label.configure(text=f"Total: €{total:,.2f}")
+            self.total_label.pack(side="left", padx=20)
+        else:
+            self.selection_frame.pack_forget()
+
+    def _clear_selection(self):
+        """Limpa a seleção da tabela."""
+        self.table.clear_selection()
+
+    def _on_row_double_click(self, data: dict):
+        """Handler para duplo clique na linha."""
+        self.on_item_double_click(data)
+
+    def _on_row_right_click(self, event, data: dict):
+        """Handler para clique direito na linha."""
+        menu_items = self.get_context_menu_items(data)
+        if not menu_items:
+            return
+
+        menu = tk.Menu(self, tearoff=0)
+
+        for item in menu_items:
+            if item.get('separator'):
+                menu.add_separator()
+            else:
+                menu.add_command(
+                    label=item.get('label', ''),
+                    command=item.get('command')
+                )
+
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    # ========== Public Methods ==========
+
+    def refresh_data(self):
+        """Recarrega os dados da tabela aplicando filtros."""
+        # Carregar dados
+        items = self.load_data()
+
+        # Aplicar pesquisa
+        search_text = getattr(self, 'search_var', None)
+        if search_text:
+            search_text = search_text.get().strip().lower()
+            if search_text:
+                items = self.filter_by_search(items, search_text)
+
+        # Aplicar filtros
+        filters = self.get_current_filters()
+        items = self.apply_filters(items, filters)
+
+        # Converter para dict e atualizar tabela
+        data = [self.item_to_dict(item) for item in items]
+        self.table.set_data(data)
+
+    def get_current_filters(self) -> Dict[str, str]:
+        """Retorna valores atuais dos filtros."""
+        return {
+            key: widget.get()
+            for key, widget in self._filter_widgets.items()
+        }
+
+    def get_selected_data(self) -> list:
+        """Retorna dados das linhas selecionadas."""
+        return self.table.get_selected_data()
+
+    # ========== Abstract Methods (Obrigatórios) ==========
+
+    @abstractmethod
+    def get_table_columns(self) -> List[Dict[str, Any]]:
+        """
+        Define as colunas da tabela.
+
+        Returns:
+            Lista de dicts com configuração das colunas:
+            [{'key': 'id', 'label': 'ID', 'width': 80, 'sortable': True}, ...]
+        """
+        pass
+
+    @abstractmethod
+    def load_data(self) -> list:
+        """
+        Carrega dados da base de dados.
+
+        Returns:
+            Lista de objetos (models) para exibir na tabela
+        """
+        pass
+
+    @abstractmethod
+    def item_to_dict(self, item) -> dict:
+        """
+        Converte um objeto para dict da tabela.
+
+        Args:
+            item: Objeto model
+
+        Returns:
+            Dict com dados para a tabela (incluir 'id' e '_item' para referência)
+        """
+        pass
+
+    # ========== Optional Override Methods ==========
+
+    def get_filters_config(self) -> List[Dict[str, Any]]:
+        """
+        Define os filtros disponíveis.
+
+        Returns:
+            Lista de dicts com configuração dos filtros:
+            [{'key': 'estado', 'label': 'Estado:', 'values': ['Todos', 'Ativo'], 'width': 150}, ...]
+        """
+        return []
+
+    def get_header_buttons(self) -> List[Dict[str, Any]]:
+        """
+        Define botões adicionais no header.
+
+        Returns:
+            Lista de dicts com configuração dos botões:
+            [{'text': '🔁 Gerar', 'command': self.gerar, 'fg_color': '#2196F3', 'width': 140}, ...]
+        """
+        return []
+
+    def get_selection_actions(self) -> List[Dict[str, Any]]:
+        """
+        Define ações disponíveis na barra de seleção.
+
+        Returns:
+            Lista de dicts com configuração das ações:
+            [{'text': '✅ Marcar Pago', 'command': self.marcar_pago, 'fg_color': '#4CAF50'}, ...]
+        """
+        return []
+
+    def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
+        """
+        Define itens do context menu para uma linha.
+
+        Args:
+            data: Dict com dados da linha
+
+        Returns:
+            Lista de dicts com itens do menu:
+            [{'label': '✏️ Editar', 'command': lambda: self.editar(data)}, {'separator': True}, ...]
+        """
+        return []
+
+    def filter_by_search(self, items: list, search_text: str) -> list:
+        """
+        Filtra items pelo texto de pesquisa.
+
+        Args:
+            items: Lista de objetos
+            search_text: Texto de pesquisa (lowercase)
+
+        Returns:
+            Lista filtrada
+        """
+        return items
+
+    def apply_filters(self, items: list, filters: Dict[str, str]) -> list:
+        """
+        Aplica filtros aos items.
+
+        Args:
+            items: Lista de objetos
+            filters: Dict com valores dos filtros {key: value}
+
+        Returns:
+            Lista filtrada
+        """
+        return items
+
+    def calculate_selection_total(self, selected_data: list) -> float:
+        """
+        Calcula o total dos items selecionados.
+
+        Args:
+            selected_data: Lista de dicts das linhas selecionadas
+
+        Returns:
+            Valor total
+        """
+        return 0.0
+
+    def on_item_double_click(self, data: dict):
+        """
+        Ação ao duplo clique numa linha.
+
+        Args:
+            data: Dict com dados da linha
+        """
+        pass
+
+    def on_new_item(self):
+        """Ação do botão 'Novo'."""
+        pass
