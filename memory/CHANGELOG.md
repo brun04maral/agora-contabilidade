@@ -4,6 +4,51 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-24] Fix Cálculo Sugestão de Boletim
+
+### 🐛 Fix: Sugestão Boletim com Saldo Projetado / Meses Restantes
+
+**Problema:**
+`sugestao_boletim` retornava apenas `saldo_total`, ignorando prémios/pessoais não faturados e não distribuía pelos meses restantes.
+
+**Solução Implementada (logic/saldos.py linhas 343-370):**
+```python
+# Meses que já têm boletim emitido (qualquer estado)
+meses_com_boletim = set(
+    b.mes for b in self.db_session.query(Boletim.mes).filter(
+        Boletim.socio == socio,
+        Boletim.ano == ano_atual
+    ).all()
+)
+
+# Meses restantes sem boletim (do mês atual até dezembro)
+meses_restantes = [m for m in range(mes_atual, 13) if m not in meses_com_boletim]
+num_meses_sem_boletim = len(meses_restantes)
+
+# Calcular saldo projetado para sugestão
+total_ins_projetado = total_ins + premios_nao_faturados + pessoais_nao_faturados
+total_outs_projetado = total_outs + boletins_pendentes
+saldo_projetado_calc = total_ins_projetado - total_outs_projetado
+
+# Sugestão = saldo projetado / meses restantes
+if num_meses_sem_boletim > 0:
+    sugestao_boletim = max(0, float(saldo_projetado_calc / num_meses_sem_boletim))
+else:
+    sugestao_boletim = 0.0
+```
+
+**Comportamento:**
+- Conta boletins já emitidos no ano atual (qualquer estado: PENDENTE ou PAGO)
+- Calcula meses restantes (do mês atual até dezembro, excluindo os que já têm boletim)
+- Divide saldo projetado pelo número de meses restantes
+- Retorna 0 se não houver meses restantes ou se valor negativo
+
+**Commit:** `57fa94e`: fix(saldos): calcular sugestão boletim com saldo projetado / meses restantes
+
+**Ver:** memory/BUSINESS_LOGIC.md (Secção 5 - Sugestão de Boletim)
+
+---
+
 ## [2025-11-24] Reestruturação Completa Saldos Pessoais
 
 ### 🎯 Sprint: Dashboard e Saldos - Separação Pagos/Pendentes/Projetados
