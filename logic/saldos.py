@@ -340,6 +340,35 @@ class SaldosCalculator:
         if total_nao_faturados > 0:
             saldo_projetado = float(saldo_total + total_nao_faturados)
 
+        # === CALCULAR SUGESTÃO DE BOLETIM ===
+        # Distribui o saldo projetado pelos meses restantes sem boletim emitido
+        hoje = date.today()
+        mes_atual = hoje.month
+        ano_atual = hoje.year
+
+        # Meses que já têm boletim emitido (qualquer estado)
+        meses_com_boletim = set(
+            b.mes for b in self.db_session.query(Boletim.mes).filter(
+                Boletim.socio == socio,
+                Boletim.ano == ano_atual
+            ).all()
+        )
+
+        # Meses restantes sem boletim (do mês atual até dezembro)
+        meses_restantes = [m for m in range(mes_atual, 13) if m not in meses_com_boletim]
+        num_meses_sem_boletim = len(meses_restantes)
+
+        # Calcular saldo projetado para sugestão
+        total_ins_projetado = total_ins + premios_nao_faturados + pessoais_nao_faturados
+        total_outs_projetado = total_outs + boletins_pendentes
+        saldo_projetado_calc = total_ins_projetado - total_outs_projetado
+
+        # Sugestão = saldo projetado / meses restantes
+        if num_meses_sem_boletim > 0:
+            sugestao_boletim = max(0, float(saldo_projetado_calc / num_meses_sem_boletim))
+        else:
+            sugestao_boletim = 0.0
+
         return {
             'socio': socio.value,
             'saldo_total': float(saldo_total),
@@ -360,7 +389,7 @@ class SaldosCalculator:
                 'despesas_pessoais': float(despesas_pessoais),
                 'total': float(total_outs)
             },
-            'sugestao_boletim': max(0, float(saldo_total))  # Nunca negativo
+            'sugestao_boletim': sugestao_boletim
         }
 
     def obter_historico_mensal(
