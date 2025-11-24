@@ -194,7 +194,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
         self.tipo_filter = ctk.CTkOptionMenu(
             filters_frame,
-            values=["Todos", "Empresa", "Pessoal BA", "Pessoal RR"],
+            values=["Todos", "Empresa BA", "Empresa RR", "Pessoal BA", "Pessoal RR"],
             command=self.aplicar_filtros,
             width=180
         )
@@ -337,7 +337,7 @@ class ProjetosScreen(ctk.CTkFrame):
     def tipo_to_label(self, projeto) -> str:
         """Convert tipo enum to label based on tipo + owner"""
         if projeto.tipo == TipoProjeto.EMPRESA:
-            return "Empresa"
+            return f"Empresa {projeto.owner}"
         elif projeto.tipo == TipoProjeto.PESSOAL:
             return f"Pessoal {projeto.owner}"
         return str(projeto.tipo)
@@ -385,8 +385,10 @@ class ProjetosScreen(ctk.CTkFrame):
 
         # Filter by tipo
         if tipo != "Todos":
-            if tipo == "Empresa":
-                projetos = [p for p in projetos if p.tipo == TipoProjeto.EMPRESA]
+            if tipo == "Empresa BA":
+                projetos = [p for p in projetos if p.tipo == TipoProjeto.EMPRESA and p.owner == 'BA']
+            elif tipo == "Empresa RR":
+                projetos = [p for p in projetos if p.tipo == TipoProjeto.EMPRESA and p.owner == 'RR']
             elif tipo == "Pessoal BA":
                 projetos = [p for p in projetos if p.tipo == TipoProjeto.PESSOAL and p.owner == 'BA']
             elif tipo == "Pessoal RR":
