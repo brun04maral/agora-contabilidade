@@ -170,7 +170,7 @@ class DashboardScreen(ctk.CTkFrame):
 
         self.empresa_ba_card = self.create_stat_card(
             ba_column, "Empresa BA", "0", "#EF6C00",  # Laranja
-            on_click=lambda: self.navigate_to_projetos_owner("BA")
+            on_click=lambda: self.navigate_to_projetos_premio("BA")
         )
         self.empresa_ba_card.pack(fill="x")
 
@@ -186,7 +186,7 @@ class DashboardScreen(ctk.CTkFrame):
 
         self.empresa_rr_card = self.create_stat_card(
             rr_column, "Empresa RR", "0", "#EF6C00",  # Laranja
-            on_click=lambda: self.navigate_to_projetos_owner("RR")
+            on_click=lambda: self.navigate_to_projetos_premio("RR")
         )
         self.empresa_rr_card.pack(fill="x")
 
@@ -387,10 +387,10 @@ class DashboardScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_projetos(filtro_tipo=tipo)
 
-    def navigate_to_projetos_owner(self, owner):
-        """Navigate to projetos screen filtered by owner (empresa projects only)"""
+    def navigate_to_projetos_premio(self, socio):
+        """Navigate to projetos screen filtered by premio (empresa projects with premio for socio)"""
         if self.main_window:
-            self.main_window.show_projetos(filtro_owner=owner)
+            self.main_window.show_projetos(filtro_premio_socio=socio)
 
     def carregar_dados(self):
         """Load and display all dashboard data"""
@@ -409,10 +409,10 @@ class DashboardScreen(ctk.CTkFrame):
             Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
 
-        # Empresa BA: owner='BA', tipo!=PESSOAL_BRUNO, estado=PAGO
+        # Empresa BA: tipo=EMPRESA, premio_bruno > 0, estado=PAGO
         empresa_ba = self.db_session.query(func.count(Projeto.id)).filter(
-            Projeto.owner == 'BA',
-            Projeto.tipo != TipoProjeto.PESSOAL_BRUNO,
+            Projeto.tipo == TipoProjeto.EMPRESA,
+            Projeto.premio_bruno > 0,
             Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
 
@@ -422,10 +422,10 @@ class DashboardScreen(ctk.CTkFrame):
             Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
 
-        # Empresa RR: owner='RR', tipo!=PESSOAL_RAFAEL, estado=PAGO
+        # Empresa RR: tipo=EMPRESA, premio_rafael > 0, estado=PAGO
         empresa_rr = self.db_session.query(func.count(Projeto.id)).filter(
-            Projeto.owner == 'RR',
-            Projeto.tipo != TipoProjeto.PESSOAL_RAFAEL,
+            Projeto.tipo == TipoProjeto.EMPRESA,
+            Projeto.premio_rafael > 0,
             Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
 
