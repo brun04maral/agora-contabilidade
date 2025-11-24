@@ -1126,6 +1126,6 @@ class FormularioDespesaDialog(BaseDialogLarge):
     def _on_close(self):
         """Handle window close - clear selection"""
         # No need to unbind - tkinter cleans up when dialog destroys
-        if hasattr(self.parent, 'table'):
-            self.parent.table.clear_selection()
+        if hasattr(self.parent_ref, 'table'):
+            self.parent_ref.table.clear_selection()
         self.destroy()

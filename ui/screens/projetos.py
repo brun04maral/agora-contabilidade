@@ -1058,7 +1058,7 @@ class FormularioProjetoDialog(BaseDialogLarge):
     def _on_close(self):
         """Handle window close"""
         # Clear selection when closing (cancel or X button)
-        if hasattr(self.parent, 'table'):
-            self.parent.table.clear_selection()
+        if hasattr(self.parent_ref, 'table'):
+            self.parent_ref.table.clear_selection()
 
         self.destroy()
