@@ -887,8 +887,8 @@ class FormularioProjetoDialog(BaseDialogLarge):
         self.nota_entry.pack(fill="x", pady=(0, 10))
 
         # Buttons
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=25, pady=(0, 25))
+        btn_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(20, 0))
 
         cancel_btn = ctk.CTkButton(
             btn_frame,

@@ -530,7 +530,7 @@ class EquipamentoDialog(BaseDialogLarge):
         self.nota_entry.pack(fill="x", pady=(0, 10))
 
         # Buttons
-        button_frame = ctk.CTkFrame(main_frame)
+        button_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         button_frame.pack(fill="x", pady=(20, 0))
 
         cancel_btn = ctk.CTkButton(
