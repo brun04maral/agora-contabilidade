@@ -124,6 +124,8 @@ ui/
 │   └── relatorios.py
 └── components/         # Componentes reutilizáveis
     ├── sidebar.py
+    ├── base_screen.py              # ✅ Template para screens de listagem (NOVO 24/11)
+    ├── base_form.py                # 📋 Template para forms (futuro)
     ├── data_table_v2.py            # Suporte para strikethrough seletivo
     ├── date_picker_dropdown.py     # Seletor de data único
     ├── date_range_picker_dropdown.py  # Seletor de período
@@ -136,21 +138,59 @@ ui/
 - Navegação entre screens
 - Validação básica de formulários
 
-**Padrão Screen:**
+**Padrão Screen - Legado (pré-24/11/2025):**
 ```python
-class ProjetosScreen(ctk.CTkFrame):
+class OrcamentosScreen(ctk.CTkFrame):
     def __init__(self, parent, db_session: Session):
-        self.manager = ProjetosManager(db_session)
-        self.create_widgets()
+        self.manager = OrcamentosManager(db_session)
+        self.create_widgets()  # 100-200 linhas de layout
         self.carregar_dados()
 
     def create_widgets(self):
-        # Criar UI
-
-    def carregar_dados(self):
-        # Chamar manager.listar()
-        # Atualizar tabela
+        # Header manual
+        # Filtros manuais
+        # Pesquisa manual
+        # Tabela DataTableV2
+        # Context menu manual
 ```
+
+**Padrão Screen - Novo (BaseScreen, desde 24/11/2025):**
+```python
+from ui.components.base_screen import BaseScreen
+
+class ProjectsScreen(BaseScreen):
+    def __init__(self, parent, db_session: Session, **kwargs):
+        self.manager = ProjetosManager(db_session)
+
+        # Configurar aparência
+        self.screen_config = {
+            'title': 'Projetos',
+            'icon_key': PROJETOS,
+            'new_button_text': 'Novo Projeto',
+            'search_placeholder': 'Pesquisar...'
+        }
+
+        super().__init__(parent, db_session, **kwargs)
+
+    # Métodos abstratos obrigatórios
+    def get_table_columns(self): ...
+    def load_data(self): ...
+    def item_to_dict(self, item): ...
+
+    # Métodos opcionais (sobrescrever conforme necessidade)
+    def get_filters_config(self): ...
+    def get_context_menu_items(self, data): ...
+    def apply_filters(self, items, filters): ...
+```
+
+**Benefícios BaseScreen:**
+- ✅ Layout consistente (header, search, filters, table) criado automaticamente
+- ✅ Redução ~36% código por screen (ProjectsScreen: 661→424 linhas)
+- ✅ Funcionalidades comuns centralizadas (pesquisa reactiva, filtros, context menu)
+- ✅ Slots para customização (header_slot, filters_slot, footer_slot)
+- ✅ Manutenção simplificada (correções aplicam-se a todas screens)
+
+**Ver:** memory/UI_ARCHITECTURE.md (guia completo de uso)
 
 ### `/assets/` - Recursos Visuais
 ```python

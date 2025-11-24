@@ -28,6 +28,35 @@ LEGENDA DE PRIORIDADES
 🔴 Alta Prioridade - Próximas 2 Semanas
 ====================================================================
 
+2. Migrar Screens Restantes para BaseScreen
+
+   ✅ ProjectsScreen migrado (24/11/2025)
+
+   Pendentes:
+   ├─ OrcamentosScreen → BaseScreen
+   ├─ DespesasScreen → BaseScreen
+   └─ BoletinsScreen → BaseScreen
+
+   Para cada screen:
+   ├─ Manter funcionalidade 100%
+   ├─ Testar visualmente após migração
+   └─ Redução esperada ~30-40% código
+
+   Estimativa: 2-3 sessões
+   Ver: memory/UI_ARCHITECTURE.md (guia completo)
+   Ver: memory/CHANGELOG.md (24/11/2025 - Sistema Templates UI)
+
+3. Validar e Testar Sistema de Templates UI
+
+   Após migração de todos screens:
+   ├─ Testes visuais (layout, cores, interações)
+   ├─ Validar funcionalidades (filtros, pesquisa, context menu)
+   ├─ Testar casos edge (muitos dados, sem dados)
+   └─ Performance (loading, scroll)
+
+   Estimativa: 1 sessão
+   Ver: memory/UI_ARCHITECTURE.md (roadmap)
+
 4. UX/UI Improvements - Orçamentos (20 melhorias)
 
    **Concluído (21/11/2025):**
@@ -219,12 +248,12 @@ Para contexto e decisões:
 Ver memory/CHANGELOG.md para histórico completo.
 
 Últimas 6 features (Novembro 2025):
+- ✅ 24/11: Sistema Templates UI - BaseScreen implementado + ProjectsScreen migrado (-36% código) - Ver CHANGELOG.md (24/11/2025)
 - ✅ 24/11: Refatoração TipoProjeto (EMPRESA|PESSOAL + owner) - migrations 027-028
 - ✅ 24/11: UI Saldos com subsecções "não pagos" e "boletins pendentes"
 - ✅ 24/11: Refatoração Screens Dedicados - fornecedores e equipamento (padrão projetos 6/6)
 - ✅ 24/11: Conversão Dialogs BaseDialogMedium/Large - 8 ficheiros, ~300 linhas removidas
 - ✅ 17/11: Orçamentos V2 Sistema Multi-Entidade COMPLETO
-- ✅ 17/11: Sistema Aprovação e Conversão Orçamentos
 
 Para histórico anterior: Ver memory/CHANGELOG.md
 

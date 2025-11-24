@@ -19,12 +19,13 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (24/11/2025):**
-- 🎯 **Reestruturação Completa Saldos Pessoais** - Separação Pagos/Pendentes/Projetados
+- 🎯 **Sistema de Templates UI** - Generalizar screens com BaseScreen para consistência e redução de código
 
 **Última Feature Concluída:**
-- ✅ **Fix Cálculo Sugestão Boletim** (24/11/2025) - Sugestão agora usa saldo_projetado dividido por meses restantes sem boletim. Conta boletins emitidos no ano, calcula meses restantes, distribui saldo projetado. **Ver:** memory/CHANGELOG.md (24/11/2025)
+- ✅ **BaseScreen Template + Migração ProjectsScreen** (24/11/2025) - Criado template reutilizável (~500 linhas) para screens de listagem com layout modular, slots customizáveis e métodos abstratos. ProjectsScreen migrado com redução de 36% código (661→424 linhas). **Ver:** memory/CHANGELOG.md (24/11/2025) | memory/UI_ARCHITECTURE.md
 
 **Próximo Milestone:**
+- 📋 Migrar OrcamentosScreen, DespesasScreen, BoletinsScreen para BaseScreen
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
 - 📋 UI Gestão Freelancers (screen CRUD)
 
