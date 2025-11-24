@@ -440,10 +440,19 @@ class ExcelImporter:
             # ✅ VERIFICAR SE JÁ EXISTE
             existing = self._exists_projeto(numero)
             if existing:
-                # Projeto existe → verificar se prémios mudaram (serão atualizados depois em processar_premios)
+                # Projeto existe → atualizar owner se diferente
+                if existing.owner != owner:
+                    if not self.dry_run:
+                        existing.owner = owner
+                        self.session.commit()
+                        print(f"  🔄 {numero}: {descricao[:40]} (owner atualizado para {owner})")
+                    else:
+                        print(f"  🔍 {numero}: {descricao[:40]} (owner seria atualizado para {owner})")
+                else:
+                    print(f"  ⏭️  {numero}: {descricao[:40]} (já existe)")
+
                 self.stats['projetos']['skip'] += 1
                 self.projetos_map[numero] = existing.id
-                print(f"  ⏭️  {numero}: {descricao[:40]} (já existe)")
                 continue
 
             # DRY RUN: Não gravar
