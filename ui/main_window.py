@@ -338,6 +338,10 @@ class MainWindow(ctk.CTkFrame):
             self.show_projeto_form(**kwargs)
         elif screen_name == "projetos":
             self.show_projetos()
+        elif screen_name == "despesa_form":
+            self.show_despesa_form(**kwargs)
+        elif screen_name == "despesas":
+            self.show_despesas()
         # Add more screens as needed
 
     def show_orcamento_form(self, orcamento_id=None):
@@ -368,6 +372,22 @@ class MainWindow(ctk.CTkFrame):
             self.content_frame,
             db_session=self.db_session,
             projeto_id=projeto_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_despesa_form(self, despesa_id=None):
+        """Show despesa form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.despesa_form import DespesaFormScreen
+        screen = DespesaFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            despesa_id=despesa_id
         )
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen

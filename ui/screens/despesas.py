@@ -7,14 +7,12 @@ import tkinter as tk
 from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import date
-from decimal import Decimal
 import tkinter.messagebox as messagebox
 
 from logic.despesas import DespesasManager
 from database.models import TipoDespesa, EstadoDespesa
 from ui.components.data_table_v2 import DataTableV2
 from assets.resources import get_icon, DESPESAS
-from utils.base_dialogs import BaseDialogLarge
 
 
 class DespesasScreen(ctk.CTkFrame):
@@ -363,8 +361,15 @@ class DespesasScreen(ctk.CTkFrame):
         self.table.clear_selection()
 
     def abrir_formulario(self, despesa=None):
-        """Open form dialog"""
-        FormularioDespesaDialog(self, self.manager, despesa, self.after_save_callback)
+        """Navigate to despesa_form screen for create/edit"""
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            if despesa:
+                main_window.show_screen("despesa_form", despesa_id=despesa.id)
+            else:
+                main_window.show_screen("despesa_form", despesa_id=None)
+        else:
+            messagebox.showerror("Erro", "Não foi possível abrir formulário")
 
     def gerar_despesas_recorrentes(self):
         """Gera despesas recorrentes para o mês atual"""
@@ -840,292 +845,3 @@ class DespesasScreen(ctk.CTkFrame):
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao apagar despesa: {str(e)}")
-
-
-class FormularioDespesaDialog(BaseDialogLarge):
-    """
-    Dialog para criar/editar despesas
-    """
-
-    def __init__(self, parent, manager: DespesasManager, despesa=None, callback=None):
-        self.manager = manager
-        self.despesa = despesa
-        self.callback = callback
-        self.parent_ref = parent
-
-        title = "Nova Despesa" if not despesa else f"Editar Despesa {despesa.numero}"
-        super().__init__(parent, title=title)
-
-        # Create form
-        self.create_form()
-
-        if despesa:
-            self.carregar_dados()
-
-        # Handle window close to clear selection
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
-
-    def create_form(self):
-        """Create form fields"""
-
-        # Use main_frame (already scrollable from BaseDialogLarge)
-        scroll = self.main_frame
-
-        # Tipo
-        ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.tipo_var = ctk.StringVar(value="FIXA_MENSAL")
-        tipo_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        tipo_frame.pack(fill="x", pady=(0, 10))
-
-        tipos = [
-            ("Fixa Mensal", "FIXA_MENSAL"),
-            ("Pessoal BA", "PESSOAL_BRUNO"),
-            ("Pessoal RR", "PESSOAL_RAFAEL"),
-            ("Equipamento", "EQUIPAMENTO"),
-            ("Projeto", "PROJETO")
-        ]
-
-        for i, (label, value) in enumerate(tipos):
-            ctk.CTkRadioButton(
-                tipo_frame,
-                text=label,
-                variable=self.tipo_var,
-                value=value
-            ).pack(side="left", padx=(0, 15))
-
-        # Data
-        ctk.CTkLabel(scroll, text="Data *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        from ui.components.date_picker_dropdown import DatePickerDropdown
-        self.data_picker = DatePickerDropdown(scroll, placeholder="Selecionar data...")
-        self.data_picker.pack(fill="x", pady=(0, 10))
-
-        # Credor/Fornecedor
-        ctk.CTkLabel(scroll, text="Credor/Fornecedor", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        fornecedores = self.manager.obter_fornecedores()
-        fornecedor_options = ["(Nenhum)"] + [f"{f.numero} - {f.nome}" for f in fornecedores]
-        self.credor_dropdown = ctk.CTkOptionMenu(scroll, values=fornecedor_options, width=400)
-        self.credor_dropdown.pack(anchor="w", pady=(0, 10))
-        self.fornecedores_map = {f"{f.numero} - {f.nome}": f.id for f in fornecedores}
-
-        # Projeto associado
-        ctk.CTkLabel(scroll, text="Projeto Associado", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        projetos = self.manager.obter_projetos()
-        projeto_options = ["(Nenhum)"] + [f"{p.numero} - {p.descricao[:30]}" for p in projetos]
-        self.projeto_dropdown = ctk.CTkOptionMenu(scroll, values=projeto_options, width=400)
-        self.projeto_dropdown.pack(anchor="w", pady=(0, 10))
-        self.projetos_map = {f"{p.numero} - {p.descricao[:30]}": p.id for p in projetos}
-
-        # Descrição
-        ctk.CTkLabel(scroll, text="Descrição *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.descricao_entry = ctk.CTkTextbox(scroll, height=80)
-        self.descricao_entry.pack(fill="x", pady=(0, 10))
-
-        # Valores
-        valores_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        valores_frame.pack(fill="x", pady=(10, 10))
-        valores_frame.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(valores_frame, text="Valor sem IVA *", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 10))
-        self.valor_sem_iva_entry = ctk.CTkEntry(valores_frame, placeholder_text="0.00")
-        self.valor_sem_iva_entry.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(5, 10))
-
-        ctk.CTkLabel(valores_frame, text="Valor com IVA *", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=1, sticky="w")
-        self.valor_com_iva_entry = ctk.CTkEntry(valores_frame, placeholder_text="0.00")
-        self.valor_com_iva_entry.grid(row=1, column=1, sticky="ew", pady=(5, 10))
-
-        # Estado
-        ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Pendente", "Vencido", "Pago"])
-        self.estado_dropdown.pack(anchor="w", pady=(0, 10))
-
-        # Data pagamento
-        ctk.CTkLabel(scroll, text="Data Pagamento (se pago)", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.data_pagamento_picker = DatePickerDropdown(scroll, placeholder="Selecionar data de pagamento...")
-        self.data_pagamento_picker.pack(fill="x", pady=(0, 10))
-
-        # Nota
-        ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
-        self.nota_entry = ctk.CTkTextbox(scroll, height=60)
-        self.nota_entry.pack(fill="x", pady=(0, 10))
-
-        # Buttons
-        btn_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(20, 0))
-
-        cancel_btn = ctk.CTkButton(
-            btn_frame,
-            text="Cancelar",
-            command=self._on_close,
-            width=120,
-            fg_color="gray",
-            hover_color="darkgray"
-        )
-        cancel_btn.pack(side="right", padx=5)
-
-        save_btn = ctk.CTkButton(
-            btn_frame,
-            text="Guardar",
-            command=self.guardar,
-            width=120,
-            fg_color=("#F44336", "#C62828"),
-            hover_color=("#E57373", "#B71C1C")
-        )
-        save_btn.pack(side="right", padx=5)
-
-    def carregar_dados(self):
-        """Load despesa data into form"""
-        d = self.despesa
-
-        self.tipo_var.set(d.tipo.value)
-
-        if d.data:
-            self.data_picker.set_date(d.data)
-
-        if d.credor:
-            credor_str = f"{d.credor.numero} - {d.credor.nome}"
-            self.credor_dropdown.set(credor_str)
-
-        if d.projeto:
-            projeto_str = f"{d.projeto.numero} - {d.projeto.descricao[:30]}"
-            self.projeto_dropdown.set(projeto_str)
-
-        self.descricao_entry.insert("1.0", d.descricao)
-
-        self.valor_sem_iva_entry.insert(0, str(d.valor_sem_iva))
-        self.valor_com_iva_entry.insert(0, str(d.valor_com_iva))
-
-        estado_map = {
-            EstadoDespesa.PENDENTE: "Pendente",
-            EstadoDespesa.VENCIDO: "Vencido",
-            EstadoDespesa.PAGO: "Pago"
-        }
-        self.estado_dropdown.set(estado_map[d.estado])
-
-        if d.data_pagamento:
-            self.data_pagamento_picker.set_date(d.data_pagamento)
-
-        if d.nota:
-            self.nota_entry.insert("1.0", d.nota)
-
-    def guardar(self):
-        """Save despesa"""
-        try:
-            # Get values
-            tipo_str = self.tipo_var.get()
-            tipo = TipoDespesa[tipo_str]
-
-            if not self.data_picker.get():
-                messagebox.showerror("Erro", "Data é obrigatória")
-                return
-            data_despesa = self.data_picker.get_date()
-
-            credor_str = self.credor_dropdown.get()
-            credor_id = self.fornecedores_map.get(credor_str) if credor_str != "(Nenhum)" else None
-
-            projeto_str = self.projeto_dropdown.get()
-            projeto_id = self.projetos_map.get(projeto_str) if projeto_str != "(Nenhum)" else None
-
-            descricao = self.descricao_entry.get("1.0", "end-1c").strip()
-            if not descricao:
-                messagebox.showerror("Erro", "Descrição é obrigatória")
-                return
-
-            valor_sem_iva_str = self.valor_sem_iva_entry.get().strip()
-            if not valor_sem_iva_str:
-                messagebox.showerror("Erro", "Valor sem IVA é obrigatório")
-                return
-            valor_sem_iva = Decimal(valor_sem_iva_str.replace(',', '.'))
-
-            valor_com_iva_str = self.valor_com_iva_entry.get().strip()
-            if not valor_com_iva_str:
-                messagebox.showerror("Erro", "Valor com IVA é obrigatório")
-                return
-            valor_com_iva = Decimal(valor_com_iva_str.replace(',', '.'))
-
-            estado_map = {
-                "Pendente": EstadoDespesa.PENDENTE,
-                "Vencido": EstadoDespesa.VENCIDO,
-                "Pago": EstadoDespesa.PAGO
-            }
-            estado = estado_map[self.estado_dropdown.get()]
-
-            data_pagamento = None
-            if self.data_pagamento_picker.get():
-                data_pagamento = self.data_pagamento_picker.get_date()
-
-            nota = self.nota_entry.get("1.0", "end-1c").strip() or None
-
-            # Create or update
-            if self.despesa:
-                sucesso, erro = self.manager.atualizar(
-                    self.despesa.id,
-                    tipo=tipo,
-                    data=data_despesa,
-                    descricao=descricao,
-                    valor_sem_iva=valor_sem_iva,
-                    valor_com_iva=valor_com_iva,
-                    credor_id=credor_id,
-                    projeto_id=projeto_id,
-                    estado=estado,
-                    data_pagamento=data_pagamento,
-                    nota=nota
-                )
-                msg = "Despesa atualizada com sucesso!"
-            else:
-                sucesso, despesa, erro = self.manager.criar(
-                    tipo=tipo,
-                    data=data_despesa,
-                    descricao=descricao,
-                    valor_sem_iva=valor_sem_iva,
-                    valor_com_iva=valor_com_iva,
-                    credor_id=credor_id,
-                    projeto_id=projeto_id,
-                    estado=estado,
-                    data_pagamento=data_pagamento,
-                    nota=nota
-                )
-
-            if sucesso:
-                if self.callback:
-                    self.callback()
-                self.destroy()
-            else:
-                messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
-
-        except ValueError as e:
-            messagebox.showerror("Erro", f"Erro nos dados: {e}")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
-
-    def _setup_scroll_capture(self):
-        """Capture scroll events on this dialog and redirect only to internal scrollable frame"""
-        # Get the internal canvas from CTkScrollableFrame
-        if hasattr(self.scroll, '_parent_canvas'):
-            canvas = self.scroll._parent_canvas
-
-            def handle_scroll(event):
-                """Handle scroll event - redirect to internal canvas and stop propagation"""
-                # Scroll the internal canvas
-                if event.num == 4 or event.delta > 0:
-                    # Scroll up
-                    canvas.yview_scroll(-1, "units")
-                elif event.num == 5 or event.delta < 0:
-                    # Scroll down
-                    canvas.yview_scroll(1, "units")
-
-                # Return "break" to stop event propagation
-                return "break"
-
-            # Bind with add=True to not remove existing bindings
-            # Windows and MacOS
-            self.bind_all("<MouseWheel>", handle_scroll, add=True)
-            # Linux
-            self.bind_all("<Button-4>", handle_scroll, add=True)
-            self.bind_all("<Button-5>", handle_scroll, add=True)
-
-    def _on_close(self):
-        """Handle window close - clear selection"""
-        # No need to unbind - tkinter cleans up when dialog destroys
-        if hasattr(self.parent_ref, 'table'):
-            self.parent_ref.table.clear_selection()
-        self.destroy()
