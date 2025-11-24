@@ -12,7 +12,7 @@ MODO INCREMENTAL (padrão):
 FLAGS:
 --dry-run          Preview sem gravar nada
 --clear-all        Limpar DB antes de importar (cuidado!)
---excel PATH       Caminho para ficheiro Excel (default: excel/CONTABILIDADE_FINAL_20251108.xlsx)
+--excel PATH       Caminho para ficheiro Excel (default: excel/CONTABILIDADE_FINAL_20251124.xlsx)
 
 LÓGICA DE MATCHING:
 - CLIENTES: Número (#C001, #C002, ...)
@@ -177,19 +177,29 @@ class ExcelImporter:
             return EstatutoFornecedor.FREELANCER
 
     def mapear_tipo_projeto(self, estado_str, owner_str):
-        """Mapeia tipo de projeto"""
+        """Mapeia tipo e owner do projeto
+
+        Returns:
+            tuple: (TipoProjeto, owner_code)
+        """
+        # Default
+        tipo = TipoProjeto.EMPRESA
+        owner = 'BA'
+
         if not pd.isna(estado_str):
             estado = str(estado_str).lower()
             if 'pessoal' in estado:
-                if not pd.isna(owner_str):
-                    owner = str(owner_str).lower()
-                    if 'bruno' in owner:
-                        return TipoProjeto.PESSOAL_BRUNO
-                    elif 'rafael' in owner:
-                        return TipoProjeto.PESSOAL_RAFAEL
-                return TipoProjeto.EMPRESA
+                tipo = TipoProjeto.PESSOAL
 
-        return TipoProjeto.EMPRESA
+        # Owner da coluna P
+        if not pd.isna(owner_str):
+            owner_lower = str(owner_str).lower()
+            if 'rafael' in owner_lower or 'rr' in owner_lower:
+                owner = 'RR'
+            else:
+                owner = 'BA'
+
+        return (tipo, owner)
 
     def mapear_estado_projeto(self, data_recebimento, data_faturacao, data_vencimento):
         """Mapeia estado do projeto"""
@@ -408,7 +418,7 @@ class ExcelImporter:
             owner_str = self.safe_str(row.iloc[15]) if len(row) > 15 else None
             nota = self.safe_str(row.iloc[16]) if len(row) > 16 else None
 
-            tipo = self.mapear_tipo_projeto(estado_str, owner_str)
+            tipo, owner = self.mapear_tipo_projeto(estado_str, owner_str)
             estado = self.mapear_estado_projeto(data_recebimento, data_faturacao, data_vencimento)
 
             if estado == EstadoProjeto.PAGO and data_recebimento and not data_faturacao:
@@ -439,14 +449,15 @@ class ExcelImporter:
             # DRY RUN: Não gravar
             if self.dry_run:
                 self.stats['projetos']['new'] += 1
-                tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else ("👤B" if tipo == TipoProjeto.PESSOAL_BRUNO else "👤R")
-                print(f"  🔍 {numero}: {tipo_icon} {descricao[:40]} (seria criado)")
+                tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else "👤"
+                print(f"  🔍 {numero}: {tipo_icon}{owner} {descricao[:40]} (seria criado)")
                 continue
 
             # CRIAR NOVO
             try:
                 success, projeto, msg = self.projetos_manager.criar(
                     tipo=tipo,
+                    owner=owner,
                     cliente_id=cliente_id,
                     descricao=descricao,
                     valor_sem_iva=valor_sem_iva,
@@ -468,9 +479,9 @@ class ExcelImporter:
 
                     self.stats['projetos']['new'] += 1
                     self.projetos_map[numero] = projeto.id
-                    tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else ("👤B" if tipo == TipoProjeto.PESSOAL_BRUNO else "👤R")
+                    tipo_icon = "🏢" if tipo == TipoProjeto.EMPRESA else "👤"
                     estado_icon = "✅" if estado == EstadoProjeto.PAGO else ("📄" if estado == EstadoProjeto.FINALIZADO else "⏳")
-                    print(f"  {estado_icon} {numero}: {tipo_icon} {descricao[:40]} (criado)")
+                    print(f"  {estado_icon} {numero}: {tipo_icon}{owner} {descricao[:40]} (criado)")
                 else:
                     self.stats['projetos']['error'] += 1
                     print(f"  ❌ {numero}: {descricao[:40]} - {msg}")
@@ -1008,7 +1019,7 @@ def main():
     parser = argparse.ArgumentParser(description='Importação incremental de dados do Excel')
     parser.add_argument('--dry-run', action='store_true', help='Preview sem gravar nada')
     parser.add_argument('--clear-all', action='store_true', help='Limpar DB antes de importar (cuidado!)')
-    parser.add_argument('--excel', type=str, default='excel/CONTABILIDADE_FINAL_20251108.xlsx',
+    parser.add_argument('--excel', type=str, default='excel/CONTABILIDADE_FINAL_20251124.xlsx',
                         help='Caminho para ficheiro Excel')
 
     args = parser.parse_args()
