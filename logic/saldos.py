@@ -157,19 +157,21 @@ class SaldosCalculator:
 
         projetos_pessoais = query_projetos_pessoais.scalar() or Decimal("0.00")
 
-        # 2. Prémios de projetos da empresa (TODOS, independentemente do estado!)
-        # ✅ CORREÇÃO: Prémios contam no saldo mesmo antes do projeto ser recebido (saldo virtual)
+        # 2. Prémios de projetos da empresa (apenas PAGOS)
+        # ✅ CORREÇÃO: Prémios só contam no saldo quando projeto está pago
         if socio == Socio.BRUNO:
             query_premios = self.db_session.query(
                 func.sum(Projeto.premio_bruno)
             ).filter(
-                Projeto.premio_bruno > 0
+                Projeto.premio_bruno > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             )
         else:
             query_premios = self.db_session.query(
                 func.sum(Projeto.premio_rafael)
             ).filter(
-                Projeto.premio_rafael > 0
+                Projeto.premio_rafael > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             )
 
         if data_inicio:
@@ -410,15 +412,17 @@ class SaldosCalculator:
             Projeto.estado == EstadoProjeto.PAGO
         ).all()
 
-        # Projetos com prémios (TODOS, não só recebidos!)
-        # ✅ CORREÇÃO: Prémios contam no saldo independentemente do estado
+        # Projetos com prémios (apenas PAGOS)
+        # ✅ CORREÇÃO: Prémios só contam no saldo quando projeto está pago
         if socio == Socio.BRUNO:
             projetos_premios = self.db_session.query(Projeto).filter(
-                Projeto.premio_bruno > 0
+                Projeto.premio_bruno > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             ).all()
         else:
             projetos_premios = self.db_session.query(Projeto).filter(
-                Projeto.premio_rafael > 0
+                Projeto.premio_rafael > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             ).all()
 
         # Despesas fixas
