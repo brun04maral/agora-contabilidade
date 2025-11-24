@@ -4,7 +4,16 @@ Registo de mudanças significativas no projeto.
 
 ---
 
-## [2025-11-21] Menu Context Orçamentos + UX Comissões
+## [2025-11-21] Menu Context Orçamentos + UX Comissões + Refatoração Dialogs
+
+### 🏗️ Refatoração - Arquitetura Base de Dialogs
+
+**BaseDialogMedium/Large** (Commit: e029530)
+- Todos dialogs modais herdam de `utils/base_dialogs.py`
+- Layout, scroll, tamanho e padding centralizados
+- Scroll automático (sem overflows nem widgets fora da frame)
+- **SEM popups de sucesso ao gravar** - apenas mensagens de erro
+- Dialogs afetados: servico, equipamento, transporte, refeicao, outro, servico_empresa, equipamento_empresa, comissao
 
 ### ✨ Features Implementadas
 

@@ -337,9 +337,44 @@ logic/
 
 ### Camada UI - Screens & Dialogs
 
+#### Arquitetura Base de Dialogs (Refatoração 21/11/2025)
+
+Todos os dialogs modais herdam de classes base em `utils/base_dialogs.py`:
+
+**Classes Disponíveis:**
+- `BaseDialogMedium` - Maioria dos dialogs (500x450)
+- `BaseDialogLarge` - Layouts maiores
+
+**Padrão de Uso:**
+```python
+from utils.base_dialogs import BaseDialogMedium
+
+class MeuDialog(BaseDialogMedium):
+    def __init__(self, parent, ...):
+        super().__init__(parent, title="Título", width=500, height=450)
+        self.create_widgets()
+
+    def create_widgets(self):
+        main = self.main_frame  # Frame com scroll automático
+        # Widgets aqui
+```
+
+**Regras UX Uniformizadas:**
+- ✅ Scroll automático (sem overflows)
+- ✅ Layout/tamanho/padding centralizados
+- ✅ Modal (transient + grab_set)
+- ❌ **SEM popups de sucesso** - apenas `messagebox.showerror/warning`
+- ❌ SEM geometry/scroll manual
+
+**Ao Gravar:**
+- Sucesso → `self.success = True` + `self.destroy()`
+- Erro → `messagebox.showerror("Erro", msg)`
+
+---
+
 ui/screens/
 ├── orcamento_form.py      # Screen principal (tabs CLIENTE/EMPRESA, validação)
-└── dialogs/
+└── dialogs/               # Todos herdam BaseDialogMedium
     ├── servico_dialog.py       # CLIENTE: descrição, qtd, dias, preço, desconto
     ├── equipamento_dialog.py   # CLIENTE: idem + seleção de lista
     ├── transporte_dialog.py    # CLIENTE: kms × valor/km
