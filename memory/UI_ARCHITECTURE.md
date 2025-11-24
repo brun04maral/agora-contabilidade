@@ -43,11 +43,19 @@ Estratégia de componentização para UI consistente e manutenível através de 
    - Botões compactos (height: 32px)
    - Mostra contagem + total
 
-6. **Espaçamentos Otimizados**
-   - Header: pady=(20, 15) (antes 30, 20)
+6. **Espaçamentos Otimizados** ✅ FINAL
+   - Header: pady=(10, 0) - SEM espaço bottom
+   - Toolbar: pady=(0, 5) - SEM espaço entre título e pesquisa
+   - Removido header_slot (frame vazio a causar espaço)
    - Botões: height=32px (antes 35px)
-   - Toolbar: pady=(0, 10)
-   - Menos espaço vazio = mais conteúdo visível
+   - **Espaço título ↔ pesquisa: ~5px** (antes ~40px)
+
+7. **Overlay Containers** (Não Empurram Tabela)
+   - overlay_container para chips (height=0→35px)
+   - selection_container para barra (height=0→45px)
+   - pack_propagate(False) = não expandem automaticamente
+   - Aparecem/desaparecem sem afetar posição da tabela
+   - Tabela mantém posição fixa sempre
 
 **API Changes:**
 - `apply_filters(items, filters: Dict[str, List[str]])` - Aceita listas para multi-seleção
