@@ -312,10 +312,39 @@ class SaldosCalculator:
 
         premios_nao_faturados = query_premios_nao_faturados.scalar() or Decimal("0.00")
 
-        # Saldo projetado (só calcular se houver prémios não faturados)
+        # === PROJETOS PESSOAIS NÃO FATURADOS (Projetos FINALIZADOS) ===
+        # Projetos pessoais concluídos aguardando pagamento
+        if socio == Socio.BRUNO:
+            query_pessoais_nao_faturados = self.db_session.query(
+                func.sum(Projeto.valor_sem_iva)
+            ).filter(
+                Projeto.estado == EstadoProjeto.FINALIZADO,
+                Projeto.tipo == TipoProjeto.PESSOAL_BRUNO
+            )
+        else:
+            query_pessoais_nao_faturados = self.db_session.query(
+                func.sum(Projeto.valor_sem_iva)
+            ).filter(
+                Projeto.estado == EstadoProjeto.FINALIZADO,
+                Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL
+            )
+
+        if data_inicio:
+            query_pessoais_nao_faturados = query_pessoais_nao_faturados.filter(
+                Projeto.data_faturacao >= data_inicio
+            )
+        if data_fim:
+            query_pessoais_nao_faturados = query_pessoais_nao_faturados.filter(
+                Projeto.data_faturacao <= data_fim
+            )
+
+        pessoais_nao_faturados = query_pessoais_nao_faturados.scalar() or Decimal("0.00")
+
+        # Saldo projetado (se houver prémios ou pessoais não faturados)
         saldo_projetado = None
-        if premios_nao_faturados > 0:
-            saldo_projetado = float(saldo_total + premios_nao_faturados)
+        total_nao_faturados = premios_nao_faturados + pessoais_nao_faturados
+        if total_nao_faturados > 0:
+            saldo_projetado = float(saldo_total + total_nao_faturados)
 
         return {
             'socio': socio.value,
@@ -325,6 +354,7 @@ class SaldosCalculator:
                 'projetos_pessoais': float(projetos_pessoais),
                 'premios': float(premios),
                 'premios_nao_faturados': float(premios_nao_faturados),
+                'pessoais_nao_faturados': float(pessoais_nao_faturados),
                 'investimento_inicial': float(investimento),
                 'total': float(total_ins)
             },

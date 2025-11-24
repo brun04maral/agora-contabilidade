@@ -390,6 +390,12 @@ class SaldosScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_projetos(filtro_estado="Finalizado")
 
+    def navegar_projetos_nao_pagos(self, socio: str):
+        """Navigate to Projetos screen with FINALIZADO filter for personal projects"""
+        if self.main_window:
+            tipo = "Pessoal BA" if socio == "BA" else "Pessoal RR"
+            self.main_window.show_projetos(filtro_estado="Finalizado", filtro_tipo=tipo)
+
     def navegar_despesas_fixas(self):
         """Navigate to Despesas screen with Fixa Mensal filter"""
         if self.main_window:
@@ -444,7 +450,7 @@ class SaldosScreen(ctk.CTkFrame):
         if saldo_bruno.get('saldo_projetado'):
             diferenca = saldo_bruno['saldo_projetado'] - saldo_atual_bruno
             self.bruno_saldo_projetado_label.configure(
-                text=f"Projetado: €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
+                text=f"Projetado (c/ não pagos): €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
             )
         else:
             self.bruno_saldo_projetado_label.configure(text="")
@@ -455,7 +461,7 @@ class SaldosScreen(ctk.CTkFrame):
 
         self.create_saldo_item(
             self.bruno_ins_frame,
-            "Projetos pessoais",
+            "Pessoais",
             saldo_bruno['ins']['projetos_pessoais'],
             clickable=True,
             on_click=self.navegar_projetos_bruno,
@@ -472,22 +478,39 @@ class SaldosScreen(ctk.CTkFrame):
             button_border_color=("#7CB342", "#9CCC65")
         )
 
+        # Separator line
+        sep = ctk.CTkFrame(self.bruno_ins_frame, height=1, fg_color="gray")
+        sep.pack(fill="x", pady=8)
+
+        # Projetos pessoais não pagos (só mostrar se > 0)
+        if saldo_bruno['ins'].get('pessoais_nao_faturados', 0) > 0:
+            self.create_saldo_item(
+                self.bruno_ins_frame,
+                "📋 Projetos não pagos",
+                saldo_bruno['ins']['pessoais_nao_faturados'],
+                clickable=True,
+                on_click=lambda: self.navegar_projetos_nao_pagos("BA"),
+                button_color=("#D4E8CF", "#3D5A2E"),  # Verde escuro acizentado
+                button_border_color=("#7CB342", "#8BC34A"),
+                tooltip="Projetos pessoais concluídos aguardando pagamento"
+            )
+
         # Prémios não faturados (só mostrar se > 0)
         if saldo_bruno['ins'].get('premios_nao_faturados', 0) > 0:
             self.create_saldo_item(
                 self.bruno_ins_frame,
-                "💡 Prémios não faturados",
+                "💡 Prémios não pagos",
                 saldo_bruno['ins']['premios_nao_faturados'],
                 clickable=True,
                 on_click=self.navegar_premios_nao_faturados,
-                button_color=("#FFF4E6", "#CC6600"),  # Laranja claro
-                button_border_color=("#FF9800", "#FFB74D"),
-                tooltip="Projetos concluídos aguardando pagamento"
+                button_color=("#D4E8CF", "#3D5A2E"),  # Verde escuro acizentado
+                button_border_color=("#7CB342", "#8BC34A"),
+                tooltip="Projetos empresa concluídos aguardando pagamento"
             )
 
         # Separator line
-        sep = ctk.CTkFrame(self.bruno_ins_frame, height=1, fg_color="gray")
-        sep.pack(fill="x", pady=8)
+        sep2 = ctk.CTkFrame(self.bruno_ins_frame, height=1, fg_color="gray")
+        sep2.pack(fill="x", pady=8)
 
         self.create_saldo_item(
             self.bruno_ins_frame,
@@ -560,7 +583,7 @@ class SaldosScreen(ctk.CTkFrame):
         if saldo_rafael.get('saldo_projetado'):
             diferenca_rr = saldo_rafael['saldo_projetado'] - saldo_atual_rafael
             self.rafael_saldo_projetado_label.configure(
-                text=f"Projetado: €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
+                text=f"Projetado (c/ não pagos): €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
             )
         else:
             self.rafael_saldo_projetado_label.configure(text="")
@@ -571,7 +594,7 @@ class SaldosScreen(ctk.CTkFrame):
 
         self.create_saldo_item(
             self.rafael_ins_frame,
-            "Projetos pessoais",
+            "Pessoais",
             saldo_rafael['ins']['projetos_pessoais'],
             clickable=True,
             on_click=self.navegar_projetos_rafael,
@@ -588,21 +611,39 @@ class SaldosScreen(ctk.CTkFrame):
             button_border_color=("#7CB342", "#9CCC65")
         )
 
+        # Separator line
+        sep = ctk.CTkFrame(self.rafael_ins_frame, height=1, fg_color="gray")
+        sep.pack(fill="x", pady=8)
+
+        # Projetos pessoais não pagos (só mostrar se > 0)
+        if saldo_rafael['ins'].get('pessoais_nao_faturados', 0) > 0:
+            self.create_saldo_item(
+                self.rafael_ins_frame,
+                "📋 Projetos não pagos",
+                saldo_rafael['ins']['pessoais_nao_faturados'],
+                clickable=True,
+                on_click=lambda: self.navegar_projetos_nao_pagos("RR"),
+                button_color=("#D4E8CF", "#3D5A2E"),  # Verde escuro acizentado
+                button_border_color=("#7CB342", "#8BC34A"),
+                tooltip="Projetos pessoais concluídos aguardando pagamento"
+            )
+
         # Prémios não faturados (só mostrar se > 0)
         if saldo_rafael['ins'].get('premios_nao_faturados', 0) > 0:
             self.create_saldo_item(
                 self.rafael_ins_frame,
-                "💡 Prémios não faturados",
+                "💡 Prémios não pagos",
                 saldo_rafael['ins']['premios_nao_faturados'],
                 clickable=True,
                 on_click=self.navegar_premios_nao_faturados,
-                button_color=("#FFF4E6", "#CC6600"),  # Laranja claro
-                button_border_color=("#FF9800", "#FFB74D"),
-                tooltip="Projetos concluídos aguardando pagamento"
+                button_color=("#D4E8CF", "#3D5A2E"),  # Verde escuro acizentado
+                button_border_color=("#7CB342", "#8BC34A"),
+                tooltip="Projetos empresa concluídos aguardando pagamento"
             )
 
-        sep = ctk.CTkFrame(self.rafael_ins_frame, height=1, fg_color="gray")
-        sep.pack(fill="x", pady=8)
+        # Separator line
+        sep2 = ctk.CTkFrame(self.rafael_ins_frame, height=1, fg_color="gray")
+        sep2.pack(fill="x", pady=8)
 
         self.create_saldo_item(
             self.rafael_ins_frame,
