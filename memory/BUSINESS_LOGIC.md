@@ -112,30 +112,72 @@ IMPACTO FINANCEIRO:
 * Cálculo é sempre automático; edits na linha atualizam header.
 
 ====================================================================
-5. CÁLCULOS FINANCEIROS
+5. CÁLCULOS FINANCEIROS - SALDOS PESSOAIS
 ====================================================================
 
-SALDOS PESSOAIS:
-* Saldos = Σ (projetos ganhos + prémios + receitas) - Σ (despesas pagas + boletins pagos)
-* Cada sócio tem regra de partilha definida (50/50 ou 100% casos pessoais).
+ESTRUTURA COMPLETA DOS SALDOS:
 
-FÓRMULA:
-BA = 
-  Σ [projetos.owner='BA' and estado='PAGO' → prémio_bruno] +
-  Σ [orcamentos.owner='BA' and estado='PAGO' → valor_empresa] +
-  Σ [saldo_fixo_mensal/2, equipamento/2, projeto/2, pessoal_bruno]
-  - Σ [despesas pagas (ver tipos relevantes)]
-  - Σ [boletins sócio BA pagos]
+INs (Entradas):
+────────────────
+  PAGOS:
+    - Projetos Pessoais PAGOS (tipo=PESSOAL, estado=PAGO, owner=sócio)
+    - Prémios PAGOS (estado=PAGO, premio_X > 0)
 
-DIVISÃO:
-* Despesas:
-  - MIXTO (equipamento, projeto, fixa_mensal): paga metade cada sócio
-  - PESSOAL: afeta só o próprio
-* Boletins: cada sócio vê só os seus.
+  PENDENTES:
+    - Projetos Pessoais não pagos (tipo=PESSOAL, estado=FINALIZADO, owner=sócio)
+    - Prémios não pagos (estado=FINALIZADO, premio_X > 0)
 
-INs E OUTs:
-* IN: prémios, receitas empresa, prémios freelancer se aplicável
-* OUT: despesas, boletins, repartições especiais.
+OUTs (Saídas):
+──────────────
+  PAGOS:
+    - Fixas Mensais ÷2 (tipo=FIXA_MENSAL, estado=PAGO)
+    - Boletins pagos (estado=PAGO)
+    - Despesas pessoais (tipo=PESSOAL_X, estado=PAGO)
+
+  PENDENTES:
+    - Boletins Pendentes (estado=PENDENTE)
+
+TOTAIS:
+───────
+- TOTAL INs Pagos = Pessoais PAGOS + Prémios PAGOS
+- TOTAL INs Pendentes = Pessoais não pagos + Prémios não pagos
+- TOTAL INs Projetado = Pagos + Pendentes
+
+- TOTAL OUTs Pagos = Fixas + Boletins pagos + Despesas pessoais
+- TOTAL OUTs Pendentes = Boletins Pendentes
+- TOTAL OUTs Projetado = Pagos + Pendentes
+
+SALDOS:
+───────
+- Saldo Atual = TOTAL INs Pagos - TOTAL OUTs Pagos
+- Saldo Projetado = TOTAL INs Projetado - TOTAL OUTs Projetado
+- Diferença = Saldo Projetado - Saldo Atual
+
+DIVISÃO DE DESPESAS:
+────────────────────
+* Despesas MIXTAS (equipamento, projeto, fixa_mensal): ÷2 cada sócio
+* Despesas PESSOAIS: afeta só o próprio sócio
+* Boletins: cada sócio vê apenas os seus
+
+SUGESTÃO DE BOLETIM (AUTOMATISMO):
+──────────────────────────────────
+Conceito: Distribuir o excedente projetado pelos meses restantes do ano.
+
+Fórmula:
+  Sugestão Boletim = Saldo Projetado ÷ Meses Restantes
+
+Onde:
+  - Saldo Projetado = diferença entre projetado e atual
+  - Meses Restantes = meses até fim do ano SEM boletim emitido
+
+Exemplo Novembro 2025:
+  SP = €4.241,67
+  Meses restantes = 2 (Nov + Dez)
+  Sugestão = €4.241,67 ÷ 2 = €2.120,84/mês
+
+Objetivo: Zerar saldo no final do ano fiscal.
+
+Implementação: Campo sugestao_boletim no retorno de calcular_saldo_X()
 
 ====================================================================
 6. EQUIPAMENTO

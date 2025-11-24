@@ -4,6 +4,35 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-24] Reestruturação Completa Saldos Pessoais
+
+### 🎯 Sprint: Dashboard e Saldos - Separação Pagos/Pendentes/Projetados
+
+**Alterações UI (ui/screens/saldos.py):**
+- INs separados em: Pagos (Pessoais + Prémios) | Pendentes (não pagos)
+- OUTs separados em: Pagos (Fixas + Boletins + Despesas) | Pendentes (Boletins)
+- Totais adicionados: TOTAL Pagos, TOTAL Pendentes, TOTAL Projetado
+- Label simplificada: `Projetado: €XXX (+€YYY)`
+- Separadores visuais entre secções (height=1 normal, height=2 projetado)
+
+**Alterações Lógica (logic/saldos.py):**
+- Query existente `pessoais_nao_faturados` para projetos FINALIZADOS
+- Campo retornado em `ins`: pessoais_nao_faturados, premios_nao_faturados
+- Correção cálculo: Saldo Projetado = TOTAL INs Projetado - TOTAL OUTs Projetado
+
+**Nova Funcionalidade Planeada:**
+- Sugestão de Boletim: SP ÷ meses restantes sem boletim
+- Automatismo para zerar saldo no fim do ano fiscal
+
+**Commits:**
+- `6ea491c`: feat(saldos): reorganizar INs/OUTs com totais pagos/pendentes/projetados
+- `782bf4b`: feat(saldos): atualizar label saldo projetado
+- `615b3ed`: fix(saldos): corrigir cálculo saldo projetado e simplificar label
+
+**Ver:** memory/BUSINESS_LOGIC.md (Secção 5)
+
+---
+
 ## [2025-11-24] Refatoração TipoProjeto e UI Saldos
 
 ### 🏗️ Refatoração - TipoProjeto Simplificado (EMPRESA|PESSOAL + Owner)

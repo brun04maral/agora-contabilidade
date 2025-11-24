@@ -19,10 +19,10 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (24/11/2025):**
-- 🎯 **Refatoração Screens Dedicados Completa** - Todos os forms CRUD migrados para screens dedicados
+- 🎯 **Reestruturação Completa Saldos Pessoais** - Separação Pagos/Pendentes/Projetados
 
 **Última Feature Concluída:**
-- ✅ **Refatoração TipoProjeto + UI Saldos** (24/11/2025) - TipoProjeto simplificado de 3 valores para 2 (EMPRESA|PESSOAL) + campo owner separado. Formulário projeto com dropdowns Tipo/Responsável. UI Saldos com subsecções "não pagos" e "boletins pendentes". Migrations 027-028. **Ver:** memory/CHANGELOG.md (24/11/2025)
+- ✅ **Reestruturação Saldos Pessoais** (24/11/2025) - INs/OUTs reorganizados com totais separados (Pagos, Pendentes, Projetado). Cálculo corrigido: Saldo Projetado = TOTAL INs Projetado - TOTAL OUTs Projetado. Label simplificada. Documentação BUSINESS_LOGIC.md expandida. **Ver:** memory/CHANGELOG.md (24/11/2025)
 
 **Próximo Milestone:**
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
