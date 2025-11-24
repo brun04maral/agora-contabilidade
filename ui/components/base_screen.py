@@ -172,7 +172,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_header(self):
         """Cria o header com título e botões."""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(10, 0))
+        header_frame.pack(fill="x", padx=30, pady=(20, 10))  # Mais espaço top, espaço bottom reduzido
 
         # Título com ícone
         title = self.config.get('title', 'Screen')
@@ -261,7 +261,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
         toolbar = ctk.CTkFrame(self, fg_color="transparent")
-        toolbar.pack(fill="x", padx=30, pady=(0, 5))
+        toolbar.pack(fill="x", padx=30, pady=(0, 10))  # 0 top (header já tem bottom), 10 bottom para separar da tabela
 
         # Search (compacta, só ícone lupa)
         if self.config.get('show_search', True):
@@ -319,7 +319,10 @@ class BaseScreen(ctk.CTkFrame):
                     width=width,
                     height=32,
                     font=ctk.CTkFont(size=12),
-                    dropdown_font=ctk.CTkFont(size=11)
+                    dropdown_font=ctk.CTkFont(size=11),
+                    fg_color=("#E0E0E0", "#404040"),  # Cor padrão (inativo)
+                    button_color=("#E0E0E0", "#404040"),
+                    button_hover_color=("#BDBDBD", "#505050")
                 )
                 option_menu.set(label)  # Placeholder
                 option_menu.pack(side="left", padx=5)
@@ -342,18 +345,14 @@ class BaseScreen(ctk.CTkFrame):
 
     def _add_filter_chip(self, filter_key: str, value: str):
         """Adiciona chip para filtro ativo."""
-        print(f"[DEBUG] _add_filter_chip chamado: key={filter_key}, value={value}")
-
         if filter_key not in self._filter_chips:
             self._filter_chips[filter_key] = {}
 
         if value in self._filter_chips[filter_key]:
-            print(f"[DEBUG] Chip já existe, ignorando")
             return  # Already exists
 
         # Show chips frame dentro do overlay container
         if not self.chips_frame.winfo_manager():
-            print(f"[DEBUG] Mostrando chips_frame")
             self.chips_frame.pack(fill="x", pady=5)
             # Expandir container para mostrar chips (35px = altura dos chips)
             self.overlay_container.configure(height=35)
@@ -366,7 +365,6 @@ class BaseScreen(ctk.CTkFrame):
             height=28
         )
         chip.pack(side="left", padx=3, pady=2)
-        print(f"[DEBUG] Chip frame criado e empacotado")
 
         # Chip label
         chip_label = ctk.CTkLabel(
@@ -391,7 +389,9 @@ class BaseScreen(ctk.CTkFrame):
         remove_btn.pack(side="left", padx=(0, 5))
 
         self._filter_chips[filter_key][value] = chip
-        print(f"[DEBUG] Chip completo criado para {filter_key}={value}")
+
+        # Destacar filtro quando tem seleções ativas
+        self._update_filter_appearance(filter_key)
 
     def _remove_filter_chip(self, filter_key: str, value: str):
         """Remove chip de filtro ativo."""
@@ -411,8 +411,35 @@ class BaseScreen(ctk.CTkFrame):
                 # Colapsar container
                 self.overlay_container.configure(height=0)
 
+            # Atualizar aparência do filtro
+            self._update_filter_appearance(filter_key)
+
             # Refresh data
             self.refresh_data()
+
+    def _update_filter_appearance(self, filter_key: str):
+        """Atualiza aparência do filtro baseado em seleções ativas."""
+        if filter_key not in self._filter_widgets:
+            return
+
+        has_selections = filter_key in self._filter_selections and len(self._filter_selections[filter_key]) > 0
+
+        widget = self._filter_widgets[filter_key]
+
+        if has_selections:
+            # Filtro ATIVO - azul
+            widget.configure(
+                fg_color=("#2196F3", "#1976D2"),
+                button_color=("#2196F3", "#1976D2"),
+                button_hover_color=("#1E88E5", "#1565C0")
+            )
+        else:
+            # Filtro INATIVO - cinza
+            widget.configure(
+                fg_color=("#E0E0E0", "#404040"),
+                button_color=("#E0E0E0", "#404040"),
+                button_hover_color=("#BDBDBD", "#505050")
+            )
 
     def _clear_all_chips(self):
         """Limpa todos os chips de filtros."""
@@ -504,19 +531,14 @@ class BaseScreen(ctk.CTkFrame):
 
     def _on_filter_select(self, key: str, value: str):
         """Handler para seleção em filtro."""
-        print(f"[DEBUG] _on_filter_select chamado: key={key}, value={value}")
-
         # Ignorar se é "Todos" ou é o próprio label do filtro
         filter_cfg = next((f for f in self.get_filters_config() if f['key'] == key), None)
         if not filter_cfg:
-            print(f"[DEBUG] Filtro não encontrado em config")
             return
 
         label = filter_cfg.get('label', key.capitalize())
-        print(f"[DEBUG] Label do filtro: {label}")
 
         if value == "Todos" or value == label:
-            print(f"[DEBUG] Valor ignorado (Todos ou label)")
             return
 
         # Adicionar à seleção
@@ -524,7 +546,6 @@ class BaseScreen(ctk.CTkFrame):
             self._filter_selections[key] = set()
 
         self._filter_selections[key].add(value)
-        print(f"[DEBUG] Adicionado à seleção: {key}={value}")
 
         # Adicionar chip
         self._add_filter_chip(key, value)
@@ -548,11 +569,9 @@ class BaseScreen(ctk.CTkFrame):
     def _on_selection_change(self, selected_data: list):
         """Handler para mudança de seleção na tabela."""
         num_selected = len(selected_data)
-        print(f"[DEBUG] _on_selection_change: {num_selected} itens selecionados")
 
         if num_selected > 0:
             # Mostrar barra de seleção
-            print(f"[DEBUG] Mostrando barra de seleção")
             if not self.selection_frame.winfo_manager():
                 self.selection_frame.pack(fill="x", pady=5)
                 # Expandir container (45px = altura da barra)
