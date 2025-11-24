@@ -25,12 +25,15 @@ Estratégia de componentização para UI consistente e manutenível através de 
    - Seleção múltipla (OR logic)
    - Dropdowns compactos (height: 32px)
    - Placeholder mostra label do filtro
+   - Indicador visual: texto azul quando filtro tem seleções ativas
 
 3. **Chips/Badges de Filtros Ativos**
    - Material Design style
-   - Cores: azul (#E3F2FD light / #1E3A5F dark)
+   - Cores filtros: azul (#E3F2FD light / #1E3A5F dark)
+   - Cor pesquisa: verde (#E8F5E9 light / #1B5E20 dark)
+   - Chip de pesquisa mostra termo com ícone 🔍
    - Botão ✕ para remover individual
-   - Área oculta quando sem filtros
+   - Área oculta quando sem chips
 
 4. **Tabela Expandida**
    - `fill="both"` + `expand=True`
@@ -44,8 +47,8 @@ Estratégia de componentização para UI consistente e manutenível através de 
    - Mostra contagem + total
 
 6. **Espaçamentos Otimizados** ✅ FINAL
-   - Header: pady=(10, 0) - SEM espaço bottom
-   - Toolbar: pady=(0, 5) - SEM espaço entre título e pesquisa
+   - Header: pady=(20, 5) - Espaço top adequado, mínimo bottom
+   - Toolbar: pady=(0, 5) - Compacto entre título e tabela
    - Removido header_slot (frame vazio a causar espaço)
    - Botões: height=32px (antes 35px)
    - **Espaço título ↔ pesquisa: ~5px** (antes ~40px)

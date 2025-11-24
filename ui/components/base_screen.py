@@ -137,6 +137,7 @@ class BaseScreen(ctk.CTkFrame):
         self._filter_widgets = {}
         self._filter_selections = {}  # {key: Set[value]}
         self._filter_chips = {}  # {key: {value: chip_widget}}
+        self._search_chip = None  # Chip da pesquisa ativa
         self._selection_buttons = []
 
         # Configure frame
@@ -172,7 +173,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_header(self):
         """Cria o header com título e botões."""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(20, 10))  # Mais espaço top, espaço bottom reduzido
+        header_frame.pack(fill="x", padx=30, pady=(20, 5))  # Reduzido: 10→5 bottom
 
         # Título com ícone
         title = self.config.get('title', 'Screen')
@@ -261,7 +262,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
         toolbar = ctk.CTkFrame(self, fg_color="transparent")
-        toolbar.pack(fill="x", padx=30, pady=(0, 10))  # 0 top (header já tem bottom), 10 bottom para separar da tabela
+        toolbar.pack(fill="x", padx=30, pady=(0, 5))  # Reduzido: 10→5 bottom
 
         # Search (compacta, só ícone lupa)
         if self.config.get('show_search', True):
@@ -311,7 +312,7 @@ class BaseScreen(ctk.CTkFrame):
                 values = filter_cfg.get('values', ['Todos'])
                 width = filter_cfg.get('width', 120)
 
-                # Dropdown compacto
+                # Dropdown compacto (mantém cinza, só muda texto)
                 option_menu = ctk.CTkOptionMenu(
                     toolbar,
                     values=values,
@@ -320,9 +321,10 @@ class BaseScreen(ctk.CTkFrame):
                     height=32,
                     font=ctk.CTkFont(size=12),
                     dropdown_font=ctk.CTkFont(size=11),
-                    fg_color=("#E0E0E0", "#404040"),  # Cor padrão (inativo)
+                    fg_color=("#E0E0E0", "#404040"),
                     button_color=("#E0E0E0", "#404040"),
-                    button_hover_color=("#BDBDBD", "#505050")
+                    button_hover_color=("#BDBDBD", "#505050"),
+                    text_color=("#000000", "#FFFFFF")  # Texto preto/branco por padrão
                 )
                 option_menu.set(label)  # Placeholder
                 option_menu.pack(side="left", padx=5)
@@ -427,22 +429,80 @@ class BaseScreen(ctk.CTkFrame):
         widget = self._filter_widgets[filter_key]
 
         if has_selections:
-            # Filtro ATIVO - azul
-            widget.configure(
-                fg_color=("#2196F3", "#1976D2"),
-                button_color=("#2196F3", "#1976D2"),
-                button_hover_color=("#1E88E5", "#1565C0")
-            )
+            # Filtro ATIVO - texto azul (botão mantém cinza)
+            widget.configure(text_color=("#2196F3", "#1976D2"))
         else:
-            # Filtro INATIVO - cinza
-            widget.configure(
-                fg_color=("#E0E0E0", "#404040"),
-                button_color=("#E0E0E0", "#404040"),
-                button_hover_color=("#BDBDBD", "#505050")
-            )
+            # Filtro INATIVO - texto preto/branco
+            widget.configure(text_color=("#000000", "#FFFFFF"))
+
+    def _add_search_chip(self, search_text: str):
+        """Adiciona chip para pesquisa ativa."""
+        if self._search_chip:
+            return  # Already exists
+
+        # Show chips frame dentro do overlay container
+        if not self.chips_frame.winfo_manager():
+            self.chips_frame.pack(fill="x", pady=5)
+            # Expandir container para mostrar chips (35px = altura dos chips)
+            self.overlay_container.configure(height=35)
+
+        # Create chip
+        chip = ctk.CTkFrame(
+            self.chips_frame,
+            fg_color=("#E8F5E9", "#1B5E20"),
+            corner_radius=16,
+            height=28
+        )
+        chip.pack(side="left", padx=3, pady=2)
+
+        # Chip label
+        chip_label = ctk.CTkLabel(
+            chip,
+            text=f"🔍 {search_text}",
+            font=ctk.CTkFont(size=11),
+            text_color=("#2E7D32", "#81C784")
+        )
+        chip_label.pack(side="left", padx=(10, 5))
+
+        # Remove button
+        remove_btn = ctk.CTkButton(
+            chip,
+            text="✕",
+            width=20,
+            height=20,
+            font=ctk.CTkFont(size=10),
+            fg_color="transparent",
+            hover_color=("#C8E6C9", "#2E7D32"),
+            command=self._remove_search_chip
+        )
+        remove_btn.pack(side="left", padx=(0, 5))
+
+        self._search_chip = chip
+
+    def _remove_search_chip(self):
+        """Remove chip de pesquisa ativa."""
+        if self._search_chip:
+            self._search_chip.destroy()
+            self._search_chip = None
+
+            # Hide chips frame if empty
+            has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
+            if not has_chips:
+                self.chips_frame.pack_forget()
+                # Colapsar container
+                self.overlay_container.configure(height=0)
+
+            # Clear search and refresh
+            self.search_var.set("")
+            self.refresh_data()
 
     def _clear_all_chips(self):
         """Limpa todos os chips de filtros."""
+        # Remove search chip
+        if self._search_chip:
+            self._remove_search_chip()
+
+        # Remove filter chips
         for filter_key in list(self._filter_chips.keys()):
             for value in list(self._filter_chips[filter_key].keys()):
                 self._remove_filter_chip(filter_key, value)
@@ -522,6 +582,30 @@ class BaseScreen(ctk.CTkFrame):
 
     def _on_search_change(self, *args):
         """Handler para mudança na pesquisa."""
+        search_text = self.search_var.get().strip()
+
+        if search_text:
+            # Adicionar chip de pesquisa
+            if not self._search_chip:
+                self._add_search_chip(search_text)
+            else:
+                # Atualizar texto do chip existente
+                for widget in self._search_chip.winfo_children():
+                    if isinstance(widget, ctk.CTkLabel):
+                        widget.configure(text=f"🔍 {search_text}")
+                        break
+        else:
+            # Remover chip se pesquisa foi limpa
+            if self._search_chip:
+                self._search_chip.destroy()
+                self._search_chip = None
+
+                # Hide chips frame if empty
+                has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
+                if not has_chips:
+                    self.chips_frame.pack_forget()
+                    self.overlay_container.configure(height=0)
+
         self.refresh_data()
 
     def _clear_search(self):

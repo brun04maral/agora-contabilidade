@@ -57,18 +57,12 @@ class ProjetosScreen(BaseScreen):
             'table_height': 400,
         }
 
-        # Filtros iniciais
+        # Filtros iniciais (só para dropdowns)
         initial_filters = {}
         if filtro_estado:
             initial_filters['estado'] = filtro_estado
         if filtro_tipo:
             initial_filters['tipo'] = filtro_tipo
-        if filtro_cliente_id:
-            # Encontrar nome do cliente
-            for cliente in self.clientes_list:
-                if cliente.id == filtro_cliente_id:
-                    initial_filters['cliente'] = cliente.nome
-                    break
 
         super().__init__(parent, db_session, initial_filters=initial_filters, **kwargs)
 
@@ -115,15 +109,7 @@ class ProjetosScreen(BaseScreen):
     # ========== Métodos opcionais override ==========
 
     def get_filters_config(self) -> List[Dict[str, Any]]:
-        cliente_values = ["Todos"] + [c.nome for c in self.clientes_list]
-
         return [
-            {
-                'key': 'cliente',
-                'label': 'Cliente:',
-                'values': cliente_values,
-                'width': 220
-            },
             {
                 'key': 'tipo',
                 'label': 'Tipo:',
@@ -184,18 +170,6 @@ class ProjetosScreen(BaseScreen):
     def apply_filters(self, items: list, filters: Dict[str, List[str]]) -> list:
         projetos = items
 
-        # Filtrar por cliente (multi-seleção)
-        clientes_selecionados = filters.get('cliente', [])
-        if clientes_selecionados:
-            cliente_ids = []
-            for cliente_nome in clientes_selecionados:
-                cliente_obj = next((c for c in self.clientes_list if c.nome == cliente_nome), None)
-                if cliente_obj:
-                    cliente_ids.append(cliente_obj.id)
-
-            if cliente_ids:
-                projetos = [p for p in projetos if p.cliente_id in cliente_ids]
-
         # Filtrar por tipo (multi-seleção)
         tipos_selecionados = filters.get('tipo', [])
         if tipos_selecionados:
@@ -228,6 +202,9 @@ class ProjetosScreen(BaseScreen):
                 projetos = [p for p in projetos if p.estado in estado_enums]
 
         # Filtros especiais (passados no constructor)
+        if self._filtro_cliente_id:
+            projetos = [p for p in projetos if p.cliente_id == self._filtro_cliente_id]
+
         if self.filtro_premio_socio:
             if self.filtro_premio_socio == "BA":
                 projetos = [p for p in projetos if p.premio_bruno and p.premio_bruno > 0]
