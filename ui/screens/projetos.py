@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Tela de gestão de Projetos - Edição Inline (sem dialogs/popups)
+Tela de gestão de Projetos - Lista com navegação para edição
 """
 import customtkinter as ctk
 import tkinter as tk
 from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import date
-from decimal import Decimal
 import tkinter.messagebox as messagebox
 
 from logic.projetos import ProjetosManager
@@ -19,7 +18,7 @@ from assets.resources import get_icon, PROJETOS
 
 class ProjetosScreen(ctk.CTkFrame):
     """
-    Tela de gestão de Projetos (CRUD completo) com edição inline
+    Tela de gestão de Projetos (lista com navegação para edição)
     """
 
     def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None, filtro_premio_socio=None, **kwargs):
@@ -39,12 +38,10 @@ class ProjetosScreen(ctk.CTkFrame):
         self.db_session = db_session
         self.manager = ProjetosManager(db_session)
         self.clientes_manager = ClientesManager(db_session)
-        self.projeto_editando = None
         self.filtro_inicial_estado = filtro_estado
         self.filtro_inicial_cliente_id = filtro_cliente_id
         self.filtro_inicial_tipo = filtro_tipo
         self.filtro_premio_socio = filtro_premio_socio  # "BA" or "RR"
-        self.editor_visible = False
 
         # Configure
         self.configure(fg_color="transparent")
@@ -113,7 +110,7 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         refresh_btn.pack(side="left", padx=5)
 
-        self.novo_btn = ctk.CTkButton(
+        novo_btn = ctk.CTkButton(
             btn_frame,
             text="➕ Novo Projeto",
             command=self.abrir_formulario,
@@ -123,7 +120,7 @@ class ProjetosScreen(ctk.CTkFrame):
             fg_color=("#4CAF50", "#388E3C"),
             hover_color=("#66BB6A", "#2E7D32")
         )
-        self.novo_btn.pack(side="left", padx=5)
+        novo_btn.pack(side="left", padx=5)
 
         # Search bar (search-as-you-type)
         search_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -257,14 +254,6 @@ class ProjetosScreen(ctk.CTkFrame):
             font=ctk.CTkFont(size=14, weight="bold")
         )
 
-        # Main content area (list OR editor - not both)
-        self.content_area = ctk.CTkFrame(self, fg_color="transparent")
-        self.content_area.pack(fill="both", expand=True, padx=30, pady=(0, 30))
-
-        # List frame (visible by default)
-        self.list_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self.list_frame.pack(fill="both", expand=True)
-
         # Table
         columns = [
             {'key': 'numero', 'label': 'ID', 'width': 80},
@@ -277,369 +266,14 @@ class ProjetosScreen(ctk.CTkFrame):
         ]
 
         self.table = DataTableV2(
-            self.list_frame,
+            self,
             columns=columns,
             height=400,
             on_row_double_click=self.editar_projeto,
             on_selection_change=self.on_selection_change,
             on_row_right_click=self.show_context_menu
         )
-        self.table.pack(fill="both", expand=True)
-
-        # Editor frame (hidden by default - replaces list when editing)
-        self.editor_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        # Don't pack yet - will be shown when editing
-
-        self._create_editor_widgets()
-
-        # Store references to header elements for hide/show
-        self.header_frame = header_frame
-        self.search_frame = search_frame
-        self.filters_frame = filters_frame
-
-    def _create_editor_widgets(self):
-        """Create the inline editor widgets (full screen layout)"""
-
-        # Configure editor_frame to use grid for better scroll support
-        self.editor_frame.grid_rowconfigure(1, weight=1)
-        self.editor_frame.grid_columnconfigure(0, weight=1)
-
-        # Editor header
-        editor_header = ctk.CTkFrame(self.editor_frame, fg_color="transparent")
-        editor_header.grid(row=0, column=0, sticky="ew", pady=(0, 15))
-
-        # Back button
-        back_btn = ctk.CTkButton(
-            editor_header,
-            text="← Voltar à lista",
-            command=self.fechar_editor,
-            width=140,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color="transparent",
-            hover_color=("#E0E0E0", "#404040"),
-            text_color=("#666666", "#AAAAAA"),
-            anchor="w"
-        )
-        back_btn.pack(side="left")
-
-        self.editor_title = ctk.CTkLabel(
-            editor_header,
-            text="Novo Projeto",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        self.editor_title.pack(side="left", padx=20)
-
-        # Scrollable form area - using grid like orcamento_form.py for better scroll
-        self.editor_scroll = ctk.CTkScrollableFrame(
-            self.editor_frame,
-            fg_color="transparent"
-        )
-        self.editor_scroll.grid(row=1, column=0, sticky="nsew", pady=(0, 10))
-
-        scroll = self.editor_scroll
-
-        # Tipo
-        ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(5, 5))
-        self.tipo_var = ctk.StringVar(value="EMPRESA")
-        tipo_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        tipo_frame.pack(fill="x", pady=(0, 12))
-
-        ctk.CTkRadioButton(tipo_frame, text="Empresa", variable=self.tipo_var, value="EMPRESA", font=ctk.CTkFont(size=12)).pack(side="left", padx=(0, 15))
-        ctk.CTkRadioButton(tipo_frame, text="Pessoal BA", variable=self.tipo_var, value="PESSOAL_BRUNO", font=ctk.CTkFont(size=12)).pack(side="left", padx=(0, 15))
-        ctk.CTkRadioButton(tipo_frame, text="Pessoal RR", variable=self.tipo_var, value="PESSOAL_RAFAEL", font=ctk.CTkFont(size=12)).pack(side="left")
-
-        # Cliente
-        ctk.CTkLabel(scroll, text="Cliente", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(5, 5))
-        clientes = self.manager.obter_clientes()
-        cliente_options = ["(Nenhum)"] + [f"{c.numero} - {c.nome}" for c in clientes]
-        self.cliente_dropdown = ctk.CTkOptionMenu(scroll, values=cliente_options, width=400, height=32)
-        self.cliente_dropdown.pack(anchor="w", pady=(0, 12))
-        self.clientes_map = {f"{c.numero} - {c.nome}": c.id for c in clientes}
-
-        # Descrição
-        ctk.CTkLabel(scroll, text="Descrição *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(5, 5))
-        self.descricao_entry = ctk.CTkTextbox(scroll, height=70)
-        self.descricao_entry.pack(fill="x", pady=(0, 12))
-
-        # Valor
-        ctk.CTkLabel(scroll, text="Valor sem IVA *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(5, 5))
-        self.valor_entry = ctk.CTkEntry(scroll, placeholder_text="0.00", height=32)
-        self.valor_entry.pack(fill="x", pady=(0, 12))
-
-        # Datas
-        datas_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        datas_frame.pack(fill="x", pady=(5, 12))
-        datas_frame.grid_columnconfigure((0, 1), weight=1)
-
-        # Período do projeto (Data início - Data fim)
-        ctk.CTkLabel(datas_frame, text="Período do Projeto", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=0, sticky="w", columnspan=2)
-        from ui.components.date_range_picker_dropdown import DateRangePickerDropdown
-        self.periodo_picker = DateRangePickerDropdown(datas_frame, placeholder="Selecionar período...")
-        self.periodo_picker.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(5, 8))
-
-        # Data faturação
-        ctk.CTkLabel(datas_frame, text="Data Faturação", font=ctk.CTkFont(size=13, weight="bold")).grid(row=2, column=0, sticky="w", padx=(0, 8))
-        from ui.components.date_picker_dropdown import DatePickerDropdown
-        self.data_faturacao_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar...")
-        self.data_faturacao_picker.grid(row=3, column=0, sticky="ew", padx=(0, 8), pady=(5, 8))
-
-        # Data vencimento
-        ctk.CTkLabel(datas_frame, text="Data Vencimento", font=ctk.CTkFont(size=13, weight="bold")).grid(row=2, column=1, sticky="w")
-        self.data_vencimento_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar...")
-        self.data_vencimento_picker.grid(row=3, column=1, sticky="ew", pady=(5, 8))
-
-        # Estado
-        ctk.CTkLabel(scroll, text="Estado *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(5, 5))
-        self.estado_dropdown = ctk.CTkOptionMenu(scroll, values=["Ativo", "Finalizado", "Pago", "Anulado"], height=32)
-        self.estado_dropdown.pack(anchor="w", pady=(0, 12))
-
-        # Prémios (só para projetos EMPRESA)
-        premios_frame = ctk.CTkFrame(scroll, fg_color="transparent")
-        premios_frame.pack(fill="x", pady=(5, 12))
-        premios_frame.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(premios_frame, text="Prémio BA (€)", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self.premio_bruno_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=32)
-        self.premio_bruno_entry.grid(row=1, column=0, sticky="ew", padx=(0, 8), pady=(5, 0))
-
-        ctk.CTkLabel(premios_frame, text="Prémio RR (€)", font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=1, sticky="w")
-        self.premio_rafael_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=32)
-        self.premio_rafael_entry.grid(row=1, column=1, sticky="ew", pady=(5, 0))
-
-        # Nota
-        ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(5, 5))
-        self.nota_entry = ctk.CTkTextbox(scroll, height=60)
-        self.nota_entry.pack(fill="x", pady=(0, 10))
-
-        # Buttons frame (fixed at bottom - footer)
-        btn_frame = ctk.CTkFrame(self.editor_frame, fg_color="transparent")
-        btn_frame.grid(row=2, column=0, sticky="ew", pady=(10, 0))
-
-        self.save_btn = ctk.CTkButton(
-            btn_frame,
-            text="💾 Guardar",
-            command=self.guardar_projeto,
-            width=140,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#4CAF50", "#388E3C"),
-            hover_color=("#66BB6A", "#2E7D32")
-        )
-        self.save_btn.pack(side="left", padx=(0, 10))
-
-        self.cancel_edit_btn = ctk.CTkButton(
-            btn_frame,
-            text="Cancelar",
-            command=self.fechar_editor,
-            width=120,
-            height=40,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#616161", "#424242")
-        )
-        self.cancel_edit_btn.pack(side="left")
-
-    def mostrar_editor(self, projeto=None):
-        """Show the editor (full screen - replaces list)"""
-        self.projeto_editando = projeto
-        self.editor_visible = True
-
-        # Update title
-        if projeto:
-            self.editor_title.configure(text=f"Editar {projeto.numero}")
-        else:
-            self.editor_title.configure(text="Novo Projeto")
-
-        # Clear form
-        self._limpar_formulario()
-
-        # Load data if editing
-        if projeto:
-            self._carregar_dados_projeto(projeto)
-
-        # Hide search, filters and selection (but keep header visible)
-        self.search_frame.pack_forget()
-        self.filters_frame.pack_forget()
-        self.selection_frame.pack_forget()
-
-        # Toggle from list to editor
-        self.list_frame.pack_forget()
-        self.editor_frame.pack(fill="both", expand=True)
-
-    def fechar_editor(self):
-        """Hide editor and show list again"""
-        self.projeto_editando = None
-        self.editor_visible = False
-
-        # Hide editor
-        self.editor_frame.pack_forget()
-
-        # Show search and filters again (before content_area to maintain order)
-        self.search_frame.pack(fill="x", padx=30, pady=(0, 15), before=self.content_area)
-        self.filters_frame.pack(fill="x", padx=30, pady=(0, 20), before=self.content_area)
-
-        # Show list
-        self.list_frame.pack(fill="both", expand=True)
-
-        # Clear selection
-        self.table.clear_selection()
-
-    def _limpar_formulario(self):
-        """Clear all form fields"""
-        self.tipo_var.set("EMPRESA")
-        self.cliente_dropdown.set("(Nenhum)")
-
-        self.descricao_entry.delete("1.0", "end")
-        self.valor_entry.delete(0, "end")
-
-        self.periodo_picker.clear()
-        self.data_faturacao_picker.clear()
-        self.data_vencimento_picker.clear()
-
-        self.estado_dropdown.set("Ativo")
-
-        self.premio_bruno_entry.delete(0, "end")
-        self.premio_rafael_entry.delete(0, "end")
-
-        self.nota_entry.delete("1.0", "end")
-
-    def _carregar_dados_projeto(self, projeto):
-        """Load project data into form"""
-        # Tipo
-        self.tipo_var.set(projeto.tipo.value)
-
-        # Cliente
-        if projeto.cliente:
-            cliente_str = f"{projeto.cliente.numero} - {projeto.cliente.nome}"
-            self.cliente_dropdown.set(cliente_str)
-
-        # Descrição
-        self.descricao_entry.insert("1.0", projeto.descricao or "")
-
-        # Valor
-        self.valor_entry.insert(0, str(projeto.valor_sem_iva))
-
-        # Datas
-        if projeto.data_inicio:
-            self.periodo_picker.set_range(projeto.data_inicio, projeto.data_fim)
-        if projeto.data_faturacao:
-            self.data_faturacao_picker.set_date(projeto.data_faturacao)
-        if projeto.data_vencimento:
-            self.data_vencimento_picker.set_date(projeto.data_vencimento)
-
-        # Estado
-        estado_map = {
-            EstadoProjeto.ATIVO: "Ativo",
-            EstadoProjeto.FINALIZADO: "Finalizado",
-            EstadoProjeto.PAGO: "Pago",
-            EstadoProjeto.ANULADO: "Anulado"
-        }
-        self.estado_dropdown.set(estado_map[projeto.estado])
-
-        # Prémios
-        if projeto.premio_bruno:
-            self.premio_bruno_entry.insert(0, str(projeto.premio_bruno))
-        if projeto.premio_rafael:
-            self.premio_rafael_entry.insert(0, str(projeto.premio_rafael))
-
-        # Nota
-        if projeto.nota:
-            self.nota_entry.insert("1.0", projeto.nota)
-
-    def guardar_projeto(self):
-        """Save project from inline editor"""
-        try:
-            # Get values
-            tipo_str = self.tipo_var.get()
-            tipo = TipoProjeto[tipo_str]
-
-            cliente_str = self.cliente_dropdown.get()
-            cliente_id = self.clientes_map.get(cliente_str) if cliente_str != "(Nenhum)" else None
-
-            descricao = self.descricao_entry.get("1.0", "end-1c").strip()
-            if not descricao:
-                messagebox.showerror("Erro", "Descrição é obrigatória")
-                return
-
-            valor_str = self.valor_entry.get().strip()
-            if not valor_str:
-                messagebox.showerror("Erro", "Valor é obrigatório")
-                return
-            valor = Decimal(valor_str.replace(',', '.'))
-
-            # Datas
-            data_inicio = self.periodo_picker.start_date if self.periodo_picker.get() else None
-            data_fim = self.periodo_picker.end_date if self.periodo_picker.get() else None
-            data_faturacao = self.data_faturacao_picker.get_date() if self.data_faturacao_picker.get() else None
-            data_vencimento = self.data_vencimento_picker.get_date() if self.data_vencimento_picker.get() else None
-
-            # Estado
-            estado_map = {
-                "Ativo": EstadoProjeto.ATIVO,
-                "Finalizado": EstadoProjeto.FINALIZADO,
-                "Pago": EstadoProjeto.PAGO,
-                "Anulado": EstadoProjeto.ANULADO
-            }
-            estado = estado_map[self.estado_dropdown.get()]
-
-            # Prémios
-            premio_bruno = None
-            if self.premio_bruno_entry.get():
-                premio_bruno = Decimal(self.premio_bruno_entry.get().replace(',', '.'))
-
-            premio_rafael = None
-            if self.premio_rafael_entry.get():
-                premio_rafael = Decimal(self.premio_rafael_entry.get().replace(',', '.'))
-
-            # Nota
-            nota = self.nota_entry.get("1.0", "end-1c").strip() or None
-
-            # Create or update
-            if self.projeto_editando:
-                # Update
-                sucesso, erro = self.manager.atualizar(
-                    self.projeto_editando.id,
-                    tipo=tipo,
-                    cliente_id=cliente_id,
-                    descricao=descricao,
-                    valor_sem_iva=valor,
-                    data_inicio=data_inicio,
-                    data_fim=data_fim,
-                    data_faturacao=data_faturacao,
-                    data_vencimento=data_vencimento,
-                    estado=estado,
-                    premio_bruno=premio_bruno,
-                    premio_rafael=premio_rafael,
-                    nota=nota
-                )
-            else:
-                # Create
-                sucesso, projeto, erro = self.manager.criar(
-                    tipo=tipo,
-                    cliente_id=cliente_id,
-                    descricao=descricao,
-                    valor_sem_iva=valor,
-                    data_inicio=data_inicio,
-                    data_fim=data_fim,
-                    data_faturacao=data_faturacao,
-                    data_vencimento=data_vencimento,
-                    estado=estado,
-                    premio_bruno=premio_bruno,
-                    premio_rafael=premio_rafael,
-                    nota=nota
-                )
-
-            if sucesso:
-                self.fechar_editor()
-                self.carregar_projetos()
-            else:
-                messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
-
-        except ValueError as e:
-            messagebox.showerror("Erro", f"Erro nos dados: {e}")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
+        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
     def carregar_projetos(self):
         """Load and display projects (respecting active filters)"""
@@ -676,10 +310,8 @@ class ProjetosScreen(ctk.CTkFrame):
 
             # Check if cliente_nome or descricao match
             if search_lower in cliente_nome.lower():
-                # Add highlight marker to numero to indicate match
                 numero = f"➤ {numero}"
             elif search_lower in descricao.lower():
-                # Add highlight marker to numero to indicate match
                 numero = f"➤ {numero}"
 
         data = {
@@ -687,14 +319,14 @@ class ProjetosScreen(ctk.CTkFrame):
             'numero': numero,
             'tipo': self.tipo_to_label(projeto.tipo),
             'cliente_nome': cliente_nome,
-            'descricao': descricao,  # DataTableV2 will truncate automatically with tooltip
+            'descricao': descricao,
             'valor_sem_iva': float(projeto.valor_sem_iva),
             'estado': self.estado_to_label(projeto.estado),
-            '_bg_color': self.estado_to_color(projeto.estado),  # Color by estado
-            '_projeto': projeto  # Keep reference
+            '_bg_color': self.estado_to_color(projeto.estado),
+            '_projeto': projeto
         }
 
-        # Add strikethrough for cancelled projects (except 'estado' column)
+        # Add strikethrough for cancelled projects
         if projeto.estado == EstadoProjeto.ANULADO:
             data['_strikethrough_except'] = ['estado']
 
@@ -720,31 +352,26 @@ class ProjetosScreen(ctk.CTkFrame):
         return mapping.get(estado, str(estado))
 
     def estado_to_color(self, estado: EstadoProjeto) -> tuple:
-        """Convert estado enum to pastel background color (light, dark) - Opção 3 Agora Inspired"""
+        """Convert estado enum to pastel background color"""
         mapping = {
-            EstadoProjeto.ATIVO: ("#FFF4CC", "#806020"),        # Pastel golden (em curso)
-            EstadoProjeto.FINALIZADO: ("#FFE5D0", "#8B4513"),  # Pastel orange (aguardando)
-            EstadoProjeto.PAGO: ("#E8F5E0", "#4A7028"),         # Pastel green (positivo)
-            EstadoProjeto.ANULADO: ("#808080", "#505050")       # Dark gray
+            EstadoProjeto.ATIVO: ("#FFF4CC", "#806020"),
+            EstadoProjeto.FINALIZADO: ("#FFE5D0", "#8B4513"),
+            EstadoProjeto.PAGO: ("#E8F5E0", "#4A7028"),
+            EstadoProjeto.ANULADO: ("#808080", "#505050")
         }
         return mapping.get(estado, ("#f8f8f8", "#252525"))
 
     def on_search_change(self, *args):
-        """
-        Reactive search handler - called on every keystroke
-        Filters projects dynamically as user types
-        """
+        """Reactive search handler - filters projects as user types"""
         search_text = self.search_var.get()
 
         # Get base projects from search
         if search_text and search_text.strip():
-            # Use backend search method
             projetos = self.manager.filtrar_por_texto(search_text)
         else:
-            # No search text, get all
             projetos = self.manager.listar_todos()
 
-        # Apply existing filters on top of search results
+        # Apply existing filters
         cliente = self.cliente_filter.get()
         tipo = self.tipo_filter.get()
         estado = self.estado_filter.get()
@@ -776,14 +403,14 @@ class ProjetosScreen(ctk.CTkFrame):
             estado_enum = estado_map[estado]
             projetos = [p for p in projetos if p.estado == estado_enum]
 
-        # Filter by prémios (if filtro_premio_socio is set)
+        # Filter by prémios
         if self.filtro_premio_socio:
             if self.filtro_premio_socio == "BA":
                 projetos = [p for p in projetos if p.premio_bruno and p.premio_bruno > 0]
             elif self.filtro_premio_socio == "RR":
                 projetos = [p for p in projetos if p.premio_rafael and p.premio_rafael > 0]
 
-        # Update table with highlighting (pass search_text for visual markers)
+        # Update table
         search_term = search_text.strip() if search_text and search_text.strip() else None
         data = [self.projeto_to_dict(p, search_text=search_term) for p in projetos]
         self.table.set_data(data)
@@ -794,45 +421,25 @@ class ProjetosScreen(ctk.CTkFrame):
         self.search_entry.focus()
 
     def aplicar_filtros(self, *args):
-        """Apply filters (dropdown filters trigger this, search triggers on_search_change)"""
-        # Trigger search which will also apply filters
+        """Apply filters"""
         self.on_search_change()
 
-    def after_save_callback(self):
-        """Callback after saving project - reload data and clear selection"""
-        self.carregar_projetos()
-        self.table.clear_selection()
-
     def abrir_formulario(self, projeto=None):
-        """Open inline editor for create/edit"""
-        self.mostrar_editor(projeto)
+        """Navigate to projeto_form screen for create/edit"""
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            if projeto:
+                main_window.show_screen("projeto_form", projeto_id=projeto.id)
+            else:
+                main_window.show_screen("projeto_form", projeto_id=None)
+        else:
+            messagebox.showerror("Erro", "Não foi possível abrir formulário")
 
     def editar_projeto(self, data: dict):
-        """Edit project"""
+        """Edit project - navigate to form"""
         projeto = data.get('_projeto')
         if projeto:
-            self.mostrar_editor(projeto)
-
-    def apagar_projeto(self, data: dict):
-        """Delete project"""
-        projeto = data.get('_projeto')
-        if not projeto:
-            return
-
-        # Confirm deletion
-        resposta = messagebox.askyesno(
-            "Confirmar",
-            f"Tem certeza que deseja apagar o projeto {projeto.numero}?\n\n"
-            f"⚠️ ATENÇÃO: Isto vai afetar os cálculos de Saldos Pessoais!",
-            icon='warning'
-        )
-
-        if resposta:
-            sucesso, erro = self.manager.apagar(projeto.id)
-            if sucesso:
-                self.carregar_projetos()
-            else:
-                messagebox.showerror("Erro", f"Erro ao apagar projeto: {erro}")
+            self.abrir_formulario(projeto)
 
     def on_selection_change(self, selected_data: list):
         """Handle selection change in table"""
@@ -841,23 +448,18 @@ class ProjetosScreen(ctk.CTkFrame):
         if num_selected > 0:
             # Show selection frame
             self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
-
-            # Show selection bar
             self.cancel_btn.pack(side="left", padx=5)
 
-            # Show count
             count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
             self.count_label.configure(text=count_text)
             self.count_label.pack(side="left", padx=15)
 
             self.report_btn.pack(side="left", padx=5)
 
-            # Calculate and show total
             total = sum(item.get('valor_sem_iva', 0) for item in selected_data)
             self.total_label.configure(text=f"Total: €{total:,.2f}")
             self.total_label.pack(side="left", padx=20)
         else:
-            # Hide entire selection frame when nothing is selected
             self.selection_frame.pack_forget()
 
     def cancelar_selecao(self):
@@ -865,127 +467,70 @@ class ProjetosScreen(ctk.CTkFrame):
         self.table.clear_selection()
 
     def criar_relatorio(self):
-        """Create report for selected projects and navigate to Relatorios tab"""
+        """Create report for selected projects"""
         selected_data = self.table.get_selected_data()
         if len(selected_data) > 0:
-            # Extract project IDs from selected data
             projeto_ids = [item.get('id') for item in selected_data if item.get('id')]
-
-            # Navigate to Relatorios tab
-            # Hierarchy: self (ProjetosScreen) -> master (content_frame) -> master (MainWindow)
             main_window = self.master.master
             if hasattr(main_window, 'show_relatorios'):
                 main_window.show_relatorios(projeto_ids=projeto_ids)
             else:
-                messagebox.showerror(
-                    "Erro",
-                    "Não foi possível navegar para a aba de Relatórios"
-                )
+                messagebox.showerror("Erro", "Não foi possível navegar para Relatórios")
 
     def show_context_menu(self, event, data: dict):
-        """
-        Mostra menu de contexto (right-click) para um projeto
-
-        Args:
-            event: Evento do clique (para posição)
-            data: Dados da linha clicada
-        """
+        """Show context menu for a project"""
         projeto = data.get('_projeto')
         if not projeto:
             return
 
-        # Criar menu
         menu = tk.Menu(self, tearoff=0)
 
-        # ✏️ Editar
-        menu.add_command(
-            label="✏️ Editar",
-            command=lambda: self.editar_projeto(data)
-        )
-
-        # 📋 Duplicar
-        menu.add_command(
-            label="📋 Duplicar",
-            command=lambda: self._duplicar_from_context(projeto)
-        )
+        menu.add_command(label="✏️ Editar", command=lambda: self.editar_projeto(data))
+        menu.add_command(label="📋 Duplicar", command=lambda: self._duplicar_from_context(projeto))
 
         menu.add_separator()
 
-        # Ações dependem do estado atual
+        # State actions
         if projeto.estado == EstadoProjeto.ATIVO:
-            menu.add_command(
-                label="✅ Marcar como Finalizado",
-                command=lambda: self._marcar_finalizado_from_context(projeto)
-            )
+            menu.add_command(label="✅ Marcar como Finalizado", command=lambda: self._marcar_finalizado_from_context(projeto))
         elif projeto.estado == EstadoProjeto.FINALIZADO:
-            menu.add_command(
-                label="✅ Marcar como Pago",
-                command=lambda: self._marcar_pago_from_context(projeto)
-            )
-            menu.add_command(
-                label="⏪ Voltar a Ativo",
-                command=lambda: self._marcar_ativo_from_context(projeto)
-            )
+            menu.add_command(label="✅ Marcar como Pago", command=lambda: self._marcar_pago_from_context(projeto))
+            menu.add_command(label="⏪ Voltar a Ativo", command=lambda: self._marcar_ativo_from_context(projeto))
         elif projeto.estado == EstadoProjeto.PAGO:
-            menu.add_command(
-                label="⏪ Voltar a Finalizado",
-                command=lambda: self._marcar_finalizado_from_context(projeto)
-            )
+            menu.add_command(label="⏪ Voltar a Finalizado", command=lambda: self._marcar_finalizado_from_context(projeto))
 
-        # Anular (se não estiver já anulado)
         if projeto.estado != EstadoProjeto.ANULADO:
             menu.add_separator()
-            menu.add_command(
-                label="⛔ Anular Projeto",
-                command=lambda: self._anular_from_context(projeto)
-            )
+            menu.add_command(label="⛔ Anular Projeto", command=lambda: self._anular_from_context(projeto))
 
         menu.add_separator()
+        menu.add_command(label="🗑️ Apagar", command=lambda: self._apagar_from_context(projeto))
 
-        # 🗑️ Apagar
-        menu.add_command(
-            label="🗑️ Apagar",
-            command=lambda: self._apagar_from_context(projeto)
-        )
-
-        # Mostrar menu na posição do cursor
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
             menu.grab_release()
 
     def _duplicar_from_context(self, projeto):
-        """Duplica projeto a partir do menu de contexto"""
+        """Duplicate project from context menu"""
         try:
-            # Confirmar duplicação
             resposta = messagebox.askyesno(
                 "Duplicar Projeto",
                 f"Duplicar projeto {projeto.numero}?\n\n"
                 f"Cliente: {projeto.cliente.nome if projeto.cliente else '-'}\n"
-                f"Descrição: {projeto.descricao[:50]}...\n\n"
-                f"O novo projeto será criado com estado ATIVO\n"
-                f"e datas resetadas."
+                f"O novo projeto será criado com estado ATIVO."
             )
 
             if not resposta:
                 return
 
-            # Duplicar
             sucesso, novo_projeto, erro = self.manager.duplicar_projeto(projeto.id)
 
             if sucesso:
-                # Recarregar lista
                 self.carregar_projetos()
                 self.table.clear_selection()
-
-                # Abrir novo projeto para edição
-                messagebox.showinfo(
-                    "Sucesso",
-                    f"Projeto duplicado como {novo_projeto.numero}\n\n"
-                    f"Abrindo para edição..."
-                )
-                self.mostrar_editor(novo_projeto)
-
+                messagebox.showinfo("Sucesso", f"Projeto duplicado como {novo_projeto.numero}")
+                self.abrir_formulario(novo_projeto)
             else:
                 messagebox.showerror("Erro", erro or "Erro ao duplicar projeto")
 
@@ -993,134 +538,104 @@ class ProjetosScreen(ctk.CTkFrame):
             messagebox.showerror("Erro", f"Erro ao duplicar projeto: {str(e)}")
 
     def _marcar_finalizado_from_context(self, projeto):
-        """Marca projeto como FINALIZADO a partir do menu de contexto"""
+        """Mark project as FINALIZADO"""
         try:
-            # Confirmar ação
             resposta = messagebox.askyesno(
                 "Marcar como Finalizado",
-                f"Marcar projeto {projeto.numero} como finalizado?\n\n"
-                f"O projeto passa para estado FINALIZADO."
+                f"Marcar projeto {projeto.numero} como finalizado?"
             )
 
             if not resposta:
                 return
 
-            sucesso, erro = self.manager.mudar_estado(
-                projeto.id,
-                EstadoProjeto.FINALIZADO
-            )
+            sucesso, erro = self.manager.mudar_estado(projeto.id, EstadoProjeto.FINALIZADO)
 
             if sucesso:
                 self.carregar_projetos()
                 self.table.clear_selection()
-                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} marcado como finalizado")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao mudar estado")
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao marcar como finalizado: {str(e)}")
+            messagebox.showerror("Erro", f"Erro: {str(e)}")
 
     def _marcar_pago_from_context(self, projeto):
-        """Marca projeto como PAGO a partir do menu de contexto"""
+        """Mark project as PAGO"""
         try:
-            # Confirmar ação
             hoje = date.today()
             resposta = messagebox.askyesno(
                 "Marcar como Pago",
                 f"Marcar projeto {projeto.numero} como pago?\n\n"
-                f"Data de pagamento será definida como hoje ({hoje.strftime('%d/%m/%Y')}).\n\n"
-                f"⚠️ ATENÇÃO: Isto afeta os cálculos de Saldos Pessoais!"
+                f"Data de pagamento: {hoje.strftime('%d/%m/%Y')}"
             )
 
             if not resposta:
                 return
 
-            sucesso, erro = self.manager.mudar_estado(
-                projeto.id,
-                EstadoProjeto.PAGO,
-                data_pagamento=hoje
-            )
+            sucesso, erro = self.manager.mudar_estado(projeto.id, EstadoProjeto.PAGO, data_pagamento=hoje)
 
             if sucesso:
                 self.carregar_projetos()
                 self.table.clear_selection()
-                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} marcado como pago")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao mudar estado")
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao marcar como pago: {str(e)}")
+            messagebox.showerror("Erro", f"Erro: {str(e)}")
 
     def _marcar_ativo_from_context(self, projeto):
-        """Marca projeto como ATIVO a partir do menu de contexto"""
+        """Mark project as ATIVO"""
         try:
-            # Confirmar ação
             resposta = messagebox.askyesno(
                 "Voltar a Ativo",
-                f"Marcar projeto {projeto.numero} como ativo?\n\n"
-                f"O projeto voltará ao estado ATIVO."
+                f"Marcar projeto {projeto.numero} como ativo?"
             )
 
             if not resposta:
                 return
 
-            sucesso, erro = self.manager.mudar_estado(
-                projeto.id,
-                EstadoProjeto.ATIVO
-            )
+            sucesso, erro = self.manager.mudar_estado(projeto.id, EstadoProjeto.ATIVO)
 
             if sucesso:
                 self.carregar_projetos()
                 self.table.clear_selection()
-                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} marcado como ativo")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao mudar estado")
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao marcar como ativo: {str(e)}")
+            messagebox.showerror("Erro", f"Erro: {str(e)}")
 
     def _anular_from_context(self, projeto):
-        """Anula projeto a partir do menu de contexto"""
+        """Cancel project"""
         try:
-            # Confirmar ação
             resposta = messagebox.askyesno(
                 "Anular Projeto",
                 f"Anular projeto {projeto.numero}?\n\n"
-                f"⚠️ ATENÇÃO: Projetos anulados não entram nos cálculos\n"
-                f"de Saldos Pessoais e aparecem riscados na lista.\n\n"
-                f"Esta ação pode ser revertida voltando o projeto a ATIVO.",
+                f"⚠️ Projetos anulados não entram nos cálculos.",
                 icon='warning'
             )
 
             if not resposta:
                 return
 
-            sucesso, erro = self.manager.mudar_estado(
-                projeto.id,
-                EstadoProjeto.ANULADO
-            )
+            sucesso, erro = self.manager.mudar_estado(projeto.id, EstadoProjeto.ANULADO)
 
             if sucesso:
                 self.carregar_projetos()
                 self.table.clear_selection()
-                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} anulado")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao anular projeto")
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao anular projeto: {str(e)}")
+            messagebox.showerror("Erro", f"Erro: {str(e)}")
 
     def _apagar_from_context(self, projeto):
-        """Apaga projeto a partir do menu de contexto"""
+        """Delete project"""
         try:
-            # Confirmar exclusão
             resposta = messagebox.askyesno(
                 "Confirmar Exclusão",
-                f"Tem certeza que deseja apagar o projeto {projeto.numero}?\n\n"
-                f"Cliente: {projeto.cliente.nome if projeto.cliente else '-'}\n"
-                f"Descrição: {projeto.descricao[:50]}...\n\n"
-                f"⚠️ ATENÇÃO: Esta ação não pode ser desfeita!\n"
-                f"⚠️ Isto vai afetar os cálculos de Saldos Pessoais!",
+                f"Apagar projeto {projeto.numero}?\n\n"
+                f"⚠️ Esta ação não pode ser desfeita!",
                 icon='warning'
             )
 
@@ -1132,9 +647,8 @@ class ProjetosScreen(ctk.CTkFrame):
             if sucesso:
                 self.carregar_projetos()
                 self.table.clear_selection()
-                messagebox.showinfo("Sucesso", f"Projeto {projeto.numero} apagado com sucesso")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao apagar projeto")
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao apagar projeto: {str(e)}")
+            messagebox.showerror("Erro", f"Erro: {str(e)}")
