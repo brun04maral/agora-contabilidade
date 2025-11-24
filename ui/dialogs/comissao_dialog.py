@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-ComissaoDialog - Dialog para criar/editar comissões EMPRESA (LADO EMPRESA)
-"""
 import customtkinter as ctk
+from utils.base_dialogs import BaseDialogMedium
 from tkinter import messagebox
 from sqlalchemy.orm import Session
 from logic.orcamentos import OrcamentoManager
@@ -12,47 +9,7 @@ from database.models.orcamento import OrcamentoReparticao
 from decimal import Decimal
 from typing import Optional, Dict
 
-
-def _setup_mousewheel(widget, scroll_command):
-    """
-    Configura scroll com mouse wheel apenas quando cursor está sobre o widget.
-    Resolve propagação de scroll para widgets de fundo.
-    """
-    def on_enter(event):
-        widget.bind_all('<MouseWheel>', scroll_command)
-        widget.bind_all('<Button-4>', lambda e: scroll_command(e, -1))
-        widget.bind_all('<Button-5>', lambda e: scroll_command(e, 1))
-    
-    def on_leave(event):
-        widget.unbind_all('<MouseWheel>')
-        widget.unbind_all('<Button-4>')
-        widget.unbind_all('<Button-5>')
-    
-    widget.bind('<Enter>', on_enter)
-    widget.bind('<Leave>', on_leave)
-
-
-class ComissaoDialog(ctk.CTkToplevel):
-    """
-    Dialog para adicionar/editar comissão no LADO EMPRESA
-
-    Campos:
-    - Beneficiário (dropdown obrigatório: BA, RR, AGORA, FREELANCER_[id], FORNECEDOR_[id])
-    - Descrição (obrigatório)
-    - Percentagem (decimal 0-100, 3 casas decimais, obrigatório)
-    - Base de Cálculo (readonly, display only)
-    - Total Calculado (readonly, auto-calculado)
-
-    Cálculo:
-    total = base_calculo × (percentagem / 100)
-    Suporta 3 casas decimais (ex: 5.125%)
-
-    Beneficiários:
-    - Sócios: BA, RR, AGORA
-    - Freelancers: FREELANCER_{id} (apenas ativos)
-    - Fornecedores: FORNECEDOR_{id} (apenas ativos)
-    """
-
+class ComissaoDialog(BaseDialogMedium):
     def __init__(
         self,
         parent,
@@ -61,208 +18,86 @@ class ComissaoDialog(ctk.CTkToplevel):
         base_calculo: Decimal,
         item_id: Optional[int] = None
     ):
-        super().__init__(parent)
-
+        super().__init__(parent, title="Adicionar Comissão" if not item_id else "Editar Comissão", width=500, height=450)
         self.db_session = db_session
         self.manager = OrcamentoManager(db_session)
         self.freelancers_manager = FreelancersManager(db_session)
         self.fornecedores_manager = FornecedoresManager(db_session)
         self.orcamento_id = orcamento_id
-        self.base_calculo = base_calculo  # Base para cálculo da comissão
+        self.base_calculo = base_calculo
         self.item_id = item_id
         self.success = False
 
-        # Mapeamento beneficiários: {id: display_name}
         self.beneficiarios_map: Dict[str, str] = {}
         self._carregar_beneficiarios()
 
-        # Configurar janela
-        self.title("Adicionar Comissão" if not item_id else "Editar Comissão")
-        self.geometry("500x520")
-        self.resizable(False, False)
-
-        # Modal
-        self.transient(parent)
-        self.grab_set()
-
-        # Criar widgets
         self.create_widgets()
-
-        # Se edição, carregar dados
         if item_id:
             self.carregar_dados()
-
-        # Calcular total inicial
         self.atualizar_total()
 
     def _carregar_beneficiarios(self):
-        """Carrega beneficiários de múltiplas fontes"""
-        # Sócios fixos
         self.beneficiarios_map["BA"] = "BA - Bruno Amaral"
         self.beneficiarios_map["RR"] = "RR - Rafael Ribeiro"
         self.beneficiarios_map["AGORA"] = "AGORA - Empresa"
-
-        # Freelancers ativos
         try:
             freelancers = self.freelancers_manager.listar_ativos()
             for freelancer in freelancers:
                 key = f"FREELANCER_{freelancer.id}"
                 self.beneficiarios_map[key] = f"{key} - {freelancer.nome}"
         except:
-            pass  # Tabela pode não existir ainda
-
-        # Fornecedores ativos
+            pass
         try:
             fornecedores = self.fornecedores_manager.listar_ativos()
             for fornecedor in fornecedores:
                 key = f"FORNECEDOR_{fornecedor.id}"
                 self.beneficiarios_map[key] = f"{key} - {fornecedor.nome}"
         except:
-            pass  # Tabela pode não existir ainda
+            pass
 
     def create_widgets(self):
-        """Cria widgets do dialog"""
-        # Container principal
-        main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        main = self.main_frame
 
-        # Configurar scroll fix
-        _setup_mousewheel(main_frame, self._on_mousewheel)
+        ctk.CTkLabel(main, text="Comissão - LADO EMPRESA", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(0, 20))
+        ctk.CTkLabel(main, text="Beneficiário: *", font=ctk.CTkFont(size=13, weight="bold"), text_color="#f44336").pack(anchor="w", pady=(0, 5))
 
-        # Título
-        title_label = ctk.CTkLabel(
-            main_frame,
-            text="Comissão - LADO EMPRESA",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        title_label.pack(pady=(0, 20))
-
-        # Beneficiário (OBRIGATÓRIO)
-        ctk.CTkLabel(
-            main_frame,
-            text="Beneficiário: *",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#f44336"
-        ).pack(anchor="w", pady=(0, 5))
-
-        # Valores do dropdown: display_name (mas guardamos id interno)
         dropdown_values = list(self.beneficiarios_map.values())
-
         self.beneficiario_var = ctk.StringVar(value="")
         self.beneficiario_dropdown = ctk.CTkOptionMenu(
-            main_frame,
+            main,
             variable=self.beneficiario_var,
             values=dropdown_values if dropdown_values else ["BA - Bruno Amaral", "RR - Rafael Ribeiro", "AGORA - Empresa"],
             height=35
         )
         self.beneficiario_dropdown.pack(fill="x", pady=(0, 15))
 
-        # Descrição
-        ctk.CTkLabel(
-            main_frame,
-            text="Descrição:",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.descricao_entry = ctk.CTkEntry(
-            main_frame,
-            placeholder_text="Ex: Comissão de Venda",
-            height=35
-        )
+        ctk.CTkLabel(main, text="Descrição:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.descricao_entry = ctk.CTkEntry(main, placeholder_text="Ex: Comissão de Venda", height=35)
         self.descricao_entry.pack(fill="x", pady=(0, 15))
 
-        # Percentagem (3 casas decimais)
-        ctk.CTkLabel(
-            main_frame,
-            text="Percentagem (%):",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.percentagem_entry = ctk.CTkEntry(
-            main_frame,
-            placeholder_text="Ex: 5.125 (suporta 3 decimais)",
-            height=35
-        )
+        ctk.CTkLabel(main, text="Percentagem (%):", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.percentagem_entry = ctk.CTkEntry(main, placeholder_text="Ex: 5.125 (suporta 3 decimais)", height=35)
         self.percentagem_entry.pack(fill="x", pady=(0, 15))
         self.percentagem_entry.bind("<KeyRelease>", lambda e: self.atualizar_total())
 
-        # Base de cálculo (display only)
-        ctk.CTkLabel(
-            main_frame,
-            text="Base de Cálculo:",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.base_label = ctk.CTkLabel(
-            main_frame,
-            text=f"€{float(self.base_calculo):.2f}",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#e3f2fd", "#1e3a5f"),
-            corner_radius=6,
-            padx=15,
-            pady=10,
-            anchor="w"
-        )
+        ctk.CTkLabel(main, text="Base de Cálculo:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.base_label = ctk.CTkLabel(main, text=f"€{float(self.base_calculo):.2f}", font=ctk.CTkFont(size=14, weight="bold"),
+                                       fg_color=("#e3f2fd", "#1e3a5f"), corner_radius=6, padx=15, pady=10, anchor="w")
         self.base_label.pack(fill="x", pady=(0, 15))
 
-        # Total Calculado (readonly, auto-calculado)
-        ctk.CTkLabel(
-            main_frame,
-            text="Total Calculado:",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.total_label = ctk.CTkLabel(
-            main_frame,
-            text="€0.00",
-            font=ctk.CTkFont(size=18, weight="bold"),
-            fg_color=("#e8f5e0", "#2b4a2b"),
-            corner_radius=6,
-            padx=15,
-            pady=10,
-            anchor="w"
-        )
+        ctk.CTkLabel(main, text="Total Calculado:", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(0, 5))
+        self.total_label = ctk.CTkLabel(main, text="€0.00", font=ctk.CTkFont(size=18, weight="bold"),
+                                        fg_color=("#e8f5e0", "#2b4a2b"), corner_radius=6, padx=15, pady=10, anchor="w")
         self.total_label.pack(fill="x", pady=(0, 20))
 
-        # Botões
-        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame = ctk.CTkFrame(main, fg_color="transparent")
         btn_frame.pack(fill="x")
-
-        btn_cancelar = ctk.CTkButton(
-            btn_frame,
-            text="Cancelar",
-            command=self.destroy,
-            width=120,
-            fg_color="gray",
-            hover_color="#5a5a5a"
-        )
-        btn_cancelar.pack(side="left", padx=(0, 10))
-
-        btn_gravar = ctk.CTkButton(
-            btn_frame,
-            text="Gravar",
-            command=self.gravar,
-            width=120,
-            fg_color="#9C27B0",
-            hover_color="#7B1FA2"
-        )
-        btn_gravar.pack(side="right")
-
-    def _on_mousewheel(self, event, direction=None):
-        """
-        Handler de scroll - impede propagação para widgets de fundo
-        """
-        # Para dialogs sem scrollable frame, apenas bloqueia propagação
-        return "break"
+        ctk.CTkButton(btn_frame, text="Cancelar", command=self.destroy, width=120, fg_color="gray", hover_color="#5a5a5a").pack(side="left", padx=(0, 10))
+        ctk.CTkButton(btn_frame, text="Gravar", command=self.gravar, width=120, fg_color="#9C27B0", hover_color="#7B1FA2").pack(side="right")
 
     def atualizar_total(self):
-        """
-        Atualiza total calculado em tempo real
-        Fórmula: total = base_calculo × (percentagem / 100)
-        """
         try:
             percentagem_str = self.percentagem_entry.get().strip()
-
             if percentagem_str:
                 percentagem = Decimal(percentagem_str.replace(',', '.'))
                 total = self.base_calculo * (percentagem / Decimal('100'))
@@ -273,59 +108,39 @@ class ComissaoDialog(ctk.CTkToplevel):
             self.total_label.configure(text="€0.00")
 
     def carregar_dados(self):
-        """Carrega dados do item para edição"""
-        item = self.db_session.query(OrcamentoReparticao).filter(
-            OrcamentoReparticao.id == self.item_id
-        ).first()
-
+        item = self.db_session.query(OrcamentoReparticao).filter(OrcamentoReparticao.id == self.item_id).first()
         if not item:
             messagebox.showerror("Erro", "Item não encontrado!")
             self.destroy()
             return
-
-        # Preencher campos
         if item.beneficiario:
-            # Encontrar display name correspondente ao id
             display_name = self.beneficiarios_map.get(item.beneficiario, item.beneficiario)
             self.beneficiario_var.set(display_name)
-
         if item.descricao:
             self.descricao_entry.delete(0, "end")
             self.descricao_entry.insert(0, item.descricao)
-
         if item.percentagem:
             self.percentagem_entry.delete(0, "end")
-            # Mostrar com 3 casas decimais se tiver
             self.percentagem_entry.insert(0, str(float(item.percentagem)))
-
         if item.base_calculo:
             self.base_calculo = item.base_calculo
             self.base_label.configure(text=f"€{float(self.base_calculo):.2f}")
-
-        # Atualizar total
         self.atualizar_total()
 
     def gravar(self):
-        """Grava a comissão"""
         try:
-            # Validar beneficiário (OBRIGATÓRIO)
             beneficiario_display = self.beneficiario_var.get()
             if not beneficiario_display:
                 messagebox.showwarning("Aviso", "Beneficiário é obrigatório!")
                 return
-
-            # Extrair ID do beneficiário (reverse lookup no mapa)
             beneficiario_id = None
             for key, value in self.beneficiarios_map.items():
                 if value == beneficiario_display:
                     beneficiario_id = key
                     break
-
             if not beneficiario_id:
                 messagebox.showerror("Erro", "Beneficiário inválido!")
                 return
-
-            # Validar beneficiário (freelancer/fornecedor deve existir e estar ativo)
             if beneficiario_id.startswith("FREELANCER_"):
                 freelancer_id = int(beneficiario_id.replace("FREELANCER_", ""))
                 freelancer = self.freelancers_manager.buscar_por_id(freelancer_id)
@@ -338,55 +153,41 @@ class ComissaoDialog(ctk.CTkToplevel):
                 if not fornecedor:
                     messagebox.showerror("Erro", "Fornecedor não encontrado!")
                     return
-
-            # Validar descrição
             descricao = self.descricao_entry.get().strip()
             if not descricao:
                 messagebox.showwarning("Aviso", "Descrição é obrigatória!")
                 return
-
-            # Validar percentagem
             percentagem_str = self.percentagem_entry.get().strip()
             if not percentagem_str:
                 messagebox.showwarning("Aviso", "Percentagem é obrigatória!")
                 return
-
-            # Converter valores
             try:
                 percentagem = Decimal(percentagem_str.replace(',', '.'))
             except ValueError:
                 messagebox.showerror("Erro", "Percentagem inválida!")
                 return
-
-            # Validar valores
             if percentagem <= 0:
                 messagebox.showwarning("Aviso", "Percentagem deve ser maior que 0!")
                 return
-
             if percentagem > 100:
                 messagebox.showwarning("Aviso", "Percentagem não pode ser maior que 100%!")
                 return
-
-            # Gravar no banco (usar beneficiario_id)
             if self.item_id:
-                # Editar existente
                 sucesso, item, erro = self.manager.atualizar_reparticao(
                     reparticao_id=self.item_id,
                     tipo='comissao',
-                    beneficiario=beneficiario_id,  # Usar ID (BA, FREELANCER_2, FORNECEDOR_5, etc)
+                    beneficiario=beneficiario_id,
                     descricao=descricao,
                     percentagem=percentagem,
                     base_calculo=self.base_calculo
                 )
-                if sucesso:
-                    item.total = item.calcular_total()
-                    self.db_session.commit()
+                if not sucesso:
+                    messagebox.showerror("Erro", f"Erro ao gravar: {erro}")
             else:
-                # Criar novo
                 reparticao = OrcamentoReparticao(
                     orcamento_id=self.orcamento_id,
                     tipo='comissao',
-                    beneficiario=beneficiario_id,  # Usar ID (BA, FREELANCER_2, FORNECEDOR_5, etc)
+                    beneficiario=beneficiario_id,
                     descricao=descricao,
                     percentagem=percentagem,
                     base_calculo=self.base_calculo,
@@ -396,14 +197,9 @@ class ComissaoDialog(ctk.CTkToplevel):
                 self.db_session.add(reparticao)
                 self.db_session.commit()
                 sucesso = True
-
             if sucesso:
                 self.success = True
-                messagebox.showinfo("Sucesso", "Comissão gravada com sucesso!")
                 self.destroy()
-            else:
-                messagebox.showerror("Erro", f"Erro ao gravar: {erro if 'erro' in locals() else 'Desconhecido'}")
-
         except Exception as e:
             self.db_session.rollback()
             messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
