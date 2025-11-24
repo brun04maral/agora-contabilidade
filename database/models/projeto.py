@@ -12,8 +12,7 @@ import enum
 class TipoProjeto(enum.Enum):
     """Enum para tipo de projeto - CRÍTICO para cálculo de saldos!"""
     EMPRESA = "EMPRESA"  # Projeto da empresa (não entra nos INs pessoais, só prémios)
-    PESSOAL_BRUNO = "PESSOAL_BRUNO"  # Projeto freelance do Bruno faturado pela empresa
-    PESSOAL_RAFAEL = "PESSOAL_RAFAEL"  # Projeto freelance do Rafael faturado pela empresa
+    PESSOAL = "PESSOAL"  # Projeto freelance do sócio (owner) faturado pela empresa
 
 
 class EstadoProjeto(enum.Enum):
@@ -28,9 +27,9 @@ class Projeto(Base):
     """
     Modelo para armazenar projetos da Agora Media
 
-    IMPORTANTE: O campo 'tipo' determina se o valor entra nos saldos pessoais:
-    - EMPRESA: Apenas prémios entram nos saldos
-    - PESSOAL_BRUNO/PESSOAL_RAFAEL: Valor total entra nos INs do sócio
+    IMPORTANTE: O campo 'tipo' + 'owner' determina se o valor entra nos saldos pessoais:
+    - EMPRESA: Apenas prémios entram nos saldos (owner indica quem angariou)
+    - PESSOAL: Valor total entra nos INs do owner (BA ou RR)
     """
     __tablename__ = 'projetos'
 

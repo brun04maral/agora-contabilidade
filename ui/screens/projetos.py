@@ -319,7 +319,7 @@ class ProjetosScreen(ctk.CTkFrame):
         data = {
             'id': projeto.id,
             'numero': numero,
-            'tipo': self.tipo_to_label(projeto.tipo),
+            'tipo': self.tipo_to_label(projeto),
             'cliente_nome': cliente_nome,
             'descricao': descricao,
             'valor_sem_iva': float(projeto.valor_sem_iva),
@@ -334,14 +334,13 @@ class ProjetosScreen(ctk.CTkFrame):
 
         return data
 
-    def tipo_to_label(self, tipo: TipoProjeto) -> str:
-        """Convert tipo enum to label"""
-        mapping = {
-            TipoProjeto.EMPRESA: "Empresa",
-            TipoProjeto.PESSOAL_BRUNO: "Pessoal BA",
-            TipoProjeto.PESSOAL_RAFAEL: "Pessoal RR"
-        }
-        return mapping.get(tipo, str(tipo))
+    def tipo_to_label(self, projeto) -> str:
+        """Convert tipo enum to label based on tipo + owner"""
+        if projeto.tipo == TipoProjeto.EMPRESA:
+            return "Empresa"
+        elif projeto.tipo == TipoProjeto.PESSOAL:
+            return f"Pessoal {projeto.owner}"
+        return str(projeto.tipo)
 
     def estado_to_label(self, estado: EstadoProjeto) -> str:
         """Convert estado enum to label"""
@@ -386,13 +385,12 @@ class ProjetosScreen(ctk.CTkFrame):
 
         # Filter by tipo
         if tipo != "Todos":
-            tipo_map = {
-                "Empresa": TipoProjeto.EMPRESA,
-                "Pessoal BA": TipoProjeto.PESSOAL_BRUNO,
-                "Pessoal RR": TipoProjeto.PESSOAL_RAFAEL
-            }
-            tipo_enum = tipo_map[tipo]
-            projetos = [p for p in projetos if p.tipo == tipo_enum]
+            if tipo == "Empresa":
+                projetos = [p for p in projetos if p.tipo == TipoProjeto.EMPRESA]
+            elif tipo == "Pessoal BA":
+                projetos = [p for p in projetos if p.tipo == TipoProjeto.PESSOAL and p.owner == 'BA']
+            elif tipo == "Pessoal RR":
+                projetos = [p for p in projetos if p.tipo == TipoProjeto.PESSOAL and p.owner == 'RR']
 
         # Filter by estado
         if estado != "Todos":

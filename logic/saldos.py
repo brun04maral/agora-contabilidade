@@ -132,8 +132,8 @@ class SaldosCalculator:
                 'sugestao_boletim': 11766.55  # valor para zerar o saldo
             }
         """
-        # Determinar tipo de projeto pessoal
-        tipo_projeto = TipoProjeto.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoProjeto.PESSOAL_RAFAEL
+        # Determinar owner e tipo de despesa pessoal
+        owner = 'BA' if socio == Socio.BRUNO else 'RR'
         tipo_despesa = TipoDespesa.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoDespesa.PESSOAL_RAFAEL
 
         # === CALCULAR INs (Entradas) ===
@@ -142,7 +142,8 @@ class SaldosCalculator:
         query_projetos_pessoais = self.db_session.query(
             func.sum(Projeto.valor_sem_iva)
         ).filter(
-            Projeto.tipo == tipo_projeto,
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == owner,
             Projeto.estado == EstadoProjeto.PAGO
         )
 
@@ -314,20 +315,13 @@ class SaldosCalculator:
 
         # === PROJETOS PESSOAIS NÃO FATURADOS (Projetos FINALIZADOS) ===
         # Projetos pessoais concluídos aguardando pagamento
-        if socio == Socio.BRUNO:
-            query_pessoais_nao_faturados = self.db_session.query(
-                func.sum(Projeto.valor_sem_iva)
-            ).filter(
-                Projeto.estado == EstadoProjeto.FINALIZADO,
-                Projeto.tipo == TipoProjeto.PESSOAL_BRUNO
-            )
-        else:
-            query_pessoais_nao_faturados = self.db_session.query(
-                func.sum(Projeto.valor_sem_iva)
-            ).filter(
-                Projeto.estado == EstadoProjeto.FINALIZADO,
-                Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL
-            )
+        query_pessoais_nao_faturados = self.db_session.query(
+            func.sum(Projeto.valor_sem_iva)
+        ).filter(
+            Projeto.estado == EstadoProjeto.FINALIZADO,
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == owner
+        )
 
         if data_inicio:
             query_pessoais_nao_faturados = query_pessoais_nao_faturados.filter(
@@ -433,12 +427,13 @@ class SaldosCalculator:
         Returns:
             Dict com listas detalhadas de projetos, despesas e boletins
         """
-        tipo_projeto = TipoProjeto.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoProjeto.PESSOAL_RAFAEL
+        owner = 'BA' if socio == Socio.BRUNO else 'RR'
         tipo_despesa = TipoDespesa.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoDespesa.PESSOAL_RAFAEL
 
         # Projetos pessoais
         projetos_pessoais = self.db_session.query(Projeto).filter(
-            Projeto.tipo == tipo_projeto,
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == owner,
             Projeto.estado == EstadoProjeto.PAGO
         ).all()
 

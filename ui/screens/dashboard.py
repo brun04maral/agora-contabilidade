@@ -403,9 +403,10 @@ class DashboardScreen(ctk.CTkFrame):
         self.rafael_card.value_label.configure(text=f"€ {saldo_rafael['saldo_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
         # === FILTROS PROJETOS POR SÓCIO ===
-        # Pessoais BA: tipo=PESSOAL_BRUNO, estado=PAGO
+        # Pessoais BA: tipo=PESSOAL, owner='BA', estado=PAGO
         pessoais_ba = self.db_session.query(func.count(Projeto.id)).filter(
-            Projeto.tipo == TipoProjeto.PESSOAL_BRUNO,
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == 'BA',
             Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
 
@@ -416,9 +417,10 @@ class DashboardScreen(ctk.CTkFrame):
             Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
 
-        # Pessoais RR: tipo=PESSOAL_RAFAEL, estado=PAGO
+        # Pessoais RR: tipo=PESSOAL, owner='RR', estado=PAGO
         pessoais_rr = self.db_session.query(func.count(Projeto.id)).filter(
-            Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL,
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == 'RR',
             Projeto.estado == EstadoProjeto.PAGO
         ).scalar() or 0
 
