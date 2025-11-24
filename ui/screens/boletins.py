@@ -7,7 +7,6 @@ import tkinter as tk
 from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import date
-from decimal import Decimal
 import tkinter.messagebox as messagebox
 
 from logic.boletins import BoletinsManager
@@ -284,9 +283,15 @@ class BoletinsScreen(ctk.CTkFrame):
         self.table.clear_selection()
 
     def abrir_formulario(self, boletim=None):
-        """Open form editor (new BoletimFormScreen)"""
-        from ui.screens.boletim_form import BoletimFormScreen
-        dialog = BoletimFormScreen(self, self.db_session, boletim=boletim, callback=self.after_save_callback)
+        """Navigate to boletim_form screen for create/edit"""
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            if boletim:
+                main_window.show_screen("boletim_form", boletim_id=boletim.id)
+            else:
+                main_window.show_screen("boletim_form", boletim_id=None)
+        else:
+            messagebox.showerror("Erro", "Não foi possível abrir formulário")
 
     def editar_boletim(self, data: dict):
         """Edit boletim (triggered by double-click)"""
