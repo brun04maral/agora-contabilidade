@@ -11,6 +11,15 @@ ARQUITETURA DE TEMPLATES:
 1. BaseScreen (este ficheiro) - Template para screens de listagem
 2. BaseForm (futuro) - Template para forms de criação/edição
 
+VISUAL REFINEMENTS (24/11/2025):
+---------------------------------
+- Barra de pesquisa compacta (só ícone lupa)
+- Filtros horizontais com seleção múltipla
+- Chips/badges para filtros ativos
+- Tabela expandida (ocupa máximo espaço)
+- Barra de ações flutuante contextual
+- Espaçamentos otimizados
+
 COMO USAR:
 ----------
 ```python
@@ -39,7 +48,7 @@ class ProjectsScreen(BaseScreen):
 
     def get_filters_config(self):
         return [
-            {'key': 'estado', 'label': 'Estado:', 'values': ['Todos', 'Ativo', 'Pago']},
+            {'key': 'estado', 'label': 'Estado', 'values': ['Todos', 'Ativo', 'Pago']},
             ...
         ]
 
@@ -75,7 +84,7 @@ Data: 2025-11-24
 
 import customtkinter as ctk
 import tkinter as tk
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, Set
 from sqlalchemy.orm import Session
 from abc import abstractmethod
 
@@ -89,10 +98,11 @@ class BaseScreen(ctk.CTkFrame):
 
     Fornece layout consistente com:
     - Header (título + ícone + botões)
-    - Barra de pesquisa
-    - Filtros configuráveis
-    - Barra de seleção dinâmica
-    - DataTableV2
+    - Barra de pesquisa compacta
+    - Filtros horizontais com multi-seleção
+    - Chips de filtros ativos
+    - Barra de seleção dinâmica (contextual)
+    - DataTableV2 expandida
     - Context menu
 
     Subclasses devem implementar os métodos abstratos e podem
@@ -125,6 +135,8 @@ class BaseScreen(ctk.CTkFrame):
 
         # Estado interno
         self._filter_widgets = {}
+        self._filter_selections = {}  # {key: Set[value]}
+        self._filter_chips = {}  # {key: {value: chip_widget}}
         self._selection_buttons = []
 
         # Configure frame
@@ -142,17 +154,17 @@ class BaseScreen(ctk.CTkFrame):
         # Header
         self._create_header()
 
-        # Search bar
-        if self.config.get('show_search', True):
-            self._create_search_bar()
+        # Search + Filters toolbar (compacto)
+        if self.config.get('show_search', True) or self.get_filters_config():
+            self._create_toolbar()
 
-        # Filters
-        self._create_filters()
+        # Chips area (filtros ativos)
+        self._create_chips_area()
 
         # Selection bar (hidden by default)
         self._create_selection_bar()
 
-        # Table
+        # Table (expandida)
         self._create_table()
 
         # Footer slot
@@ -162,7 +174,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_header(self):
         """Cria o header com título e botões."""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
+        header_frame.pack(fill="x", padx=30, pady=(20, 15))
 
         # Título com ícone
         title = self.config.get('title', 'Screen')
@@ -214,8 +226,8 @@ class BaseScreen(ctk.CTkFrame):
             text="🔄 Atualizar",
             command=self.refresh_data,
             width=120,
-            height=35,
-            font=ctk.CTkFont(size=13)
+            height=32,
+            font=ctk.CTkFont(size=12)
         )
         refresh_btn.pack(side="left", padx=5)
 
@@ -226,15 +238,15 @@ class BaseScreen(ctk.CTkFrame):
                 text=btn_config.get('text', ''),
                 command=btn_config.get('command'),
                 width=btn_config.get('width', 140),
-                height=35,
-                font=ctk.CTkFont(size=13),
+                height=32,
+                font=ctk.CTkFont(size=12),
                 fg_color=btn_config.get('fg_color'),
                 hover_color=btn_config.get('hover_color')
             )
             btn.pack(side="left", padx=5)
 
         # Botão Novo
-        new_text = self.config.get('new_button_text', '➕ Novo')
+        new_text = self.config.get('new_button_text', 'Novo')
         new_color = self.config.get('new_button_color', ('#4CAF50', '#388E3C'))
         new_hover = self.config.get('new_button_hover', ('#66BB6A', '#2E7D32'))
 
@@ -242,111 +254,190 @@ class BaseScreen(ctk.CTkFrame):
             btn_frame,
             text=f"➕ {new_text}",
             command=self.on_new_item,
-            width=150,
-            height=35,
-            font=ctk.CTkFont(size=13),
+            width=140,
+            height=32,
+            font=ctk.CTkFont(size=12, weight="bold"),
             fg_color=new_color,
             hover_color=new_hover
         )
         new_btn.pack(side="left", padx=5)
 
-    def _create_search_bar(self):
-        """Cria a barra de pesquisa."""
-        search_frame = ctk.CTkFrame(self, fg_color="transparent")
-        search_frame.pack(fill="x", padx=30, pady=(0, 15))
+    def _create_toolbar(self):
+        """Cria toolbar compacto com pesquisa e filtros horizontais."""
+        toolbar = ctk.CTkFrame(self, fg_color="transparent")
+        toolbar.pack(fill="x", padx=30, pady=(0, 10))
 
-        ctk.CTkLabel(
-            search_frame,
-            text="🔍 Pesquisar:",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(side="left", padx=(0, 10))
-
-        # Search entry com StringVar reactivo
-        self.search_var = ctk.StringVar()
-        self.search_var.trace_add("write", self._on_search_change)
-
-        placeholder = self.config.get('search_placeholder', 'Digite para pesquisar...')
-        self.search_entry = ctk.CTkEntry(
-            search_frame,
-            textvariable=self.search_var,
-            placeholder_text=placeholder,
-            width=500,
-            height=35,
-            font=ctk.CTkFont(size=13)
-        )
-        self.search_entry.pack(side="left", padx=(0, 10))
-
-        # Botão limpar
-        clear_btn = ctk.CTkButton(
-            search_frame,
-            text="✖",
-            command=self._clear_search,
-            width=35,
-            height=35,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#E0E0E0", "#404040"),
-            hover_color=("#BDBDBD", "#606060")
-        )
-        clear_btn.pack(side="left")
-
-    def _create_filters(self):
-        """Cria os filtros configuráveis."""
-        filters_config = self.get_filters_config()
-        if not filters_config:
-            return
-
-        filters_frame = ctk.CTkFrame(self, fg_color="transparent")
-        filters_frame.pack(fill="x", padx=30, pady=(0, 20))
-
-        for filter_cfg in filters_config:
-            key = filter_cfg['key']
-            label = filter_cfg.get('label', f'{key}:')
-            values = filter_cfg.get('values', ['Todos'])
-            width = filter_cfg.get('width', 150)
-
-            # Label
-            ctk.CTkLabel(
-                filters_frame,
-                text=label,
-                font=ctk.CTkFont(size=13)
-            ).pack(side="left", padx=(0, 10))
-
-            # OptionMenu
-            option_menu = ctk.CTkOptionMenu(
-                filters_frame,
-                values=values,
-                command=lambda v, k=key: self._on_filter_change(k, v),
-                width=width
+        # Search (compacta, só ícone lupa)
+        if self.config.get('show_search', True):
+            # Ícone lupa
+            search_icon = ctk.CTkLabel(
+                toolbar,
+                text="🔍",
+                font=ctk.CTkFont(size=16)
             )
-            option_menu.pack(side="left", padx=(0, 20))
+            search_icon.pack(side="left", padx=(0, 8))
 
-            self._filter_widgets[key] = option_menu
+            # Search entry (compacto)
+            self.search_var = ctk.StringVar()
+            self.search_var.trace_add("write", self._on_search_change)
+
+            placeholder = self.config.get('search_placeholder', 'Digite para pesquisar...')
+            self.search_entry = ctk.CTkEntry(
+                toolbar,
+                textvariable=self.search_var,
+                placeholder_text=placeholder,
+                width=320,
+                height=32,
+                font=ctk.CTkFont(size=12)
+            )
+            self.search_entry.pack(side="left", padx=(0, 5))
+
+            # Botão limpar (só ícone)
+            clear_btn = ctk.CTkButton(
+                toolbar,
+                text="✖",
+                command=self._clear_search,
+                width=32,
+                height=32,
+                font=ctk.CTkFont(size=12),
+                fg_color="transparent",
+                hover_color=("#E0E0E0", "#404040"),
+                border_width=0
+            )
+            clear_btn.pack(side="left", padx=(0, 20))
+
+        # Filtros (horizontais, à direita)
+        filters_config = self.get_filters_config()
+        if filters_config:
+            for filter_cfg in filters_config:
+                key = filter_cfg['key']
+                label = filter_cfg.get('label', key.capitalize())
+                values = filter_cfg.get('values', ['Todos'])
+                width = filter_cfg.get('width', 120)
+
+                # Dropdown compacto
+                option_menu = ctk.CTkOptionMenu(
+                    toolbar,
+                    values=values,
+                    command=lambda v, k=key: self._on_filter_select(k, v),
+                    width=width,
+                    height=32,
+                    font=ctk.CTkFont(size=12),
+                    dropdown_font=ctk.CTkFont(size=11)
+                )
+                option_menu.set(label)  # Placeholder
+                option_menu.pack(side="left", padx=5)
+
+                self._filter_widgets[key] = option_menu
+                self._filter_selections[key] = set()
 
         # Slot para filtros adicionais
-        self.filters_slot = ctk.CTkFrame(filters_frame, fg_color="transparent")
-        self.filters_slot.pack(side="left")
+        self.filters_slot = ctk.CTkFrame(toolbar, fg_color="transparent")
+        self.filters_slot.pack(side="left", padx=10)
+
+    def _create_chips_area(self):
+        """Cria área para chips de filtros ativos."""
+        self.chips_frame = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        self.chips_frame.pack(fill="x", padx=30, pady=(0, 10))
+        self.chips_frame.pack_forget()  # Hidden by default
+
+    def _add_filter_chip(self, filter_key: str, value: str):
+        """Adiciona chip para filtro ativo."""
+        if filter_key not in self._filter_chips:
+            self._filter_chips[filter_key] = {}
+
+        if value in self._filter_chips[filter_key]:
+            return  # Already exists
+
+        # Show chips frame
+        self.chips_frame.pack(fill="x", padx=30, pady=(0, 10))
+
+        # Create chip
+        chip = ctk.CTkFrame(
+            self.chips_frame,
+            fg_color=("#E3F2FD", "#1E3A5F"),
+            corner_radius=16,
+            height=28
+        )
+        chip.pack(side="left", padx=3, pady=2)
+
+        # Chip label
+        chip_label = ctk.CTkLabel(
+            chip,
+            text=value,
+            font=ctk.CTkFont(size=11),
+            text_color=("#1976D2", "#90CAF9")
+        )
+        chip_label.pack(side="left", padx=(10, 5))
+
+        # Remove button
+        remove_btn = ctk.CTkButton(
+            chip,
+            text="✕",
+            width=20,
+            height=20,
+            font=ctk.CTkFont(size=10),
+            fg_color="transparent",
+            hover_color=("#BBDEFB", "#2C5282"),
+            command=lambda: self._remove_filter_chip(filter_key, value)
+        )
+        remove_btn.pack(side="left", padx=(0, 5))
+
+        self._filter_chips[filter_key][value] = chip
+
+    def _remove_filter_chip(self, filter_key: str, value: str):
+        """Remove chip de filtro ativo."""
+        if filter_key in self._filter_chips and value in self._filter_chips[filter_key]:
+            chip = self._filter_chips[filter_key][value]
+            chip.destroy()
+            del self._filter_chips[filter_key][value]
+
+            # Remove from selections
+            if filter_key in self._filter_selections:
+                self._filter_selections[filter_key].discard(value)
+
+            # Hide chips frame if empty
+            has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
+            if not has_chips:
+                self.chips_frame.pack_forget()
+
+            # Refresh data
+            self.refresh_data()
+
+    def _clear_all_chips(self):
+        """Limpa todos os chips de filtros."""
+        for filter_key in list(self._filter_chips.keys()):
+            for value in list(self._filter_chips[filter_key].keys()):
+                self._remove_filter_chip(filter_key, value)
 
     def _create_selection_bar(self):
-        """Cria a barra de seleção (oculta por padrão)."""
-        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+        """Cria a barra de seleção flutuante (oculta por padrão)."""
+        self.selection_frame = ctk.CTkFrame(
+            self,
+            fg_color=("#F5F5F5", "#2B2B2B"),
+            corner_radius=8,
+            border_width=1,
+            border_color=("#E0E0E0", "#404040")
+        )
 
         # Botão limpar seleção
         self.cancel_btn = ctk.CTkButton(
             self.selection_frame,
-            text="🗑️ Limpar Seleção",
+            text="✖",
             command=self._clear_selection,
-            width=150,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#9E9E9E", "#757575")
+            width=32,
+            height=32,
+            font=ctk.CTkFont(size=12),
+            fg_color="transparent",
+            hover_color=("#E0E0E0", "#404040"),
+            border_width=0
         )
 
         # Label contagem
         self.count_label = ctk.CTkLabel(
             self.selection_frame,
             text="0 selecionados",
-            font=ctk.CTkFont(size=13)
+            font=ctk.CTkFont(size=12, weight="bold")
         )
 
         # Botões de ação da seleção
@@ -355,9 +446,9 @@ class BaseScreen(ctk.CTkFrame):
                 self.selection_frame,
                 text=action_cfg.get('text', ''),
                 command=action_cfg.get('command'),
-                width=action_cfg.get('width', 160),
-                height=35,
-                font=ctk.CTkFont(size=13),
+                width=action_cfg.get('width', 120),
+                height=32,
+                font=ctk.CTkFont(size=11),
                 fg_color=action_cfg.get('fg_color'),
                 hover_color=action_cfg.get('hover_color')
             )
@@ -367,23 +458,23 @@ class BaseScreen(ctk.CTkFrame):
         self.total_label = ctk.CTkLabel(
             self.selection_frame,
             text="Total: €0,00",
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=12, weight="bold")
         )
 
     def _create_table(self):
-        """Cria a tabela de dados."""
+        """Cria a tabela de dados (expandida)."""
         columns = self.get_table_columns()
-        height = self.config.get('table_height', 400)
 
         self.table = DataTableV2(
             self,
             columns=columns,
-            height=height,
+            height=400,  # Will expand with fill="both"
             on_row_double_click=self._on_row_double_click,
             on_selection_change=self._on_selection_change,
             on_row_right_click=self._on_row_right_click
         )
-        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        # Expandir tabela para ocupar máximo espaço
+        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 10))
 
     # ========== Event Handlers ==========
 
@@ -396,9 +487,33 @@ class BaseScreen(ctk.CTkFrame):
         self.search_var.set("")
         self.search_entry.focus()
 
-    def _on_filter_change(self, key: str, value: str):
-        """Handler para mudança em filtro."""
+    def _on_filter_select(self, key: str, value: str):
+        """Handler para seleção em filtro."""
+        # Se é "Todos" ou já selecionado, ignora
+        if value == "Todos" or value in [f.get('label', f['key']) for f in self.get_filters_config() if f['key'] == key]:
+            return
+
+        # Adicionar à seleção
+        if key not in self._filter_selections:
+            self._filter_selections[key] = set()
+
+        self._filter_selections[key].add(value)
+
+        # Adicionar chip
+        self._add_filter_chip(key, value)
+
+        # Reset dropdown
+        filter_cfg = next((f for f in self.get_filters_config() if f['key'] == key), None)
+        if filter_cfg:
+            label = filter_cfg.get('label', key.capitalize())
+            self._filter_widgets[key].set(label)
+
+        # Refresh data
         self.refresh_data()
+
+    def _on_filter_change(self, key: str, value: str):
+        """Handler para mudança em filtro (backward compatibility)."""
+        self._on_filter_select(key, value)
 
     def _apply_initial_filters(self):
         """Aplica filtros iniciais."""
@@ -411,22 +526,23 @@ class BaseScreen(ctk.CTkFrame):
         num_selected = len(selected_data)
 
         if num_selected > 0:
-            # Mostrar barra de seleção
+            # Mostrar barra de seleção (flutuante)
             self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
-            self.cancel_btn.pack(side="left", padx=5)
+            self.cancel_btn.pack(side="left", padx=8)
 
             count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
             self.count_label.configure(text=count_text)
-            self.count_label.pack(side="left", padx=15)
+            self.count_label.pack(side="left", padx=12)
 
             # Mostrar botões de ação
             for btn in self._selection_buttons:
-                btn.pack(side="left", padx=5)
+                btn.pack(side="left", padx=4)
 
             # Calcular e mostrar total
             total = self.calculate_selection_total(selected_data)
-            self.total_label.configure(text=f"Total: €{total:,.2f}")
-            self.total_label.pack(side="left", padx=20)
+            if total > 0:
+                self.total_label.configure(text=f"Total: €{total:,.2f}")
+                self.total_label.pack(side="left", padx=12)
         else:
             self.selection_frame.pack_forget()
 
@@ -474,7 +590,7 @@ class BaseScreen(ctk.CTkFrame):
             if search_text:
                 items = self.filter_by_search(items, search_text)
 
-        # Aplicar filtros
+        # Aplicar filtros de chips
         filters = self.get_current_filters()
         items = self.apply_filters(items, filters)
 
@@ -482,11 +598,12 @@ class BaseScreen(ctk.CTkFrame):
         data = [self.item_to_dict(item) for item in items]
         self.table.set_data(data)
 
-    def get_current_filters(self) -> Dict[str, str]:
-        """Retorna valores atuais dos filtros."""
+    def get_current_filters(self) -> Dict[str, List[str]]:
+        """Retorna filtros ativos (multi-seleção)."""
         return {
-            key: widget.get()
-            for key, widget in self._filter_widgets.items()
+            key: list(selections)
+            for key, selections in self._filter_selections.items()
+            if len(selections) > 0
         }
 
     def get_selected_data(self) -> list:
@@ -537,7 +654,7 @@ class BaseScreen(ctk.CTkFrame):
 
         Returns:
             Lista de dicts com configuração dos filtros:
-            [{'key': 'estado', 'label': 'Estado:', 'values': ['Todos', 'Ativo'], 'width': 150}, ...]
+            [{'key': 'estado', 'label': 'Estado', 'values': ['Todos', 'Ativo'], 'width': 150}, ...]
         """
         return []
 
@@ -587,13 +704,13 @@ class BaseScreen(ctk.CTkFrame):
         """
         return items
 
-    def apply_filters(self, items: list, filters: Dict[str, str]) -> list:
+    def apply_filters(self, items: list, filters: Dict[str, List[str]]) -> list:
         """
         Aplica filtros aos items.
 
         Args:
             items: Lista de objetos
-            filters: Dict com valores dos filtros {key: value}
+            filters: Dict com listas de valores {key: [value1, value2, ...]}
 
         Returns:
             Lista filtrada

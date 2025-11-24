@@ -10,6 +10,53 @@
 
 Estratégia de componentização para UI consistente e manutenível através de templates base reutilizáveis.
 
+### ✨ Refinamentos Visuais (24/11/2025)
+
+**Melhorias aplicadas ao BaseScreen:**
+
+1. **Barra de Pesquisa Compacta**
+   - Só ícone lupa 🔍 (sem texto "Pesquisar:")
+   - Width reduzida: 320px
+   - Botão limpar sem moldura (só ícone ✖)
+   - Height: 32px (antes 35px)
+
+2. **Filtros Horizontais com Multi-Seleção**
+   - Alinhados à direita da pesquisa
+   - Seleção múltipla (OR logic)
+   - Dropdowns compactos (height: 32px)
+   - Placeholder mostra label do filtro
+
+3. **Chips/Badges de Filtros Ativos**
+   - Material Design style
+   - Cores: azul (#E3F2FD light / #1E3A5F dark)
+   - Botão ✕ para remover individual
+   - Área oculta quando sem filtros
+
+4. **Tabela Expandida**
+   - `fill="both"` + `expand=True`
+   - Ocupa máximo espaço vertical disponível
+   - Padding reduzido (30px)
+
+5. **Barra de Ações Contextual**
+   - Só aparece quando há seleção
+   - Visual flutuante com borda
+   - Botões compactos (height: 32px)
+   - Mostra contagem + total
+
+6. **Espaçamentos Otimizados**
+   - Header: pady=(20, 15) (antes 30, 20)
+   - Botões: height=32px (antes 35px)
+   - Toolbar: pady=(0, 10)
+   - Menos espaço vazio = mais conteúdo visível
+
+**API Changes:**
+- `apply_filters(items, filters: Dict[str, List[str]])` - Aceita listas para multi-seleção
+- `get_current_filters()` → `Dict[str, List[str]]` - Retorna listas
+
+**Backward Compatibility:**
+- ProjectsScreen atualizado para nova API
+- Método `_on_filter_change()` mantido para compatibilidade
+
 ### Fase 1: BaseScreen (Implementado)
 
 **Objetivo:** Template base para screens de listagem principal.

@@ -181,40 +181,51 @@ class ProjetosScreen(BaseScreen):
     def filter_by_search(self, items: list, search_text: str) -> list:
         return self.manager.filtrar_por_texto(search_text)
 
-    def apply_filters(self, items: list, filters: Dict[str, str]) -> list:
+    def apply_filters(self, items: list, filters: Dict[str, List[str]]) -> list:
         projetos = items
 
-        # Filtrar por cliente
-        cliente = filters.get('cliente', 'Todos')
-        if cliente != "Todos":
-            cliente_obj = next((c for c in self.clientes_list if c.nome == cliente), None)
-            if cliente_obj:
-                projetos = [p for p in projetos if p.cliente_id == cliente_obj.id]
+        # Filtrar por cliente (multi-seleção)
+        clientes_selecionados = filters.get('cliente', [])
+        if clientes_selecionados:
+            cliente_ids = []
+            for cliente_nome in clientes_selecionados:
+                cliente_obj = next((c for c in self.clientes_list if c.nome == cliente_nome), None)
+                if cliente_obj:
+                    cliente_ids.append(cliente_obj.id)
 
-        # Filtrar por tipo
-        tipo = filters.get('tipo', 'Todos')
-        if tipo != "Todos":
-            if tipo == "Empresa BA":
-                projetos = [p for p in projetos if p.tipo == TipoProjeto.EMPRESA and p.owner == 'BA']
-            elif tipo == "Empresa RR":
-                projetos = [p for p in projetos if p.tipo == TipoProjeto.EMPRESA and p.owner == 'RR']
-            elif tipo == "Pessoal BA":
-                projetos = [p for p in projetos if p.tipo == TipoProjeto.PESSOAL and p.owner == 'BA']
-            elif tipo == "Pessoal RR":
-                projetos = [p for p in projetos if p.tipo == TipoProjeto.PESSOAL and p.owner == 'RR']
+            if cliente_ids:
+                projetos = [p for p in projetos if p.cliente_id in cliente_ids]
 
-        # Filtrar por estado
-        estado = filters.get('estado', 'Todos')
-        if estado != "Todos":
+        # Filtrar por tipo (multi-seleção)
+        tipos_selecionados = filters.get('tipo', [])
+        if tipos_selecionados:
+            tipo_matches = []
+            for tipo in tipos_selecionados:
+                if tipo == "Empresa BA":
+                    tipo_matches.extend([p for p in projetos if p.tipo == TipoProjeto.EMPRESA and p.owner == 'BA'])
+                elif tipo == "Empresa RR":
+                    tipo_matches.extend([p for p in projetos if p.tipo == TipoProjeto.EMPRESA and p.owner == 'RR'])
+                elif tipo == "Pessoal BA":
+                    tipo_matches.extend([p for p in projetos if p.tipo == TipoProjeto.PESSOAL and p.owner == 'BA'])
+                elif tipo == "Pessoal RR":
+                    tipo_matches.extend([p for p in projetos if p.tipo == TipoProjeto.PESSOAL and p.owner == 'RR'])
+
+            # Remove duplicates preserving order
+            seen = set()
+            projetos = [p for p in tipo_matches if not (p.id in seen or seen.add(p.id))]
+
+        # Filtrar por estado (multi-seleção)
+        estados_selecionados = filters.get('estado', [])
+        if estados_selecionados:
             estado_map = {
                 "Ativo": EstadoProjeto.ATIVO,
                 "Finalizado": EstadoProjeto.FINALIZADO,
                 "Pago": EstadoProjeto.PAGO,
                 "Anulado": EstadoProjeto.ANULADO
             }
-            estado_enum = estado_map.get(estado)
-            if estado_enum:
-                projetos = [p for p in projetos if p.estado == estado_enum]
+            estado_enums = [estado_map[e] for e in estados_selecionados if e in estado_map]
+            if estado_enums:
+                projetos = [p for p in projetos if p.estado in estado_enums]
 
         # Filtros especiais (passados no constructor)
         if self.filtro_premio_socio:
