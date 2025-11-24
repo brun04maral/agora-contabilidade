@@ -21,7 +21,7 @@ class ProjetosScreen(ctk.CTkFrame):
     Tela de gestão de Projetos (lista com navegação para edição)
     """
 
-    def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None, filtro_premio_socio=None, **kwargs):
+    def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None, filtro_premio_socio=None, filtro_owner=None, **kwargs):
         """
         Initialize projetos screen
 
@@ -32,6 +32,7 @@ class ProjetosScreen(ctk.CTkFrame):
             filtro_cliente_id: Optional initial cliente filter (cliente ID)
             filtro_tipo: Optional initial tipo filter ("Pessoal BA", "Pessoal RR", "Empresa")
             filtro_premio_socio: Optional filter for projects with prizes ("BA" or "RR")
+            filtro_owner: Optional owner filter ("BA" or "RR") for empresa projects
         """
         super().__init__(parent, **kwargs)
 
@@ -42,6 +43,7 @@ class ProjetosScreen(ctk.CTkFrame):
         self.filtro_inicial_cliente_id = filtro_cliente_id
         self.filtro_inicial_tipo = filtro_tipo
         self.filtro_premio_socio = filtro_premio_socio  # "BA" or "RR"
+        self.filtro_owner = filtro_owner  # "BA" or "RR" for empresa projects
 
         # Configure
         self.configure(fg_color="transparent")
@@ -50,7 +52,7 @@ class ProjetosScreen(ctk.CTkFrame):
         self.create_widgets()
 
         # Apply initial filter if provided
-        if self.filtro_inicial_estado or self.filtro_inicial_cliente_id or self.filtro_inicial_tipo or self.filtro_premio_socio:
+        if self.filtro_inicial_estado or self.filtro_inicial_cliente_id or self.filtro_inicial_tipo or self.filtro_premio_socio or self.filtro_owner:
             if self.filtro_inicial_estado:
                 self.estado_filter.set(self.filtro_inicial_estado)
             if self.filtro_inicial_cliente_id:
@@ -409,6 +411,10 @@ class ProjetosScreen(ctk.CTkFrame):
                 projetos = [p for p in projetos if p.premio_bruno and p.premio_bruno > 0]
             elif self.filtro_premio_socio == "RR":
                 projetos = [p for p in projetos if p.premio_rafael and p.premio_rafael > 0]
+
+        # Filter by owner (empresa projects only)
+        if self.filtro_owner:
+            projetos = [p for p in projetos if p.owner == self.filtro_owner and p.tipo == TipoProjeto.EMPRESA]
 
         # Update table
         search_term = search_text.strip() if search_text and search_text.strip() else None

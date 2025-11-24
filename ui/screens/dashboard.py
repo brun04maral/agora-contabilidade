@@ -154,6 +154,42 @@ class DashboardScreen(ctk.CTkFrame):
         )
         self.rafael_card.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
+        # === FILTROS PROJETOS POR SÓCIO ===
+        filtros_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        filtros_container.pack(fill="x", pady=(0, 35))
+
+        # Coluna BA
+        ba_column = ctk.CTkFrame(filtros_container, fg_color="transparent")
+        ba_column.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        self.pessoais_ba_card = self.create_stat_card(
+            ba_column, "Pessoais BA", "0", "#7CB342",  # Verde
+            on_click=lambda: self.navigate_to_projetos_filtrado("Pessoal BA")
+        )
+        self.pessoais_ba_card.pack(fill="x", pady=(0, 10))
+
+        self.empresa_ba_card = self.create_stat_card(
+            ba_column, "Empresa BA", "0", "#EF6C00",  # Laranja
+            on_click=lambda: self.navigate_to_projetos_owner("BA")
+        )
+        self.empresa_ba_card.pack(fill="x")
+
+        # Coluna RR
+        rr_column = ctk.CTkFrame(filtros_container, fg_color="transparent")
+        rr_column.pack(side="left", fill="both", expand=True, padx=(10, 0))
+
+        self.pessoais_rr_card = self.create_stat_card(
+            rr_column, "Pessoais RR", "0", "#7CB342",  # Verde
+            on_click=lambda: self.navigate_to_projetos_filtrado("Pessoal RR")
+        )
+        self.pessoais_rr_card.pack(fill="x", pady=(0, 10))
+
+        self.empresa_rr_card = self.create_stat_card(
+            rr_column, "Empresa RR", "0", "#EF6C00",  # Laranja
+            on_click=lambda: self.navigate_to_projetos_owner("RR")
+        )
+        self.empresa_rr_card.pack(fill="x")
+
         # === PROJETOS ===
         projetos_title = self.create_section_title(scroll_frame, "Projetos", PROJETOS)
         projetos_title.pack(anchor="w", pady=(15, 15))
@@ -346,6 +382,16 @@ class DashboardScreen(ctk.CTkFrame):
         if self.main_window:
             self.main_window.show_saldos()
 
+    def navigate_to_projetos_filtrado(self, tipo):
+        """Navigate to projetos screen filtered by tipo"""
+        if self.main_window:
+            self.main_window.show_projetos(filtro_tipo=tipo)
+
+    def navigate_to_projetos_owner(self, owner):
+        """Navigate to projetos screen filtered by owner (empresa projects only)"""
+        if self.main_window:
+            self.main_window.show_projetos(filtro_owner=owner)
+
     def carregar_dados(self):
         """Load and display all dashboard data"""
 
@@ -355,6 +401,38 @@ class DashboardScreen(ctk.CTkFrame):
 
         self.bruno_card.value_label.configure(text=f"€ {saldo_bruno['saldo_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         self.rafael_card.value_label.configure(text=f"€ {saldo_rafael['saldo_total']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+        # === FILTROS PROJETOS POR SÓCIO ===
+        # Pessoais BA: tipo=PESSOAL_BRUNO, estado=PAGO
+        pessoais_ba = self.db_session.query(func.count(Projeto.id)).filter(
+            Projeto.tipo == TipoProjeto.PESSOAL_BRUNO,
+            Projeto.estado == EstadoProjeto.PAGO
+        ).scalar() or 0
+
+        # Empresa BA: owner='BA', tipo!=PESSOAL_BRUNO, estado=PAGO
+        empresa_ba = self.db_session.query(func.count(Projeto.id)).filter(
+            Projeto.owner == 'BA',
+            Projeto.tipo != TipoProjeto.PESSOAL_BRUNO,
+            Projeto.estado == EstadoProjeto.PAGO
+        ).scalar() or 0
+
+        # Pessoais RR: tipo=PESSOAL_RAFAEL, estado=PAGO
+        pessoais_rr = self.db_session.query(func.count(Projeto.id)).filter(
+            Projeto.tipo == TipoProjeto.PESSOAL_RAFAEL,
+            Projeto.estado == EstadoProjeto.PAGO
+        ).scalar() or 0
+
+        # Empresa RR: owner='RR', tipo!=PESSOAL_RAFAEL, estado=PAGO
+        empresa_rr = self.db_session.query(func.count(Projeto.id)).filter(
+            Projeto.owner == 'RR',
+            Projeto.tipo != TipoProjeto.PESSOAL_RAFAEL,
+            Projeto.estado == EstadoProjeto.PAGO
+        ).scalar() or 0
+
+        self.pessoais_ba_card.value_label.configure(text=str(pessoais_ba))
+        self.empresa_ba_card.value_label.configure(text=str(empresa_ba))
+        self.pessoais_rr_card.value_label.configure(text=str(pessoais_rr))
+        self.empresa_rr_card.value_label.configure(text=str(empresa_rr))
 
         # === PROJETOS ===
         total_projetos = self.db_session.query(func.count(Projeto.id)).scalar() or 0
