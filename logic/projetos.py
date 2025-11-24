@@ -83,6 +83,7 @@ class ProjetosManager:
         cliente_id: Optional[int],
         descricao: str,
         valor_sem_iva: Decimal,
+        owner: str = 'BA',
         data_inicio: Optional[date] = None,
         data_fim: Optional[date] = None,
         data_faturacao: Optional[date] = None,
@@ -131,6 +132,7 @@ class ProjetosManager:
             projeto = Projeto(
                 numero=numero,
                 tipo=tipo,
+                owner=owner,
                 cliente_id=cliente_id,
                 descricao=descricao,
                 valor_sem_iva=valor_sem_iva,
@@ -158,6 +160,7 @@ class ProjetosManager:
         self,
         projeto_id: int,
         tipo: Optional[TipoProjeto] = None,
+        owner: Optional[str] = None,
         cliente_id: Optional[int] = None,
         descricao: Optional[str] = None,
         valor_sem_iva: Optional[Decimal] = None,
@@ -188,6 +191,8 @@ class ProjetosManager:
             # Atualizar apenas campos fornecidos
             if tipo is not None:
                 projeto.tipo = tipo
+            if owner is not None:
+                projeto.owner = owner
             if cliente_id is not None:
                 projeto.cliente_id = cliente_id
             if descricao is not None:

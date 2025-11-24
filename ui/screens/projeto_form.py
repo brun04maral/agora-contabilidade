@@ -102,17 +102,22 @@ class ProjetoFormScreen(ctk.CTkFrame):
         fields_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 20))
         fields_frame.grid_columnconfigure(0, weight=1)
 
+        # Tipo e Responsável (mesma linha)
+        tipo_owner_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
+        tipo_owner_frame.grid(row=0, column=0, sticky="ew", pady=(0, 18))
+        tipo_owner_frame.grid_columnconfigure((0, 1), weight=1)
+
         # Tipo
-        ctk.CTkLabel(fields_frame, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", pady=(0, 8))
+        ctk.CTkLabel(tipo_owner_frame, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).grid(
+            row=0, column=0, sticky="w", padx=(0, 12))
+        self.tipo_dropdown = ctk.CTkOptionMenu(tipo_owner_frame, values=["Empresa", "Pessoal"], width=200, height=35)
+        self.tipo_dropdown.grid(row=1, column=0, sticky="w", padx=(0, 12), pady=(8, 0))
 
-        self.tipo_var = ctk.StringVar(value="EMPRESA")
-        tipo_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        tipo_frame.grid(row=1, column=0, sticky="w", pady=(0, 18))
-
-        ctk.CTkRadioButton(tipo_frame, text="Empresa", variable=self.tipo_var, value="EMPRESA").pack(side="left", padx=(0, 20))
-        ctk.CTkRadioButton(tipo_frame, text="Pessoal BA", variable=self.tipo_var, value="PESSOAL_BRUNO").pack(side="left", padx=(0, 20))
-        ctk.CTkRadioButton(tipo_frame, text="Pessoal RR", variable=self.tipo_var, value="PESSOAL_RAFAEL").pack(side="left")
+        # Responsável
+        ctk.CTkLabel(tipo_owner_frame, text="Responsável *", font=ctk.CTkFont(size=14, weight="bold")).grid(
+            row=0, column=1, sticky="w")
+        self.owner_dropdown = ctk.CTkOptionMenu(tipo_owner_frame, values=["BA", "RR"], width=100, height=35)
+        self.owner_dropdown.grid(row=1, column=1, sticky="w", pady=(8, 0))
 
         # Cliente
         ctk.CTkLabel(fields_frame, text="Cliente", font=ctk.CTkFont(size=14, weight="bold")).grid(
@@ -228,8 +233,10 @@ class ProjetoFormScreen(ctk.CTkFrame):
         # Atualizar título
         self.title_label.configure(text=f"Editar Projeto {self.projeto.numero}")
 
-        # Tipo
-        self.tipo_var.set(self.projeto.tipo.value)
+        # Tipo e Owner
+        tipo_label = "Empresa" if self.projeto.tipo == TipoProjeto.EMPRESA else "Pessoal"
+        self.tipo_dropdown.set(tipo_label)
+        self.owner_dropdown.set(self.projeto.owner)
 
         # Cliente
         if self.projeto.cliente:
@@ -273,8 +280,9 @@ class ProjetoFormScreen(ctk.CTkFrame):
         """Guarda o projeto"""
         try:
             # Get values
-            tipo_str = self.tipo_var.get()
-            tipo = TipoProjeto[tipo_str]
+            tipo_str = self.tipo_dropdown.get()
+            tipo = TipoProjeto.EMPRESA if tipo_str == "Empresa" else TipoProjeto.PESSOAL
+            owner = self.owner_dropdown.get()
 
             cliente_str = self.cliente_dropdown.get()
             cliente_id = self.clientes_map.get(cliente_str) if cliente_str != "(Nenhum)" else None
@@ -323,6 +331,7 @@ class ProjetoFormScreen(ctk.CTkFrame):
                 sucesso, erro = self.manager.atualizar(
                     self.projeto_id,
                     tipo=tipo,
+                    owner=owner,
                     cliente_id=cliente_id,
                     descricao=descricao,
                     valor_sem_iva=valor,
@@ -339,6 +348,7 @@ class ProjetoFormScreen(ctk.CTkFrame):
                 # Create
                 sucesso, projeto, erro = self.manager.criar(
                     tipo=tipo,
+                    owner=owner,
                     cliente_id=cliente_id,
                     descricao=descricao,
                     valor_sem_iva=valor,
