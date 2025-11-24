@@ -446,11 +446,25 @@ class SaldosScreen(ctk.CTkFrame):
             text_color=("#4CAF50", "#66BB6A") if saldo_atual_bruno >= 0 else ("#F44336", "#E57373")
         )
 
-        # Saldo projetado (se houver prémios não faturados)
-        if saldo_bruno.get('saldo_projetado'):
-            diferenca = saldo_bruno['saldo_projetado'] - saldo_atual_bruno
+        # Calcular saldo projetado
+        total_ins_projetado_ba = (
+            saldo_bruno['ins']['projetos_pessoais'] +
+            saldo_bruno['ins']['premios'] +
+            saldo_bruno['ins'].get('pessoais_nao_faturados', 0) +
+            saldo_bruno['ins'].get('premios_nao_faturados', 0)
+        )
+        total_outs_projetado_ba = (
+            saldo_bruno['outs']['despesas_fixas'] +
+            saldo_bruno['outs']['boletins_pagos'] +
+            saldo_bruno['outs']['despesas_pessoais'] +
+            saldo_bruno['outs'].get('boletins_pendentes', 0)
+        )
+        saldo_projetado_ba = total_ins_projetado_ba - total_outs_projetado_ba
+        diferenca_ba = saldo_projetado_ba - saldo_atual_bruno
+
+        if diferenca_ba != 0:
             self.bruno_saldo_projetado_label.configure(
-                text=f"Projetado (INs + OUTs): €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
+                text=f"Projetado: €{saldo_projetado_ba:,.2f} (+€{diferenca_ba:,.2f})"
             )
         else:
             self.bruno_saldo_projetado_label.configure(text="")
@@ -602,11 +616,25 @@ class SaldosScreen(ctk.CTkFrame):
             text_color=("#4CAF50", "#66BB6A") if saldo_atual_rafael >= 0 else ("#F44336", "#E57373")
         )
 
-        # Saldo projetado (se houver prémios não faturados)
-        if saldo_rafael.get('saldo_projetado'):
-            diferenca_rr = saldo_rafael['saldo_projetado'] - saldo_atual_rafael
+        # Calcular saldo projetado
+        total_ins_projetado_rr = (
+            saldo_rafael['ins']['projetos_pessoais'] +
+            saldo_rafael['ins']['premios'] +
+            saldo_rafael['ins'].get('pessoais_nao_faturados', 0) +
+            saldo_rafael['ins'].get('premios_nao_faturados', 0)
+        )
+        total_outs_projetado_rr = (
+            saldo_rafael['outs']['despesas_fixas'] +
+            saldo_rafael['outs']['boletins_pagos'] +
+            saldo_rafael['outs']['despesas_pessoais'] +
+            saldo_rafael['outs'].get('boletins_pendentes', 0)
+        )
+        saldo_projetado_rr = total_ins_projetado_rr - total_outs_projetado_rr
+        diferenca_rr = saldo_projetado_rr - saldo_atual_rafael
+
+        if diferenca_rr != 0:
             self.rafael_saldo_projetado_label.configure(
-                text=f"Projetado (INs + OUTs): €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
+                text=f"Projetado: €{saldo_projetado_rr:,.2f} (+€{diferenca_rr:,.2f})"
             )
         else:
             self.rafael_saldo_projetado_label.configure(text="")
