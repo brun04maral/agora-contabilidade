@@ -300,9 +300,13 @@ class ProjetosScreen(ctk.CTkFrame):
     def _create_editor_widgets(self):
         """Create the inline editor widgets (full screen layout)"""
 
+        # Configure editor_frame to use grid for better scroll support
+        self.editor_frame.grid_rowconfigure(1, weight=1)
+        self.editor_frame.grid_columnconfigure(0, weight=1)
+
         # Editor header
         editor_header = ctk.CTkFrame(self.editor_frame, fg_color="transparent")
-        editor_header.pack(fill="x", pady=(0, 15))
+        editor_header.grid(row=0, column=0, sticky="ew", pady=(0, 15))
 
         # Back button
         back_btn = ctk.CTkButton(
@@ -326,15 +330,12 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         self.editor_title.pack(side="left", padx=20)
 
-        # Scrollable form area
+        # Scrollable form area - using grid like orcamento_form.py for better scroll
         self.editor_scroll = ctk.CTkScrollableFrame(
             self.editor_frame,
             fg_color="transparent"
         )
-        self.editor_scroll.pack(fill="both", expand=True, pady=(0, 10))
-
-        # Enable trackpad/mouse scroll by ensuring focus
-        self.editor_scroll.bind("<Enter>", lambda e: self.editor_scroll.focus_set())
+        self.editor_scroll.grid(row=1, column=0, sticky="nsew", pady=(0, 10))
 
         scroll = self.editor_scroll
 
@@ -413,7 +414,7 @@ class ProjetosScreen(ctk.CTkFrame):
 
         # Buttons frame (fixed at bottom - footer)
         btn_frame = ctk.CTkFrame(self.editor_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(10, 0))
+        btn_frame.grid(row=2, column=0, sticky="ew", pady=(10, 0))
 
         self.save_btn = ctk.CTkButton(
             btn_frame,
@@ -465,9 +466,6 @@ class ProjetosScreen(ctk.CTkFrame):
         # Toggle from list to editor
         self.list_frame.pack_forget()
         self.editor_frame.pack(fill="both", expand=True)
-
-        # Focus on editor scroll for trackpad support
-        self.editor_scroll.focus_set()
 
     def fechar_editor(self):
         """Hide editor and show list again"""
