@@ -44,6 +44,19 @@ owner = Column(String(2), nullable=False, default='BA')  # 'BA' ou 'RR'
 
 ---
 
+### 🔧 Script de Importação Atualizado
+
+**Commit:** `991983e`
+
+**Alterações em scripts/import_from_excel.py:**
+- `mapear_tipo_projeto()` retorna tuple `(tipo, owner)` em vez de enum único
+- Coluna O (estado_str) → tipo EMPRESA/PESSOAL
+- Coluna P (owner_str) → owner BA/RR
+- Adicionado parâmetro `owner=owner` ao `criar()`
+- Default Excel atualizado para `20251124`
+
+---
+
 ### ✨ Features - UI Saldos Melhorada
 
 **Commits:**
