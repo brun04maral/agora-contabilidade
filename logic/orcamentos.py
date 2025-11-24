@@ -637,37 +637,13 @@ class OrcamentoManager:
             secoes = self.obter_secoes(orcamento_id)
 
             # IDs de secções de serviços e equipamento (incluindo subsecções)
-            secoes_parcial_1 = []
-            secoes_parcial_2 = []
-
-            for secao in secoes:
-                if secao.tipo in ['servicos', 'equipamento', 'video', 'som', 'iluminacao']:
-                    secoes_parcial_1.append(secao.id)
-                elif secao.tipo in ['despesas', 'custos_variaveis']:
-                    secoes_parcial_2.append(secao.id)
-
-            # Calcular Total Parcial 1
-            if secoes_parcial_1:
-                total_parcial_1 = self.db.query(func.sum(OrcamentoItem.total))\
-                    .filter(OrcamentoItem.orcamento_id == orcamento_id)\
-                    .filter(OrcamentoItem.secao_id.in_(secoes_parcial_1))\
-                    .scalar() or Decimal('0')
-            else:
-                total_parcial_1 = Decimal('0')
-
-            # Calcular Total Parcial 2
-            if secoes_parcial_2:
-                total_parcial_2 = self.db.query(func.sum(OrcamentoItem.total))\
-                    .filter(OrcamentoItem.orcamento_id == orcamento_id)\
-                    .filter(OrcamentoItem.secao_id.in_(secoes_parcial_2))\
-                    .scalar() or Decimal('0')
-            else:
-                total_parcial_2 = Decimal('0')
+            # Calcular total de todos os itens
+            valor_total = self.db.query(func.sum(OrcamentoItem.total))\
+                .filter(OrcamentoItem.orcamento_id == orcamento_id)\
+                .scalar() or Decimal('0')
 
             # Atualizar orçamento
-            orcamento.total_parcial_1 = total_parcial_1
-            orcamento.total_parcial_2 = total_parcial_2
-            orcamento.valor_total = total_parcial_1 + total_parcial_2
+            orcamento.valor_total = valor_total
             orcamento.updated_at = datetime.now()
 
             self.db.commit()
