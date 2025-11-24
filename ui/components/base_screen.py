@@ -150,6 +150,9 @@ class BaseScreen(ctk.CTkFrame):
         self._apply_initial_filters()
         self.refresh_data()
 
+        # Posicionar overlays após layout estar pronto
+        self.after(10, self._position_overlays)
+
     def _create_layout(self):
         """Cria o layout base do screen."""
         # Header
@@ -159,14 +162,14 @@ class BaseScreen(ctk.CTkFrame):
         if self.config.get('show_search', True) or self.get_filters_config():
             self._create_toolbar()
 
-        # Chips area (filtros ativos)
+        # Table (expandida) - Logo após toolbar, SEM espaço!
+        self._create_table()
+
+        # Chips area (overlay sobre tabela)
         self._create_chips_area()
 
-        # Selection bar (hidden by default)
+        # Selection bar (overlay sobre tabela)
         self._create_selection_bar()
-
-        # Table (expandida) - DEVE ser último para expandir
-        self._create_table()
 
         # Footer slot - NÃO adicionar aqui, só se necessário
 
@@ -336,12 +339,23 @@ class BaseScreen(ctk.CTkFrame):
         self.filters_slot = ctk.CTkFrame(toolbar, fg_color="transparent")
         self.filters_slot.pack(side="left", padx=10)
 
+    def _position_overlays(self):
+        """Posiciona overlays sobre a tabela após layout estar pronto."""
+        self.update_idletasks()
+
+        # Obter posição da tabela
+        table_y = self.table.winfo_y()
+
+        # Posicionar chips no topo da tabela
+        self.overlay_container.place(x=30, y=table_y, relwidth=1, width=-60, height=40)
+
+        # Posicionar barra de seleção abaixo dos chips
+        self.selection_container.place(x=30, y=table_y + 45, relwidth=1, width=-60, height=50)
+
     def _create_chips_area(self):
-        """Cria área para chips de filtros ativos (altura fixa, não empurra tabela)."""
-        # Container com ALTURA FIXA (sempre 40px, mesmo vazio)
-        self.overlay_container = ctk.CTkFrame(self, fg_color="transparent", height=40)
-        self.overlay_container.pack(fill="x", padx=30, pady=0)
-        self.overlay_container.pack_propagate(False)  # Altura fixa, não muda
+        """Cria área para chips de filtros ativos (overlay sobre tabela)."""
+        # Container ABSOLUTAMENTE posicionado (será posicionado depois)
+        self.overlay_container = ctk.CTkFrame(self, fg_color="transparent")
 
         # Frame interno onde chips aparecem/desaparecem
         self.chips_frame = ctk.CTkFrame(self.overlay_container, fg_color="transparent")
@@ -508,11 +522,9 @@ class BaseScreen(ctk.CTkFrame):
                 self._remove_filter_chip(filter_key, value)
 
     def _create_selection_bar(self):
-        """Cria a barra de seleção flutuante (altura fixa, não empurra tabela)."""
-        # Container com ALTURA FIXA (sempre 50px, mesmo vazio)
-        self.selection_container = ctk.CTkFrame(self, fg_color="transparent", height=50)
-        self.selection_container.pack(fill="x", padx=30, pady=0)
-        self.selection_container.pack_propagate(False)  # Altura fixa
+        """Cria a barra de seleção flutuante (overlay sobre tabela)."""
+        # Container ABSOLUTAMENTE posicionado (será posicionado depois)
+        self.selection_container = ctk.CTkFrame(self, fg_color="transparent")
 
         self.selection_frame = ctk.CTkFrame(
             self.selection_container,
