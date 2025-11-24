@@ -449,22 +449,6 @@ class OrcamentosScreen(ctk.CTkFrame):
         )
         valores_title.pack(pady=(10, 10))
 
-        if orcamento.total_parcial_1:
-            parcial1 = ctk.CTkLabel(
-                valores_frame,
-                text=f"Total Parcial 1 (Serviços + Equipamento): {float(orcamento.total_parcial_1):.2f}€",
-                font=ctk.CTkFont(size=13)
-            )
-            parcial1.pack(pady=2)
-
-        if orcamento.total_parcial_2:
-            parcial2 = ctk.CTkLabel(
-                valores_frame,
-                text=f"Total Parcial 2 (Despesas): {float(orcamento.total_parcial_2):.2f}€",
-                font=ctk.CTkFont(size=13)
-            )
-            parcial2.pack(pady=2)
-
         if orcamento.valor_total:
             total = ctk.CTkLabel(
                 valores_frame,
