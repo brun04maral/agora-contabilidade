@@ -448,10 +448,11 @@ class ExcelImporter:
                         print(f"  🔄 {numero}: {descricao[:40]} (owner atualizado para {owner})")
                     else:
                         print(f"  🔍 {numero}: {descricao[:40]} (owner seria atualizado para {owner})")
+                    self.stats['projetos']['updated'] += 1
                 else:
                     print(f"  ⏭️  {numero}: {descricao[:40]} (já existe)")
+                    self.stats['projetos']['skip'] += 1
 
-                self.stats['projetos']['skip'] += 1
                 self.projetos_map[numero] = existing.id
                 continue
 
