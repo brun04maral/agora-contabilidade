@@ -172,7 +172,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_header(self):
         """Cria o header com título e botões."""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(15, 5))
+        header_frame.pack(fill="x", padx=30, pady=(10, 0))
 
         # Título com ícone
         title = self.config.get('title', 'Screen')
@@ -263,7 +263,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
         toolbar = ctk.CTkFrame(self, fg_color="transparent")
-        toolbar.pack(fill="x", padx=30, pady=(0, 5))
+        toolbar.pack(fill="x", padx=30, pady=(5, 5))
 
         # Search (compacta, só ícone lupa)
         if self.config.get('show_search', True):
@@ -340,15 +340,19 @@ class BaseScreen(ctk.CTkFrame):
 
     def _add_filter_chip(self, filter_key: str, value: str):
         """Adiciona chip para filtro ativo."""
+        print(f"[DEBUG] _add_filter_chip chamado: key={filter_key}, value={value}")
+
         if filter_key not in self._filter_chips:
             self._filter_chips[filter_key] = {}
 
         if value in self._filter_chips[filter_key]:
+            print(f"[DEBUG] Chip já existe, ignorando")
             return  # Already exists
 
         # Show chips frame (inserir ANTES da tabela)
         # Verificar se já está empacotado
         if not self.chips_frame.winfo_manager():
+            print(f"[DEBUG] Empacotando chips_frame pela primeira vez")
             self.chips_frame.pack(fill="x", padx=30, pady=(0, 5), before=self.table)
 
         # Create chip
@@ -359,6 +363,7 @@ class BaseScreen(ctk.CTkFrame):
             height=28
         )
         chip.pack(side="left", padx=3, pady=2)
+        print(f"[DEBUG] Chip frame criado e empacotado")
 
         # Chip label
         chip_label = ctk.CTkLabel(
@@ -383,6 +388,7 @@ class BaseScreen(ctk.CTkFrame):
         remove_btn.pack(side="left", padx=(0, 5))
 
         self._filter_chips[filter_key][value] = chip
+        print(f"[DEBUG] Chip completo criado para {filter_key}={value}")
 
     def _remove_filter_chip(self, filter_key: str, value: str):
         """Remove chip de filtro ativo."""
@@ -488,13 +494,19 @@ class BaseScreen(ctk.CTkFrame):
 
     def _on_filter_select(self, key: str, value: str):
         """Handler para seleção em filtro."""
+        print(f"[DEBUG] _on_filter_select chamado: key={key}, value={value}")
+
         # Ignorar se é "Todos" ou é o próprio label do filtro
         filter_cfg = next((f for f in self.get_filters_config() if f['key'] == key), None)
         if not filter_cfg:
+            print(f"[DEBUG] Filtro não encontrado em config")
             return
 
         label = filter_cfg.get('label', key.capitalize())
+        print(f"[DEBUG] Label do filtro: {label}")
+
         if value == "Todos" or value == label:
+            print(f"[DEBUG] Valor ignorado (Todos ou label)")
             return
 
         # Adicionar à seleção
@@ -502,6 +514,7 @@ class BaseScreen(ctk.CTkFrame):
             self._filter_selections[key] = set()
 
         self._filter_selections[key].add(value)
+        print(f"[DEBUG] Adicionado à seleção: {key}={value}")
 
         # Adicionar chip
         self._add_filter_chip(key, value)
@@ -525,9 +538,11 @@ class BaseScreen(ctk.CTkFrame):
     def _on_selection_change(self, selected_data: list):
         """Handler para mudança de seleção na tabela."""
         num_selected = len(selected_data)
+        print(f"[DEBUG] _on_selection_change: {num_selected} itens selecionados")
 
         if num_selected > 0:
             # Mostrar barra de seleção (flutuante) ANTES da tabela
+            print(f"[DEBUG] Mostrando barra de seleção")
             self.selection_frame.pack(fill="x", padx=30, pady=(0, 5), before=self.table)
             self.cancel_btn.pack(side="left", padx=8)
 
