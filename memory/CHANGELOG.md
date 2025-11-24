@@ -4,6 +4,55 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-24] Conversão Completa de Dialogs para BaseDialogMedium/Large
+
+### 🏗️ Refatoração - Dialogs em ui/screens/
+
+**Conversão para BaseDialogLarge:** (Commits: 19d647d, 515abb7)
+- FormularioFornecedorDialog (fornecedores.py)
+- FormularioDespesaDialog (despesas.py)
+- LinhaDialog (boletim_form.py)
+- EquipamentoDialog (equipamento.py)
+- FormularioProjetoDialog (projetos.py)
+- FormularioTemplateDialog (templates_despesas.py)
+- FormularioClienteDialog (clientes.py)
+
+**Conversão para BaseDialogMedium:**
+- FormularioValorDialog (valores_referencia.py)
+- ConfirmDialog (fornecedores.py, clientes.py)
+
+**Eliminados:**
+- MessageDialog em fornecedores.py e clientes.py (substituído por messagebox.showerror)
+- Popups de sucesso (apenas erros são mostrados)
+
+**Estatísticas:**
+- 8 ficheiros alterados
+- 107 linhas adicionadas, 404 removidas (redução ~300 linhas código duplicado)
+
+### 🐛 Bugs Corrigidos
+
+**self.parent → self.parent_ref** (Commit: 551bb31)
+- Corrigido AttributeError em _on_close() de FormularioProjetoDialog e FormularioDespesaDialog
+- Variável renomeada durante conversão mas referências não atualizadas
+
+**NameError main_frame** (Commit: 515abb7)
+- equipamento.py: `main_frame` → `self.main_frame` no button_frame
+- projetos.py: button_frame movido para dentro de `self.main_frame` (garante scroll)
+
+**Ficheiros Alterados:**
+- ui/screens/valores_referencia.py
+- ui/screens/fornecedores.py
+- ui/screens/despesas.py
+- ui/screens/boletim_form.py
+- ui/screens/equipamento.py
+- ui/screens/projetos.py
+- ui/screens/templates_despesas.py
+- ui/screens/clientes.py
+
+**Ver:** memory/ARCHITECTURE.md (Secção BaseDialogMedium/Large)
+
+---
+
 ## [2025-11-21] Menu Context Orçamentos + UX Comissões + Refatoração Dialogs
 
 ### 🏗️ Refatoração - Arquitetura Base de Dialogs

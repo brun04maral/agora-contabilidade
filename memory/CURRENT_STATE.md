@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-21 15:00 WET
+**Última atualização:** 2025-11-24 WET
 **Branch:** claude/sync-branch-updates-01E272Kg4MfomDai3tRbLKDz
 **Status Geral:** ✅ PRODUÇÃO READY
 
@@ -18,11 +18,11 @@
 
 ## 📌 Resumo Executivo
 
-**Sprint Atual (21/11/2025):**
-- 🎯 **Orçamentos V2 - Menu Context + UX Comissões** - Right-click menu, duplicar, input manual percentagem
+**Sprint Atual (24/11/2025):**
+- 🎯 **Refatoração Dialogs Completa** - Todos dialogs convertidos para BaseDialogMedium/Large
 
 **Última Feature Concluída:**
-- ✅ **Menu Right-Click Orçamentos** (21/11/2025) - Menu de contexto completo com todas acções (Visualizar, Editar, Duplicar, Marcar Aprovado/Pago, Anular, Apagar). Botão Duplicar na barra inferior. Backend: `duplicar_orcamento()`, `mudar_status()`. Input manual + setas repeat nas comissões. Campo código editável. **Ver:** memory/CHANGELOG.md (21/11/2025)
+- ✅ **Conversão Dialogs BaseDialogMedium/Large** (24/11/2025) - Todos os dialogs em ui/screens/ convertidos para herdar de BaseDialogMedium/Large. 8 ficheiros alterados, ~300 linhas código duplicado removidas. Scroll garantido, NameErrors corrigidos. **Ver:** memory/CHANGELOG.md (24/11/2025)
 
 **Próximo Milestone:**
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
