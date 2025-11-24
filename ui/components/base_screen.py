@@ -173,7 +173,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_header(self):
         """Cria o header com título e botões."""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(20, 5))  # Reduzido: 10→5 bottom
+        header_frame.pack(fill="x", padx=30, pady=(20, 0))  # SEM padding bottom
 
         # Título com ícone
         title = self.config.get('title', 'Screen')
@@ -262,7 +262,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
         toolbar = ctk.CTkFrame(self, fg_color="transparent")
-        toolbar.pack(fill="x", padx=30, pady=(0, 5))  # Reduzido: 10→5 bottom
+        toolbar.pack(fill="x", padx=30, pady=(5, 10))  # Compacto: 5px top, 10px bottom
 
         # Search (compacta, só ícone lupa)
         if self.config.get('show_search', True):
@@ -337,12 +337,13 @@ class BaseScreen(ctk.CTkFrame):
         self.filters_slot.pack(side="left", padx=10)
 
     def _create_chips_area(self):
-        """Cria área para chips de filtros ativos."""
-        # Criar container que não empurra conteúdo
-        self.overlay_container = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        """Cria área para chips de filtros ativos (altura fixa, não empurra tabela)."""
+        # Container com ALTURA FIXA (sempre 40px, mesmo vazio)
+        self.overlay_container = ctk.CTkFrame(self, fg_color="transparent", height=40)
         self.overlay_container.pack(fill="x", padx=30, pady=0)
-        self.overlay_container.pack_propagate(False)  # Não expande com conteúdo
+        self.overlay_container.pack_propagate(False)  # Altura fixa, não muda
 
+        # Frame interno onde chips aparecem/desaparecem
         self.chips_frame = ctk.CTkFrame(self.overlay_container, fg_color="transparent")
 
     def _add_filter_chip(self, filter_key: str, value: str):
@@ -353,11 +354,9 @@ class BaseScreen(ctk.CTkFrame):
         if value in self._filter_chips[filter_key]:
             return  # Already exists
 
-        # Show chips frame dentro do overlay container
+        # Show chips frame dentro do overlay container (NÃO muda altura do container!)
         if not self.chips_frame.winfo_manager():
-            self.chips_frame.pack(fill="x", pady=5)
-            # Expandir container para mostrar chips (35px = altura dos chips)
-            self.overlay_container.configure(height=35)
+            self.chips_frame.pack(fill="both", expand=True, pady=5)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -406,12 +405,10 @@ class BaseScreen(ctk.CTkFrame):
             if filter_key in self._filter_selections:
                 self._filter_selections[filter_key].discard(value)
 
-            # Hide chips frame if empty
+            # Hide chips frame if empty (container mantém altura fixa)
             has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
-            if not has_chips:
+            if not has_chips and not self._search_chip:
                 self.chips_frame.pack_forget()
-                # Colapsar container
-                self.overlay_container.configure(height=0)
 
             # Atualizar aparência do filtro
             self._update_filter_appearance(filter_key)
@@ -424,15 +421,22 @@ class BaseScreen(ctk.CTkFrame):
         if filter_key not in self._filter_widgets:
             return
 
+        widget = self._filter_widgets[filter_key]
         has_selections = filter_key in self._filter_selections and len(self._filter_selections[filter_key]) > 0
 
-        widget = self._filter_widgets[filter_key]
+        # Obter label do filtro
+        filter_cfg = next((f for f in self.get_filters_config() if f['key'] == filter_key), None)
+        label = filter_cfg.get('label', filter_key.capitalize()) if filter_cfg else filter_key.capitalize()
 
         if has_selections:
-            # Filtro ATIVO - texto azul (botão mantém cinza)
+            # Mostrar primeira seleção em AZUL
+            selections = list(self._filter_selections[filter_key])
+            first_selection = selections[0] if len(selections) == 1 else f"{selections[0]} (+{len(selections)-1})"
+            widget.set(first_selection)
             widget.configure(text_color=("#2196F3", "#1976D2"))
         else:
-            # Filtro INATIVO - texto preto/branco
+            # Mostrar label em preto/branco
+            widget.set(label)
             widget.configure(text_color=("#000000", "#FFFFFF"))
 
     def _add_search_chip(self, search_text: str):
@@ -440,11 +444,9 @@ class BaseScreen(ctk.CTkFrame):
         if self._search_chip:
             return  # Already exists
 
-        # Show chips frame dentro do overlay container
+        # Show chips frame dentro do overlay container (NÃO muda altura!)
         if not self.chips_frame.winfo_manager():
-            self.chips_frame.pack(fill="x", pady=5)
-            # Expandir container para mostrar chips (35px = altura dos chips)
-            self.overlay_container.configure(height=35)
+            self.chips_frame.pack(fill="both", expand=True, pady=5)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -485,12 +487,10 @@ class BaseScreen(ctk.CTkFrame):
             self._search_chip.destroy()
             self._search_chip = None
 
-            # Hide chips frame if empty
+            # Hide chips frame if empty (container mantém altura fixa)
             has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
-            if not has_chips:
+            if not has_chips and not self._search_chip:
                 self.chips_frame.pack_forget()
-                # Colapsar container
-                self.overlay_container.configure(height=0)
 
             # Clear search and refresh
             self.search_var.set("")
@@ -508,11 +508,11 @@ class BaseScreen(ctk.CTkFrame):
                 self._remove_filter_chip(filter_key, value)
 
     def _create_selection_bar(self):
-        """Cria a barra de seleção flutuante (oculta por padrão)."""
-        # Container para barra de seleção (height 0 por padrão)
-        self.selection_container = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        """Cria a barra de seleção flutuante (altura fixa, não empurra tabela)."""
+        # Container com ALTURA FIXA (sempre 50px, mesmo vazio)
+        self.selection_container = ctk.CTkFrame(self, fg_color="transparent", height=50)
         self.selection_container.pack(fill="x", padx=30, pady=0)
-        self.selection_container.pack_propagate(False)
+        self.selection_container.pack_propagate(False)  # Altura fixa
 
         self.selection_frame = ctk.CTkFrame(
             self.selection_container,
@@ -631,11 +631,8 @@ class BaseScreen(ctk.CTkFrame):
 
         self._filter_selections[key].add(value)
 
-        # Adicionar chip
+        # Adicionar chip (e atualizar aparência do dropdown)
         self._add_filter_chip(key, value)
-
-        # Reset dropdown para mostrar label novamente
-        self._filter_widgets[key].set(label)
 
         # Refresh data
         self.refresh_data()
@@ -655,11 +652,9 @@ class BaseScreen(ctk.CTkFrame):
         num_selected = len(selected_data)
 
         if num_selected > 0:
-            # Mostrar barra de seleção
+            # Mostrar barra de seleção (container mantém altura fixa)
             if not self.selection_frame.winfo_manager():
-                self.selection_frame.pack(fill="x", pady=5)
-                # Expandir container (45px = altura da barra)
-                self.selection_container.configure(height=45)
+                self.selection_frame.pack(fill="both", expand=True, pady=5)
 
             self.cancel_btn.pack(side="left", padx=8)
 
@@ -677,9 +672,8 @@ class BaseScreen(ctk.CTkFrame):
                 self.total_label.configure(text=f"Total: €{total:,.2f}")
                 self.total_label.pack(side="left", padx=12)
         else:
+            # Esconder barra (container mantém altura fixa)
             self.selection_frame.pack_forget()
-            # Colapsar container
-            self.selection_container.configure(height=0)
 
     def _clear_selection(self):
         """Limpa a seleção da tabela."""
