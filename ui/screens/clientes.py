@@ -4,16 +4,15 @@ Tela de Clientes - Gestão de clientes da Agora Media
 """
 import customtkinter as ctk
 import tkinter as tk
-from typing import Callable, Optional, Dict
+from typing import Dict
 from sqlalchemy.orm import Session
 from logic.clientes import ClientesManager
 from ui.components.data_table_v2 import DataTableV2
-from database.models import Cliente
 from tkinter import messagebox
 import csv
 from datetime import datetime
 from assets.resources import get_icon, CLIENTES
-from utils.base_dialogs import BaseDialogLarge, BaseDialogMedium
+from utils.base_dialogs import BaseDialogMedium
 
 
 class ClientesScreen(ctk.CTkFrame):
@@ -416,31 +415,20 @@ class ClientesScreen(ctk.CTkFrame):
             self.main_window.show_projetos(filtro_cliente_id=cliente_id)
 
     def adicionar_cliente(self):
-        """Show dialog to add new cliente"""
-        dialog = FormularioClienteDialog(self, self.db_session)
-        dialog.wait_window()
-
-        # Reload if cliente was created
-        if dialog.cliente_criado:
-            self.carregar_clientes()
-            self.table.clear_selection()
+        """Navigate to cliente_form screen for create"""
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            main_window.show_screen("cliente_form", cliente_id=None)
+        else:
+            messagebox.showerror("Erro", "Não foi possível abrir formulário")
 
     def editar_cliente(self, cliente_id: int):
-        """Show dialog to edit cliente"""
-        cliente = self.manager.buscar_por_id(cliente_id)
-        if not cliente:
-            messagebox.showerror("Erro", "Cliente não encontrado")
-            return
-
-        dialog = FormularioClienteDialog(self, self.db_session, cliente=cliente)
-        dialog.wait_window()
-
-        # Clear selection after closing dialog (whether updated or cancelled)
-        self.table.clear_selection()
-
-        # Reload if cliente was updated
-        if dialog.cliente_atualizado:
-            self.carregar_clientes()
+        """Navigate to cliente_form screen for edit"""
+        main_window = self.master.master
+        if hasattr(main_window, 'show_screen'):
+            main_window.show_screen("cliente_form", cliente_id=cliente_id)
+        else:
+            messagebox.showerror("Erro", "Não foi possível abrir formulário")
 
     def apagar_cliente(self, cliente_id: int):
         """Delete cliente"""
@@ -469,309 +457,6 @@ class ClientesScreen(ctk.CTkFrame):
             self.carregar_clientes()
         else:
             messagebox.showerror("Erro", message)
-
-
-class FormularioClienteDialog(BaseDialogLarge):
-    """
-    Dialog for creating/editing cliente
-    """
-
-    def __init__(self, parent, db_session: Session, cliente: Optional[Cliente] = None):
-        self.db_session = db_session
-        self.manager = ClientesManager(db_session)
-        self.cliente = cliente
-        self.cliente_criado = False
-        self.cliente_atualizado = False
-
-        title = "Editar Cliente" if cliente else "Novo Cliente"
-        super().__init__(parent, title=title)
-
-        # Create widgets
-        self.create_widgets()
-
-        # Handle window close
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
-
-        # Load data if editing
-        if self.cliente:
-            self.load_cliente_data()
-
-    def create_widgets(self):
-        """Create dialog widgets"""
-
-        # Title
-        title = ctk.CTkLabel(
-            self.main_frame,
-            text="✏️ Editar Cliente" if self.cliente else "➕ Novo Cliente",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        title.pack(pady=(0, 20))
-
-        # Use main_frame (already scrollable from BaseDialogLarge)
-        form_frame = self.main_frame
-
-        # Nome (required)
-        ctk.CTkLabel(
-            form_frame,
-            text="Nome *",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(10, 5))
-
-        ctk.CTkLabel(
-            form_frame,
-            text="Nome curto para listagens (max 120 caracteres)",
-            font=ctk.CTkFont(size=11),
-            text_color="gray"
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.nome_entry = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="Ex: Farmácia do Povo",
-            height=35
-        )
-        self.nome_entry.pack(fill="x", pady=(0, 15))
-
-        # Nome Formal
-        ctk.CTkLabel(
-            form_frame,
-            text="Nome Formal",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        ctk.CTkLabel(
-            form_frame,
-            text="Nome completo/formal da empresa (opcional, max 255 caracteres)",
-            font=ctk.CTkFont(size=11),
-            text_color="gray"
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.nome_formal_entry = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="Ex: Farmácia Popular do Centro, Lda.",
-            height=35
-        )
-        self.nome_formal_entry.pack(fill="x", pady=(0, 15))
-
-        # NIF
-        ctk.CTkLabel(
-            form_frame,
-            text="NIF / Tax ID",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.nif_entry = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="Número de identificação fiscal...",
-            height=35
-        )
-        self.nif_entry.pack(fill="x", pady=(0, 15))
-
-        # País
-        ctk.CTkLabel(
-            form_frame,
-            text="País",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.pais_entry = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="Portugal",
-            height=35
-        )
-        self.pais_entry.pack(fill="x", pady=(0, 15))
-
-        # Morada
-        ctk.CTkLabel(
-            form_frame,
-            text="Morada",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.morada_entry = ctk.CTkTextbox(
-            form_frame,
-            height=60
-        )
-        self.morada_entry.pack(fill="x", pady=(0, 15))
-
-        # Contacto
-        ctk.CTkLabel(
-            form_frame,
-            text="Contacto",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.contacto_entry = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="Telefone...",
-            height=35
-        )
-        self.contacto_entry.pack(fill="x", pady=(0, 15))
-
-        # Email
-        ctk.CTkLabel(
-            form_frame,
-            text="Email",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.email_entry = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="email@exemplo.pt",
-            height=35
-        )
-        self.email_entry.pack(fill="x", pady=(0, 15))
-
-        # Angariação
-        ctk.CTkLabel(
-            form_frame,
-            text="Angariação",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.angariacao_entry = ctk.CTkEntry(
-            form_frame,
-            placeholder_text="Como foi angariado este cliente...",
-            height=35
-        )
-        self.angariacao_entry.pack(fill="x", pady=(0, 15))
-
-        # Nota
-        ctk.CTkLabel(
-            form_frame,
-            text="Nota",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(anchor="w", pady=(0, 5))
-
-        self.nota_entry = ctk.CTkTextbox(
-            form_frame,
-            height=80
-        )
-        self.nota_entry.pack(fill="x", pady=(0, 15))
-
-        # Buttons
-        button_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        button_frame.pack(fill="x", pady=(20, 0))
-
-        cancel_btn = ctk.CTkButton(
-            button_frame,
-            text="Cancelar",
-            command=self.destroy,
-            width=140,
-            height=40,
-            fg_color="gray",
-            hover_color="darkgray"
-        )
-        cancel_btn.pack(side="left", padx=(0, 10))
-
-        save_btn = ctk.CTkButton(
-            button_frame,
-            text="Guardar",
-            command=self.guardar,
-            width=140,
-            height=40,
-            fg_color=("#2196F3", "#1565C0"),
-            hover_color=("#1976D2", "#0D47A1")
-        )
-        save_btn.pack(side="right")
-
-    def load_cliente_data(self):
-        """Load cliente data into form"""
-        if not self.cliente:
-            return
-
-        self.nome_entry.insert(0, self.cliente.nome)
-
-        if self.cliente.nome_formal:
-            self.nome_formal_entry.insert(0, self.cliente.nome_formal)
-
-        if self.cliente.nif:
-            self.nif_entry.insert(0, self.cliente.nif)
-
-        if self.cliente.pais:
-            self.pais_entry.insert(0, self.cliente.pais)
-
-        if self.cliente.morada:
-            self.morada_entry.insert("1.0", self.cliente.morada)
-
-        if self.cliente.contacto:
-            self.contacto_entry.insert(0, self.cliente.contacto)
-
-        if self.cliente.email:
-            self.email_entry.insert(0, self.cliente.email)
-
-        if self.cliente.angariacao:
-            self.angariacao_entry.insert(0, self.cliente.angariacao)
-
-        if self.cliente.nota:
-            self.nota_entry.insert("1.0", self.cliente.nota)
-
-    def guardar(self):
-        """Save cliente"""
-        # Get values
-        nome = self.nome_entry.get().strip()
-        nome_formal = self.nome_formal_entry.get().strip()
-        nif = self.nif_entry.get().strip()
-        pais = self.pais_entry.get().strip() or "Portugal"
-        morada = self.morada_entry.get("1.0", "end").strip()
-        contacto = self.contacto_entry.get().strip()
-        email = self.email_entry.get().strip()
-        angariacao = self.angariacao_entry.get().strip()
-        nota = self.nota_entry.get("1.0", "end").strip()
-
-        # Validate
-        if not nome:
-            self.show_error("Nome é obrigatório")
-            return
-
-        # Create or update
-        if self.cliente:
-            # Update
-            success, cliente, message = self.manager.atualizar(
-                self.cliente.id,
-                nome=nome,
-                nome_formal=nome_formal if nome_formal else None,
-                nif=nif if nif else None,
-                pais=pais,
-                morada=morada if morada else None,
-                contacto=contacto if contacto else None,
-                email=email if email else None,
-                angariacao=angariacao if angariacao else None,
-                nota=nota if nota else None
-            )
-
-            if success:
-                self.cliente_atualizado = True
-                self.destroy()
-            else:
-                messagebox.showerror("Erro", message)
-        else:
-            # Create
-            success, cliente, message = self.manager.criar(
-                nome=nome,
-                nome_formal=nome_formal if nome_formal else None,
-                nif=nif if nif else None,
-                pais=pais,
-                morada=morada if morada else None,
-                contacto=contacto if contacto else None,
-                email=email if email else None,
-                angariacao=angariacao if angariacao else None,
-                nota=nota if nota else None
-            )
-
-            if success:
-                self.cliente_criado = True
-                self.destroy()
-            else:
-                messagebox.showerror("Erro", message)
-
-    def show_error(self, message: str):
-        """Show error message"""
-        messagebox.showerror("Erro", message)
-
-    def _on_close(self):
-        """Handle window close"""
-        # No need to unbind - tkinter cleans up when dialog destroys
-        self.destroy()
 
 
 class ConfirmDialog(BaseDialogMedium):
