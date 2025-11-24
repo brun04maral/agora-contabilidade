@@ -257,13 +257,13 @@ class ProjetosScreen(ctk.CTkFrame):
             font=ctk.CTkFont(size=14, weight="bold")
         )
 
-        # Main content area (list + editor)
+        # Main content area (list OR editor - not both)
         self.content_area = ctk.CTkFrame(self, fg_color="transparent")
         self.content_area.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
-        # List frame (left side)
+        # List frame (visible by default)
         self.list_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self.list_frame.pack(side="left", fill="both", expand=True)
+        self.list_frame.pack(fill="both", expand=True)
 
         # Table
         columns = [
@@ -286,47 +286,52 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         self.table.pack(fill="both", expand=True)
 
-        # Editor frame (right side - hidden by default)
-        self.editor_frame = ctk.CTkFrame(self.content_area, width=450)
-        self.editor_frame.pack_propagate(False)
+        # Editor frame (hidden by default - replaces list when editing)
+        self.editor_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         # Don't pack yet - will be shown when editing
 
         self._create_editor_widgets()
 
+        # Store references to header elements for hide/show
+        self.header_frame = header_frame
+        self.search_frame = search_frame
+        self.filters_frame = filters_frame
+
     def _create_editor_widgets(self):
-        """Create the inline editor widgets"""
+        """Create the inline editor widgets (full screen layout)"""
 
         # Editor header
         editor_header = ctk.CTkFrame(self.editor_frame, fg_color="transparent")
-        editor_header.pack(fill="x", padx=15, pady=(15, 10))
+        editor_header.pack(fill="x", pady=(0, 15))
+
+        # Back button
+        back_btn = ctk.CTkButton(
+            editor_header,
+            text="← Voltar à lista",
+            command=self.fechar_editor,
+            width=140,
+            height=35,
+            font=ctk.CTkFont(size=13),
+            fg_color="transparent",
+            hover_color=("#E0E0E0", "#404040"),
+            text_color=("#666666", "#AAAAAA"),
+            anchor="w"
+        )
+        back_btn.pack(side="left")
 
         self.editor_title = ctk.CTkLabel(
             editor_header,
             text="Novo Projeto",
-            font=ctk.CTkFont(size=18, weight="bold")
+            font=ctk.CTkFont(size=20, weight="bold")
         )
-        self.editor_title.pack(side="left")
-
-        # Close button
-        close_btn = ctk.CTkButton(
-            editor_header,
-            text="✕",
-            command=self.fechar_editor,
-            width=30,
-            height=30,
-            font=ctk.CTkFont(size=14),
-            fg_color="transparent",
-            hover_color=("#E0E0E0", "#404040"),
-            text_color=("#666666", "#AAAAAA")
-        )
-        close_btn.pack(side="right")
+        self.editor_title.pack(side="left", padx=20)
 
         # Scrollable form area
         self.editor_scroll = ctk.CTkScrollableFrame(
             self.editor_frame,
             fg_color="transparent"
         )
-        self.editor_scroll.pack(fill="both", expand=True, padx=15, pady=(0, 10))
+        self.editor_scroll.pack(fill="both", expand=True, pady=(0, 10))
 
         scroll = self.editor_scroll
 
@@ -403,36 +408,36 @@ class ProjetosScreen(ctk.CTkFrame):
         self.nota_entry = ctk.CTkTextbox(scroll, height=60)
         self.nota_entry.pack(fill="x", pady=(0, 10))
 
-        # Buttons frame (fixed at bottom)
+        # Buttons frame (fixed at bottom - footer)
         btn_frame = ctk.CTkFrame(self.editor_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=15, pady=(0, 15))
-
-        self.cancel_edit_btn = ctk.CTkButton(
-            btn_frame,
-            text="Cancelar",
-            command=self.fechar_editor,
-            width=100,
-            height=36,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#616161", "#424242")
-        )
-        self.cancel_edit_btn.pack(side="right", padx=(5, 0))
+        btn_frame.pack(fill="x", pady=(10, 0))
 
         self.save_btn = ctk.CTkButton(
             btn_frame,
             text="💾 Guardar",
             command=self.guardar_projeto,
-            width=120,
-            height=36,
-            font=ctk.CTkFont(size=13, weight="bold"),
+            width=140,
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold"),
             fg_color=("#4CAF50", "#388E3C"),
             hover_color=("#66BB6A", "#2E7D32")
         )
-        self.save_btn.pack(side="right")
+        self.save_btn.pack(side="left", padx=(0, 10))
+
+        self.cancel_edit_btn = ctk.CTkButton(
+            btn_frame,
+            text="Cancelar",
+            command=self.fechar_editor,
+            width=120,
+            height=40,
+            font=ctk.CTkFont(size=14),
+            fg_color=("#757575", "#616161"),
+            hover_color=("#616161", "#424242")
+        )
+        self.cancel_edit_btn.pack(side="left")
 
     def mostrar_editor(self, projeto=None):
-        """Show the inline editor panel"""
+        """Show the editor (full screen - replaces list)"""
         self.projeto_editando = projeto
         self.editor_visible = True
 
@@ -449,22 +454,29 @@ class ProjetosScreen(ctk.CTkFrame):
         if projeto:
             self._carregar_dados_projeto(projeto)
 
-        # Show editor
-        self.editor_frame.pack(side="right", fill="y", padx=(15, 0))
+        # Hide list elements
+        self.header_frame.pack_forget()
+        self.search_frame.pack_forget()
+        self.filters_frame.pack_forget()
+        self.selection_frame.pack_forget()
+        self.list_frame.pack_forget()
 
-        # Disable novo button while editing
-        self.novo_btn.configure(state="disabled")
+        # Show editor (full screen)
+        self.editor_frame.pack(fill="both", expand=True)
 
     def fechar_editor(self):
-        """Hide the inline editor panel"""
+        """Hide editor and show list again"""
         self.projeto_editando = None
         self.editor_visible = False
 
         # Hide editor
         self.editor_frame.pack_forget()
 
-        # Re-enable novo button
-        self.novo_btn.configure(state="normal")
+        # Show list elements again (in correct order)
+        self.header_frame.pack(fill="x", padx=30, pady=(30, 20))
+        self.search_frame.pack(fill="x", padx=30, pady=(0, 15))
+        self.filters_frame.pack(fill="x", padx=30, pady=(0, 20))
+        self.list_frame.pack(fill="both", expand=True)
 
         # Clear selection
         self.table.clear_selection()
