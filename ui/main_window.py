@@ -350,6 +350,10 @@ class MainWindow(ctk.CTkFrame):
             self.show_cliente_form(**kwargs)
         elif screen_name == "clientes":
             self.show_clientes()
+        elif screen_name == "fornecedor_form":
+            self.show_fornecedor_form(**kwargs)
+        elif screen_name == "fornecedores":
+            self.show_fornecedores()
         # Add more screens as needed
 
     def show_orcamento_form(self, orcamento_id=None):
@@ -428,6 +432,22 @@ class MainWindow(ctk.CTkFrame):
             self.content_frame,
             db_session=self.db_session,
             cliente_id=cliente_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_fornecedor_form(self, fornecedor_id=None):
+        """Show fornecedor form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.fornecedor_form import FornecedorFormScreen
+        screen = FornecedorFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            fornecedor_id=fornecedor_id
         )
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
