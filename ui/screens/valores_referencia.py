@@ -10,6 +10,7 @@ import tkinter.messagebox as messagebox
 
 from logic.valores_referencia import ValoresReferenciaManager
 from ui.components.data_table_v2 import DataTableV2
+from utils.base_dialogs import BaseDialogMedium
 
 
 class ValoresReferenciaScreen(ctk.CTkFrame):
@@ -130,32 +131,18 @@ class ValoresReferenciaScreen(ctk.CTkFrame):
         self.table.clear_selection()
 
 
-class FormularioValorDialog(ctk.CTkToplevel):
+class FormularioValorDialog(BaseDialogMedium):
     """
     Dialog para criar/editar valores de referência
     """
 
     def __init__(self, parent, db_session: Session, valor=None):
-        super().__init__(parent)
-
         self.db_session = db_session
         self.manager = ValoresReferenciaManager(db_session)
         self.valor = valor  # None = criar novo, objeto = editar
 
-        # Window config
-        self.title("Editar Valores" if valor else "Novo Ano")
-        self.geometry("500x400")
-        self.resizable(False, False)
-
-        # Center window
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (500 // 2)
-        y = (self.winfo_screenheight() // 2) - (400 // 2)
-        self.geometry(f"+{x}+{y}")
-
-        # Make modal
-        self.transient(parent)
-        self.grab_set()
+        title = "Editar Valores" if valor else "Novo Ano"
+        super().__init__(parent, title=title)
 
         self.create_layout()
         if valor:
@@ -164,18 +151,15 @@ class FormularioValorDialog(ctk.CTkToplevel):
     def create_layout(self):
         """Create dialog layout"""
         # Title
-        title_frame = ctk.CTkFrame(self, fg_color="transparent")
-        title_frame.pack(fill="x", padx=30, pady=(30, 20))
-
         ctk.CTkLabel(
-            title_frame,
+            self.main_frame,
             text="✏️ Editar Valores" if self.valor else "➕ Novo Ano",
             font=ctk.CTkFont(size=20, weight="bold")
-        ).pack(anchor="w")
+        ).pack(anchor="w", pady=(0, 20))
 
         # Form frame
-        form_frame = ctk.CTkFrame(self, fg_color="transparent")
-        form_frame.pack(fill="both", expand=True, padx=30, pady=(0, 20))
+        form_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        form_frame.pack(fill="both", expand=True, pady=(0, 20))
 
         # Ano
         ctk.CTkLabel(form_frame, text="Ano:", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(10, 5))
@@ -200,8 +184,8 @@ class FormularioValorDialog(ctk.CTkToplevel):
         self.val_km_entry.pack(fill="x", pady=(0, 10))
 
         # Buttons
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=30, pady=(0, 30))
+        btn_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(10, 0))
 
         cancel_btn = ctk.CTkButton(
             btn_frame,

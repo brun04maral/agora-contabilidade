@@ -14,6 +14,7 @@ from logic.despesas import DespesasManager
 from database.models import TipoDespesa, EstadoDespesa
 from ui.components.data_table_v2 import DataTableV2
 from assets.resources import get_icon, DESPESAS
+from utils.base_dialogs import BaseDialogLarge
 
 
 class DespesasScreen(ctk.CTkFrame):
@@ -841,30 +842,22 @@ class DespesasScreen(ctk.CTkFrame):
             messagebox.showerror("Erro", f"Erro ao apagar despesa: {str(e)}")
 
 
-class FormularioDespesaDialog(ctk.CTkToplevel):
+class FormularioDespesaDialog(BaseDialogLarge):
     """
     Dialog para criar/editar despesas
     """
 
     def __init__(self, parent, manager: DespesasManager, despesa=None, callback=None):
-        super().__init__(parent)
-
         self.manager = manager
         self.despesa = despesa
         self.callback = callback
-        self.parent = parent
+        self.parent_ref = parent
 
-        self.title("Nova Despesa" if not despesa else f"Editar Despesa {despesa.numero}")
-        self.geometry("600x750")
+        title = "Nova Despesa" if not despesa else f"Editar Despesa {despesa.numero}"
+        super().__init__(parent, title=title)
 
-        self.transient(parent)
-        self.grab_set()
-
-        # Create form (needs to be created first to have scroll reference)
+        # Create form
         self.create_form()
-
-        # Setup scroll event capture
-        self._setup_scroll_capture()
 
         if despesa:
             self.carregar_dados()
@@ -875,10 +868,8 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
     def create_form(self):
         """Create form fields"""
 
-        self.scroll = ctk.CTkScrollableFrame(self)
-        self.scroll.pack(fill="both", expand=True, padx=20, pady=20)
-
-        scroll = self.scroll
+        # Use main_frame (already scrollable from BaseDialogLarge)
+        scroll = self.main_frame
 
         # Tipo
         ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))
@@ -958,8 +949,8 @@ class FormularioDespesaDialog(ctk.CTkToplevel):
         self.nota_entry.pack(fill="x", pady=(0, 10))
 
         # Buttons
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=20, pady=(0, 20))
+        btn_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(20, 0))
 
         cancel_btn = ctk.CTkButton(
             btn_frame,

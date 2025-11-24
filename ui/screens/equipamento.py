@@ -10,6 +10,7 @@ from ui.components.data_table_v2 import DataTableV2
 from database.models.equipamento import Equipamento
 from tkinter import messagebox
 from assets.resources import get_icon, EQUIPAMENTO
+from utils.base_dialogs import BaseDialogLarge
 
 
 class EquipamentoScreen(ctk.CTkFrame):
@@ -318,31 +319,17 @@ class EquipamentoScreen(ctk.CTkFrame):
         self.carregar_equipamentos()
 
 
-class EquipamentoDialog(ctk.CTkToplevel):
+class EquipamentoDialog(BaseDialogLarge):
     """Dialog para criar/editar equipamento"""
 
     def __init__(self, parent, manager: EquipamentoManager, equipamento: Optional[Equipamento] = None):
-        super().__init__(parent)
-
         self.manager = manager
         self.equipamento = equipamento
         self.equipamento_criado = False
         self.equipamento_atualizado = False
 
-        # Window config
-        self.title("Editar Equipamento" if equipamento else "Novo Equipamento")
-        self.geometry("700x800")
-        self.resizable(False, False)
-
-        # Make modal
-        self.transient(parent)
-        self.grab_set()
-
-        # Center window
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (700 // 2)
-        y = (self.winfo_screenheight() // 2) - (800 // 2)
-        self.geometry(f"700x800+{x}+{y}")
+        title = "Editar Equipamento" if equipamento else "Novo Equipamento"
+        super().__init__(parent, title=title)
 
         # Create widgets
         self.create_widgets()
@@ -354,21 +341,16 @@ class EquipamentoDialog(ctk.CTkToplevel):
     def create_widgets(self):
         """Create dialog widgets"""
 
-        # Main container
-        main_frame = ctk.CTkFrame(self)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-
         # Title
         title = ctk.CTkLabel(
-            main_frame,
+            self.main_frame,
             text="✏️ Editar Equipamento" if self.equipamento else "➕ Novo Equipamento",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title.pack(pady=(0, 20))
 
-        # Scrollable form
-        scroll = ctk.CTkScrollableFrame(main_frame)
-        scroll.pack(fill="both", expand=True)
+        # Use main_frame (already scrollable from BaseDialogLarge)
+        scroll = self.main_frame
 
         # Número (auto-generated or display)
         if not self.equipamento:

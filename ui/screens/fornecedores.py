@@ -12,6 +12,7 @@ from datetime import datetime
 from tkinter import messagebox
 import csv
 from assets.resources import get_icon, FORNECEDORES
+from utils.base_dialogs import BaseDialogLarge, BaseDialogMedium
 
 
 class FornecedoresScreen(ctk.CTkFrame):
@@ -375,7 +376,7 @@ class FornecedoresScreen(ctk.CTkFrame):
         """Show dialog to edit fornecedor"""
         fornecedor = self.manager.buscar_por_id(fornecedor_id)
         if not fornecedor:
-            self.show_error("Fornecedor não encontrado")
+            messagebox.showerror("Erro", "Fornecedor não encontrado")
             return
 
         dialog = FormularioFornecedorDialog(self, self.db_session, fornecedor=fornecedor)
@@ -392,7 +393,7 @@ class FornecedoresScreen(ctk.CTkFrame):
         """Delete fornecedor"""
         fornecedor = self.manager.buscar_por_id(fornecedor_id)
         if not fornecedor:
-            self.show_error("Fornecedor não encontrado")
+            messagebox.showerror("Erro", "Fornecedor não encontrado")
             return
 
         # Confirm
@@ -412,50 +413,25 @@ class FornecedoresScreen(ctk.CTkFrame):
         success, message = self.manager.apagar(fornecedor_id)
 
         if success:
-            self.show_success(message)
             self.carregar_fornecedores()
         else:
-            self.show_error(message)
-
-    def show_success(self, message: str):
-        """Show success message"""
-        dialog = MessageDialog(self, title="Sucesso", message=message, type="success")
-        dialog.wait_window()
-
-    def show_error(self, message: str):
-        """Show error message"""
-        dialog = MessageDialog(self, title="Erro", message=message, type="error")
-        dialog.wait_window()
+            messagebox.showerror("Erro", message)
 
 
-class FormularioFornecedorDialog(ctk.CTkToplevel):
+class FormularioFornecedorDialog(BaseDialogLarge):
     """
     Dialog for creating/editing fornecedor
     """
 
     def __init__(self, parent, db_session: Session, fornecedor: Optional[Fornecedor] = None):
-        super().__init__(parent)
-
         self.db_session = db_session
         self.manager = FornecedoresManager(db_session)
         self.fornecedor = fornecedor
         self.fornecedor_criado = False
         self.fornecedor_atualizado = False
 
-        # Configure window
-        self.title("Editar Fornecedor" if fornecedor else "Novo Fornecedor")
-        self.geometry("600x800")
-        self.resizable(False, False)
-
-        # Make modal
-        self.transient(parent)
-        self.grab_set()
-
-        # Center window
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (600 // 2)
-        y = (self.winfo_screenheight() // 2) - (800 // 2)
-        self.geometry(f"600x800+{x}+{y}")
+        title = "Editar Fornecedor" if fornecedor else "Novo Fornecedor"
+        super().__init__(parent, title=title)
 
         # Create widgets
         self.create_widgets()
@@ -491,21 +467,16 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
     def create_widgets(self):
         """Create dialog widgets"""
 
-        # Main container
-        main_frame = ctk.CTkFrame(self)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-
         # Title
         title = ctk.CTkLabel(
-            main_frame,
+            self.main_frame,
             text="✏️ Editar Fornecedor" if self.fornecedor else "➕ Novo Fornecedor",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title.pack(pady=(0, 20))
 
-        # Scrollable form
-        form_frame = ctk.CTkScrollableFrame(main_frame)
-        form_frame.pack(fill="both", expand=True)
+        # Use main_frame directly (already scrollable)
+        form_frame = self.main_frame
 
         # Nome (required)
         ctk.CTkLabel(
@@ -717,7 +688,7 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
         self.nota_entry.pack(fill="x", pady=(0, 15))
 
         # Buttons
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         button_frame.pack(fill="x", pady=(20, 0))
 
         cancel_btn = ctk.CTkButton(
@@ -846,10 +817,9 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
 
             if success:
                 self.fornecedor_atualizado = True
-                self.show_success(message)
                 self.destroy()
             else:
-                self.show_error(message)
+                messagebox.showerror("Erro", message)
         else:
             # Create
             success, fornecedor, message = self.manager.criar(
@@ -870,122 +840,54 @@ class FormularioFornecedorDialog(ctk.CTkToplevel):
 
             if success:
                 self.fornecedor_criado = True
-                self.show_success(message)
                 self.destroy()
             else:
-                self.show_error(message)
-
-    def show_success(self, message: str):
-        """Show success message"""
-        dialog = MessageDialog(self, title="Sucesso", message=message, type="success")
-        dialog.wait_window()
+                messagebox.showerror("Erro", message)
 
     def show_error(self, message: str):
         """Show error message"""
-        dialog = MessageDialog(self, title="Erro", message=message, type="error")
-        dialog.wait_window()
+        messagebox.showerror("Erro", message)
 
 
-class MessageDialog(ctk.CTkToplevel):
-    """Simple message dialog"""
-
-    def __init__(self, parent, title: str, message: str, type: str = "info"):
-        super().__init__(parent)
-
-        self.title(title)
-        self.geometry("400x200")
-        self.resizable(False, False)
-
-        # Make modal
-        self.transient(parent)
-        self.grab_set()
-
-        # Center
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (400 // 2)
-        y = (self.winfo_screenheight() // 2) - (200 // 2)
-        self.geometry(f"400x200+{x}+{y}")
-
-        # Icon
-        icon = "✅" if type == "success" else "❌" if type == "error" else "ℹ️"
-
-        # Content
-        frame = ctk.CTkFrame(self)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
-
-        icon_label = ctk.CTkLabel(
-            frame,
-            text=icon,
-            font=ctk.CTkFont(size=40)
-        )
-        icon_label.pack(pady=(20, 10))
-
-        message_label = ctk.CTkLabel(
-            frame,
-            text=message,
-            font=ctk.CTkFont(size=14),
-            wraplength=350
-        )
-        message_label.pack(pady=(0, 20))
-
-        ok_btn = ctk.CTkButton(
-            frame,
-            text="OK",
-            command=self.destroy,
-            width=120,
-            height=35
-        )
-        ok_btn.pack()
-
-
-class ConfirmDialog(ctk.CTkToplevel):
+class ConfirmDialog(BaseDialogMedium):
     """Confirmation dialog"""
 
     def __init__(self, parent, title: str, message: str, confirm_text: str = "Confirmar", cancel_text: str = "Cancelar"):
-        super().__init__(parent)
-
         self.confirmed = False
+        self._message = message
+        self._confirm_text = confirm_text
+        self._cancel_text = cancel_text
 
-        self.title(title)
-        self.geometry("450x220")
-        self.resizable(False, False)
+        super().__init__(parent, title=title, height=280)
 
-        # Make modal
-        self.transient(parent)
-        self.grab_set()
+        self.create_layout()
 
-        # Center
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (450 // 2)
-        y = (self.winfo_screenheight() // 2) - (220 // 2)
-        self.geometry(f"450x220+{x}+{y}")
-
-        # Content
-        frame = ctk.CTkFrame(self)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
-
+    def create_layout(self):
+        """Create dialog layout"""
+        # Icon
         icon_label = ctk.CTkLabel(
-            frame,
+            self.main_frame,
             text="⚠️",
             font=ctk.CTkFont(size=40)
         )
         icon_label.pack(pady=(20, 10))
 
+        # Message
         message_label = ctk.CTkLabel(
-            frame,
-            text=message,
+            self.main_frame,
+            text=self._message,
             font=ctk.CTkFont(size=14),
             wraplength=400
         )
         message_label.pack(pady=(0, 20))
 
         # Buttons
-        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        button_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         button_frame.pack(fill="x")
 
         cancel_btn = ctk.CTkButton(
             button_frame,
-            text=cancel_text,
+            text=self._cancel_text,
             command=self.cancel,
             width=140,
             height=35,
@@ -996,7 +898,7 @@ class ConfirmDialog(ctk.CTkToplevel):
 
         confirm_btn = ctk.CTkButton(
             button_frame,
-            text=confirm_text,
+            text=self._confirm_text,
             command=self.confirm,
             width=140,
             height=35,

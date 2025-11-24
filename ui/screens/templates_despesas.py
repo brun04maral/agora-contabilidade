@@ -11,6 +11,7 @@ import tkinter.messagebox as messagebox
 from logic.despesa_templates import DespesaTemplatesManager
 from database.models import TipoDespesa
 from ui.components.data_table_v2 import DataTableV2
+from utils.base_dialogs import BaseDialogLarge
 
 
 class TemplatesDespesasScreen(ctk.CTkFrame):
@@ -246,24 +247,19 @@ class TemplatesDespesasScreen(ctk.CTkFrame):
         self.table.clear_selection()
 
 
-class FormularioTemplateDialog(ctk.CTkToplevel):
+class FormularioTemplateDialog(BaseDialogLarge):
     """
     Dialog para criar/editar templates de despesas recorrentes
     """
 
     def __init__(self, parent, manager: DespesaTemplatesManager, template=None, callback=None):
-        super().__init__(parent)
-
         self.manager = manager
         self.template = template
         self.callback = callback
-        self.parent = parent
+        self.parent_ref = parent
 
-        self.title("Novo Template" if not template else f"Editar Template {template.numero}")
-        self.geometry("600x700")
-
-        self.transient(parent)
-        self.grab_set()
+        title = "Novo Template" if not template else f"Editar Template {template.numero}"
+        super().__init__(parent, title=title)
 
         self.create_form()
 
@@ -273,8 +269,8 @@ class FormularioTemplateDialog(ctk.CTkToplevel):
     def create_form(self):
         """Create form fields"""
 
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=20, pady=20)
+        # Use main_frame (already scrollable from BaseDialogLarge)
+        scroll = self.main_frame
 
         # Tipo
         ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 5))

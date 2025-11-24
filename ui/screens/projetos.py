@@ -15,6 +15,7 @@ from logic.clientes import ClientesManager
 from database.models import TipoProjeto, EstadoProjeto
 from ui.components.data_table_v2 import DataTableV2
 from assets.resources import get_icon, PROJETOS
+from utils.base_dialogs import BaseDialogLarge
 
 
 class ProjetosScreen(ctk.CTkFrame):
@@ -776,26 +777,19 @@ class ProjetosScreen(ctk.CTkFrame):
             messagebox.showerror("Erro", f"Erro ao apagar projeto: {str(e)}")
 
 
-class FormularioProjetoDialog(ctk.CTkToplevel):
+class FormularioProjetoDialog(BaseDialogLarge):
     """
     Dialog para criar/editar projetos
     """
 
     def __init__(self, parent, manager: ProjetosManager, projeto=None, callback=None):
-        super().__init__(parent)
-
         self.manager = manager
         self.projeto = projeto
         self.callback = callback
-        self.parent = parent
+        self.parent_ref = parent
 
-        # Configure window
-        self.title("Novo Projeto" if not projeto else f"Editar Projeto {projeto.numero}")
-        self.geometry("600x700")
-
-        # Make modal
-        self.transient(parent)
-        self.grab_set()
+        title = "Novo Projeto" if not projeto else f"Editar Projeto {projeto.numero}"
+        super().__init__(parent, title=title)
 
         # Create form
         self.create_form()
@@ -816,11 +810,8 @@ class FormularioProjetoDialog(ctk.CTkToplevel):
     def create_form(self):
         """Create form fields"""
 
-        # Scrollable container
-        self.scroll = ctk.CTkScrollableFrame(self)
-        self.scroll.pack(fill="both", expand=True, padx=25, pady=25)
-
-        scroll = self.scroll
+        # Use main_frame (already scrollable from BaseDialogLarge)
+        scroll = self.main_frame
 
         # Tipo
         ctk.CTkLabel(scroll, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(5, 8))

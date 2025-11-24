@@ -16,6 +16,7 @@ from logic.projetos import ProjetosManager
 from database.models.boletim import Socio
 from database.models.boletim_linha import TipoDeslocacao
 from ui.components.data_table_v2 import DataTableV2
+from utils.base_dialogs import BaseDialogLarge
 
 
 class BoletimFormScreen(ctk.CTkToplevel):
@@ -636,34 +637,20 @@ class BoletimFormScreen(ctk.CTkToplevel):
             messagebox.showerror("Erro", f"Erro ao duplicar boletim: {str(e)}")
 
 
-class LinhaDialog(ctk.CTkToplevel):
+class LinhaDialog(BaseDialogLarge):
     """
     Dialog para adicionar/editar linha de deslocação
     """
 
     def __init__(self, parent, db_session: Session, boletim_id: int, linha=None):
-        super().__init__(parent)
-
         self.db_session = db_session
         self.boletim_id = boletim_id
         self.linha = linha
         self.linhas_manager = BoletimLinhasManager(db_session)
         self.projetos_manager = ProjetosManager(db_session)
 
-        # Window config
-        self.title("Editar Deslocação" if linha else "Nova Deslocação")
-        self.geometry("600x700")
-        self.resizable(False, False)
-
-        # Center window
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (600 // 2)
-        y = (self.winfo_screenheight() // 2) - (700 // 2)
-        self.geometry(f"+{x}+{y}")
-
-        # Make modal
-        self.transient(parent)
-        self.grab_set()
+        title = "Editar Deslocação" if linha else "Nova Deslocação"
+        super().__init__(parent, title=title)
 
         self.create_layout()
 
@@ -672,9 +659,8 @@ class LinhaDialog(ctk.CTkToplevel):
 
     def create_layout(self):
         """Create dialog layout"""
-        # Main scroll container
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=20, pady=20)
+        # Use main_frame (already scrollable from BaseDialogLarge)
+        scroll = self.main_frame
 
         # Title
         ctk.CTkLabel(
