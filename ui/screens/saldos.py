@@ -525,28 +525,10 @@ class SaldosScreen(ctk.CTkFrame):
 
         self.create_saldo_item(
             self.bruno_outs_frame,
-            "Despesas fixas (÷2)",
+            "Fixas Mensais ÷2",
             saldo_bruno['outs']['despesas_fixas'],
             clickable=True,
             on_click=self.navegar_despesas_fixas,
-            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
-            button_border_color=("#EF6C00", "#FF9800")
-        )
-        self.create_saldo_item(
-            self.bruno_outs_frame,
-            "Boletins pendentes",
-            saldo_bruno['outs']['boletins_pendentes'],
-            clickable=True,
-            on_click=self.navegar_boletins_pendentes_bruno,
-            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
-            button_border_color=("#EF6C00", "#FF9800")
-        )
-        self.create_saldo_item(
-            self.bruno_outs_frame,
-            "Boletins pagos",
-            saldo_bruno['outs']['boletins_pagos'],
-            clickable=True,
-            on_click=self.navegar_boletins_pagos_bruno,
             button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
             button_border_color=("#EF6C00", "#FF9800")
         )
@@ -563,6 +545,33 @@ class SaldosScreen(ctk.CTkFrame):
         # Separator line
         sep = ctk.CTkFrame(self.bruno_outs_frame, height=1, fg_color="gray")
         sep.pack(fill="x", pady=8)
+
+        # Boletins pendentes (subsecção - só mostrar se > 0)
+        if saldo_bruno['outs'].get('boletins_pendentes', 0) > 0:
+            self.create_saldo_item(
+                self.bruno_outs_frame,
+                "📋 Boletins Pendentes",
+                saldo_bruno['outs']['boletins_pendentes'],
+                clickable=True,
+                on_click=self.navegar_boletins_pendentes_bruno,
+                button_color=("#FFECD9", "#8B5A00"),  # Laranja escuro acizentado
+                button_border_color=("#EF6C00", "#FF9800"),
+                tooltip="Boletins emitidos aguardando pagamento"
+            )
+
+        self.create_saldo_item(
+            self.bruno_outs_frame,
+            "Boletins pagos",
+            saldo_bruno['outs']['boletins_pagos'],
+            clickable=True,
+            on_click=self.navegar_boletins_pagos_bruno,
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
+        )
+
+        # Separator line
+        sep2 = ctk.CTkFrame(self.bruno_outs_frame, height=1, fg_color="gray")
+        sep2.pack(fill="x", pady=8)
 
         self.create_saldo_item(
             self.bruno_outs_frame,
@@ -658,28 +667,10 @@ class SaldosScreen(ctk.CTkFrame):
 
         self.create_saldo_item(
             self.rafael_outs_frame,
-            "Despesas fixas (÷2)",
+            "Fixas Mensais ÷2",
             saldo_rafael['outs']['despesas_fixas'],
             clickable=True,
             on_click=self.navegar_despesas_fixas,
-            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
-            button_border_color=("#EF6C00", "#FF9800")
-        )
-        self.create_saldo_item(
-            self.rafael_outs_frame,
-            "Boletins pendentes",
-            saldo_rafael['outs']['boletins_pendentes'],
-            clickable=True,
-            on_click=self.navegar_boletins_pendentes_rafael,
-            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
-            button_border_color=("#EF6C00", "#FF9800")
-        )
-        self.create_saldo_item(
-            self.rafael_outs_frame,
-            "Boletins pagos",
-            saldo_rafael['outs']['boletins_pagos'],
-            clickable=True,
-            on_click=self.navegar_boletins_pagos_rafael,
             button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
             button_border_color=("#EF6C00", "#FF9800")
         )
@@ -693,8 +684,36 @@ class SaldosScreen(ctk.CTkFrame):
             button_border_color=("#EF6C00", "#FF9800")
         )
 
+        # Separator line
         sep = ctk.CTkFrame(self.rafael_outs_frame, height=1, fg_color="gray")
         sep.pack(fill="x", pady=8)
+
+        # Boletins pendentes (subsecção - só mostrar se > 0)
+        if saldo_rafael['outs'].get('boletins_pendentes', 0) > 0:
+            self.create_saldo_item(
+                self.rafael_outs_frame,
+                "📋 Boletins Pendentes",
+                saldo_rafael['outs']['boletins_pendentes'],
+                clickable=True,
+                on_click=self.navegar_boletins_pendentes_rafael,
+                button_color=("#FFECD9", "#8B5A00"),  # Laranja escuro acizentado
+                button_border_color=("#EF6C00", "#FF9800"),
+                tooltip="Boletins emitidos aguardando pagamento"
+            )
+
+        self.create_saldo_item(
+            self.rafael_outs_frame,
+            "Boletins pagos",
+            saldo_rafael['outs']['boletins_pagos'],
+            clickable=True,
+            on_click=self.navegar_boletins_pagos_rafael,
+            button_color=("#FFE5D0", "#8B4513"),  # Orange - match Não Faturado (OUTs = saídas)
+            button_border_color=("#EF6C00", "#FF9800")
+        )
+
+        # Separator line
+        sep2 = ctk.CTkFrame(self.rafael_outs_frame, height=1, fg_color="gray")
+        sep2.pack(fill="x", pady=8)
 
         self.create_saldo_item(
             self.rafael_outs_frame,
