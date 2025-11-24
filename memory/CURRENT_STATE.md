@@ -22,7 +22,7 @@
 - 🎯 **Reestruturação Completa Saldos Pessoais** - Separação Pagos/Pendentes/Projetados
 
 **Última Feature Concluída:**
-- ✅ **Reestruturação Saldos Pessoais** (24/11/2025) - INs/OUTs reorganizados com totais separados (Pagos, Pendentes, Projetado). Cálculo corrigido: Saldo Projetado = TOTAL INs Projetado - TOTAL OUTs Projetado. Label simplificada. Documentação BUSINESS_LOGIC.md expandida. **Ver:** memory/CHANGELOG.md (24/11/2025)
+- ✅ **Fix Cálculo Sugestão Boletim** (24/11/2025) - Sugestão agora usa saldo_projetado dividido por meses restantes sem boletim. Conta boletins emitidos no ano, calcula meses restantes, distribui saldo projetado. **Ver:** memory/CHANGELOG.md (24/11/2025)
 
 **Próximo Milestone:**
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
