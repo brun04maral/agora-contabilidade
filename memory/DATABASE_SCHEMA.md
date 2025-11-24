@@ -772,9 +772,47 @@ session.query(Orcamento).filter(
 
 ---
 
+#### Migration 027 - Campo Owner em Projetos (24/11/2025)
+**Status:** ✅ Aplicada
+**Commit:** c190c6e
+
+**Alterações:**
+- Adiciona campo `owner` VARCHAR(2) DEFAULT 'BA' à tabela projetos
+- Owner indica sócio responsável ('BA' ou 'RR')
+- Atualiza owners existentes baseado em tipo anterior
+
+```sql
+ALTER TABLE projetos ADD COLUMN owner VARCHAR(2) DEFAULT 'BA';
+UPDATE projetos SET owner = 'BA' WHERE tipo = 'PESSOAL_BRUNO';
+UPDATE projetos SET owner = 'RR' WHERE tipo = 'PESSOAL_RAFAEL';
+```
+
+**Ver:** memory/CHANGELOG.md (24/11/2025)
+
+---
+
+#### Migration 028 - Refatorar TipoProjeto (24/11/2025)
+**Status:** ✅ Aplicada
+**Commit:** f56a3a2
+
+**Alterações:**
+- Simplifica TipoProjeto de 3 valores para 2
+- PESSOAL_BRUNO → PESSOAL (owner já definido como 'BA')
+- PESSOAL_RAFAEL → PESSOAL (owner já definido como 'RR')
+- EMPRESA mantido
+
+```sql
+UPDATE projetos SET tipo = 'PESSOAL' WHERE tipo = 'PESSOAL_BRUNO';
+UPDATE projetos SET tipo = 'PESSOAL' WHERE tipo = 'PESSOAL_RAFAEL';
+```
+
+**Ver:** memory/CHANGELOG.md (24/11/2025), memory/DECISIONS.md (ADR-009)
+
+---
+
 ### 📋 Planeadas (Futuro)
 
-#### Migration 027 - Sistema Fiscal - Receitas (PLANEADO)
+#### Migration 029 - Sistema Fiscal - Receitas (PLANEADO)
 **Prioridade:** 🔴 Alta
 **Status:** 📝 Documentado em FISCAL.md (39KB), aguarda validação TOC
 

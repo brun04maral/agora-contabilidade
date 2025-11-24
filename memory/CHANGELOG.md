@@ -4,6 +4,81 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-24] Refatoração TipoProjeto e UI Saldos
+
+### 🏗️ Refatoração - TipoProjeto Simplificado (EMPRESA|PESSOAL + Owner)
+
+**Contexto:**
+Refatoração arquitetural do modelo Projeto. Antes havia 3 valores de TipoProjeto (EMPRESA, PESSOAL_BRUNO, PESSOAL_RAFAEL). Agora simplificado para 2 valores + campo owner separado, permitindo melhor organização e queries mais limpas.
+
+**Commits:**
+- `f56a3a2`: refactor(projeto): simplificar TipoProjeto para EMPRESA|PESSOAL
+- `c190c6e`: feat(projeto): adicionar campo owner para identificar sócio responsável
+- `d1848c3`: feat(projeto_form): atualizar formulário para tipo + owner separados
+- `80d8ef8`: fix(migration): corrigir sintaxe Python 2/3 na migration 027
+
+**Migrations:**
+- **027**: Adiciona campo `owner` VARCHAR(2) DEFAULT 'BA' à tabela projetos
+- **028**: Converte PESSOAL_BRUNO→PESSOAL e PESSOAL_RAFAEL→PESSOAL
+
+**Modelo Projeto Atualizado:**
+```python
+class TipoProjeto(enum.Enum):
+    EMPRESA = "EMPRESA"   # Projeto da empresa (só prémios nos saldos)
+    PESSOAL = "PESSOAL"   # Projeto freelance do sócio
+
+owner = Column(String(2), nullable=False, default='BA')  # 'BA' ou 'RR'
+```
+
+**Ficheiros Alterados:**
+- `database/models/projeto.py` - Enum simplificado, campo owner
+- `database/migrations/027_add_owner_to_projeto.py` (NOVO)
+- `database/migrations/028_refactor_tipo_projeto.py` (NOVO)
+- `logic/projetos.py` - Manager com parâmetro owner
+- `logic/saldos.py` - Queries atualizadas (tipo + owner)
+- `ui/screens/dashboard.py` - Filtros e contagens
+- `ui/screens/projetos.py` - Filtros e labels
+- `ui/screens/projeto_form.py` - Dropdowns separados (Tipo + Responsável)
+
+**Ver:** memory/DATABASE_SCHEMA.md (Migrations 027-028), memory/DECISIONS.md (ADR-009)
+
+---
+
+### ✨ Features - UI Saldos Melhorada
+
+**Commits:**
+- `d1911da`: feat(saldos): adicionar subsecção boletins pendentes em OUTs
+- Sprints 3-5: Melhorias INs/OUTs e cálculos prémios
+
+**Alterações em ui/screens/saldos.py:**
+
+**INs Section:**
+- "Projetos pessoais" → "Pessoais"
+- Nova subsecção "📋 Projetos não pagos" (verde escuro #D4E8CF)
+- Nova subsecção "💡 Prémios não pagos" (verde escuro #D4E8CF)
+- Prémios só contam quando projeto.estado == PAGO
+
+**OUTs Section:**
+- "Despesas fixas (÷2)" → "Fixas Mensais ÷2"
+- Nova subsecção "📋 Boletins Pendentes" (laranja #FFECD9)
+
+**Dashboard:**
+- Fix formato moeda: "€. 1.234,56" → "€ 1.234,56"
+- 4 cards filtro projetos por tipo/owner (Pessoais BA, Pessoais RR, Empresa BA, Empresa RR)
+
+**Ver:** memory/BUSINESS_LOGIC.md (Secção Saldos)
+
+---
+
+### 🐛 Bugs Corrigidos
+
+**AttributeError Projeto.owner** (Commit: 0bf4b8c)
+- Dashboard tentava usar Projeto.owner antes do campo existir
+- Corrigido temporariamente com premio_bruno/premio_rafael
+- Resolvido definitivamente com migration 027
+
+---
+
 ## [2025-11-24] Refatoração Screens Dedicados (Padrão Projetos)
 
 ### 🏗️ Refatoração - Form Screens Dedicados para Fornecedores e Equipamento

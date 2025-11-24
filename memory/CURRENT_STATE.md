@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
 **Última atualização:** 2025-11-24 WET
-**Branch:** claude/sync-remote-branches-012DCnfzPEKEbhcQwMSJQVNB
+**Branch:** claude/sync-branch-updates-01PSZaS68aoVjGybDc4qUPnq
 **Status Geral:** ✅ PRODUÇÃO READY
 
 ---
@@ -22,7 +22,7 @@
 - 🎯 **Refatoração Screens Dedicados Completa** - Todos os forms CRUD migrados para screens dedicados
 
 **Última Feature Concluída:**
-- ✅ **Screens Dedicados Fornecedores e Equipamento** (24/11/2025) - Migração de dialogs para screens dedicados com CTkScrollableFrame e grid() layout. Criados fornecedor_form.py e equipamento_form.py, removidos ~770 linhas de dialogs. Completa refatoração padrão projetos (6/6 entidades). **Ver:** memory/CHANGELOG.md (24/11/2025)
+- ✅ **Refatoração TipoProjeto + UI Saldos** (24/11/2025) - TipoProjeto simplificado de 3 valores para 2 (EMPRESA|PESSOAL) + campo owner separado. Formulário projeto com dropdowns Tipo/Responsável. UI Saldos com subsecções "não pagos" e "boletins pendentes". Migrations 027-028. **Ver:** memory/CHANGELOG.md (24/11/2025)
 
 **Próximo Milestone:**
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
@@ -52,7 +52,7 @@
 
 ### 💾 Base de Dados
 **Status:** ✅ Completo
-**Última Migration:** 026 (18/11/2025)
+**Última Migration:** 028 (24/11/2025)
 
 **Tabelas Principais (16):**
 - Core: socios, clientes, fornecedores
@@ -69,6 +69,8 @@
 - ✅ 024: Campo projeto_id em orcamentos (17/11)
 - ✅ 025: Freelancers e fornecedores multi-entidade (17/11)
 - ✅ 026: Percentagem comissões 4 casas decimais (18/11)
+- ✅ 027: Campo owner em projetos (24/11)
+- ✅ 028: Refatorar TipoProjeto EMPRESA|PESSOAL (24/11)
 
 **Ver:** `memory/DATABASE_SCHEMA.md`
 
