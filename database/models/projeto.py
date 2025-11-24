@@ -37,6 +37,7 @@ class Projeto(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     numero = Column(String(20), unique=True, nullable=False, index=True)  # Ex: #P0001
     tipo = Column(SQLEnum(TipoProjeto), nullable=False, default=TipoProjeto.EMPRESA, index=True)
+    owner = Column(String(2), nullable=False, default='BA')  # 'BA' ou 'RR' - sócio responsável
 
     # Cliente
     cliente_id = Column(Integer, ForeignKey('clientes.id'), nullable=True)
@@ -79,6 +80,7 @@ class Projeto(Base):
             'id': self.id,
             'numero': self.numero,
             'tipo': self.tipo.value if self.tipo else None,
+            'owner': self.owner,
             'cliente_id': self.cliente_id,
             'cliente_nome': self.cliente.nome if self.cliente else None,
             'data_inicio': self.data_inicio.isoformat() if self.data_inicio else None,
