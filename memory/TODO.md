@@ -1,6 +1,6 @@
 # 📋 TODO.md - Tarefas Priorizadas
 
-Última atualização: 2025-11-22 10:36 WET
+Última atualização: 2025-11-24 WET
 
 ====================================================================
 LEGENDA DE PRIORIDADES
@@ -219,12 +219,12 @@ Para contexto e decisões:
 Ver memory/CHANGELOG.md para histórico completo.
 
 Últimas 6 features (Novembro 2025):
+- ✅ 24/11: Refatoração Screens Dedicados - fornecedores e equipamento (padrão projetos 6/6)
+- ✅ 24/11: Conversão Dialogs BaseDialogMedium/Large - 8 ficheiros, ~300 linhas removidas
 - ✅ 17/11: Orçamentos V2 Sistema Multi-Entidade COMPLETO
 - ✅ 17/11: Sistema Aprovação e Conversão Orçamentos
 - ✅ 17/11: Orçamentos V2 - 5/5 dialogs CLIENTE + 3/3 dialogs EMPRESA
-- ✅ 17/11: Auditoria Memory - DATABASE_SCHEMA, CURRENT_STATE, BUSINESS_LOGIC reorganizados
 - ✅ 15/11: Migration 021 - Cliente nome e nome_formal
-- ✅ 15/11: Migration 020 - Owner em projetos/orçamentos, rastreabilidade
 
 Para histórico anterior: Ver memory/CHANGELOG.md
 

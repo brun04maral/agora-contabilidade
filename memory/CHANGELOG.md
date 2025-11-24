@@ -4,6 +4,51 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-24] Refatoração Screens Dedicados (Padrão Projetos)
+
+### 🏗️ Refatoração - Form Screens Dedicados para Fornecedores e Equipamento
+
+**Contexto:**
+Continuação do padrão estabelecido em projetos, orçamentos, despesas, boletins e clientes. Todos os formulários de CRUD migrados de dialogs/popups para screens dedicados com CTkScrollableFrame e grid() layout. Isto resolve problemas de scroll trackpad e melhora consistência UX.
+
+**Commits:**
+- `213b51b`: refactor: fornecedores com screen dedicado para edição (padrão projetos)
+- `d1d055e`: refactor: equipamento com screen dedicado para edição (padrão projetos)
+
+**Ficheiros Criados:**
+- `ui/screens/fornecedor_form.py` (455 linhas) - Screen dedicado com todos os campos (nome, estatuto, área, função, classificação, NIF, IBAN, morada, contacto, email, website, validade_seguro_trabalho, nota)
+- `ui/screens/equipamento_form.py` (478 linhas) - Screen dedicado com todos os campos (produto, tipo, label, descrição, valores, quantidade, estado, fornecedor, data_compra, specs técnicas, URLs, nota)
+
+**Ficheiros Refatorados:**
+- `ui/screens/fornecedores.py` - Removido FormularioFornecedorDialog (~430 linhas), navegação via show_screen
+- `ui/screens/equipamento.py` - Removido EquipamentoDialog (~340 linhas), navegação via show_screen
+- `ui/main_window.py` - Adicionados show_fornecedor_form e show_equipamento_form, handlers no show_screen
+
+**Padrão Implementado:**
+1. Screen herda de CTkFrame (não CTkToplevel)
+2. Aceita `*_id` parameter (None = criar, ID = editar)
+3. CTkScrollableFrame com grid() para scroll correto
+4. Header com "< Voltar" button
+5. Navegação via main_window.show_screen()
+
+**Estatísticas:**
+- 2 ficheiros novos criados
+- 3 ficheiros alterados
+- ~770 linhas de dialog removidas
+- ~930 linhas de screen adicionadas (melhor estruturadas)
+
+**Refatoração Completa (Padrão Projetos):**
+- ✅ projetos (f84c778)
+- ✅ despesas (160e32a)
+- ✅ boletins (65c8480)
+- ✅ clientes (fab2850)
+- ✅ fornecedores (213b51b) - esta sessão
+- ✅ equipamento (d1d055e) - esta sessão
+
+**Ver:** memory/ARCHITECTURE.md (Secção Screen Navigation)
+
+---
+
 ## [2025-11-24] Conversão Completa de Dialogs para BaseDialogMedium/Large
 
 ### 🏗️ Refatoração - Dialogs em ui/screens/

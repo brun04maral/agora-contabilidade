@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
 **Última atualização:** 2025-11-24 WET
-**Branch:** claude/sync-branch-updates-01E272Kg4MfomDai3tRbLKDz
+**Branch:** claude/sync-remote-branches-012DCnfzPEKEbhcQwMSJQVNB
 **Status Geral:** ✅ PRODUÇÃO READY
 
 ---
@@ -19,10 +19,10 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (24/11/2025):**
-- 🎯 **Refatoração Dialogs Completa** - Todos dialogs convertidos para BaseDialogMedium/Large
+- 🎯 **Refatoração Screens Dedicados Completa** - Todos os forms CRUD migrados para screens dedicados
 
 **Última Feature Concluída:**
-- ✅ **Conversão Dialogs BaseDialogMedium/Large** (24/11/2025) - Todos os dialogs em ui/screens/ convertidos para herdar de BaseDialogMedium/Large. 8 ficheiros alterados, ~300 linhas código duplicado removidas. Scroll garantido, NameErrors corrigidos. **Ver:** memory/CHANGELOG.md (24/11/2025)
+- ✅ **Screens Dedicados Fornecedores e Equipamento** (24/11/2025) - Migração de dialogs para screens dedicados com CTkScrollableFrame e grid() layout. Criados fornecedor_form.py e equipamento_form.py, removidos ~770 linhas de dialogs. Completa refatoração padrão projetos (6/6 entidades). **Ver:** memory/CHANGELOG.md (24/11/2025)
 
 **Próximo Milestone:**
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
