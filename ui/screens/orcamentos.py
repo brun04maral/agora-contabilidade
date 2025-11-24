@@ -438,21 +438,6 @@ class OrcamentosScreen(ctk.CTkFrame):
             )
             value.pack(side="left", fill="x", expand=True)
 
-        # Description
-        if orcamento.descricao_proposta:
-            desc_label = ctk.CTkLabel(
-                scroll_frame,
-                text="Descrição da Proposta:",
-                font=ctk.CTkFont(size=14, weight="bold"),
-                anchor="w"
-            )
-            desc_label.pack(fill="x", pady=(10, 5))
-
-            desc_text = ctk.CTkTextbox(scroll_frame, height=80)
-            desc_text.pack(fill="x", pady=(0, 20))
-            desc_text.insert("1.0", orcamento.descricao_proposta)
-            desc_text.configure(state="disabled")
-
         # Valores
         valores_frame = ctk.CTkFrame(scroll_frame)
         valores_frame.pack(fill="x", pady=(0, 20))

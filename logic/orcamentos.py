@@ -54,7 +54,8 @@ class OrcamentoManager:
             termo = f"%{pesquisa}%"
             query = query.filter(
                 (Orcamento.codigo.ilike(termo)) |
-                (Orcamento.descricao_proposta.ilike(termo))
+                (Orcamento.local_evento.ilike(termo)) |
+                (Orcamento.data_evento.ilike(termo))
             )
 
         return query.order_by(Orcamento.data_criacao.desc()).all()
