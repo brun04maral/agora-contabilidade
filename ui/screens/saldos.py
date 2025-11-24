@@ -450,7 +450,7 @@ class SaldosScreen(ctk.CTkFrame):
         if saldo_bruno.get('saldo_projetado'):
             diferenca = saldo_bruno['saldo_projetado'] - saldo_atual_bruno
             self.bruno_saldo_projetado_label.configure(
-                text=f"Projetado (c/ não pagos): €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
+                text=f"Projetado (INs + OUTs): €{saldo_bruno['saldo_projetado']:,.2f} (+€{diferenca:,.2f})"
             )
         else:
             self.bruno_saldo_projetado_label.configure(text="")
@@ -606,7 +606,7 @@ class SaldosScreen(ctk.CTkFrame):
         if saldo_rafael.get('saldo_projetado'):
             diferenca_rr = saldo_rafael['saldo_projetado'] - saldo_atual_rafael
             self.rafael_saldo_projetado_label.configure(
-                text=f"Projetado (c/ não pagos): €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
+                text=f"Projetado (INs + OUTs): €{saldo_rafael['saldo_projetado']:,.2f} (+€{diferenca_rr:,.2f})"
             )
         else:
             self.rafael_saldo_projetado_label.configure(text="")
