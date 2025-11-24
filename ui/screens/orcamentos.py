@@ -485,10 +485,17 @@ class OrcamentosScreen(ctk.CTkFrame):
                 items = self.manager.obter_itens(orcamento.id, secao.id)
                 if items:
                     for item in items:
-                        item_text = f"  • {item.descricao} - Qtd: {item.quantidade} x {item.dias} dias x {float(item.preco_unitario):.2f}€"
-                        if item.desconto > 0:
-                            item_text += f" (Desconto: {float(item.desconto*100):.0f}%)"
-                        item_text += f" = {float(item.total):.2f}€"
+                        # Safe conversion for potentially None values
+                        qtd = item.quantidade or 0
+                        dias = item.dias or 1
+                        preco = float(item.preco_unitario) if item.preco_unitario else 0.0
+                        total = float(item.total) if item.total else 0.0
+                        desconto = float(item.desconto) if item.desconto else 0.0
+
+                        item_text = f"  • {item.descricao} - Qtd: {qtd} x {dias} dias x {preco:.2f}€"
+                        if desconto > 0:
+                            item_text += f" (Desconto: {desconto*100:.0f}%)"
+                        item_text += f" = {total:.2f}€"
 
                         item_label = ctk.CTkLabel(
                             secao_frame,
