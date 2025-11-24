@@ -210,11 +210,9 @@ class BaseScreen(ctk.CTkFrame):
             )
         title_label.pack(side="left")
 
-        # Slot para conteúdo custom no header
-        self.header_slot = ctk.CTkFrame(header_frame, fg_color="transparent")
-        self.header_slot.pack(side="left", padx=20)
+        # REMOVIDO header_slot - estava a causar espaço vazio
 
-        # Botões de ação
+        # Botões de ação (movidos para a direita, sem slot no meio)
         btn_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
         btn_frame.pack(side="right")
 
@@ -263,7 +261,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
         toolbar = ctk.CTkFrame(self, fg_color="transparent")
-        toolbar.pack(fill="x", padx=30, pady=(5, 5))
+        toolbar.pack(fill="x", padx=30, pady=(0, 5))
 
         # Search (compacta, só ícone lupa)
         if self.config.get('show_search', True):
@@ -335,8 +333,12 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_chips_area(self):
         """Cria área para chips de filtros ativos."""
-        self.chips_frame = ctk.CTkFrame(self, fg_color="transparent")
-        # NÃO fazer pack aqui - só fazer quando tiver chips
+        # Criar container que não empurra conteúdo
+        self.overlay_container = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        self.overlay_container.pack(fill="x", padx=30, pady=0)
+        self.overlay_container.pack_propagate(False)  # Não expande com conteúdo
+
+        self.chips_frame = ctk.CTkFrame(self.overlay_container, fg_color="transparent")
 
     def _add_filter_chip(self, filter_key: str, value: str):
         """Adiciona chip para filtro ativo."""
@@ -349,11 +351,12 @@ class BaseScreen(ctk.CTkFrame):
             print(f"[DEBUG] Chip já existe, ignorando")
             return  # Already exists
 
-        # Show chips frame (inserir ANTES da tabela)
-        # Verificar se já está empacotado
+        # Show chips frame dentro do overlay container
         if not self.chips_frame.winfo_manager():
-            print(f"[DEBUG] Empacotando chips_frame pela primeira vez")
-            self.chips_frame.pack(fill="x", padx=30, pady=(0, 5), before=self.table)
+            print(f"[DEBUG] Mostrando chips_frame")
+            self.chips_frame.pack(fill="x", pady=5)
+            # Expandir container para mostrar chips (35px = altura dos chips)
+            self.overlay_container.configure(height=35)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -405,6 +408,8 @@ class BaseScreen(ctk.CTkFrame):
             has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
             if not has_chips:
                 self.chips_frame.pack_forget()
+                # Colapsar container
+                self.overlay_container.configure(height=0)
 
             # Refresh data
             self.refresh_data()
@@ -417,8 +422,13 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_selection_bar(self):
         """Cria a barra de seleção flutuante (oculta por padrão)."""
+        # Container para barra de seleção (height 0 por padrão)
+        self.selection_container = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        self.selection_container.pack(fill="x", padx=30, pady=0)
+        self.selection_container.pack_propagate(False)
+
         self.selection_frame = ctk.CTkFrame(
-            self,
+            self.selection_container,
             fg_color=("#F5F5F5", "#2B2B2B"),
             corner_radius=8,
             border_width=1,
@@ -541,9 +551,13 @@ class BaseScreen(ctk.CTkFrame):
         print(f"[DEBUG] _on_selection_change: {num_selected} itens selecionados")
 
         if num_selected > 0:
-            # Mostrar barra de seleção (flutuante) ANTES da tabela
+            # Mostrar barra de seleção
             print(f"[DEBUG] Mostrando barra de seleção")
-            self.selection_frame.pack(fill="x", padx=30, pady=(0, 5), before=self.table)
+            if not self.selection_frame.winfo_manager():
+                self.selection_frame.pack(fill="x", pady=5)
+                # Expandir container (45px = altura da barra)
+                self.selection_container.configure(height=45)
+
             self.cancel_btn.pack(side="left", padx=8)
 
             count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
@@ -561,6 +575,8 @@ class BaseScreen(ctk.CTkFrame):
                 self.total_label.pack(side="left", padx=12)
         else:
             self.selection_frame.pack_forget()
+            # Colapsar container
+            self.selection_container.configure(height=0)
 
     def _clear_selection(self):
         """Limpa a seleção da tabela."""
