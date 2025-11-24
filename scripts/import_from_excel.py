@@ -441,10 +441,15 @@ class ExcelImporter:
             existing = self._exists_projeto(numero)
             if existing:
                 # Projeto existe → atualizar owner se diferente
+                print(f"  [DEBUG] {numero}: existing.owner={existing.owner}, excel.owner={owner}, dry_run={self.dry_run}")
                 if existing.owner != owner:
                     if not self.dry_run:
+                        print(f"  [DEBUG] Atualizando {numero}: {existing.owner} → {owner}")
                         existing.owner = owner
                         self.session.commit()
+                        # Confirmar que gravou
+                        self.session.refresh(existing)
+                        print(f"  [DEBUG] Após commit: {existing.owner}")
                         print(f"  🔄 {numero}: {descricao[:40]} (owner atualizado para {owner})")
                     else:
                         print(f"  🔍 {numero}: {descricao[:40]} (owner seria atualizado para {owner})")
