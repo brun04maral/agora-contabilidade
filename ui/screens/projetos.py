@@ -333,6 +333,9 @@ class ProjetosScreen(ctk.CTkFrame):
         )
         self.editor_scroll.pack(fill="both", expand=True, pady=(0, 10))
 
+        # Enable trackpad/mouse scroll by ensuring focus
+        self.editor_scroll.bind("<Enter>", lambda e: self.editor_scroll.focus_set())
+
         scroll = self.editor_scroll
 
         # Tipo
@@ -454,15 +457,17 @@ class ProjetosScreen(ctk.CTkFrame):
         if projeto:
             self._carregar_dados_projeto(projeto)
 
-        # Hide list elements
-        self.header_frame.pack_forget()
+        # Hide search, filters and selection (but keep header visible)
         self.search_frame.pack_forget()
         self.filters_frame.pack_forget()
         self.selection_frame.pack_forget()
-        self.list_frame.pack_forget()
 
-        # Show editor (full screen)
+        # Toggle from list to editor
+        self.list_frame.pack_forget()
         self.editor_frame.pack(fill="both", expand=True)
+
+        # Focus on editor scroll for trackpad support
+        self.editor_scroll.focus_set()
 
     def fechar_editor(self):
         """Hide editor and show list again"""
@@ -472,10 +477,11 @@ class ProjetosScreen(ctk.CTkFrame):
         # Hide editor
         self.editor_frame.pack_forget()
 
-        # Show list elements again (in correct order)
-        self.header_frame.pack(fill="x", padx=30, pady=(30, 20))
-        self.search_frame.pack(fill="x", padx=30, pady=(0, 15))
-        self.filters_frame.pack(fill="x", padx=30, pady=(0, 20))
+        # Show search and filters again (before content_area to maintain order)
+        self.search_frame.pack(fill="x", padx=30, pady=(0, 15), before=self.content_area)
+        self.filters_frame.pack(fill="x", padx=30, pady=(0, 20), before=self.content_area)
+
+        # Show list
         self.list_frame.pack(fill="both", expand=True)
 
         # Clear selection
