@@ -164,17 +164,15 @@ class BaseScreen(ctk.CTkFrame):
         # Selection bar (hidden by default)
         self._create_selection_bar()
 
-        # Table (expandida)
+        # Table (expandida) - DEVE ser último para expandir
         self._create_table()
 
-        # Footer slot
-        self.footer_slot = ctk.CTkFrame(self, fg_color="transparent")
-        self.footer_slot.pack(fill="x", padx=30, pady=(0, 10))
+        # Footer slot - NÃO adicionar aqui, só se necessário
 
     def _create_header(self):
         """Cria o header com título e botões."""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(20, 15))
+        header_frame.pack(fill="x", padx=30, pady=(15, 5))
 
         # Título com ícone
         title = self.config.get('title', 'Screen')
@@ -265,7 +263,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
         toolbar = ctk.CTkFrame(self, fg_color="transparent")
-        toolbar.pack(fill="x", padx=30, pady=(0, 10))
+        toolbar.pack(fill="x", padx=30, pady=(0, 5))
 
         # Search (compacta, só ícone lupa)
         if self.config.get('show_search', True):
@@ -337,9 +335,8 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_chips_area(self):
         """Cria área para chips de filtros ativos."""
-        self.chips_frame = ctk.CTkFrame(self, fg_color="transparent", height=0)
-        self.chips_frame.pack(fill="x", padx=30, pady=(0, 10))
-        self.chips_frame.pack_forget()  # Hidden by default
+        self.chips_frame = ctk.CTkFrame(self, fg_color="transparent")
+        # NÃO fazer pack aqui - só fazer quando tiver chips
 
     def _add_filter_chip(self, filter_key: str, value: str):
         """Adiciona chip para filtro ativo."""
@@ -349,8 +346,10 @@ class BaseScreen(ctk.CTkFrame):
         if value in self._filter_chips[filter_key]:
             return  # Already exists
 
-        # Show chips frame
-        self.chips_frame.pack(fill="x", padx=30, pady=(0, 10))
+        # Show chips frame (inserir ANTES da tabela)
+        # Verificar se já está empacotado
+        if not self.chips_frame.winfo_manager():
+            self.chips_frame.pack(fill="x", padx=30, pady=(0, 5), before=self.table)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -468,13 +467,13 @@ class BaseScreen(ctk.CTkFrame):
         self.table = DataTableV2(
             self,
             columns=columns,
-            height=400,  # Will expand with fill="both"
+            height=100,  # Mínimo, vai expandir
             on_row_double_click=self._on_row_double_click,
             on_selection_change=self._on_selection_change,
             on_row_right_click=self._on_row_right_click
         )
-        # Expandir tabela para ocupar máximo espaço
-        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 10))
+        # Expandir tabela para ocupar MÁXIMO espaço disponível
+        self.table.pack(fill="both", expand=True, padx=30, pady=0)
 
     # ========== Event Handlers ==========
 
@@ -489,8 +488,13 @@ class BaseScreen(ctk.CTkFrame):
 
     def _on_filter_select(self, key: str, value: str):
         """Handler para seleção em filtro."""
-        # Se é "Todos" ou já selecionado, ignora
-        if value == "Todos" or value in [f.get('label', f['key']) for f in self.get_filters_config() if f['key'] == key]:
+        # Ignorar se é "Todos" ou é o próprio label do filtro
+        filter_cfg = next((f for f in self.get_filters_config() if f['key'] == key), None)
+        if not filter_cfg:
+            return
+
+        label = filter_cfg.get('label', key.capitalize())
+        if value == "Todos" or value == label:
             return
 
         # Adicionar à seleção
@@ -502,11 +506,8 @@ class BaseScreen(ctk.CTkFrame):
         # Adicionar chip
         self._add_filter_chip(key, value)
 
-        # Reset dropdown
-        filter_cfg = next((f for f in self.get_filters_config() if f['key'] == key), None)
-        if filter_cfg:
-            label = filter_cfg.get('label', key.capitalize())
-            self._filter_widgets[key].set(label)
+        # Reset dropdown para mostrar label novamente
+        self._filter_widgets[key].set(label)
 
         # Refresh data
         self.refresh_data()
@@ -526,8 +527,8 @@ class BaseScreen(ctk.CTkFrame):
         num_selected = len(selected_data)
 
         if num_selected > 0:
-            # Mostrar barra de seleção (flutuante)
-            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
+            # Mostrar barra de seleção (flutuante) ANTES da tabela
+            self.selection_frame.pack(fill="x", padx=30, pady=(0, 5), before=self.table)
             self.cancel_btn.pack(side="left", padx=8)
 
             count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
