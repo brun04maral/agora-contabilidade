@@ -4,113 +4,203 @@ Tela de gestão de Boletins
 """
 import customtkinter as ctk
 import tkinter as tk
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from datetime import date
 import tkinter.messagebox as messagebox
 
 from logic.boletins import BoletinsManager
 from database.models import Socio, EstadoBoletim
-from ui.components.data_table_v2 import DataTableV2
+from ui.components.base_screen import BaseScreen
 from assets.resources import get_icon, BOLETINS
 
 
-class BoletinsScreen(ctk.CTkFrame):
+class BoletinsScreen(BaseScreen):
     """
     Tela de gestão de Boletins (listar + emitir + marcar pago)
     """
 
     def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_socio=None, **kwargs):
-        super().__init__(parent, **kwargs)
-
         self.db_session = db_session
         self.manager = BoletinsManager(db_session)
         self.filtro_inicial_estado = filtro_estado
         self.filtro_inicial_socio = filtro_socio
 
-        self.configure(fg_color="transparent")
-        self.create_widgets()
+        # Initialize filter widgets (created in toolbar_slot)
+        self.socio_filter = None
+        self.estado_filter = None
 
-        # Apply initial filter if provided
-        if self.filtro_inicial_estado or self.filtro_inicial_socio:
-            if self.filtro_inicial_estado:
-                self.estado_filter.set(self.filtro_inicial_estado)
-            if self.filtro_inicial_socio:
-                self.socio_filter.set(self.filtro_inicial_socio)
-            self.aplicar_filtros()
-        else:
-            self.carregar_boletins()
+        # Call parent __init__ (this will call abstract methods)
+        super().__init__(parent, db_session, **kwargs)
 
-    def create_widgets(self):
-        """Create screen widgets"""
+    # ===== ABSTRACT METHODS FROM BaseScreen =====
 
-        # Header
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
+    def get_screen_title(self) -> str:
+        """Return screen title"""
+        return "Boletins"
 
-        # Title with PNG icon
-        icon_pil = get_icon(BOLETINS, size=(28, 28))
-        if icon_pil:
-            icon_ctk = ctk.CTkImage(
-                light_image=icon_pil,
-                dark_image=icon_pil,
-                size=(28, 28)
-            )
-            title_label = ctk.CTkLabel(
-                header_frame,
-                image=icon_ctk,
-                text=" Boletins",
-                compound="left",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        else:
-            title_label = ctk.CTkLabel(
-                header_frame,
-                text="📄 Boletins",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        title_label.pack(side="left")
+    def get_screen_icon(self):
+        """Return screen icon (PIL Image or None)"""
+        return get_icon(BOLETINS, size=(28, 28))
 
-        # Buttons
-        btn_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        btn_frame.pack(side="right")
+    def get_table_columns(self) -> List[Dict[str, Any]]:
+        """Return table column definitions"""
+        return [
+            {'key': 'numero', 'label': 'ID', 'width': 80, 'sortable': True},
+            {'key': 'socio', 'label': 'Sócio', 'width': 120, 'sortable': True},
+            {'key': 'data_emissao', 'label': 'Data Emissão', 'width': 120, 'sortable': True},
+            {'key': 'linhas', 'label': 'Linhas', 'width': 80, 'sortable': True},
+            {'key': 'valor_fmt', 'label': 'Valor', 'width': 110, 'sortable': True},
+            {'key': 'descricao', 'label': 'Descrição', 'width': 220, 'sortable': False},
+            {'key': 'estado', 'label': 'Estado', 'width': 100, 'sortable': True},
+            {'key': 'data_pagamento', 'label': 'Data Pagamento', 'width': 130, 'sortable': True},
+        ]
 
-        refresh_btn = ctk.CTkButton(
-            btn_frame,
-            text="🔄 Atualizar",
-            command=self.carregar_boletins,
-            width=120,
-            height=35,
-            font=ctk.CTkFont(size=13)
-        )
-        refresh_btn.pack(side="left", padx=5)
+    def load_data(self) -> List[Any]:
+        """Load boletins from database and return as list of objects"""
+        try:
+            # Get dropdown filters (widgets podem não existir em __init__)
+            socio = "Todos"
+            if hasattr(self, 'socio_filter') and self.socio_filter:
+                try:
+                    socio = self.socio_filter.get()
+                except Exception:
+                    pass
 
-        novo_btn = ctk.CTkButton(
-            btn_frame,
-            text="➕ Novo Boletim",
-            command=self.abrir_formulario,
-            width=150,
-            height=35,
-            font=ctk.CTkFont(size=13)
-        )
-        novo_btn.pack(side="left", padx=5)
+            estado = "Todos"
+            if hasattr(self, 'estado_filter') and self.estado_filter:
+                try:
+                    estado = self.estado_filter.get()
+                except Exception:
+                    pass
 
-        # Config button (small, for values)
-        config_btn = ctk.CTkButton(
-            btn_frame,
-            text="⚙️",
-            command=self.abrir_valores_referencia,
-            width=35,
-            height=35,
-            font=ctk.CTkFont(size=16),
-            fg_color=("gray70", "gray30"),
-            hover_color=("gray60", "gray40")
-        )
-        config_btn.pack(side="left", padx=(0, 5))
+            # Load all boletins
+            boletins = self.manager.listar_todos()
 
-        # Filters
-        filters_frame = ctk.CTkFrame(self, fg_color="transparent")
-        filters_frame.pack(fill="x", padx=30, pady=(0, 20))
+            # Apply socio filter
+            if socio != "Todos":
+                socio_enum = Socio.BRUNO if socio == "BA" else Socio.RAFAEL
+                boletins = [b for b in boletins if b.socio == socio_enum]
+
+            # Apply estado filter
+            if estado != "Todos":
+                estado_enum = EstadoBoletim.PENDENTE if estado == "Pendente" else EstadoBoletim.PAGO
+                boletins = [b for b in boletins if b.estado == estado_enum]
+
+            return boletins  # NUNCA None, sempre lista
+
+        except Exception as e:
+            print(f"ERROR in load_data(): {e}")
+            import traceback
+            traceback.print_exc()
+            return []  # SEMPRE retornar lista vazia em erro
+
+    def item_to_dict(self, item: Any) -> Dict[str, Any]:
+        """Convert boletim object to dict for table"""
+        # Count linhas (deslocações)
+        num_linhas = len(item.linhas) if hasattr(item, 'linhas') and item.linhas else 0
+
+        return {
+            'id': item.id,
+            'numero': item.numero,
+            'socio': "BA" if item.socio == Socio.BRUNO else "RR",
+            'data_emissao': item.data_emissao.strftime("%Y-%m-%d") if item.data_emissao else '-',
+            'linhas': str(num_linhas),
+            'valor': float(item.valor),
+            'valor_fmt': f"€{float(item.valor):,.2f}",
+            'descricao': item.descricao or '-',
+            'estado': "Pendente" if item.estado == EstadoBoletim.PENDENTE else "Pago",
+            'data_pagamento': item.data_pagamento.strftime("%Y-%m-%d") if item.data_pagamento else '-',
+            '_bg_color': self.get_estado_color(item.estado),
+            '_boletim': item  # CRÍTICO: guardar objeto original
+        }
+
+    def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
+        """Define ações do context menu e barra de ações"""
+
+        # Para barra de ações (data vazio {} quando BaseScreen chama)
+        if not data or '_boletim' not in data:
+            return [
+                {
+                    'label': '✏️ Editar',
+                    'command': self._editar_selecionado,
+                    'min_selection': 1,
+                    'max_selection': 1,
+                    'fg_color': ('#2196F3', '#1976D2'),
+                    'hover_color': ('#1976D2', '#1565C0'),
+                    'width': 100
+                },
+                {
+                    'label': '📋 Duplicar',
+                    'command': self._duplicar_selecionado,
+                    'min_selection': 1,
+                    'max_selection': 1,  # ⚠️ Apenas 1 por vez
+                    'fg_color': ('#9C27B0', '#7B1FA2'),
+                    'hover_color': ('#7B1FA2', '#6A1B9A'),
+                    'width': 110
+                },
+                {
+                    'label': '✅ Marcar Pago',
+                    'command': self._pagar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#4CAF50', '#388E3C'),
+                    'hover_color': ('#388E3C', '#2E7D32'),
+                    'width': 130
+                },
+                {
+                    'label': '📊 Relatório',
+                    'command': self._criar_relatorio,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#FF9800', '#F57C00'),
+                    'hover_color': ('#F57C00', '#EF6C00'),
+                    'width': 110
+                },
+                {
+                    'label': '🗑️ Apagar',
+                    'command': self._apagar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#F44336', '#C62828'),
+                    'hover_color': ('#D32F2F', '#B71C1C'),
+                    'width': 100
+                }
+            ]
+
+        # Para context menu (ações contextuais baseadas em estado)
+        boletim = data.get('_boletim')
+        if not boletim:
+            return []
+
+        items = [
+            {'label': '✏️ Editar', 'command': lambda: self.editar_boletim(data)},
+            {'label': '📋 Duplicar', 'command': lambda: self._duplicar_from_context(boletim)},
+            {'separator': True},
+        ]
+
+        # Ação depende do estado
+        if boletim.estado == EstadoBoletim.PENDENTE:
+            items.append({'label': '✅ Marcar como Pago', 'command': lambda: self._marcar_pago_from_context(boletim)})
+        else:  # PAGO
+            items.append({'label': '⏪ Voltar a Pendente', 'command': lambda: self._marcar_pendente_from_context(boletim)})
+
+        items.append({'separator': True})
+        items.append({'label': '🗑️ Apagar', 'command': lambda: self._apagar_from_context(boletim)})
+
+        return items
+
+    # ===== OPTIONAL METHODS =====
+
+    def toolbar_slot(self, parent):
+        """Create custom toolbar with filters and config button"""
+        # Frame principal
+        toolbar_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        toolbar_frame.pack(fill="x", padx=0, pady=(0, 10))
+
+        # Row 1: Filtros + botão config
+        filters_frame = ctk.CTkFrame(toolbar_frame, fg_color="transparent")
+        filters_frame.pack(fill="x")
 
         # Sócio filter
         ctk.CTkLabel(
@@ -122,9 +212,10 @@ class BoletinsScreen(ctk.CTkFrame):
         self.socio_filter = ctk.CTkOptionMenu(
             filters_frame,
             values=["Todos", "BA", "RR"],
-            command=self.aplicar_filtros,
+            command=lambda _: self.refresh_data(),
             width=150
         )
+        self.socio_filter.set(self.filtro_inicial_socio or "Todos")
         self.socio_filter.pack(side="left", padx=(0, 20))
 
         # Estado filter
@@ -137,114 +228,169 @@ class BoletinsScreen(ctk.CTkFrame):
         self.estado_filter = ctk.CTkOptionMenu(
             filters_frame,
             values=["Todos", "Pendente", "Pago"],
-            command=self.aplicar_filtros,
+            command=lambda _: self.refresh_data(),
             width=120
         )
-        self.estado_filter.pack(side="left")
+        self.estado_filter.set(self.filtro_inicial_estado or "Todos")
+        self.estado_filter.pack(side="left", padx=(0, 20))
 
-        # Selection actions bar (created but NOT packed - will be shown on selection)
-        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
-
-        # Clear selection button
-        self.cancel_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="🗑️ Limpar Seleção",
-            command=self.cancelar_selecao,
-            width=150, height=35
+        # Config button (valores de referência)
+        config_btn = ctk.CTkButton(
+            filters_frame,
+            text="⚙️",
+            command=self.abrir_valores_referencia,
+            width=35,
+            height=35,
+            font=ctk.CTkFont(size=16),
+            fg_color=("gray70", "gray30"),
+            hover_color=("gray60", "gray40")
         )
+        config_btn.pack(side="left")
 
-        # Selection count label
-        self.count_label = ctk.CTkLabel(
-            self.selection_frame,
-            text="0 selecionados",
-            font=ctk.CTkFont(size=13)
-        )
+    def on_add_click(self):
+        """Handle add button click"""
+        self.abrir_formulario(boletim=None)
 
-        # Mark as paid button
-        self.marcar_pago_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="✅ Marcar como Pago",
-            command=self.marcar_como_pago_batch,
-            width=180, height=35,
-            fg_color=("#4CAF50", "#388E3C"),
-            hover_color=("#66BB6A", "#2E7D32")
-        )
+    def on_item_double_click(self, data: dict):
+        """Handle table row double-click (editar)"""
+        boletim = data.get('_boletim')
+        if boletim:
+            self.abrir_formulario(boletim)
 
-        # Duplicate button (only for single selection)
-        self.duplicar_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="📋 Duplicar",
-            command=self.duplicar_boletim_selecionado,
-            width=140, height=35,
-            fg_color=("#2196F3", "#1976D2"),
-            hover_color=("#64B5F6", "#1565C0")
-        )
+    def calculate_selection_total(self, selected_data: List[Dict[str, Any]]) -> float:
+        """Calculate total value of selected boletins"""
+        return sum(item.get('valor', 0) for item in selected_data)
 
-        # Report button
-        self.report_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="📊 Criar Relatório",
-            command=self.criar_relatorio,
-            width=160, height=35
-        )
+    # ===== BULK OPERATION METHODS FOR ACTION BAR =====
 
-        # Total label
-        self.total_label = ctk.CTkLabel(
-            self.selection_frame,
-            text="Total: €0,00",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
+    def _editar_selecionado(self):
+        """Edita boletim selecionado"""
+        selected = self.get_selected_data()
+        if selected and len(selected) == 1:
+            self.on_item_double_click(selected[0])
 
-        # Table
-        columns = [
-            {'key': 'numero', 'label': 'ID', 'width': 80, 'sortable': True},
-            {'key': 'socio', 'label': 'Sócio', 'width': 120, 'sortable': True},
-            {'key': 'data_emissao', 'label': 'Data Emissão', 'width': 120, 'sortable': True},
-            {'key': 'linhas', 'label': 'Linhas', 'width': 80, 'sortable': True},
-            {'key': 'valor_fmt', 'label': 'Valor', 'width': 110, 'sortable': True},
-            {'key': 'descricao', 'label': 'Descrição', 'width': 220, 'sortable': False},
-            {'key': 'estado', 'label': 'Estado', 'width': 100, 'sortable': True},
-            {'key': 'data_pagamento', 'label': 'Data Pagamento', 'width': 130, 'sortable': True},
-        ]
+    def _duplicar_selecionado(self):
+        """Duplica boletim selecionado (APENAS 1)"""
+        selected = self.get_selected_data()
+        if not selected or len(selected) != 1:
+            return
 
-        self.table = DataTableV2(
-            self,
-            columns=columns,
-            on_row_double_click=self.editar_boletim,
-            on_selection_change=self.on_selection_change,
-            on_row_right_click=self.show_context_menu,
-            height=400
-        )
-        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        boletim = selected[0].get('_boletim')
+        if not boletim:
+            return
 
-    def carregar_boletins(self):
-        """Load and display boletins"""
-        boletins = self.manager.listar_todos()
-        data = [self.boletim_to_dict(b) for b in boletins]
-        self.table.set_data(data)
+        try:
+            # Confirmar
+            resposta = messagebox.askyesno(
+                "Duplicar Boletim",
+                f"Duplicar boletim {boletim.numero}?\n\n"
+                f"Todas as deslocações serão copiadas.\n"
+                f"O novo boletim abrirá em modo edição."
+            )
 
-    def boletim_to_dict(self, boletim) -> dict:
-        """Convert boletim to dict for table"""
-        # Determine color based on estado
-        color = self.get_estado_color(boletim.estado)
+            if not resposta:
+                return
 
-        # Count linhas (deslocações)
-        num_linhas = len(boletim.linhas) if hasattr(boletim, 'linhas') and boletim.linhas else 0
+            # Duplicar
+            sucesso, novo_boletim, erro = self.manager.duplicar_boletim(boletim.id)
 
-        return {
-            'id': boletim.id,
-            'numero': boletim.numero,
-            'socio': "BA" if boletim.socio == Socio.BRUNO else "RR",
-            'data_emissao': boletim.data_emissao.strftime("%Y-%m-%d") if boletim.data_emissao else '-',
-            'linhas': str(num_linhas),
-            'valor': float(boletim.valor),
-            'valor_fmt': f"€{float(boletim.valor):,.2f}",
-            'descricao': boletim.descricao or '-',
-            'estado': "Pendente" if boletim.estado == EstadoBoletim.PENDENTE else "Pago",
-            'data_pagamento': boletim.data_pagamento.strftime("%Y-%m-%d") if boletim.data_pagamento else '-',
-            '_bg_color': color,
-            '_boletim': boletim
-        }
+            if sucesso:
+                self.refresh_data()
+                messagebox.showinfo("Sucesso", f"Boletim duplicado como {novo_boletim.numero}")
+                self.abrir_formulario(novo_boletim)
+            else:
+                messagebox.showerror("Erro", erro or "Erro ao duplicar boletim")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao duplicar: {str(e)}")
+
+    def _pagar_selecionados(self):
+        """Marca boletins selecionados como pagos"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        # Filtrar apenas não pagos
+        unpaid = [b.get('_boletim') for b in selected
+                  if b.get('_boletim') and b.get('_boletim').estado != EstadoBoletim.PAGO]
+
+        if not unpaid:
+            messagebox.showinfo("Info", "Todos já estão pagos.")
+            return
+
+        # Confirmar
+        if not messagebox.askyesno(
+            "Confirmar",
+            f"Marcar {len(unpaid)} boletim(ns) como pago(s)?\n\n"
+            f"Data: {date.today().strftime('%Y-%m-%d')}"
+        ):
+            return
+
+        erros = []
+        for boletim in unpaid:
+            sucesso, erro = self.manager.marcar_como_pago(boletim.id)
+            if not sucesso:
+                erros.append(f"{boletim.numero}: {erro}")
+
+        if not erros:
+            self.refresh_data()
+            messagebox.showinfo("Sucesso", f"{len(unpaid)} boletim(ns) marcado(s) como pago")
+        else:
+            messagebox.showerror("Erro", "\n".join(erros))
+            self.refresh_data()
+
+    def _criar_relatorio(self):
+        """Cria relatório para boletins selecionados"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        boletim_ids = [item.get('id') for item in selected if item.get('id')]
+
+        # Navigate to Relatorios tab
+        main_window = self.master.master
+        if hasattr(main_window, 'show_relatorios'):
+            main_window.show_relatorios(boletim_ids=boletim_ids)
+        else:
+            messagebox.showerror("Erro", "Não foi possível navegar para Relatórios")
+
+    def _apagar_selecionados(self):
+        """Apaga boletins selecionados"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+        if not messagebox.askyesno(
+            "Confirmar Exclusão",
+            f"Apagar {num} boletim(ns)?\n\n"
+            f"⚠️ Esta ação não pode ser desfeita."
+        ):
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            boletim = data.get('_boletim')
+            if boletim:
+                sucesso, erro = self.manager.apagar(boletim.id)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{boletim.numero}: {erro}")
+
+        if sucessos > 0:
+            msg = f"✅ {sucessos} boletim(ns) apagado(s)!"
+            if erros:
+                msg += f"\n\n⚠️ {len(erros)} erro(s)"
+            messagebox.showinfo("Resultado", msg)
+        else:
+            messagebox.showerror("Erro", "\n".join(erros[:5]))
+
+        self.refresh_data()
+
+    # ===== HELPER METHODS (MANTER) =====
 
     def get_estado_color(self, estado: EstadoBoletim) -> tuple:
         """Get color for estado (returns tuple: light, dark mode) - Opção 3 Agora Inspired"""
@@ -253,34 +399,6 @@ class BoletinsScreen(ctk.CTkFrame):
             EstadoBoletim.PAGO: ("#E8F5E0", "#4A7028")        # Verde pastel - positivo
         }
         return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
-
-    def aplicar_filtros(self, *args):
-        """Apply filters"""
-        socio = self.socio_filter.get()
-        estado = self.estado_filter.get()
-
-        boletins = self.manager.listar_todos()
-
-        # Filter by socio
-        if socio != "Todos":
-            socio_enum = Socio.BRUNO if socio == "BA" else Socio.RAFAEL
-            boletins = [b for b in boletins if b.socio == socio_enum]
-
-        # Filter by estado
-        if estado != "Todos":
-            estado_enum = EstadoBoletim.PENDENTE if estado == "Pendente" else EstadoBoletim.PAGO
-            boletins = [b for b in boletins if b.estado == estado_enum]
-
-        data = [self.boletim_to_dict(b) for b in boletins]
-        self.table.set_data(data)
-
-        # Clear selection when filters change
-        self.table.clear_selection()
-
-    def after_save_callback(self):
-        """Callback after saving - reload data and clear selection"""
-        self.carregar_boletins()
-        self.table.clear_selection()
 
     def abrir_formulario(self, boletim=None):
         """Navigate to boletim_form screen for create/edit"""
@@ -294,152 +412,10 @@ class BoletinsScreen(ctk.CTkFrame):
             messagebox.showerror("Erro", "Não foi possível abrir formulário")
 
     def editar_boletim(self, data: dict):
-        """Edit boletim (triggered by double-click)"""
+        """Edit boletim (triggered by double-click or context menu)"""
         boletim = data.get('_boletim')
         if boletim:
             self.abrir_formulario(boletim)
-
-    def on_selection_change(self, selected_data: list):
-        """Handle selection change in table"""
-        num_selected = len(selected_data)
-
-        if num_selected > 0:
-            # Show selection frame
-            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
-
-            # Show selection bar
-            self.cancel_btn.pack(side="left", padx=5)
-
-            # Show count
-            count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
-            self.count_label.configure(text=count_text)
-            self.count_label.pack(side="left", padx=15)
-
-            # Show "Marcar como Pago" only if there are unpaid boletins
-            has_unpaid = any(
-                item.get('_boletim') and item.get('_boletim').estado != EstadoBoletim.PAGO
-                for item in selected_data
-            )
-            if has_unpaid:
-                self.marcar_pago_btn.pack(side="left", padx=5)
-
-            # Show "Duplicar" only if exactly 1 boletim is selected
-            if num_selected == 1:
-                self.duplicar_btn.pack(side="left", padx=5)
-
-            self.report_btn.pack(side="left", padx=5)
-
-            # Calculate and show total
-            total = sum(item.get('valor', 0) for item in selected_data)
-            self.total_label.configure(text=f"Total: €{total:,.2f}")
-            self.total_label.pack(side="left", padx=20)
-        else:
-            # Hide entire selection frame when nothing is selected
-            self.selection_frame.pack_forget()
-
-    def cancelar_selecao(self):
-        """Cancel selection"""
-        self.table.clear_selection()
-
-    def marcar_como_pago_batch(self):
-        """Mark selected boletins as paid"""
-        selected_data = self.table.get_selected_data()
-        if len(selected_data) == 0:
-            return
-
-        # Filter only unpaid boletins
-        unpaid_boletins = [
-            item.get('_boletim') for item in selected_data
-            if item.get('_boletim') and item.get('_boletim').estado != EstadoBoletim.PAGO
-        ]
-
-        if len(unpaid_boletins) == 0:
-            messagebox.showinfo("Info", "Todos os boletins selecionados já estão pagos.")
-            return
-
-        # Confirm action
-        resposta = messagebox.askyesno(
-            "Confirmar",
-            f"Marcar {len(unpaid_boletins)} boletim(ns) como pago(s)?\n\n"
-            f"Data de pagamento será definida como hoje ({date.today().strftime('%Y-%m-%d')})."
-        )
-
-        if resposta:
-            hoje = date.today()
-            erros = []
-
-            for boletim in unpaid_boletins:
-                sucesso, erro = self.manager.marcar_como_pago(boletim.id)
-                if not sucesso:
-                    erros.append(f"{boletim.numero}: {erro}")
-
-            if len(erros) == 0:
-                self.carregar_boletins()
-                self.table.clear_selection()
-            else:
-                messagebox.showerror("Erro", f"Erros ao marcar boletins:\n" + "\n".join(erros))
-                self.carregar_boletins()
-
-    def criar_relatorio(self):
-        """Create report for selected boletins and navigate to Relatorios tab"""
-        selected_data = self.table.get_selected_data()
-        if len(selected_data) > 0:
-            # Extract boletim IDs from selected data
-            boletim_ids = [item.get('id') for item in selected_data if item.get('id')]
-
-            # Navigate to Relatorios tab with selected boletim IDs
-            main_window = self.master.master
-            if hasattr(main_window, 'show_relatorios'):
-                main_window.show_relatorios(boletim_ids=boletim_ids)
-            else:
-                messagebox.showerror("Erro", "Não foi possível navegar para a aba de Relatórios")
-
-    def duplicar_boletim_selecionado(self):
-        """
-        Duplica o boletim selecionado na lista
-
-        Conforme BUSINESS_LOGIC.md Secção 2.3:
-        - Duplica boletim completo (header + linhas)
-        - Abre novo boletim em modo edição
-        """
-        selected_data = self.table.get_selected_data()
-        if len(selected_data) != 1:
-            messagebox.showerror("Erro", "Selecione exatamente 1 boletim para duplicar")
-            return
-
-        boletim_original = selected_data[0].get('_boletim')
-        if not boletim_original:
-            messagebox.showerror("Erro", "Boletim não encontrado")
-            return
-
-        try:
-            # Confirm duplication
-            resposta = messagebox.askyesno(
-                "Duplicar Boletim",
-                f"Duplicar boletim {boletim_original.numero}?\n\n"
-                f"Todas as deslocações serão copiadas.\n"
-                f"O novo boletim abrirá em modo edição."
-            )
-
-            if not resposta:
-                return
-
-            # Duplicate
-            sucesso, novo_boletim, erro = self.manager.duplicar_boletim(boletim_original.id)
-
-            if sucesso:
-                # Reload list
-                self.carregar_boletins()
-                self.table.clear_selection()
-
-                # Open new boletim for editing
-                self.abrir_formulario(novo_boletim)
-
-            else:
-                messagebox.showerror("Erro", erro or "Erro ao duplicar boletim")
-
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao duplicar boletim: {str(e)}")
 
     def abrir_valores_referencia(self):
         """Open valores de referência screen (config)"""
@@ -464,60 +440,7 @@ class BoletinsScreen(ctk.CTkFrame):
         screen = ValoresReferenciaScreen(dialog, self.db_session)
         screen.pack(fill="both", expand=True)
 
-    def show_context_menu(self, event, data: dict):
-        """
-        Mostra menu de contexto (right-click) para um boletim
-
-        Args:
-            event: Evento do clique (para posição)
-            data: Dados da linha clicada
-        """
-        boletim = data.get('_boletim')
-        if not boletim:
-            return
-
-        # Criar menu
-        menu = tk.Menu(self, tearoff=0)
-
-        # ✏️ Editar
-        menu.add_command(
-            label="✏️ Editar",
-            command=lambda: self.editar_boletim(data)
-        )
-
-        # 📋 Duplicar
-        menu.add_command(
-            label="📋 Duplicar",
-            command=lambda: self._duplicar_from_context(boletim)
-        )
-
-        menu.add_separator()
-
-        # Ação depende do estado
-        if boletim.estado == EstadoBoletim.PENDENTE:
-            menu.add_command(
-                label="✅ Marcar como Pago",
-                command=lambda: self._marcar_pago_from_context(boletim)
-            )
-        else:  # PAGO
-            menu.add_command(
-                label="⏪ Voltar a Pendente",
-                command=lambda: self._marcar_pendente_from_context(boletim)
-            )
-
-        menu.add_separator()
-
-        # 🗑️ Apagar
-        menu.add_command(
-            label="🗑️ Apagar",
-            command=lambda: self._apagar_from_context(boletim)
-        )
-
-        # Mostrar menu na posição do cursor
-        try:
-            menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            menu.grab_release()
+    # ===== CONTEXT MENU HELPERS =====
 
     def _duplicar_from_context(self, boletim):
         """Duplica boletim a partir do menu de contexto"""
@@ -538,10 +461,10 @@ class BoletinsScreen(ctk.CTkFrame):
 
             if sucesso:
                 # Reload list
-                self.carregar_boletins()
-                self.table.clear_selection()
+                self.refresh_data()
 
                 # Open new boletim for editing
+                messagebox.showinfo("Sucesso", f"Boletim duplicado como {novo_boletim.numero}")
                 self.abrir_formulario(novo_boletim)
 
             else:
@@ -566,8 +489,8 @@ class BoletinsScreen(ctk.CTkFrame):
             sucesso, erro = self.manager.marcar_como_pago(boletim.id)
 
             if sucesso:
-                self.carregar_boletins()
-                self.table.clear_selection()
+                self.refresh_data()
+                messagebox.showinfo("Sucesso", f"Boletim {boletim.numero} marcado como pago")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao marcar como pago")
 
@@ -590,8 +513,8 @@ class BoletinsScreen(ctk.CTkFrame):
             sucesso, erro = self.manager.marcar_como_pendente(boletim.id)
 
             if sucesso:
-                self.carregar_boletins()
-                self.table.clear_selection()
+                self.refresh_data()
+                messagebox.showinfo("Sucesso", f"Boletim {boletim.numero} marcado como pendente")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao marcar como pendente")
 
@@ -614,13 +537,10 @@ class BoletinsScreen(ctk.CTkFrame):
             sucesso, erro = self.manager.apagar(boletim.id)
 
             if sucesso:
-                self.carregar_boletins()
-                self.table.clear_selection()
+                self.refresh_data()
                 messagebox.showinfo("Sucesso", f"Boletim {boletim.numero} apagado com sucesso")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao apagar boletim")
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao apagar boletim: {str(e)}")
-
-
