@@ -4,6 +4,442 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-25 19:30] 🎯 SISTEMA BaseForm - Framework para Formulários CRUD
+
+### ✅ NOVO SISTEMA DE TEMPLATES PARA FORMULÁRIOS
+
+**Status:** SPRINT 1 e 2 COMPLETOS (25/11/2025)
+**Impacto:** Novo framework BaseForm + primeira migração real (ClienteFormScreen)
+**Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
+
+### 🎉 VISÃO GERAL
+
+Criado sistema de templates para formulários CRUD, similar ao BaseScreen usado em listagens. Framework extensível com slots flexíveis, API unificada e suporte a 6 tipos de campo.
+
+**Progress:**
+- ✅ SPRINT 1: BaseForm framework criado (faaa731)
+- ✅ SPRINT 2: ClienteFormScreen migrado (cff8ddb)
+- 📋 SPRINT 3+: 6 forms restantes (Fornecedor, Equipamento, Despesa, Orçamento, Projeto, Boletim)
+
+**Benefícios:**
+- Layout 100% consistente entre forms
+- API unificada (4 métodos abstratos obrigatórios)
+- Validação padronizada (required + custom validators)
+- Código DRY (sem boilerplate UI manual)
+- Manutenção simplificada
+
+---
+
+### 🏗️ PARTE 1: BaseForm Framework (SPRINT 1/∞)
+
+**Commit:**
+- faaa731: feat(ui): criar BaseForm framework para formulários CRUD [SPRINT 1/∞]
+
+**Ficheiros Criados:**
+- `ui/components/base_form.py` (~650 linhas)
+- `ui/screens/form_teste.py` (~180 linhas)
+
+**Arquitetura BaseForm:**
+
+**Classe BaseForm (abstract):**
+```python
+class BaseForm(ctk.CTkFrame, ABC):
+    # Herda de CTkFrame + ABC
+    # Template Method Pattern
+```
+
+**4 Métodos Abstratos Obrigatórios:**
+1. `get_form_title() → str` - Retorna título do form
+2. `get_form_icon() → PIL.Image|None` - Retorna ícone
+3. `get_fields_config() → List[dict]` - Configuração de campos
+4. `on_save(data: dict) → bool|str` - Lógica de save
+
+**4 Slots Personalizáveis:**
+1. `header_slot(parent)` - Header (default: ícone + título)
+2. `fields_slot(parent)` - Campos (default: cria de field_config)
+3. `footer_slot(parent)` - Footer (default: botões Guardar/Cancelar)
+4. `error_slot(parent)` - Mensagem erro (default: label vermelho)
+
+**API Completa (8 métodos públicos):**
+- `set_data(dict)` - Preenche form com dados (modo edit)
+- `get_form_data() → dict` - Retorna valores atuais
+- `set_error_message(str)` - Mostra erro
+- `clear_error_message()` - Limpa erro
+- `clear_fields()` - Limpa todos os campos
+- `validate_fields() → dict|None` - Valida campos required
+- `after_save_callback()` - Override para pós-save
+- `after_cancel_callback()` - Override para pós-cancel
+
+**6 Tipos de Campo Suportados:**
+1. **text** - Entry simples (CTkEntry)
+2. **number** - Entry com validação numérica
+3. **dropdown** - OptionMenu com valores (CTkOptionMenu)
+4. **checkbox** - CheckBox booleano (CTkCheckBox)
+5. **date** - DatePicker com calendário (DateEntry)
+6. **textarea** - TextBox multilinha (CTkTextbox)
+
+**Field Config Format:**
+```python
+{
+    "key": "campo_id",              # ID único (obrigatório)
+    "label": "Nome do Campo",       # Label exibido (obrigatório)
+    "type": "text",                 # Tipo (obrigatório)
+    "required": True,               # Obrigatório? (opcional, default=False)
+    "placeholder": "Digite...",     # Placeholder (opcional)
+    "values": [...],                # Para dropdown (obrigatório se type=dropdown)
+    "default": valor,               # Valor padrão (opcional)
+    "width": 400,                   # Largura widget (opcional)
+    "validator": func,              # Validação custom (opcional)
+    "readonly": False,              # Read-only? (opcional, default=False)
+}
+```
+
+**Layout Consistente:**
+```
+┌─────────────────────────────────────┐
+│ [ícone] Título do Form              │ ← header_slot
+├─────────────────────────────────────┤
+│ Label 1*: [_______________]         │ (* = required)
+│ Label 2:  [_______________]         │ ← fields_slot
+│ Label 3:  [▼ dropdown     ]         │    (scrollable)
+│ ...                                 │
+├─────────────────────────────────────┤
+│ ⚠️ Erro: campo X obrigatório        │ ← error_slot
+│ [Cancelar]  [✅ Guardar]            │ ← footer_slot
+└─────────────────────────────────────┘
+```
+
+**Features:**
+- ✅ Validação automática de campos required
+- ✅ Highlight visual (label com `*` para obrigatórios)
+- ✅ Validadores customizados por campo
+- ✅ Campos readonly suportados
+- ✅ Feedback visual de erros
+- ✅ Layout scrollable (para forms grandes)
+- ✅ Callbacks pós-save/pós-cancel
+- ✅ Docstring completa (mini-guide para devs)
+
+**FormTesteScreen (Demonstração):**
+
+Formulário de teste demonstrando TODOS os 6 tipos de campo:
+```python
+[
+    {"key": "nome", "type": "text", "required": True},           # Text
+    {"key": "idade", "type": "number", "validator": custom},     # Number
+    {"key": "genero", "type": "dropdown", "values": [...]},      # Dropdown
+    {"key": "ativo", "type": "checkbox"},                        # Checkbox
+    {"key": "nascimento", "type": "date", "required": True},     # Date
+    {"key": "observacoes", "type": "textarea"},                  # Textarea
+    {"key": "id_interno", "type": "text", "readonly": True},     # Readonly
+]
+```
+
+Features demonstradas:
+- ✅ Campos obrigatórios com `*`
+- ✅ Validação automática (required)
+- ✅ Validador custom (`_validate_idade`)
+- ✅ Initial data (form pré-preenchido)
+- ✅ on_save mostra dados em messagebox
+- ✅ after_save_callback com logging
+- ✅ after_cancel_callback com confirmação
+
+**Validação:**
+
+**Automática:**
+- Campos `required=True` validados automaticamente
+- Erro exibido se campo obrigatório vazio
+- Validação executada antes de `on_save()`
+
+**Custom:**
+- Validator function opcional por campo
+- Signature: `validator(value) → bool`
+- Executado se campo não vazio
+
+**Fluxo:**
+1. User clica "Guardar"
+2. `validate_fields()` valida todos os campos
+3. Se erros → mostra primeiro erro e para
+4. Se válido → chama `on_save(data)`
+5. Se `on_save` retorna `True` → sucesso
+6. Se `on_save` retorna `str` → mostra erro
+
+**Estatísticas:**
+- BaseForm: ~650 linhas (com docstring completa)
+- FormTesteScreen: ~180 linhas
+- Total: ~830 linhas
+- Tipos de campo: 6
+- Métodos abstratos: 4
+- Slots: 4
+- API: 8 métodos públicos
+
+---
+
+### 📋 PARTE 2: ClienteFormScreen Migrado (SPRINT 2/∞)
+
+**Commit:**
+- cff8ddb: refactor(ui): migrar ClienteFormScreen para BaseForm [SPRINT 2/∞]
+
+**Ficheiro:** ui/screens/cliente_form.py
+**Status:** PRIMEIRA MIGRAÇÃO REAL (serve como template)
+**Redução:** ~325 → ~358 linhas (+33, +10%)
+
+**Nota sobre aumento:**
+Código CRESCEU 10% mas removeu ~318 linhas de boilerplate UI.
+Aumento deve-se a:
+- ✅ Docstrings completas (~50 linhas)
+- ✅ Validadores NIF/email (~58 linhas)
+- ✅ Comentários explicativos
+- ✅ Error handling melhorado
+
+**Implementação BaseForm (4 métodos abstratos):**
+
+**1. get_form_title() → str**
+```python
+def get_form_title(self) -> str:
+    if self.cliente_id:
+        return "Editar Cliente"
+    return "Novo Cliente"
+```
+
+**2. get_form_icon() → PIL.Image**
+```python
+def get_form_icon(self):
+    return get_icon(CLIENTES, size=(28, 28))
+```
+
+**3. get_fields_config() → List[dict]**
+
+9 campos configurados:
+```python
+[
+    {"key": "nome", "type": "text", "required": True},           # ⭐
+    {"key": "nome_formal", "type": "text"},
+    {"key": "nif", "type": "text", "validator": self._validate_nif},
+    {"key": "pais", "type": "text", "default": "Portugal"},
+    {"key": "morada", "type": "textarea"},
+    {"key": "contacto", "type": "text"},
+    {"key": "email", "type": "text", "validator": self._validate_email},
+    {"key": "angariacao", "type": "text"},
+    {"key": "nota", "type": "textarea"},
+]
+```
+
+**4. on_save(data: dict) → bool|str**
+```python
+def on_save(self, data: Dict[str, Any]) -> bool | str:
+    # Prepara dados (empty strings → None)
+    nome = data.get('nome', '').strip()
+    # ...
+
+    # Valida
+    if not nome:
+        return "Nome é obrigatório"
+
+    # Create or Update
+    if self.cliente_id:
+        success, cliente, message = self.manager.atualizar(...)
+    else:
+        success, cliente, message = self.manager.criar(...)
+
+    if not success:
+        return message or "Erro..."
+
+    return True
+```
+
+**Validadores Criados (NOVO):**
+
+**_validate_nif(nif: str) → bool**
+- Aceita alfanuméricos + caracteres especiais (-, /, espaço)
+- Comprimento: 9-20 caracteres
+- Opcional (pode ser vazio)
+```python
+def _validate_nif(self, nif: str) -> bool:
+    if not nif:
+        return True  # Opcional
+    nif_clean = nif.strip()
+    if len(nif_clean) < 9 or len(nif_clean) > 20:
+        return False
+    return bool(re.match(r'^[A-Za-z0-9\s\-/]+$', nif_clean))
+```
+
+**_validate_email(email: str) → bool**
+- Regex: local@domain.tld
+- Formato padrão RFC-like
+- Opcional (pode ser vazio)
+```python
+def _validate_email(self, email: str) -> bool:
+    if not email:
+        return True  # Opcional
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email.strip()))
+```
+
+**Callbacks Implementados:**
+
+**after_save_callback()**
+```python
+def after_save_callback(self):
+    """Navega para lista após save"""
+    self._voltar_para_lista()
+```
+
+**after_cancel_callback()**
+```python
+def after_cancel_callback(self):
+    """Confirmação antes de cancelar"""
+    resposta = messagebox.askyesno("Cancelar", "Tem certeza?...")
+    if resposta:
+        self._voltar_para_lista()
+```
+
+**Código Removido:**
+
+Legacy UI Boilerplate (~318 linhas):
+- ❌ `create_widgets()` - 63 linhas
+- ❌ `create_header()` - 26 linhas
+- ❌ `create_fields()` - 86 linhas
+- ❌ `create_footer()` - 29 linhas
+- ❌ `carregar_cliente()` - 47 linhas
+- ❌ `guardar()` - 60 linhas
+- ❌ `voltar()` - 7 linhas
+
+**Funcionalidade Mantida (100%):**
+- ✅ Modo CREATE (cliente_id=None)
+- ✅ Modo EDIT (cliente_id=ID)
+- ✅ Load inicial de dados (modo edit)
+- ✅ Todos os 9 campos originais
+- ✅ Validação de campos required
+- ✅ Validação de NIF e email
+- ✅ Navegação via main_window.show_screen()
+- ✅ Integração com ClientesManager
+- ✅ Mensagens de erro/sucesso
+- ✅ Confirmação ao cancelar
+
+---
+
+### 📊 ESTATÍSTICAS GLOBAIS
+
+**BaseForm Framework (SPRINT 1):**
+- Ficheiros criados: 2
+- Linhas de código: ~830
+- Tipos de campo: 6
+- Métodos abstratos: 4
+- Slots: 4
+- API: 8 métodos
+
+**ClienteFormScreen (SPRINT 2):**
+- Ficheiros migrados: 1
+- Linhas antes: 325
+- Linhas depois: 358 (+10%)
+- Boilerplate removido: ~318 linhas
+- Validadores criados: 2
+
+**Progress Geral (Forms CRUD):**
+```
+Forms Total: 7
+├─ ✅ ClienteFormScreen (migrado)
+└─ 📋 Pendentes: 6
+   ├─ FornecedorFormScreen (SPRINT 3 - próximo)
+   ├─ EquipamentoFormScreen
+   ├─ DespesaFormScreen
+   ├─ OrcamentoFormScreen
+   ├─ ProjetoFormScreen
+   └─ BoletimFormScreen
+```
+
+---
+
+### 🎓 PADRÕES ESTABELECIDOS
+
+**Estrutura Padronizada (ClienteFormScreen como template):**
+```python
+class XFormScreen(BaseForm):
+    def __init__(self, ...):
+        # Load initial data if edit mode
+        # Initialize BaseForm
+
+    # ===== MÉTODOS ABSTRATOS =====
+    def get_form_title(self): ...
+    def get_form_icon(self): ...
+    def get_fields_config(self): ...
+    def on_save(self, data): ...
+
+    # ===== VALIDADORES =====
+    def _validate_xxx(self, value): ...
+
+    # ===== CALLBACKS =====
+    def after_save_callback(self): ...
+    def after_cancel_callback(self): ...
+
+    # ===== HELPERS =====
+    def _voltar_para_lista(self): ...
+```
+
+**Checklist de Migração (para SPRINT 3+):**
+1. ✅ Ler form original e identificar campos
+2. ✅ Identificar validações necessárias
+3. ✅ Criar field_config com todos os campos
+4. ✅ Implementar validadores em métodos separados
+5. ✅ Implementar on_save() com lógica do manager
+6. ✅ Implementar callbacks after_save/after_cancel
+7. ✅ Remover TODO código UI manual
+8. ✅ Testar sintaxe
+9. ✅ Commit com mensagem detalhada
+
+---
+
+### 🎯 PRÓXIMOS PASSOS
+
+**SPRINT 3 (Próximo):**
+- Migrar FornecedorFormScreen para BaseForm
+- Form simples-médio (similar a Cliente)
+- Campos: nome, estatuto (enum), área, função, NIF, contacto, email
+
+**SPRINT 4-8:**
+- EquipamentoFormScreen (médio)
+- DespesaFormScreen (médio)
+- OrcamentoFormScreen (médio)
+- ProjetoFormScreen (complexo)
+- BoletimFormScreen (avançado)
+
+**Objetivo:**
+- ✅ 100% dos formulários usando BaseForm
+- ✅ Layout consistente
+- ✅ API unificada
+- ✅ Validação padronizada
+
+---
+
+### 🏆 BENEFÍCIOS ALCANÇADOS
+
+**Código:**
+- ✅ Boilerplate UI 100% removido
+- ✅ Layout declarativo vs imperativo
+- ✅ Validação centralizada e padronizada
+- ✅ Callbacks bem definidos
+- ✅ Documentação completa (docstrings)
+
+**Manutenção:**
+- ✅ Bugs em BaseForm propagam para todos
+- ✅ Features novas funcionam automaticamente
+- ✅ Código DRY (Don't Repeat Yourself)
+- ✅ Onboarding devs mais rápido
+
+**Consistência:**
+- ✅ Layout idêntico entre forms
+- ✅ API idêntica (mesmos métodos)
+- ✅ Padrão estabelecido para próximos
+
+---
+
+**Ver:**
+- ui/components/base_form.py (framework completo)
+- ui/screens/form_teste.py (demo todos os tipos)
+- ui/screens/cliente_form.py (exemplo real migrado)
+
+---
+
 ## [2025-11-25 18:00] 🎊 SISTEMA BaseScreen 100% COMPLETO - 7/7 Screens Migrados
 
 ### ✅ MILESTONE ALCANÇADO: TODOS OS SCREENS DE LISTAGEM UNIFORMIZADOS

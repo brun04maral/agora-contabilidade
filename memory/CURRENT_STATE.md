@@ -19,15 +19,17 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (25/11/2025):**
-- 🎯 **Sistema de Templates UI - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** (Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores, Equipamento) 🎉
+- 🎯 **Sistema BaseForm - SPRINT 1+2 COMPLETOS** - Framework para formulários CRUD criado + ClienteFormScreen migrado (1/7 forms) 🎯
+- 🎉 **Sistema BaseScreen - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** (Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores, Equipamento) 🎉
 
 **Última Feature Concluída:**
-- ✅ **Sistema BaseScreen 100% COMPLETO** (25/11/2025) - TODOS os 7 screens de listagem migrados para BaseScreen template! Sessão final completou ClientesScreen, FornecedoresScreen e EquipamentoScreen. Redução média de ~11% código (-489 linhas total). Padrões estabelecidos: A (objects - recomendado, 6/7 screens) e B (dicts - legado, 1/7 screen). Layout 100% consistente, APIs unificadas, manutenção simplificada. **Ver:** memory/CHANGELOG.md (25/11/2025 18:00)
+- ✅ **Sistema BaseForm SPRINT 1+2** (25/11/2025) - Framework BaseForm criado com 6 tipos de campo (text, number, dropdown, checkbox, date, textarea), 4 métodos abstratos obrigatórios, API unificada com validação padronizada. ClienteFormScreen migrado como primeira implementação real (serve como template). 6 forms restantes a migrar. Código declarativo vs imperativo, boilerplate UI removido. **Ver:** memory/CHANGELOG.md (25/11/2025 19:30)
 
 **Próximo Milestone:**
+- 📋 **SPRINT 3:** Migrar FornecedorFormScreen para BaseForm (form simples-médio)
+- 📋 **SPRINT 4-8:** Migrar 5 forms restantes (Equipamento, Despesa, Orçamento, Projeto, Boletim)
 - 📋 Testar e validar sistema BaseScreen completo (7/7 screens)
 - 📋 UX/UI Improvements - Orçamentos (DateRangePicker + Context Menus)
-- 📋 Considerar BaseForm template para screens CRUD
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins

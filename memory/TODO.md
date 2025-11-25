@@ -42,7 +42,33 @@ LEGENDA DE PRIORIDADES
    Status: Pronto para testes (migração 100% completa - 7/7 screens)
    Ver: memory/CHANGELOG.md (25/11/2025 18:00 - Sistema BaseScreen 100% COMPLETO)
 
-3. UX/UI Improvements - Orçamentos (20 melhorias)
+3. Migrar Formulários para BaseForm (SPRINT 3+)
+
+   Sistema BaseForm criado ✅ (SPRINT 1 + 2):
+   ├─ ✅ BaseForm framework (faaa731)
+   ├─ ✅ ClienteFormScreen migrado (cff8ddb)
+   └─ 📋 Pendentes: 6 forms restantes
+
+   **SPRINT 3 (Próximo):**
+   └─ FornecedorFormScreen
+      - Form simples-médio (similar a Cliente)
+      - Campos: nome, estatuto (enum), área, função, NIF, contacto, email
+      - Validadores: NIF, email, estatuto
+
+   **SPRINT 4-8 (Futuros):**
+   ├─ EquipamentoFormScreen (médio)
+   ├─ DespesaFormScreen (médio)
+   ├─ OrcamentoFormScreen (médio)
+   ├─ ProjetoFormScreen (complexo)
+   └─ BoletimFormScreen (avançado)
+
+   **Objetivo:** 7/7 forms com layout consistente, validação padronizada, código DRY
+
+   Estimativa: 1 form por sessão (6 sessões restantes)
+   Status: SPRINT 1 + 2 completos (25/11/2025)
+   Ver: memory/CHANGELOG.md (25/11/2025 19:30 - Sistema BaseForm)
+
+4. UX/UI Improvements - Orçamentos (20 melhorias)
 
    **Concluído (21/11/2025):**
    ├─ ✅ Menu right-click na lista de orçamentos (Visualizar, Editar, Duplicar, Status, Anular, Apagar)
@@ -233,13 +259,13 @@ Para contexto e decisões:
 Ver memory/CHANGELOG.md para histórico completo.
 
 Últimas 7 features (Novembro 2025):
+- ✅ 25/11: **Sistema BaseForm SPRINT 1+2** - Framework criado + ClienteFormScreen migrado (1/7 forms) - 6 tipos campo, API unificada - Ver CHANGELOG.md (25/11/2025 19:30) 🎯
 - ✅ 25/11: **SISTEMA BaseScreen 100% COMPLETO** - 7/7 screens migrados (Clientes, Fornecedores, Equipamento finais) - ~11% redução código total (-489 linhas) - Ver CHANGELOG.md (25/11/2025 18:00) 🎉
 - ✅ 25/11: Migração Completa para BaseScreen - OrcamentosScreen, DespesasScreen, BoletinsScreen migrados (4/4) - Ver CHANGELOG.md (25/11/2025 16:00)
 - ✅ 24/11: Sistema Templates UI - BaseScreen implementado + ProjectsScreen migrado (-36% código) - Ver CHANGELOG.md (24/11/2025)
 - ✅ 24/11: Refatoração TipoProjeto (EMPRESA|PESSOAL + owner) - migrations 027-028
 - ✅ 24/11: UI Saldos com subsecções "não pagos" e "boletins pendentes"
 - ✅ 24/11: Refatoração Screens Dedicados - fornecedores e equipamento (padrão projetos 6/6)
-- ✅ 24/11: Conversão Dialogs BaseDialogMedium/Large - 8 ficheiros, ~300 linhas removidas
 
 Para histórico anterior: Ver memory/CHANGELOG.md
 
