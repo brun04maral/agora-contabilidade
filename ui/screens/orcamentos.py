@@ -63,67 +63,75 @@ class OrcamentosScreen(BaseScreen):
 
     def load_data(self) -> List[Dict[str, Any]]:
         """Load orçamentos from database and return as list of dicts"""
-        # Get filters (widgets might not exist yet during initialization)
-        pesquisa = None
-        if hasattr(self, 'search_entry') and self.search_entry:
-            try:
-                pesquisa = self.search_entry.get().strip() or None
-            except Exception:
-                pass
-
-        filtro_status = None
-        if hasattr(self, 'status_combo') and self.status_combo:
-            try:
-                filtro_status = self.status_combo.get()
-                if filtro_status == "Todos":
-                    filtro_status = None
-            except Exception:
-                pass
-
-        # Load orcamentos
-        orcamentos = self.manager.listar_orcamentos(
-            filtro_status=filtro_status,
-            filtro_cliente_id=self.filtro_cliente_id_inicial,
-            pesquisa=pesquisa
-        )
-
-        # Defensive: handle None or empty results
-        if orcamentos is None:
-            orcamentos = []
-
-        # Prepare data for table
-        data = []
-        for orc in orcamentos:
-            if orc is None:
-                continue  # Skip None values
-
-            try:
-                # Safely extract data with defensive checks
-                cliente_nome = orc.cliente.nome if orc.cliente else "N/A"
-                valor_str = f"{float(orc.valor_total or 0):.2f}€" if orc.valor_total else "0.00€"
-                data_str = orc.data_criacao.strftime("%Y-%m-%d") if orc.data_criacao else "N/A"
-
-                data.append({
-                    "id": orc.id,
-                    "codigo": orc.codigo or "",
-                    "cliente": cliente_nome,
-                    "data_criacao": data_str,
-                    "valor_total": valor_str,
-                    "status": orc.status or "rascunho",
-                    "_orcamento": orc,  # Store full object for context menu
-                })
-            except Exception as e:
-                # Skip this item if there's any error processing it
-                print(f"Warning: Failed to process orçamento {getattr(orc, 'id', 'unknown')}: {e}")
-                continue
-
-        # Update statistics (non-critical, don't fail if it errors)
         try:
-            self.atualizar_estatisticas()
-        except Exception as e:
-            print(f"Warning: Failed to update statistics: {e}")
+            # Get filters (widgets might not exist yet during initialization)
+            pesquisa = None
+            if hasattr(self, 'search_entry') and self.search_entry:
+                try:
+                    pesquisa = self.search_entry.get().strip() or None
+                except Exception:
+                    pass
 
-        return data
+            filtro_status = None
+            if hasattr(self, 'status_combo') and self.status_combo:
+                try:
+                    filtro_status = self.status_combo.get()
+                    if filtro_status == "Todos":
+                        filtro_status = None
+                except Exception:
+                    pass
+
+            # Load orcamentos
+            orcamentos = self.manager.listar_orcamentos(
+                filtro_status=filtro_status,
+                filtro_cliente_id=self.filtro_cliente_id_inicial,
+                pesquisa=pesquisa
+            )
+
+            # Defensive: handle None or empty results
+            if orcamentos is None:
+                orcamentos = []
+
+            # Prepare data for table
+            data = []
+            for orc in orcamentos:
+                if orc is None:
+                    continue  # Skip None values
+
+                try:
+                    # Safely extract data with defensive checks
+                    cliente_nome = orc.cliente.nome if orc.cliente else "N/A"
+                    valor_str = f"{float(orc.valor_total or 0):.2f}€" if orc.valor_total else "0.00€"
+                    data_str = orc.data_criacao.strftime("%Y-%m-%d") if orc.data_criacao else "N/A"
+
+                    data.append({
+                        "id": orc.id,
+                        "codigo": orc.codigo or "",
+                        "cliente": cliente_nome,
+                        "data_criacao": data_str,
+                        "valor_total": valor_str,
+                        "status": orc.status or "rascunho",
+                        "_orcamento": orc,  # Store full object for context menu
+                    })
+                except Exception as e:
+                    # Skip this item if there's any error processing it
+                    print(f"Warning: Failed to process orçamento {getattr(orc, 'id', 'unknown')}: {e}")
+                    continue
+
+            # Update statistics (non-critical, don't fail if it errors)
+            try:
+                self.atualizar_estatisticas()
+            except Exception as e:
+                print(f"Warning: Failed to update statistics: {e}")
+
+            return data
+
+        except Exception as e:
+            # Critical error - log it and return empty list to prevent crash
+            print(f"ERROR in load_data(): {e}")
+            import traceback
+            traceback.print_exc()
+            return []  # ALWAYS return a list, never None
 
     def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
         """
