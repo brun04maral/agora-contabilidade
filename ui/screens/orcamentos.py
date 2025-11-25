@@ -96,19 +96,26 @@ class OrcamentosScreen(BaseScreen):
         for orc in orcamentos:
             if orc is None:
                 continue  # Skip None values
-            cliente_nome = orc.cliente.nome if orc.cliente else "N/A"
-            valor_str = f"{float(orc.valor_total or 0):.2f}€" if orc.valor_total else "0.00€"
-            data_str = orc.data_criacao.strftime("%Y-%m-%d") if orc.data_criacao else "N/A"
 
-            data.append({
-                "id": orc.id,
-                "codigo": orc.codigo or "",
-                "cliente": cliente_nome,
-                "data_criacao": data_str,
-                "valor_total": valor_str,
-                "status": orc.status or "rascunho",
-                "_orcamento": orc,  # Store full object for context menu
-            })
+            try:
+                # Safely extract data with defensive checks
+                cliente_nome = orc.cliente.nome if orc.cliente else "N/A"
+                valor_str = f"{float(orc.valor_total or 0):.2f}€" if orc.valor_total else "0.00€"
+                data_str = orc.data_criacao.strftime("%Y-%m-%d") if orc.data_criacao else "N/A"
+
+                data.append({
+                    "id": orc.id,
+                    "codigo": orc.codigo or "",
+                    "cliente": cliente_nome,
+                    "data_criacao": data_str,
+                    "valor_total": valor_str,
+                    "status": orc.status or "rascunho",
+                    "_orcamento": orc,  # Store full object for context menu
+                })
+            except Exception as e:
+                # Skip this item if there's any error processing it
+                print(f"Warning: Failed to process orçamento {getattr(orc, 'id', 'unknown')}: {e}")
+                continue
 
         # Update statistics (non-critical, don't fail if it errors)
         try:
