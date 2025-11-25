@@ -19,14 +19,14 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (25/11/2025):**
-- 🎯 **Sistema de Templates UI + Refinamentos UX** - BaseScreen com layout otimizado e barra de ações sempre visível
+- 🎯 **Sistema de Templates UI - COMPLETO** - BaseScreen com 4/4 screens migrados (Projetos, Orçamentos, Despesas, Boletins)
 
 **Última Feature Concluída:**
-- ✅ **BUG-001 Resolvido + Redesign Layout BaseScreen** (25/11/2025) - Corrigido bug crítico de espaçamento (toolbar gigante ~150-200px → 40px) através de debug visual. Redesenhado layout completo: header simplificado, nova barra topo tabela (chips+botões), barra de ações sempre visível com lógica min/max_selection. API Breaking: removido get_selection_actions(), atualizado get_context_menu_items(). **Ver:** memory/CHANGELOG.md (25/11/2025)
+- ✅ **Migração Completa para BaseScreen** (25/11/2025) - Migração completa e bem-sucedida de OrcamentosScreen (com fix crítico item_to_dict pass-through), DespesasScreen e BoletinsScreen. 4/4 screens principais usando BaseScreen template. Redução média de ~20% código. Padrões estabelecidos: A (objects - recomendado) e B (dicts - legado). Todos os screens agora compartilham layout unificado, APIs consistentes e comportamento previsível. **Ver:** memory/CHANGELOG.md (25/11/2025)
 
 **Próximo Milestone:**
-- 📋 Atualizar ProjectsScreen para nova API (get_context_menu_items)
-- 📋 Migrar OrcamentosScreen, DespesasScreen, BoletinsScreen para BaseScreen
+- 📋 Testar e validar sistema BaseScreen completo (4 screens)
+- 📋 UX/UI Improvements - Orçamentos (DateRangePicker + Context Menus)
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
 
 **Dados Atuais (Última Importação 15/11/2025):**

@@ -4,6 +4,383 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-25 16:00] 🎉 Migração Completa para BaseScreen - Todos os Screens Unificados
+
+### ✅ MIGRAÇÃO GLOBAL CONCLUÍDA
+
+**Status:** ✅ COMPLETO (25/11/2025)
+**Impacto:** Todos os 4 screens principais migrados para BaseScreen template
+**Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
+
+### 📊 VISÃO GERAL
+
+Migração completa e bem-sucedida de **OrcamentosScreen**, **DespesasScreen** e **BoletinsScreen** para o template BaseScreen, completando a uniformização iniciada com ProjectsScreen. Todos os screens de listagem agora compartilham o mesmo padrão de layout, APIs e comportamento.
+
+**Screens Migrados:**
+- ✅ ProjectsScreen (sessão anterior)
+- ✅ OrcamentosScreen (com fix crítico)
+- ✅ DespesasScreen (esta sessão)
+- ✅ BoletinsScreen (esta sessão)
+
+---
+
+### 🐛 PARTE 1: Fix Crítico OrcamentosScreen
+
+**Commits:**
+- d974ffc: fix(ui): corrigir nome do método get_columns → get_table_columns
+- 61400a9: fix(ui): adicionar verificações defensivas em load_data()
+- 88cbd8d: fix(ui): melhorar robustez de OrcamentosScreen.load_data()
+- 5d0822d: fix(ui): adicionar try-except ao redor do processamento de cada orçamento
+- 178e2eb: fix(ui): garantir que load_data() NUNCA retorna None
+- **6bbd4ad: fix(ui): adicionar método item_to_dict() pass-through em OrcamentosScreen** ⭐
+
+**Problema:**
+Após migração inicial de OrcamentosScreen, o screen crashava com `TypeError: argument of type 'NoneType' is not iterable` ao tentar carregar dados.
+
+**Tentativas Falhadas (5 commits):**
+1. Renomear get_columns() → get_table_columns() ❌
+2. Verificações defensivas (hasattr, None checks) ❌
+3. Try-except em estatísticas ❌
+4. Try-except por item no loop ❌
+5. Try-except global em load_data() ❌
+
+**ROOT CAUSE Identificado:**
+```python
+# BaseScreen.refresh_data() linha 748:
+data = [self.item_to_dict(item) for item in items]
+# ↑ SEMPRE chama item_to_dict() em cada item
+
+# OrcamentosScreen.load_data() retorna dicts (Padrão B):
+def load_data(self) -> List[Dict[str, Any]]:
+    return [{...}, {...}]  # Já são dicts!
+
+# MAS item_to_dict() não estava implementado:
+# Retorna None por default → DataTableV2 recebe None → TypeError
+```
+
+**Solução Definitiva (6bbd4ad):**
+```python
+def item_to_dict(self, item: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Convert item to dict for table.
+    Since load_data() already returns dicts, this is a pass-through.
+    """
+    return item  # ⭐ Pass-through para Padrão B
+```
+
+**Aprendizado:**
+- BaseScreen sempre chama `item_to_dict()`, independente do padrão usado
+- **Padrão A** (Objects): load_data() retorna objetos, item_to_dict() converte para dict
+- **Padrão B** (Dicts): load_data() retorna dicts, item_to_dict() é pass-through
+- Ambos os padrões são válidos, mas A é recomendado para novas implementações
+
+---
+
+### 🏗️ PARTE 2: Migração DespesasScreen para BaseScreen
+
+**Commit:**
+- 1702a14: refactor(ui): migrar DespesasScreen para BaseScreen
+
+**Arquivo:** ui/screens/despesas.py
+**Padrão Usado:** A (Objects - Recomendado)
+**Redução:** ~847 → ~697 linhas (18% menor, -150 linhas)
+
+**Implementação Completa:**
+
+**1. Métodos Abstratos (6/6):**
+```python
+def get_screen_title(self) -> str:
+    return "Despesas"
+
+def get_screen_icon(self):
+    return get_icon(DESPESAS, size=(28, 28))
+
+def get_table_columns(self) -> List[Dict[str, Any]]:
+    return [
+        {'key': 'numero', 'label': 'ID', 'width': 100, 'sortable': True},
+        {'key': 'data', 'label': 'Data', 'width': 120, 'sortable': True},
+        # ... 7 colunas total
+    ]
+
+def load_data(self) -> List[Any]:
+    """Returns list of Despesa objects"""
+    despesas = self.manager.listar_todas()
+    # Apply search and filters
+    return despesas  # Objects!
+
+def item_to_dict(self, item: Any) -> Dict[str, Any]:
+    """Converts Despesa object to dict"""
+    return {
+        'id': item.id,
+        'numero': item.numero,
+        # ... campos
+        '_despesa': item,  # ⭐ Store original object
+        '_bg_color': self.get_estado_color(item.estado)
+    }
+
+def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
+    """Dual-mode: action bar + context menu"""
+    if not data or '_despesa' not in data:
+        # Action bar buttons
+        return [
+            {'label': '✏️ Editar', 'min_selection': 1, 'max_selection': 1, ...},
+            {'label': '📋 Duplicar', 'min_selection': 1, ...},
+            {'label': '✅ Marcar Pago', 'min_selection': 1, ...},
+            {'label': '📊 Relatório', 'min_selection': 1, ...},
+            {'label': '🗑️ Apagar', 'min_selection': 1, ...}
+        ]
+
+    # Context menu (estado-dependent)
+    despesa = data.get('_despesa')
+    items = [{'label': '✏️ Editar', ...}, ...]
+    if despesa.estado == EstadoDespesa.PENDENTE:
+        items.append({'label': '✅ Marcar como Pago', ...})
+    # ...
+    return items
+```
+
+**2. Toolbar Customizado (toolbar_slot):**
+```python
+def toolbar_slot(self, parent):
+    # Row 1: Search + special buttons
+    - 🔍 Search entry (reactive)
+    - ✖ Clear button
+    - 🔁 Gerar Recorrentes
+    - 📝 Editar Recorrentes (templates)
+
+    # Row 2: Filters
+    - Tipo (Fixa Mensal, Pessoal BA/RR, Equipamento, Projeto)
+    - Estado (Pendente, Vencido, Pago)
+```
+
+**3. Bulk Operations (5 métodos):**
+```python
+def _editar_selecionada(self):  # 1 seleção
+def _duplicar_selecionadas(self):  # múltiplas
+def _pagar_selecionadas(self):  # múltiplas
+def _apagar_selecionadas(self):  # múltiplas
+def criar_relatorio(self):  # múltiplas
+```
+
+**4. Features Especiais Mantidas:**
+- Geração de despesas recorrentes (templates)
+- Gestão de templates (dialog modal)
+- Navegação para relatórios com filtro
+- Cores baseadas em estado (Pendente/Vencido/Pago)
+
+**Métodos Removidos:**
+- `create_widgets()` → BaseScreen gere layout
+- `carregar_despesas()` → substituído por load_data()
+- `despesa_to_dict()` → renomeado para item_to_dict()
+- `aplicar_filtros()` → lógica movida para load_data()
+- `on_selection_change()` → BaseScreen gere automaticamente
+- `show_context_menu()` → BaseScreen chama get_context_menu_items()
+
+---
+
+### 🏗️ PARTE 3: Migração BoletinsScreen para BaseScreen
+
+**Commit:**
+- 38b55f2: refactor(ui): migrar BoletinsScreen para BaseScreen
+
+**Arquivo:** ui/screens/boletins.py
+**Padrão Usado:** A (Objects - Recomendado)
+**Redução:** ~627 → ~546 linhas (13% menor, -81 linhas)
+
+**Implementação Completa:**
+
+**1. Métodos Abstratos (6/6):**
+```python
+def get_screen_title(self) -> str:
+    return "Boletins"
+
+def get_table_columns(self) -> List[Dict[str, Any]]:
+    return [
+        {'key': 'numero', 'label': 'ID', 'width': 80, ...},
+        {'key': 'socio', 'label': 'Sócio', 'width': 120, ...},
+        # ... 8 colunas total
+    ]
+
+def load_data(self) -> List[Any]:
+    """Returns list of Boletim objects"""
+    boletins = self.manager.listar_todos()
+    # Apply socio/estado filters
+    return boletins
+
+def item_to_dict(self, item: Any) -> Dict[str, Any]:
+    num_linhas = len(item.linhas) if item.linhas else 0
+    return {
+        'id': item.id,
+        'numero': item.numero,
+        'linhas': str(num_linhas),  # Count deslocações
+        # ... campos
+        '_boletim': item,  # Store original
+        '_bg_color': self.get_estado_color(item.estado)
+    }
+
+def get_context_menu_items(self, data: dict):
+    # Action bar: 5 buttons
+    # Context menu: estado-dependent (Pendente/Pago)
+    ...
+```
+
+**2. Toolbar Customizado:**
+```python
+def toolbar_slot(self, parent):
+    - Sócio filter (Todos/BA/RR)
+    - Estado filter (Todos/Pendente/Pago)
+    - ⚙️ Config button (Valores de Referência)
+```
+
+**3. Bulk Operations (5 métodos):**
+```python
+def _editar_selecionado(self):  # 1 seleção
+def _duplicar_selecionado(self):  # ⚠️ APENAS 1 (max_selection=1)
+def _pagar_selecionados(self):  # múltiplas
+def _criar_relatorio(self):  # múltiplas
+def _apagar_selecionados(self):  # múltiplas
+```
+
+**Detalhe Importante:**
+- Botão **Duplicar** tem `max_selection: 1` (apenas 1 boletim por vez)
+- Outros botões aceitam múltiplas seleções
+- Context menu adapta baseado no estado (Pendente vs Pago)
+
+**Features Especiais Mantidas:**
+- Valores de Referência (dialog modal)
+- Contagem de linhas de deslocações
+- Navegação para relatórios
+- Cores baseadas em estado
+
+**Métodos Removidos:**
+- `create_widgets()` → BaseScreen
+- `carregar_boletins()` → load_data()
+- `boletim_to_dict()` → item_to_dict()
+- `aplicar_filtros()` → load_data()
+- `on_selection_change()` → BaseScreen
+- `cancelar_selecao()` → BaseScreen
+- `marcar_como_pago_batch()` → _pagar_selecionados()
+- `criar_relatorio()` → _criar_relatorio()
+- `duplicar_boletim_selecionado()` → _duplicar_selecionado()
+- `show_context_menu()` → BaseScreen
+
+---
+
+### 📊 ESTATÍSTICAS GLOBAIS
+
+**Screens Migrados:** 4/4 (100%)
+
+| Screen | Padrão | Antes | Depois | Redução |
+|--------|--------|-------|--------|---------|
+| ProjectsScreen | A (objects) | - | - | ~36% |
+| OrcamentosScreen | B (dicts) | ~600 | ~600 | 0% (fix) |
+| DespesasScreen | A (objects) | ~847 | ~697 | 18% |
+| BoletinsScreen | A (objects) | ~627 | ~546 | 13% |
+
+**Total Linhas Removidas:** ~231 linhas
+**Média Redução:** ~20% código por screen
+**Padrão Recomendado:** A (objects) - 3/4 screens
+**Padrão B (dicts):** 1/4 screens (OrcamentosScreen)
+
+---
+
+### ✨ BENEFÍCIOS CONQUISTADOS
+
+**1. Layout Unificado:**
+- Todos os screens seguem o mesmo padrão visual
+- Header simplificado (título + ícone)
+- Toolbar customizável (pesquisa + filtros)
+- Barra topo tabela (chips + botões)
+- Action bar sempre visível (seleção inteligente)
+
+**2. Código Reduzido:**
+- ~20% menos código em média
+- Menos duplicação
+- Manutenção simplificada
+
+**3. Funcionalidades Consistentes:**
+- Action bar com min/max_selection
+- Context menu dual-mode (barra + right-click)
+- Seleção múltipla inteligente
+- Totais automáticos (calculate_selection_total)
+
+**4. Melhor UX:**
+- Comportamento previsível entre screens
+- Botões aparecem/desaparecem automaticamente
+- Feedback visual consistente
+- Navegação uniforme
+
+**5. Escalabilidade:**
+- Novos screens podem usar BaseScreen facilmente
+- Mudanças no BaseScreen afetam todos os screens
+- Padrão bem documentado (2 patterns: A e B)
+
+---
+
+### 🎯 PADRÕES ESTABELECIDOS
+
+**Padrão A - Objects (Recomendado):**
+```python
+def load_data(self) -> List[Any]:
+    return self.manager.listar_todos()  # Lista de objetos ORM
+
+def item_to_dict(self, item: Any) -> Dict[str, Any]:
+    return {
+        'id': item.id,
+        'campo': item.campo,
+        '_objeto': item  # Guardar original
+    }
+```
+
+**Padrão B - Dicts (Apenas se necessário):**
+```python
+def load_data(self) -> List[Dict[str, Any]]:
+    return [{...}, {...}]  # Lista de dicts
+
+def item_to_dict(self, item: Dict[str, Any]) -> Dict[str, Any]:
+    return item  # Pass-through!
+```
+
+**Quando usar cada padrão:**
+- **Padrão A:** Novo código, migração de screens existentes (DespesasScreen, BoletinsScreen)
+- **Padrão B:** Código legado que já retorna dicts, quando conversão é complexa (OrcamentosScreen)
+
+**Regra de Ouro:**
+⚠️ **item_to_dict() é SEMPRE necessário**, independente do padrão usado!
+
+---
+
+### 📚 PRÓXIMOS PASSOS
+
+**Testes:**
+- [ ] Validar todos os 4 screens em conjunto
+- [ ] Verificar navegação entre screens
+- [ ] Testar casos edge (muitos dados, sem dados, seleção múltipla)
+- [ ] Performance (loading, scroll)
+
+**Documentação:**
+- [ ] Atualizar memory/UI_ARCHITECTURE.md com padrão BaseScreen
+- [ ] Documentar Padrões A e B
+- [ ] Adicionar exemplos de migração
+
+**Futuro:**
+- Considerar migração de outros screens usando BaseScreen
+- Potenciais candidatos: Clientes, Fornecedores (screens de listagem)
+
+---
+
+### 🔗 Referências
+
+**Ver:**
+- memory/TODO.md (task #2 - Migrar Screens Restantes)
+- memory/UI_ARCHITECTURE.md (guia completo BaseScreen)
+- ui/components/base_screen.py (template base)
+- ui/screens/despesas.py (exemplo Padrão A)
+- ui/screens/boletins.py (exemplo Padrão A)
+- ui/screens/orcamentos.py (exemplo Padrão B)
+
+---
+
 ## [2025-11-25 04:30] ✅ BUG-001 RESOLVIDO + Redesign Layout BaseScreen
 
 ### 🎉 RESOLUÇÃO COMPLETA

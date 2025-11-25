@@ -28,36 +28,21 @@ LEGENDA DE PRIORIDADES
 🔴 Alta Prioridade - Próximas 2 Semanas
 ====================================================================
 
-2. Migrar Screens Restantes para BaseScreen
+2. Validar e Testar Sistema de Templates UI (BaseScreen)
 
-   ✅ ProjectsScreen migrado (24/11/2025)
-
-   Pendentes:
-   ├─ OrcamentosScreen → BaseScreen
-   ├─ DespesasScreen → BaseScreen
-   └─ BoletinsScreen → BaseScreen
-
-   Para cada screen:
-   ├─ Manter funcionalidade 100%
-   ├─ Testar visualmente após migração
-   └─ Redução esperada ~30-40% código
-
-   Estimativa: 2-3 sessões
-   Ver: memory/UI_ARCHITECTURE.md (guia completo)
-   Ver: memory/CHANGELOG.md (24/11/2025 - Sistema Templates UI)
-
-3. Validar e Testar Sistema de Templates UI
-
-   Após migração de todos screens:
+   Após migração completa de 4 screens ✅:
    ├─ Testes visuais (layout, cores, interações)
-   ├─ Validar funcionalidades (filtros, pesquisa, context menu)
-   ├─ Testar casos edge (muitos dados, sem dados)
-   └─ Performance (loading, scroll)
+   ├─ Validar funcionalidades (filtros, pesquisa, context menu, action bar)
+   ├─ Testar casos edge (muitos dados, sem dados, seleção múltipla)
+   ├─ Performance (loading, scroll)
+   └─ Navegação entre screens
 
    Estimativa: 1 sessão
+   Status: Pronto para testes (migração 100% completa)
+   Ver: memory/CHANGELOG.md (25/11/2025 - Migração Completa)
    Ver: memory/UI_ARCHITECTURE.md (roadmap)
 
-4. UX/UI Improvements - Orçamentos (20 melhorias)
+3. UX/UI Improvements - Orçamentos (20 melhorias)
 
    **Concluído (21/11/2025):**
    ├─ ✅ Menu right-click na lista de orçamentos (Visualizar, Editar, Duplicar, Status, Anular, Apagar)
@@ -88,7 +73,7 @@ LEGENDA DE PRIORIDADES
 
    Ver: memory/TODO.md (versão anterior, linha 80-120 para detalhes completos)
 
-5. UX/UI Improvements - Boletins (mínimo 10 melhorias)
+4. UX/UI Improvements - Boletins (mínimo 10 melhorias)
    
    Críticas:
    ├─ View em cards (mês, total, botão expandir)
@@ -101,7 +86,7 @@ LEGENDA DE PRIORIDADES
    ├─ Export PDF boletim completo
    └─ Sugestão automática de deslocações (baseada em projetos)
 
-6. Sistema Fiscal - Validação TOC
+5. Sistema Fiscal - Validação TOC
    
    ├─ Marcar reunião com TOC (Técnico Oficial de Contas)
    ├─ Validar regras IVA, IRS, IRC, SS
@@ -111,7 +96,7 @@ LEGENDA DE PRIORIDADES
    Status: Documentação completa (39KB)
    Ver: memory/FISCAL.md
 
-7. Sistema de Totais por Beneficiário e Rastreabilidade
+6. Sistema de Totais por Beneficiário e Rastreabilidade
 
    ├─ Totais por beneficiário no form orçamento (lado EMPRESA)
    │  - Frame dedicado com cards coloridos por tipo
@@ -131,7 +116,7 @@ LEGENDA DE PRIORIDADES
    Estimativa: 2-3 sessões
    Ver: memory/BUSINESS_LOGIC.md (Secção 6), memory/ARCHITECTURE.md (Orçamentos V2)
 
-8. Implementar Tabela Receitas (Migration 027)
+7. Implementar Tabela Receitas (Migration 027)
 
    Após validação TOC:
    ├─ Criar migration 027_receitas.py
@@ -147,7 +132,7 @@ LEGENDA DE PRIORIDADES
 🟡 Média Prioridade - Próximo Mês
 ====================================================================
 
-9. UI Gestão Freelancers e Trabalhos/Compras
+8. UI Gestão Freelancers e Trabalhos/Compras
 
    ├─ Screen CRUD Freelancers (listar, criar, editar, inativar)
    ├─ Screen Trabalhos Freelancers (listar a_pagar, marcar como pago, filtros)
@@ -157,7 +142,7 @@ LEGENDA DE PRIORIDADES
    Estimativa: 1 semana
    Ver: memory/CHANGELOG.md (17/11/2025 - Orçamentos V2 Sistema Multi-Entidade)
 
-10. Testes de Integração Completos
+9. Testes de Integração Completos
    
    ├─ Testes E2E principais fluxos (criar projeto, aprovar orçamento, etc)
    ├─ Testes unitários managers críticos
@@ -166,7 +151,7 @@ LEGENDA DE PRIORIDADES
    
    Framework: pytest
 
-11. Build para Windows (PyInstaller)
+10. Build para Windows (PyInstaller)
     
     ├─ Configurar spec file
     ├─ Testar em Windows 10/11
@@ -176,7 +161,7 @@ LEGENDA DE PRIORIDADES
     
     Ver: memory/DEV_SETUP.md (adicionar secção Build)
 
-12. Dashboard Fiscal (após Migration 027)
+11. Dashboard Fiscal (após Migration 027)
     
     ├─ Card IVA a pagar (trimestre atual)
     ├─ Card IRS retido (mês atual)
@@ -190,37 +175,37 @@ LEGENDA DE PRIORIDADES
 🟢 Baixa Prioridade - Backlog
 ====================================================================
 
-13. Integração TOConline, BizDocs, BPI Net Empresas (importação manual)
+12. Integração TOConline, BizDocs, BPI Net Empresas (importação manual)
     - Importação manual (CSV) de faturas TOConline, despesas BizDocs e movimentos da conta BPI Empresas
     - Sem automação/API nesta fase (MVP)
     - Matching associativo: sugestão automática de projeto/despesa/receita para reconciliação
     - Referências: INTEGRACOES.md, FISCAL.md, DATABASE_SCHEMA.md
     - Pendente revisão futura, não prioritário
 
-14. Notificações e Alertas
+13. Notificações e Alertas
     - Despesas vencidas
     - Orçamentos aguardando aprovação há > 7 dias
     - Projetos sem movimento há > 30 dias
     - Prazos fiscais próximos
 
-15. Sistema de Backup Automático
+14. Sistema de Backup Automático
     - Backup diário da BD (agora_media.db)
     - Rotação (manter últimos 7 dias)
     - Opcional: upload cloud (Google Drive, Dropbox)
 
-16. Relatórios Avançados
+15. Relatórios Avançados
     - Relatório de rendibilidade por cliente
     - Relatório de custos por tipo
     - Análise de margens (receitas vs custos)
     - Export multi-formato (PDF, Excel, CSV)
 
-17. Multi-utilizador (Futuro distante)
+16. Multi-utilizador (Futuro distante)
     - Sistema de autenticação
     - Permissões por role
     - Auditoria de alterações
     - Nota: Não prioritário (apenas 2 sócios)
 
-18. App Mobile (Exploratório)
+17. App Mobile (Exploratório)
     - Consulta rápida de saldos
     - Adicionar despesas em movimento
     - Push notifications
@@ -247,7 +232,8 @@ Para contexto e decisões:
 
 Ver memory/CHANGELOG.md para histórico completo.
 
-Últimas 6 features (Novembro 2025):
+Últimas 7 features (Novembro 2025):
+- ✅ 25/11: Migração Completa para BaseScreen - OrcamentosScreen, DespesasScreen, BoletinsScreen migrados (4/4 completo, ~20% redução código) - Ver CHANGELOG.md (25/11/2025)
 - ✅ 24/11: Sistema Templates UI - BaseScreen implementado + ProjectsScreen migrado (-36% código) - Ver CHANGELOG.md (24/11/2025)
 - ✅ 24/11: Refatoração TipoProjeto (EMPRESA|PESSOAL + owner) - migrations 027-028
 - ✅ 24/11: UI Saldos com subsecções "não pagos" e "boletins pendentes"
