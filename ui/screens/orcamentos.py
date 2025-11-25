@@ -325,6 +325,13 @@ class OrcamentosScreen(BaseScreen):
                 total += float(orcamento.valor_total)
         return total
 
+    def item_to_dict(self, item: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert item to dict for table.
+        Since load_data() already returns dicts, this is a pass-through.
+        """
+        return item
+
     # ===== BULK OPERATION METHODS FOR ACTION BAR =====
 
     def _editar_selecionado(self):
