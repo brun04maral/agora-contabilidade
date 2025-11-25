@@ -79,9 +79,15 @@ class OrcamentosScreen(BaseScreen):
             pesquisa=pesquisa
         )
 
+        # Defensive: handle None or empty results
+        if orcamentos is None:
+            orcamentos = []
+
         # Prepare data for table
         data = []
         for orc in orcamentos:
+            if orc is None:
+                continue  # Skip None values
             cliente_nome = orc.cliente.nome if orc.cliente else "N/A"
             valor_str = f"{float(orc.valor_total or 0):.2f}€" if orc.valor_total else "0.00€"
             data_str = orc.data_criacao.strftime("%Y-%m-%d") if orc.data_criacao else "N/A"
