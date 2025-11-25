@@ -528,24 +528,24 @@ class BaseScreen(ctk.CTkFrame):
                 'max_selection': item.get('max_selection', None)
             }
 
-        # Botão Limpar seleção (entre botões e info)
+        # Frame direito para info
+        info_frame = ctk.CTkFrame(action_container, fg_color="transparent")
+        info_frame.pack(side="right", fill="y", padx=10)
+
+        # Botão Limpar seleção (à direita, antes do status)
         self.clear_selection_btn = ctk.CTkButton(
-            action_container,
-            text="✖ Limpar seleção",
+            info_frame,
+            text="✖",
             command=self._clear_selection,
-            width=120,
+            width=32,
             height=32,
-            font=ctk.CTkFont(size=11),
+            font=ctk.CTkFont(size=14),
             fg_color="transparent",
             hover_color=("#E0E0E0", "#404040"),
             border_width=1,
             border_color=("#BDBDBD", "#616161")
         )
         # Inicialmente escondido
-
-        # Frame direito para info
-        info_frame = ctk.CTkFrame(action_container, fg_color="transparent")
-        info_frame.pack(side="right", fill="y", padx=10)
 
         # Label status (sem seleção ou com seleção)
         self.status_label = ctk.CTkLabel(
@@ -670,9 +670,9 @@ class BaseScreen(ctk.CTkFrame):
                 else:
                     btn.pack_forget()
 
-            # Mostrar botão Limpar seleção (entre botões e info)
+            # Mostrar botão Limpar seleção (à direita, antes do status)
             if not self.clear_selection_btn.winfo_manager():
-                self.clear_selection_btn.pack(side="left", padx=20)
+                self.clear_selection_btn.pack(side="left", padx=(0, 10))
 
             # Calcular e mostrar total
             total = self.calculate_selection_total(selected_data)
