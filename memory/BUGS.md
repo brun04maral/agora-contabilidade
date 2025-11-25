@@ -6,12 +6,19 @@ Documentação de bugs ativos e resolvidos do projeto.
 
 ## 🔴 BUGS ATIVOS
 
-### BUG-001: BaseScreen - Chips Invisíveis + Espaçamento Excessivo
+### 🟢 Nenhum Bug Crítico Ativo
+
+---
+
+## ✅ BUGS RESOLVIDOS
+
+### BUG-001: BaseScreen - Toolbar Gigante Causava Espaçamento Excessivo
 
 **Data Identificado:** 24/11/2025
+**Data Resolvido:** 25/11/2025
 **Severidade:** 🔴 CRÍTICA
 **Prioridade:** URGENTE
-**Status:** EM INVESTIGAÇÃO (9 tentativas de fix)
+**Status:** ✅ RESOLVIDO (commit 313aa0f)
 
 **Afeta:**
 - `ui/components/base_screen.py`
@@ -212,11 +219,58 @@ Este bug é CRÍTICO porque afeta a funcionalidade core do sistema de templates 
 
 ---
 
-## ✅ BUGS RESOLVIDOS
+### ✅ SOLUÇÃO IMPLEMENTADA (25/11/2025)
 
-_(Vazio - Primeiros bugs documentados)_
+**Diagnóstico Final (Debug Visual):**
+
+Implementado debug com cores temporárias:
+```python
+header_frame = ctk.CTkFrame(self, fg_color="blue")
+toolbar = ctk.CTkFrame(self, fg_color="red")           # ← CULPADO!
+chips_container = ctk.CTkFrame(self, fg_color="green")
+selection_container = ctk.CTkFrame(self, fg_color="yellow")
+```
+
+Screenshot revelou: **Toolbar VERMELHO estava ~150-200px de altura em vez de ~35-40px**
+
+**ROOT CAUSE:**
+```python
+# PROBLEMA:
+toolbar = ctk.CTkFrame(self, fg_color="red")
+toolbar.pack(fill="x", padx=30, pady=(0, 10))
+# ^^^ SEM height control! Frame expandia verticalmente sem limite
+```
+
+**FIX IMPLEMENTADO (commit 313aa0f):**
+```python
+# SOLUÇÃO:
+toolbar = ctk.CTkFrame(self, fg_color="transparent", height=40)
+toolbar.pack(fill="x", padx=30, pady=(0, 10))
+toolbar.pack_propagate(False)  # ← Previne expansão automática
+```
+
+**Mudanças Completas:**
+1. Toolbar: `height=40` fixo + `pack_propagate(False)`
+2. Chips container: `height=40` fixo (já estava, mantido)
+3. Selection bar: `height=50` fixo (já estava, mantido)
+4. Removidas cores debug
+
+**Resultado:**
+✅ Toolbar com altura normal (~40px)
+✅ Espaçamento compacto (~30px entre título e pesquisa)
+✅ Chips visíveis quando adicionados
+✅ Tabela estável (não é empurrada)
+
+**Lição Aprendida:**
+- Debug visual com cores é EXTREMAMENTE eficaz para identificar problemas de layout
+- pack_propagate(False) é essencial para containers com height fixo
+- 9 tentativas sem debug visual vs 1 tentativa com debug = debug sempre!
+
+**Ver Detalhes Completos:**
+- memory/CHANGELOG.md (25/11/2025) - Processo completo de resolução
+- screenshots/ (04.27.10.png) - Screenshot diagnóstico
 
 ---
 
 **Mantido por:** Equipa Agora
-**Última Atualização:** 24/11/2025 20:40 WET
+**Última Atualização:** 25/11/2025 04:30 WET

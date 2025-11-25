@@ -4,20 +4,230 @@ Registo de mudanças significativas no projeto.
 
 ---
 
-## [2025-11-24 20:00-20:40] 🐛 BUG ATIVO: Refinamentos Visuais BaseScreen (Iterações Múltiplas)
+## [2025-11-25 04:30] ✅ BUG-001 RESOLVIDO + Redesign Layout BaseScreen
 
-### ❌ PROBLEMA CRÍTICO NÃO RESOLVIDO
+### 🎉 RESOLUÇÃO COMPLETA
 
-**Status:** 🔴 BUG ATIVO - Requer atenção urgente
+**Status:** ✅ RESOLVIDO (25/11/2025)
 **Afeta:** ui/components/base_screen.py
-**Impacto:** Experiência visual degradada no ProjectsScreen
+**Impacto Original:** Experiência visual degradada no ProjectsScreen
 
-**Sintomas:**
+### 🐛 PARTE 1: Resolução BUG-001 (Toolbar Gigante)
+
+**Commits:**
+- 313aa0f: fix(ui): RESOLVER BUG-001 - toolbar gigante causava espaçamento excessivo
+- 08bd4ca: debug: adicionar cores temporárias (identificou culpado)
+- 7022601: Screenshot diagnóstico (toolbar vermelho ~150-200px)
+
+**Sintomas Originais:**
 1. ❌ Chips de filtros/pesquisa **não aparecem** (invisíveis)
 2. ❌ Espaçamento **excessivo** entre toolbar e tabela (~80-100px)
 3. ❌ Layout inconsistente dependendo de haver chips ou não
 
-**Histórico de Tentativas (10 commits iterativos):**
+**Processo de Diagnóstico (Debug Visual):**
+
+Após 9 tentativas falhadas, implementado debug com cores:
+```python
+header_frame = ctk.CTkFrame(self, fg_color="blue")      # Azul
+toolbar = ctk.CTkFrame(self, fg_color="red")            # Vermelho - CULPADO!
+chips_container = ctk.CTkFrame(self, fg_color="green")  # Verde
+selection_container = ctk.CTkFrame(self, fg_color="yellow") # Amarelo
+```
+
+**Screenshot diagnóstico revelou:**
+- 🔴 Toolbar VERMELHO estava GIGANTE (~150-200px em vez de ~35-40px)
+- ✅ Header azul: tamanho normal
+- ✅ Chips verde: invisíveis (esperado, sem conteúdo)
+- ✅ Selection amarelo: invisível (esperado, sem seleção)
+
+**ROOT CAUSE IDENTIFICADO:**
+```python
+# ANTES (BUGGY):
+toolbar = ctk.CTkFrame(self, fg_color="red")
+toolbar.pack(fill="x", padx=30, pady=(0, 10))
+# ^^^ SEM height control! Frame expande verticalmente sem limite
+
+# DEPOIS (FIX):
+toolbar = ctk.CTkFrame(self, fg_color="transparent", height=40)
+toolbar.pack(fill="x", padx=30, pady=(0, 10))
+toolbar.pack_propagate(False)  # Previne expansão automática
+```
+
+**Solução Completa (313aa0f):**
+1. Toolbar: `height=40` fixo + `pack_propagate(False)`
+2. Chips container: mantém `height=40` fixo
+3. Selection bar: mantém `height=50` fixo
+4. Removidas cores debug (red, green, yellow → transparent)
+
+**Resultado:**
+✅ Espaçamento compacto entre título e pesquisa (~30px)
+✅ Toolbar com altura normal (~40px)
+✅ Chips visíveis quando adicionados
+✅ Tabela estável (não empurrada quando chips aparecem)
+
+---
+
+### 🏗️ PARTE 2: Redesign Completo do Layout BaseScreen
+
+**Commit:**
+- d80a66b: refactor(ui): redesenhar layout BaseScreen - barra de ações sempre visível
+
+**Motivação:**
+Após resolver BUG-001, aproveitou-se para melhorar a UX com barra de ações sempre visível e layout mais organizado.
+
+**MUDANÇAS DE LAYOUT:**
+
+**1. Header → Simplificado (apenas título)**
+```python
+# ANTES:
+┌──────────────────────────────────────────────────────┐
+│ 📁 Projetos      [🔄 Atualizar][🔁 Custom][➕ Novo] │
+└──────────────────────────────────────────────────────┘
+
+# DEPOIS:
+┌──────────────────────────────────────────────────────┐
+│ 📁 Projetos                                          │
+└──────────────────────────────────────────────────────┘
+```
+- Removidos: Botões Atualizar, Custom, Novo
+- Mantido: Título + ícone
+
+**2. Nova Barra Topo Tabela (chips + botões)**
+```python
+┌──────────────────────────────────────────────────────┐
+│ [🔍 digital][BA][Pessoais] ➤➤ [🔄][🔁 Gerar][➕ Novo]│
+└──────────────────────────────────────────────────────┘
+```
+- **Esquerda:** Chips de filtros/pesquisa (dinâmicos)
+- **Direita:** Botões Atualizar + Custom + Novo
+- Sempre visível (height=50px fixo)
+- Código: `_create_table_header_bar()`
+
+**3. Barra de Ações (fundo, sempre visível)**
+```python
+┌──────────────────────────────────────────────────────┐
+│ Nenhum item selecionado                              │  ← Sem seleção
+└──────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────┐
+│ [✏️ Editar][🗑️ Apagar] ➤➤ 2 selecionados │ €3,500   │  ← Com seleção
+└──────────────────────────────────────────────────────┘
+```
+- **Sempre visível** (não mais contextual)
+- Sem seleção: "Nenhum item selecionado"
+- Com seleção: botões + contagem + total
+- Botões baseados em `get_context_menu_items()`
+- Lógica inteligente `min_selection`/`max_selection`
+
+**Alterações Código:**
+
+**Layout Order (_create_layout):**
+```python
+def _create_layout(self):
+    self._create_header()           # 1. Título (simplificado)
+    self._create_toolbar()          # 2. Pesquisa + filtros
+    self._create_table_header_bar() # 3. Chips + botões (NOVO)
+    self._create_table()            # 4. Tabela
+    self._create_action_bar()       # 5. Barra ações (NOVO, sempre visível)
+```
+
+**API Changes (BREAKING):**
+
+1. **Removido:** `get_selection_actions()`
+   ```python
+   # ❌ NÃO EXISTE MAIS
+   def get_selection_actions(self):
+       return [{'text': '✅ Marcar Pago', ...}]
+   ```
+
+2. **Atualizado:** `get_context_menu_items()` com novos campos
+   ```python
+   # ✅ NOVA API
+   def get_context_menu_items(self, data: dict):
+       return [
+           {
+               'label': '✏️ Editar',
+               'command': lambda: self.editar(data),
+               'min_selection': 1,      # NOVO: mínimo items
+               'max_selection': 1,      # NOVO: máximo items
+               'fg_color': '#2196F3',   # Opcional (para botão)
+               'hover_color': '#1976D2',
+               'width': 100
+           },
+           {
+               'label': '🗑️ Apagar',
+               'command': lambda: self.apagar_selecionados(),
+               'min_selection': 1,
+               'max_selection': None,   # None = sem limite
+               'fg_color': '#F44336'
+           }
+       ]
+   ```
+
+**Lógica min/max_selection:**
+- Editar: `min=1, max=1` → aparece só quando exatamente 1 item selecionado
+- Apagar: `min=1, max=None` → aparece quando 1+ itens selecionados
+- Exportar: `min=1, max=None` → aparece quando 1+ itens selecionados
+
+**Implementação (_on_selection_change):**
+```python
+def _on_selection_change(self, selected_data: list):
+    num_selected = len(selected_data)
+
+    if num_selected > 0:
+        # Atualizar status
+        self.status_label.configure(text=f"{num_selected} selecionados")
+
+        # Mostrar/esconder botões baseado em min/max
+        for label, config in self._action_buttons.items():
+            should_show = (num_selected >= config['min_selection'] and
+                          (config['max_selection'] is None or
+                           num_selected <= config['max_selection']))
+
+            if should_show:
+                config['button'].pack(side="left", padx=4)
+            else:
+                config['button'].pack_forget()
+    else:
+        # Sem seleção
+        self.status_label.configure(text="Nenhum item selecionado")
+        # Esconder todos os botões
+```
+
+**BENEFÍCIOS:**
+
+✅ **UX Melhorada:**
+- Barra de ações sempre visível (melhor feedback visual)
+- Layout mais limpo e organizado
+- Chips agrupados com botões de ação no topo da tabela
+
+✅ **Código Mais Limpo:**
+- Single source of truth (context menu = action bar)
+- Menos duplicação (get_selection_actions removido)
+- Lógica contextual automática (min/max selection)
+
+✅ **Arquitetura:**
+- Separação clara de responsabilidades
+- API mais consistente
+- Fácil extensão (apenas get_context_menu_items)
+
+**Ficheiros Alterados:**
+- ui/components/base_screen.py (164 insertions, 170 deletions)
+
+**Próximos Passos:**
+- Atualizar screens existentes para nova API:
+  - ❌ ProjectsScreen (usar get_context_menu_items)
+  - ❌ OrcamentosScreen (migrar + adaptar)
+  - ❌ DespesasScreen (migrar + adaptar)
+  - ❌ BoletinsScreen (migrar + adaptar)
+
+**Ver:**
+- memory/UI_ARCHITECTURE.md (documentação completa)
+- ui/components/base_screen.py (linhas 1-875)
+
+---
+
+**Histórico de Tentativas BUG-001 (10 commits iterativos):**
 
 1. **b10b77a** - Tentativa 1: Reduzir pady header/toolbar
    - Resultado: Melhorou, mas espaço ainda existe

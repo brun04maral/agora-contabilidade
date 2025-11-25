@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-24 WET
-**Branch:** claude/sync-branch-updates-01PSZaS68aoVjGybDc4qUPnq
+**Última atualização:** 2025-11-25 WET
+**Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
 **Status Geral:** ✅ PRODUÇÃO READY
 
 ---
@@ -18,16 +18,16 @@
 
 ## 📌 Resumo Executivo
 
-**Sprint Atual (24/11/2025):**
-- 🎯 **Sistema de Templates UI** - Generalizar screens com BaseScreen para consistência e redução de código
+**Sprint Atual (25/11/2025):**
+- 🎯 **Sistema de Templates UI + Refinamentos UX** - BaseScreen com layout otimizado e barra de ações sempre visível
 
 **Última Feature Concluída:**
-- ✅ **BaseScreen Template + Migração ProjectsScreen** (24/11/2025) - Criado template reutilizável (~500 linhas) para screens de listagem com layout modular, slots customizáveis e métodos abstratos. ProjectsScreen migrado com redução de 36% código (661→424 linhas). **Ver:** memory/CHANGELOG.md (24/11/2025) | memory/UI_ARCHITECTURE.md
+- ✅ **BUG-001 Resolvido + Redesign Layout BaseScreen** (25/11/2025) - Corrigido bug crítico de espaçamento (toolbar gigante ~150-200px → 40px) através de debug visual. Redesenhado layout completo: header simplificado, nova barra topo tabela (chips+botões), barra de ações sempre visível com lógica min/max_selection. API Breaking: removido get_selection_actions(), atualizado get_context_menu_items(). **Ver:** memory/CHANGELOG.md (25/11/2025)
 
 **Próximo Milestone:**
+- 📋 Atualizar ProjectsScreen para nova API (get_context_menu_items)
 - 📋 Migrar OrcamentosScreen, DespesasScreen, BoletinsScreen para BaseScreen
 - 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
-- 📋 UI Gestão Freelancers (screen CRUD)
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins
@@ -37,41 +37,12 @@
 
 ## 🔴 PROBLEMAS ATIVOS (URGENTE)
 
-### BUG-001: BaseScreen - Chips Invisíveis + Espaçamento Excessivo
+### 🟢 Nenhum Problema Crítico Ativo
 
-**Severidade:** 🔴 CRÍTICA | **Status:** EM INVESTIGAÇÃO
-**Identificado:** 24/11/2025 20:00-20:40 WET
-**Tentativas de Fix:** 9 commits iterativos (NENHUM resolveu)
-
-**Sintomas:**
-1. ❌ Chips de filtros/pesquisa **não aparecem** na tela
-2. ❌ Espaçamento **excessivo** (~80-100px) entre toolbar e tabela
-3. ❌ Layout visual degradado no ProjectsScreen
-
-**Impacto:**
-- 🔴 Bloqueia UX adequada em ProjectsScreen
-- 🔴 Bloqueia migração de screens (Orçamentos, Despesas, Boletins)
-- 🟡 Reduz confiança na arquitetura BaseScreen
-
-**Abordagens Tentadas (Todas Falharam):**
-1. Reduzir padding → Melhorou mas não resolveu
-2. Ajustar containers → Chips invisíveis
-3. Overlays com place() → Chips desapareceram
-4. Adicionar lift() z-order → Ainda invisíveis
-5. Simplificar para pack() → Espaço gigante voltou
-6. Pack condicional containers → **Estado atual (não funciona)**
-
-**Próximos Passos (Próxima Sessão):**
-1. 🔍 Debug visual com cores de fundo (red/blue)
-2. 🔍 Print winfo_manager() estados
-3. 🔍 Testar sem `before=` parameter
-4. 🔄 Considerar grid() em vez de pack()
-5. 🔄 Alternativa: containers sempre visíveis com height=0
-
-**Documentação Completa:**
-- Ver: memory/BUGS.md (BUG-001)
-- Ver: memory/CHANGELOG.md (24/11/2025 20:00-20:40)
-- Screenshots: screenshots/ (20.08.33, 20.33.26, 20.33.41)
+**Último Problema Resolvido:**
+- ✅ **BUG-001** (BaseScreen Toolbar Gigante) - Resolvido em 25/11/2025
+- Ver: memory/CHANGELOG.md (25/11/2025)
+- Ver: memory/BUGS.md (BUG-001 - marcado como resolvido)
 
 ---
 
