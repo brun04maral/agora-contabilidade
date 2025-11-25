@@ -51,7 +51,7 @@ class OrcamentosScreen(BaseScreen):
         """Return screen icon (PIL Image or None)"""
         return get_icon(ORCAMENTOS, size=(28, 28))
 
-    def get_columns(self) -> List[Dict[str, Any]]:
+    def get_table_columns(self) -> List[Dict[str, Any]]:
         """Return table column definitions"""
         return [
             {"key": "codigo", "label": "Código", "width": 280},
