@@ -528,6 +528,21 @@ class BaseScreen(ctk.CTkFrame):
                 'max_selection': item.get('max_selection', None)
             }
 
+        # Botão Limpar seleção (entre botões e info)
+        self.clear_selection_btn = ctk.CTkButton(
+            action_container,
+            text="✖ Limpar seleção",
+            command=self._clear_selection,
+            width=120,
+            height=32,
+            font=ctk.CTkFont(size=11),
+            fg_color="transparent",
+            hover_color=("#E0E0E0", "#404040"),
+            border_width=1,
+            border_color=("#BDBDBD", "#616161")
+        )
+        # Inicialmente escondido
+
         # Frame direito para info
         info_frame = ctk.CTkFrame(action_container, fg_color="transparent")
         info_frame.pack(side="right", fill="y", padx=10)
@@ -655,6 +670,10 @@ class BaseScreen(ctk.CTkFrame):
                 else:
                     btn.pack_forget()
 
+            # Mostrar botão Limpar seleção (entre botões e info)
+            if not self.clear_selection_btn.winfo_manager():
+                self.clear_selection_btn.pack(side="left", padx=20)
+
             # Calcular e mostrar total
             total = self.calculate_selection_total(selected_data)
             if total > 0:
@@ -671,8 +690,15 @@ class BaseScreen(ctk.CTkFrame):
             for config in self._action_buttons.values():
                 config['button'].pack_forget()
 
+            # Esconder botão Limpar seleção
+            self.clear_selection_btn.pack_forget()
+
             # Esconder total
             self.total_label.pack_forget()
+
+    def _clear_selection(self):
+        """Limpa a seleção da tabela."""
+        self.table.clear_selection()
 
     def _on_row_double_click(self, data: dict):
         """Handler para duplo clique na linha."""

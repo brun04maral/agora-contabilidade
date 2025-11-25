@@ -182,6 +182,15 @@ class ProjetosScreen(BaseScreen):
                     'width': 130
                 },
                 {
+                    'label': '⛔ Anular',
+                    'command': self._anular_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#FF9800', '#F57C00'),
+                    'hover_color': ('#F57C00', '#EF6C00'),
+                    'width': 100
+                },
+                {
                     'label': '🗑️ Apagar',
                     'command': self._apagar_selecionados,
                     'min_selection': 1,
@@ -555,6 +564,48 @@ class ProjetosScreen(BaseScreen):
             self.refresh_data()
             if len(erros) == 0:
                 messagebox.showinfo("Sucesso", f"{sucessos} projeto(s) marcado(s) como pago(s)")
+            else:
+                messagebox.showwarning(
+                    "Parcialmente Concluído",
+                    f"{sucessos} sucesso(s), {len(erros)} erro(s):\n" + "\n".join(erros[:5])
+                )
+        elif erros:
+            messagebox.showerror("Erro", "Erros:\n" + "\n".join(erros[:5]))
+
+    def _anular_selecionados(self):
+        """Anula projetos selecionados."""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+        resposta = messagebox.askyesno(
+            "Anular Projetos",
+            f"Anular {num} projeto(s)?\n\n"
+            f"⚠️ Projetos anulados não entram nos cálculos.",
+            icon='warning'
+        )
+
+        if not resposta:
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            projeto = data.get('_projeto')
+            if projeto:
+                sucesso, erro = self.manager.mudar_estado(projeto.id, EstadoProjeto.ANULADO)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{projeto.numero}: {erro}")
+
+        # Mostrar resultado
+        if sucessos > 0:
+            self.refresh_data()
+            if len(erros) == 0:
+                messagebox.showinfo("Sucesso", f"{sucessos} projeto(s) anulado(s)")
             else:
                 messagebox.showwarning(
                     "Parcialmente Concluído",
