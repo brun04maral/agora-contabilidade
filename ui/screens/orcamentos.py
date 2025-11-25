@@ -63,14 +63,22 @@ class OrcamentosScreen(BaseScreen):
 
     def load_data(self) -> List[Dict[str, Any]]:
         """Load orçamentos from database and return as list of dicts"""
-        # Get filters
-        pesquisa = self.search_entry.get().strip() if self.search_entry else None
+        # Get filters (widgets might not exist yet during initialization)
+        pesquisa = None
+        if hasattr(self, 'search_entry') and self.search_entry:
+            try:
+                pesquisa = self.search_entry.get().strip() or None
+            except Exception:
+                pass
 
         filtro_status = None
-        if self.status_combo:
-            filtro_status = self.status_combo.get()
-            if filtro_status == "Todos":
-                filtro_status = None
+        if hasattr(self, 'status_combo') and self.status_combo:
+            try:
+                filtro_status = self.status_combo.get()
+                if filtro_status == "Todos":
+                    filtro_status = None
+            except Exception:
+                pass
 
         # Load orcamentos
         orcamentos = self.manager.listar_orcamentos(
@@ -102,8 +110,11 @@ class OrcamentosScreen(BaseScreen):
                 "_orcamento": orc,  # Store full object for context menu
             })
 
-        # Update statistics
-        self.atualizar_estatisticas()
+        # Update statistics (non-critical, don't fail if it errors)
+        try:
+            self.atualizar_estatisticas()
+        except Exception as e:
+            print(f"Warning: Failed to update statistics: {e}")
 
         return data
 
