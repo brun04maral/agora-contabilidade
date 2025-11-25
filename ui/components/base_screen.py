@@ -11,13 +11,14 @@ ARQUITETURA DE TEMPLATES:
 1. BaseScreen (este ficheiro) - Template para screens de listagem
 2. BaseForm (futuro) - Template para forms de criação/edição
 
-VISUAL REFINEMENTS (24/11/2025):
+VISUAL REFINEMENTS (25/11/2025):
 ---------------------------------
+- Header: apenas título + ícone
 - Barra de pesquisa compacta (só ícone lupa)
 - Filtros horizontais com seleção múltipla
-- Chips/badges para filtros ativos
+- Barra topo tabela: chips (esquerda) + botões Atualizar/Novo (direita)
 - Tabela expandida (ocupa máximo espaço)
-- Barra de ações flutuante contextual
+- Barra de ações (fundo, sempre visível): ações contextuais baseadas em seleção
 - Espaçamentos otimizados
 
 COMO USAR:
@@ -63,9 +64,8 @@ MÉTODOS PARA OVERRIDE:
 ----------------------
 - get_table_columns() - Definir colunas da tabela
 - get_filters_config() - Definir filtros disponíveis
-- get_header_buttons() - Adicionar botões custom ao header
-- get_selection_actions() - Definir ações na barra de seleção
-- get_context_menu_items(item) - Definir itens do context menu
+- get_header_buttons() - Adicionar botões custom (aparecem no topo da tabela)
+- get_context_menu_items(item) - Definir ações (context menu + barra de ações)
 - load_data() - Carregar dados da BD
 - item_to_dict(item) - Converter objeto para dict da tabela
 - on_item_double_click(data) - Ação ao duplo clique
@@ -97,12 +97,11 @@ class BaseScreen(ctk.CTkFrame):
     Template base para screens de listagem principal.
 
     Fornece layout consistente com:
-    - Header (título + ícone + botões)
-    - Barra de pesquisa compacta
-    - Filtros horizontais com multi-seleção
-    - Chips de filtros ativos
-    - Barra de seleção dinâmica (contextual)
+    - Header (título + ícone)
+    - Barra de pesquisa compacta + filtros horizontais
+    - Barra topo tabela (chips à esquerda, botões Atualizar/Novo à direita)
     - DataTableV2 expandida
+    - Barra de ações (fundo, sempre visível, ações contextuais)
     - Context menu
 
     Subclasses devem implementar os métodos abstratos e podem
@@ -138,7 +137,7 @@ class BaseScreen(ctk.CTkFrame):
         self._filter_selections = {}  # {key: Set[value]}
         self._filter_chips = {}  # {key: {value: chip_widget}}
         self._search_chip = None  # Chip da pesquisa ativa
-        self._selection_buttons = []
+        self._action_buttons = {}  # {label: {button, min_selection, max_selection}}
 
         # Configure frame
         self.configure(fg_color="transparent")
@@ -152,28 +151,26 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_layout(self):
         """Cria o layout base do screen."""
-        # Header
+        # Header (apenas título)
         self._create_header()
 
         # Search + Filters toolbar (compacto)
         if self.config.get('show_search', True) or self.get_filters_config():
             self._create_toolbar()
 
-        # Chips area (pack normal, não overlay)
-        self._create_chips_area()
-
-        # Selection bar
-        self._create_selection_bar()
+        # Barra topo tabela: chips (esquerda) + botões (direita)
+        self._create_table_header_bar()
 
         # Table (expandida)
         self._create_table()
 
-        # Footer slot - NÃO adicionar aqui, só se necessário
+        # Barra de ações (fundo, sempre visível)
+        self._create_action_bar()
 
     def _create_header(self):
-        """Cria o header com título e botões."""
+        """Cria o header com título (apenas)."""
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(20, 20))  # 20px bottom (como DespesasScreen)
+        header_frame.pack(fill="x", padx=30, pady=(20, 20))
 
         # Título com ícone
         title = self.config.get('title', 'Screen')
@@ -210,54 +207,6 @@ class BaseScreen(ctk.CTkFrame):
                 font=ctk.CTkFont(size=28, weight="bold")
             )
         title_label.pack(side="left")
-
-        # REMOVIDO header_slot - estava a causar espaço vazio
-
-        # Botões de ação (movidos para a direita, sem slot no meio)
-        btn_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        btn_frame.pack(side="right")
-
-        # Botão Atualizar
-        refresh_btn = ctk.CTkButton(
-            btn_frame,
-            text="🔄 Atualizar",
-            command=self.refresh_data,
-            width=120,
-            height=32,
-            font=ctk.CTkFont(size=12)
-        )
-        refresh_btn.pack(side="left", padx=5)
-
-        # Botões custom do header
-        for btn_config in self.get_header_buttons():
-            btn = ctk.CTkButton(
-                btn_frame,
-                text=btn_config.get('text', ''),
-                command=btn_config.get('command'),
-                width=btn_config.get('width', 140),
-                height=32,
-                font=ctk.CTkFont(size=12),
-                fg_color=btn_config.get('fg_color'),
-                hover_color=btn_config.get('hover_color')
-            )
-            btn.pack(side="left", padx=5)
-
-        # Botão Novo
-        new_text = self.config.get('new_button_text', 'Novo')
-        new_color = self.config.get('new_button_color', ('#4CAF50', '#388E3C'))
-        new_hover = self.config.get('new_button_hover', ('#66BB6A', '#2E7D32'))
-
-        new_btn = ctk.CTkButton(
-            btn_frame,
-            text=f"➕ {new_text}",
-            command=self.on_new_item,
-            width=140,
-            height=32,
-            font=ctk.CTkFont(size=12, weight="bold"),
-            fg_color=new_color,
-            hover_color=new_hover
-        )
-        new_btn.pack(side="left", padx=5)
 
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
@@ -337,15 +286,62 @@ class BaseScreen(ctk.CTkFrame):
         self.filters_slot = ctk.CTkFrame(toolbar, fg_color="transparent")
         self.filters_slot.pack(side="left", padx=10)
 
-    def _create_chips_area(self):
-        """Cria área para chips de filtros ativos."""
-        # Container com height FIXO (sempre reserva espaço, não empurra tabela)
-        self.chips_container = ctk.CTkFrame(self, fg_color="transparent", height=40)
-        self.chips_container.pack(fill="x", padx=30, pady=0)
-        self.chips_container.pack_propagate(False)  # NÃO expande automaticamente
+    def _create_table_header_bar(self):
+        """Cria barra topo tabela: chips (esquerda) + botões (direita)."""
+        # Container sempre visível com height fixo
+        table_header = ctk.CTkFrame(self, fg_color="transparent", height=50)
+        table_header.pack(fill="x", padx=30, pady=(0, 10))
+        table_header.pack_propagate(False)
 
-        # Frame interno onde chips aparecem (inicialmente escondido)
-        self.chips_frame = ctk.CTkFrame(self.chips_container, fg_color="transparent")
+        # Frame esquerdo para chips
+        self.chips_frame = ctk.CTkFrame(table_header, fg_color="transparent")
+        self.chips_frame.pack(side="left", fill="both", expand=True)
+
+        # Frame direito para botões
+        buttons_frame = ctk.CTkFrame(table_header, fg_color="transparent")
+        buttons_frame.pack(side="right")
+
+        # Botão Atualizar
+        refresh_btn = ctk.CTkButton(
+            buttons_frame,
+            text="🔄 Atualizar",
+            command=self.refresh_data,
+            width=120,
+            height=36,
+            font=ctk.CTkFont(size=12)
+        )
+        refresh_btn.pack(side="left", padx=5)
+
+        # Botões custom do header
+        for btn_config in self.get_header_buttons():
+            btn = ctk.CTkButton(
+                buttons_frame,
+                text=btn_config.get('text', ''),
+                command=btn_config.get('command'),
+                width=btn_config.get('width', 140),
+                height=36,
+                font=ctk.CTkFont(size=12),
+                fg_color=btn_config.get('fg_color'),
+                hover_color=btn_config.get('hover_color')
+            )
+            btn.pack(side="left", padx=5)
+
+        # Botão Novo
+        new_text = self.config.get('new_button_text', 'Novo')
+        new_color = self.config.get('new_button_color', ('#4CAF50', '#388E3C'))
+        new_hover = self.config.get('new_button_hover', ('#66BB6A', '#2E7D32'))
+
+        new_btn = ctk.CTkButton(
+            buttons_frame,
+            text=f"➕ {new_text}",
+            command=self.on_new_item,
+            width=140,
+            height=36,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=new_color,
+            hover_color=new_hover
+        )
+        new_btn.pack(side="left", padx=5)
 
     def _add_filter_chip(self, filter_key: str, value: str):
         """Adiciona chip para filtro ativo."""
@@ -354,10 +350,6 @@ class BaseScreen(ctk.CTkFrame):
 
         if value in self._filter_chips[filter_key]:
             return  # Already exists
-
-        # Mostrar chips_frame se for o primeiro chip
-        if not self.chips_frame.winfo_manager():
-            self.chips_frame.pack(fill="both", expand=True, pady=5)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -406,11 +398,6 @@ class BaseScreen(ctk.CTkFrame):
             if filter_key in self._filter_selections:
                 self._filter_selections[filter_key].discard(value)
 
-            # Esconder chips_frame se vazio
-            has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
-            if not has_chips and not self._search_chip:
-                self.chips_frame.pack_forget()
-
             # Atualizar aparência do filtro
             self._update_filter_appearance(filter_key)
 
@@ -444,10 +431,6 @@ class BaseScreen(ctk.CTkFrame):
         """Adiciona chip para pesquisa ativa."""
         if self._search_chip:
             return  # Already exists
-
-        # Mostrar chips_frame se for o primeiro chip
-        if not self.chips_frame.winfo_manager():
-            self.chips_frame.pack(fill="both", expand=True, pady=5)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -488,11 +471,6 @@ class BaseScreen(ctk.CTkFrame):
             self._search_chip.destroy()
             self._search_chip = None
 
-            # Esconder chips_frame se vazio
-            has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
-            if not has_chips and not self._search_chip:
-                self.chips_frame.pack_forget()
-
             # Clear search and refresh
             self.search_var.set("")
             self.refresh_data()
@@ -508,62 +486,67 @@ class BaseScreen(ctk.CTkFrame):
             for value in list(self._filter_chips[filter_key].keys()):
                 self._remove_filter_chip(filter_key, value)
 
-    def _create_selection_bar(self):
-        """Cria a barra de seleção."""
-        # Container com height FIXO (sempre reserva espaço, não empurra tabela)
-        self.selection_container = ctk.CTkFrame(self, fg_color="transparent", height=50)
-        self.selection_container.pack(fill="x", padx=30, pady=0)
-        self.selection_container.pack_propagate(False)  # NÃO expande automaticamente
-
-        # Frame da barra (inicialmente escondido)
-        self.selection_frame = ctk.CTkFrame(
-            self.selection_container,
+    def _create_action_bar(self):
+        """Cria a barra de ações no fundo (sempre visível)."""
+        # Container sempre visível com height fixo
+        action_container = ctk.CTkFrame(
+            self,
             fg_color=("#F5F5F5", "#2B2B2B"),
             corner_radius=8,
             border_width=1,
-            border_color=("#E0E0E0", "#404040")
+            border_color=("#E0E0E0", "#404040"),
+            height=60
         )
+        action_container.pack(fill="x", padx=30, pady=(10, 20))
+        action_container.pack_propagate(False)
 
-        # Botão limpar seleção
-        self.cancel_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="✖",
-            command=self._clear_selection,
-            width=32,
-            height=32,
-            font=ctk.CTkFont(size=12),
-            fg_color="transparent",
-            hover_color=("#E0E0E0", "#404040"),
-            border_width=0
-        )
+        # Frame esquerdo para botões de ação
+        self.action_buttons_frame = ctk.CTkFrame(action_container, fg_color="transparent")
+        self.action_buttons_frame.pack(side="left", fill="y", padx=10)
 
-        # Label contagem
-        self.count_label = ctk.CTkLabel(
-            self.selection_frame,
-            text="0 selecionados",
-            font=ctk.CTkFont(size=12, weight="bold")
-        )
+        # Criar botões de ação (inicialmente escondidos)
+        self._action_buttons = {}
+        for item in self.get_context_menu_items({}):
+            if item.get('separator'):
+                continue
 
-        # Botões de ação da seleção
-        for action_cfg in self.get_selection_actions():
             btn = ctk.CTkButton(
-                self.selection_frame,
-                text=action_cfg.get('text', ''),
-                command=action_cfg.get('command'),
-                width=action_cfg.get('width', 120),
-                height=32,
+                self.action_buttons_frame,
+                text=item.get('label', ''),
+                command=item.get('command'),
+                width=item.get('width', 100),
+                height=36,
                 font=ctk.CTkFont(size=11),
-                fg_color=action_cfg.get('fg_color'),
-                hover_color=action_cfg.get('hover_color')
+                fg_color=item.get('fg_color', ("#2196F3", "#1976D2")),
+                hover_color=item.get('hover_color', ("#1976D2", "#1565C0"))
             )
-            self._selection_buttons.append(btn)
 
-        # Label total
+            # Armazenar referência com config
+            self._action_buttons[item.get('label', '')] = {
+                'button': btn,
+                'min_selection': item.get('min_selection', 1),
+                'max_selection': item.get('max_selection', None)
+            }
+
+        # Frame direito para info
+        info_frame = ctk.CTkFrame(action_container, fg_color="transparent")
+        info_frame.pack(side="right", fill="y", padx=10)
+
+        # Label status (sem seleção ou com seleção)
+        self.status_label = ctk.CTkLabel(
+            info_frame,
+            text="Nenhum item selecionado",
+            font=ctk.CTkFont(size=12)
+        )
+        self.status_label.pack(side="left", padx=10)
+
+        # Label total (aparece quando há seleção com valor)
         self.total_label = ctk.CTkLabel(
-            self.selection_frame,
+            info_frame,
             text="Total: €0,00",
             font=ctk.CTkFont(size=12, weight="bold")
         )
+        # Inicialmente escondido
 
     def _create_table(self):
         """Cria a tabela de dados (expandida)."""
@@ -601,11 +584,6 @@ class BaseScreen(ctk.CTkFrame):
             if self._search_chip:
                 self._search_chip.destroy()
                 self._search_chip = None
-
-                # Esconder chips_frame se vazio
-                has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
-                if not has_chips:
-                    self.chips_frame.pack_forget()
 
         self.refresh_data()
 
@@ -656,32 +634,45 @@ class BaseScreen(ctk.CTkFrame):
         num_selected = len(selected_data)
 
         if num_selected > 0:
-            # Mostrar selection_frame
-            if not self.selection_frame.winfo_manager():
-                self.selection_frame.pack(fill="both", expand=True, pady=5)
-
-            self.cancel_btn.pack(side="left", padx=8)
-
+            # Atualizar status
             count_text = f"{num_selected} selecionado" if num_selected == 1 else f"{num_selected} selecionados"
-            self.count_label.configure(text=count_text)
-            self.count_label.pack(side="left", padx=12)
+            self.status_label.configure(text=count_text)
 
-            # Mostrar botões de ação
-            for btn in self._selection_buttons:
-                btn.pack(side="left", padx=4)
+            # Mostrar/esconder botões baseado em min/max selection
+            for label, config in self._action_buttons.items():
+                btn = config['button']
+                min_sel = config['min_selection']
+                max_sel = config['max_selection']
+
+                # Verificar se botão deve aparecer
+                should_show = num_selected >= min_sel
+                if max_sel is not None:
+                    should_show = should_show and num_selected <= max_sel
+
+                if should_show:
+                    if not btn.winfo_manager():
+                        btn.pack(side="left", padx=4)
+                else:
+                    btn.pack_forget()
 
             # Calcular e mostrar total
             total = self.calculate_selection_total(selected_data)
             if total > 0:
                 self.total_label.configure(text=f"Total: €{total:,.2f}")
-                self.total_label.pack(side="left", padx=12)
+                if not self.total_label.winfo_manager():
+                    self.total_label.pack(side="left", padx=12)
+            else:
+                self.total_label.pack_forget()
         else:
-            # Esconder selection_frame
-            self.selection_frame.pack_forget()
+            # Sem seleção
+            self.status_label.configure(text="Nenhum item selecionado")
 
-    def _clear_selection(self):
-        """Limpa a seleção da tabela."""
-        self.table.clear_selection()
+            # Esconder todos os botões
+            for config in self._action_buttons.values():
+                config['button'].pack_forget()
+
+            # Esconder total
+            self.total_label.pack_forget()
 
     def _on_row_double_click(self, data: dict):
         """Handler para duplo clique na linha."""
@@ -801,26 +792,29 @@ class BaseScreen(ctk.CTkFrame):
         """
         return []
 
-    def get_selection_actions(self) -> List[Dict[str, Any]]:
-        """
-        Define ações disponíveis na barra de seleção.
-
-        Returns:
-            Lista de dicts com configuração das ações:
-            [{'text': '✅ Marcar Pago', 'command': self.marcar_pago, 'fg_color': '#4CAF50'}, ...]
-        """
-        return []
-
     def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
         """
-        Define itens do context menu para uma linha.
+        Define itens do context menu e da barra de ações.
 
         Args:
-            data: Dict com dados da linha
+            data: Dict com dados da linha (pode estar vazio {} ao criar barra de ações)
 
         Returns:
             Lista de dicts com itens do menu:
-            [{'label': '✏️ Editar', 'command': lambda: self.editar(data)}, {'separator': True}, ...]
+            [{
+                'label': '✏️ Editar',
+                'command': lambda: self.editar(data),
+                'min_selection': 1,  # Mínimo de itens selecionados (default: 1)
+                'max_selection': 1,  # Máximo de itens selecionados (default: None = sem limite)
+                'fg_color': '#2196F3',  # Cor do botão (opcional)
+                'hover_color': '#1976D2',  # Cor hover (opcional)
+                'width': 100  # Largura do botão (opcional)
+            }, ...]
+
+        Exemplos:
+            - Editar: min=1, max=1 (só 1 item)
+            - Apagar: min=1, max=None (1 ou mais)
+            - Exportar: min=1, max=None (1 ou mais)
         """
         return []
 
