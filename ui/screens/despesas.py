@@ -4,249 +4,49 @@ Tela de gestão de Despesas
 """
 import customtkinter as ctk
 import tkinter as tk
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from datetime import date
 import tkinter.messagebox as messagebox
 
 from logic.despesas import DespesasManager
 from database.models import TipoDespesa, EstadoDespesa
-from ui.components.data_table_v2 import DataTableV2
+from ui.components.base_screen import BaseScreen
 from assets.resources import get_icon, DESPESAS
 
 
-class DespesasScreen(ctk.CTkFrame):
+class DespesasScreen(BaseScreen):
     """
     Tela de gestão de Despesas (CRUD completo)
     """
 
     def __init__(self, parent, db_session: Session, filtro_estado=None, filtro_tipo=None, **kwargs):
-        super().__init__(parent, **kwargs)
-
         self.db_session = db_session
         self.manager = DespesasManager(db_session)
         self.filtro_inicial_estado = filtro_estado
         self.filtro_inicial_tipo = filtro_tipo
 
-        self.configure(fg_color="transparent")
-        self.create_widgets()
+        # Initialize filter widgets (created in toolbar_slot)
+        self.search_entry = None
+        self.tipo_filter = None
+        self.estado_filter = None
 
-        # Apply initial filter if provided
-        if self.filtro_inicial_estado or self.filtro_inicial_tipo:
-            if self.filtro_inicial_estado:
-                self.estado_filter.set(self.filtro_inicial_estado)
-            if self.filtro_inicial_tipo:
-                self.tipo_filter.set(self.filtro_inicial_tipo)
-            self.aplicar_filtros()
-        else:
-            self.carregar_despesas()
+        # Call parent __init__ (this will call abstract methods)
+        super().__init__(parent, db_session, **kwargs)
 
-    def create_widgets(self):
-        """Create screen widgets"""
+    # ===== ABSTRACT METHODS FROM BaseScreen =====
 
-        # Header
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
+    def get_screen_title(self) -> str:
+        """Return screen title"""
+        return "Despesas"
 
-        # Title with PNG icon
-        icon_pil = get_icon(DESPESAS, size=(28, 28))
-        if icon_pil:
-            icon_ctk = ctk.CTkImage(
-                light_image=icon_pil,
-                dark_image=icon_pil,
-                size=(28, 28)
-            )
-            title_label = ctk.CTkLabel(
-                header_frame,
-                image=icon_ctk,
-                text=" Despesas",
-                compound="left",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        else:
-            title_label = ctk.CTkLabel(
-                header_frame,
-                text="💸 Despesas",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        title_label.pack(side="left")
+    def get_screen_icon(self):
+        """Return screen icon (PIL Image or None)"""
+        return get_icon(DESPESAS, size=(28, 28))
 
-        # Buttons
-        btn_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        btn_frame.pack(side="right")
-
-        refresh_btn = ctk.CTkButton(
-            btn_frame,
-            text="🔄 Atualizar",
-            command=self.carregar_despesas,
-            width=120,
-            height=35,
-            font=ctk.CTkFont(size=13)
-        )
-        refresh_btn.pack(side="left", padx=5)
-
-        gerar_recorrentes_btn = ctk.CTkButton(
-            btn_frame,
-            text="🔁 Gerar Recorrentes",
-            command=self.gerar_despesas_recorrentes,
-            width=170,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#2196F3", "#1976D2"),
-            hover_color=("#64B5F6", "#1565C0")
-        )
-        gerar_recorrentes_btn.pack(side="left", padx=5)
-
-        editar_templates_btn = ctk.CTkButton(
-            btn_frame,
-            text="📝 Editar Recorrentes",
-            command=self.abrir_templates,
-            width=170,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#9C27B0", "#7B1FA2"),
-            hover_color=("#BA68C8", "#6A1B9A")
-        )
-        editar_templates_btn.pack(side="left", padx=5)
-
-        nova_btn = ctk.CTkButton(
-            btn_frame,
-            text="➕ Nova Despesa",
-            command=self.abrir_formulario,
-            width=140,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#F44336", "#C62828"),
-            hover_color=("#E57373", "#B71C1C")
-        )
-        nova_btn.pack(side="left", padx=5)
-
-        # Search bar (search-as-you-type)
-        search_frame = ctk.CTkFrame(self, fg_color="transparent")
-        search_frame.pack(fill="x", padx=30, pady=(0, 15))
-
-        ctk.CTkLabel(
-            search_frame,
-            text="🔍 Pesquisar:",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).pack(side="left", padx=(0, 10))
-
-        # Search entry with StringVar for reactive tracking
-        self.search_var = ctk.StringVar()
-        self.search_var.trace_add("write", self.on_search_change)
-
-        self.search_entry = ctk.CTkEntry(
-            search_frame,
-            textvariable=self.search_var,
-            placeholder_text="Digite para pesquisar por fornecedor ou descrição...",
-            width=500,
-            height=35,
-            font=ctk.CTkFont(size=13)
-        )
-        self.search_entry.pack(side="left", padx=(0, 10))
-
-        # Clear search button
-        clear_search_btn = ctk.CTkButton(
-            search_frame,
-            text="✖",
-            command=self.limpar_pesquisa,
-            width=35,
-            height=35,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#E0E0E0", "#404040"),
-            hover_color=("#BDBDBD", "#606060")
-        )
-        clear_search_btn.pack(side="left")
-
-        # Filters
-        filters_frame = ctk.CTkFrame(self, fg_color="transparent")
-        filters_frame.pack(fill="x", padx=30, pady=(0, 20))
-
-        # Tipo filter
-        ctk.CTkLabel(
-            filters_frame,
-            text="Tipo:",
-            font=ctk.CTkFont(size=13)
-        ).pack(side="left", padx=(0, 10))
-
-        self.tipo_filter = ctk.CTkOptionMenu(
-            filters_frame,
-            values=["Todos", "Fixa Mensal", "Pessoal BA", "Pessoal RR", "Equipamento", "Projeto"],
-            command=self.aplicar_filtros,
-            width=180
-        )
-        self.tipo_filter.pack(side="left", padx=(0, 20))
-
-        # Estado filter
-        ctk.CTkLabel(
-            filters_frame,
-            text="Estado:",
-            font=ctk.CTkFont(size=13)
-        ).pack(side="left", padx=(0, 10))
-
-        self.estado_filter = ctk.CTkOptionMenu(
-            filters_frame,
-            values=["Todos", "Pendente", "Vencido", "Pago"],
-            command=self.aplicar_filtros,
-            width=120
-        )
-        self.estado_filter.pack(side="left")
-
-        # Selection actions bar (created but NOT packed - will be shown on selection)
-        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
-
-        # Clear selection button
-        self.cancel_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="🗑️ Limpar Seleção",
-            command=self.cancelar_selecao,
-            width=150, height=35
-        )
-
-        # Selection count label
-        self.count_label = ctk.CTkLabel(
-            self.selection_frame,
-            text="0 selecionados",
-            font=ctk.CTkFont(size=13)
-        )
-
-        # Mark as paid button
-        self.marcar_pago_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="✅ Marcar como Pago",
-            command=self.marcar_como_pago,
-            width=160, height=35,
-            fg_color=("#4CAF50", "#388E3C"),
-            hover_color=("#66BB6A", "#2E7D32")
-        )
-
-        # Report button
-        self.report_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="📊 Criar Relatório",
-            command=self.criar_relatorio,
-            width=160, height=35
-        )
-
-        # Delete button
-        self.delete_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="🗑️ Apagar Selecionadas",
-            command=self.apagar_selecionadas,
-            width=160, height=35,
-            fg_color=("#F44336", "#C62828"),
-            hover_color=("#E57373", "#B71C1C")
-        )
-
-        # Total label
-        self.total_label = ctk.CTkLabel(
-            self.selection_frame,
-            text="Total: €0,00",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-
-        # Table
-        columns = [
+    def get_table_columns(self) -> List[Dict[str, Any]]:
+        """Return table column definitions"""
+        return [
             {'key': 'numero', 'label': 'ID', 'width': 100, 'sortable': True},
             {'key': 'data', 'label': 'Data', 'width': 120, 'sortable': True},
             {'key': 'tipo', 'label': 'Tipo', 'width': 140, 'sortable': False},
@@ -256,79 +56,395 @@ class DespesasScreen(ctk.CTkFrame):
             {'key': 'estado', 'label': 'Estado', 'width': 110, 'sortable': True},
         ]
 
-        self.table = DataTableV2(
-            self,
-            columns=columns,
-            on_row_double_click=self.editar_despesa,
-            on_selection_change=self.on_selection_change,
-            on_row_right_click=self.show_context_menu,
-            height=400
-        )
-        self.table.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+    def load_data(self) -> List[Any]:
+        """Load despesas from database and return as list of objects"""
+        try:
+            # Get search filter (widget pode não existir em __init__)
+            search = None
+            if hasattr(self, 'search_entry') and self.search_entry:
+                try:
+                    search = self.search_entry.get().strip() or None
+                except Exception:
+                    pass
 
-    def carregar_despesas(self):
-        """Load and display despesas"""
-        despesas = self.manager.listar_todas()
-        data = [self.despesa_to_dict(d) for d in despesas]
-        self.table.set_data(data)
+            # Get dropdown filters
+            tipo = "Todos"
+            if hasattr(self, 'tipo_filter') and self.tipo_filter:
+                try:
+                    tipo = self.tipo_filter.get()
+                except Exception:
+                    pass
 
-    def despesa_to_dict(self, despesa, search_text: Optional[str] = None) -> dict:
-        """
-        Convert despesa to dict for table
+            estado = "Todos"
+            if hasattr(self, 'estado_filter') and self.estado_filter:
+                try:
+                    estado = self.estado_filter.get()
+                except Exception:
+                    pass
 
-        Args:
-            despesa: Despesa object
-            search_text: Optional search text to highlight in results
+            # Apply search
+            if search:
+                despesas = self.manager.filtrar_por_texto(search)
+            else:
+                despesas = self.manager.listar_todas()
 
-        Returns:
-            Dictionary with despesa data for table display
-        """
-        # Determine color based on estado
-        color = self.get_estado_color(despesa.estado)
+            # Apply tipo filter
+            if tipo != "Todos":
+                tipo_map = {
+                    "Fixa Mensal": TipoDespesa.FIXA_MENSAL,
+                    "Pessoal BA": TipoDespesa.PESSOAL_BRUNO,
+                    "Pessoal RR": TipoDespesa.PESSOAL_RAFAEL,
+                    "Equipamento": TipoDespesa.EQUIPAMENTO,
+                    "Projeto": TipoDespesa.PROJETO
+                }
+                tipo_enum = tipo_map.get(tipo)
+                if tipo_enum:
+                    despesas = [d for d in despesas if d.tipo == tipo_enum]
 
-        # Add asterisk to tipo if generated from template
-        tipo_label = self.tipo_to_label(despesa.tipo)
-        if despesa.despesa_template_id:
+            # Apply estado filter
+            if estado != "Todos":
+                estado_map = {
+                    "Pendente": EstadoDespesa.PENDENTE,
+                    "Vencido": EstadoDespesa.VENCIDO,
+                    "Pago": EstadoDespesa.PAGO
+                }
+                estado_enum = estado_map.get(estado)
+                if estado_enum:
+                    despesas = [d for d in despesas if d.estado == estado_enum]
+
+            return despesas  # NUNCA None, sempre lista
+
+        except Exception as e:
+            print(f"ERROR in load_data(): {e}")
+            import traceback
+            traceback.print_exc()
+            return []  # SEMPRE retornar lista vazia em erro
+
+    def item_to_dict(self, item: Any) -> Dict[str, Any]:
+        """Convert despesa object to dict for table"""
+        # Reusar lógica de despesa_to_dict() existente mas sem search_text
+        tipo_label = self.tipo_to_label(item.tipo)
+        if item.despesa_template_id:
             tipo_label += "*"
 
-        credor_nome = despesa.credor.nome if despesa.credor else '-'
-        descricao = despesa.descricao or ''
-        numero = despesa.numero
-
-        # Apply visual highlighting if search text is provided
-        if search_text and search_text.strip():
-            search_lower = search_text.strip().lower()
-
-            # Check if credor_nome or descricao match
-            if search_lower in credor_nome.lower():
-                # Add highlight marker to numero to indicate match
-                numero = f"➤ {numero}"
-            elif search_lower in descricao.lower():
-                # Add highlight marker to numero to indicate match
-                numero = f"➤ {numero}"
+        credor_nome = item.credor.nome if item.credor else '-'
 
         return {
-            'id': despesa.id,
-            'numero': numero,
-            'data': despesa.data.strftime("%Y-%m-%d") if despesa.data else '-',
+            'id': item.id,
+            'numero': item.numero,
+            'data': item.data.strftime("%Y-%m-%d") if item.data else '-',
             'tipo': tipo_label,
             'credor_nome': credor_nome,
-            'descricao': descricao,
-            'valor_com_iva': float(despesa.valor_com_iva),
-            'valor_com_iva_fmt': f"€{float(despesa.valor_com_iva):,.2f}",
-            'estado': self.estado_to_label(despesa.estado),
-            '_bg_color': color,
-            '_despesa': despesa
+            'descricao': item.descricao or '',
+            'valor_com_iva': float(item.valor_com_iva),
+            'valor_com_iva_fmt': f"€{float(item.valor_com_iva):,.2f}",
+            'estado': self.estado_to_label(item.estado),
+            '_bg_color': self.get_estado_color(item.estado),
+            '_despesa': item  # CRÍTICO: guardar objeto original
         }
 
-    def get_estado_color(self, estado: EstadoDespesa) -> tuple:
-        """Get color for estado (returns tuple: light, dark mode) - Opção 3 Agora Inspired"""
-        color_map = {
-            EstadoDespesa.PAGO: ("#E8F5E0", "#4A7028"),        # Verde pastel - positivo
-            EstadoDespesa.PENDENTE: ("#FFF4CC", "#806020"),    # Dourado pastel - harmoniza com BA
-            EstadoDespesa.VENCIDO: ("#FFE5D0", "#8B4513")      # Laranja pastel - atenção urgente
-        }
-        return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
+    def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
+        """Define ações do context menu e barra de ações"""
+
+        # Para barra de ações (data vazio {} quando BaseScreen chama)
+        if not data or '_despesa' not in data:
+            return [
+                {
+                    'label': '✏️ Editar',
+                    'command': self._editar_selecionada,
+                    'min_selection': 1,
+                    'max_selection': 1,
+                    'fg_color': ('#2196F3', '#1976D2'),
+                    'hover_color': ('#1976D2', '#1565C0'),
+                    'width': 100
+                },
+                {
+                    'label': '📋 Duplicar',
+                    'command': self._duplicar_selecionadas,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#9C27B0', '#7B1FA2'),
+                    'hover_color': ('#7B1FA2', '#6A1B9A'),
+                    'width': 110
+                },
+                {
+                    'label': '✅ Marcar Pago',
+                    'command': self._pagar_selecionadas,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#4CAF50', '#388E3C'),
+                    'hover_color': ('#388E3C', '#2E7D32'),
+                    'width': 130
+                },
+                {
+                    'label': '📊 Relatório',
+                    'command': self.criar_relatorio,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#607D8B', '#455A64'),
+                    'hover_color': ('#455A64', '#37474F'),
+                    'width': 110
+                },
+                {
+                    'label': '🗑️ Apagar',
+                    'command': self._apagar_selecionadas,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#F44336', '#C62828'),
+                    'hover_color': ('#D32F2F', '#B71C1C'),
+                    'width': 100
+                }
+            ]
+
+        # Para context menu (ações contextuais baseadas em estado)
+        despesa = data.get('_despesa')
+        if not despesa:
+            return []
+
+        items = [
+            {'label': '✏️ Editar', 'command': lambda: self.editar_despesa(data)},
+            {'label': '📋 Duplicar', 'command': lambda: self._duplicar_from_context(despesa)},
+            {'separator': True},
+        ]
+
+        # Ações baseadas no estado
+        if despesa.estado == EstadoDespesa.PENDENTE:
+            items.append({'label': '✅ Marcar como Pago', 'command': lambda: self._marcar_pago_from_context(despesa)})
+        elif despesa.estado == EstadoDespesa.VENCIDO:
+            items.append({'label': '✅ Marcar como Pago', 'command': lambda: self._marcar_pago_from_context(despesa)})
+            items.append({'label': '⏪ Voltar a Pendente', 'command': lambda: self._marcar_pendente_from_context(despesa)})
+        elif despesa.estado == EstadoDespesa.PAGO:
+            items.append({'label': '⏪ Voltar a Pendente', 'command': lambda: self._marcar_pendente_from_context(despesa)})
+
+        items.append({'separator': True})
+        items.append({'label': '🗑️ Apagar', 'command': lambda: self._apagar_from_context(despesa)})
+
+        return items
+
+    # ===== OPTIONAL METHODS =====
+
+    def toolbar_slot(self, parent):
+        """Create custom toolbar with search and filters"""
+        # Frame principal
+        toolbar_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        toolbar_frame.pack(fill="x", padx=0, pady=(0, 10))
+
+        # Row 1: Search + botões especiais
+        search_frame = ctk.CTkFrame(toolbar_frame, fg_color="transparent")
+        search_frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(
+            search_frame,
+            text="🔍 Pesquisar:",
+            font=ctk.CTkFont(size=13)
+        ).pack(side="left", padx=(0, 10))
+
+        self.search_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Digite para pesquisar por fornecedor ou descrição...",
+            width=400,
+            height=35
+        )
+        self.search_entry.pack(side="left", padx=(0, 10))
+        self.search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
+
+        # Botão limpar search
+        clear_btn = ctk.CTkButton(
+            search_frame,
+            text="✖",
+            command=lambda: (self.search_entry.delete(0, 'end'), self.refresh_data()),
+            width=35,
+            height=35
+        )
+        clear_btn.pack(side="left", padx=(0, 20))
+
+        # Botões especiais (Gerar Recorrentes + Editar Templates)
+        gerar_btn = ctk.CTkButton(
+            search_frame,
+            text="🔁 Gerar Recorrentes",
+            command=self.gerar_despesas_recorrentes,
+            width=170,
+            height=35,
+            fg_color=("#2196F3", "#1976D2"),
+            hover_color=("#64B5F6", "#1565C0")
+        )
+        gerar_btn.pack(side="left", padx=5)
+
+        templates_btn = ctk.CTkButton(
+            search_frame,
+            text="📝 Editar Recorrentes",
+            command=self.abrir_templates,
+            width=170,
+            height=35,
+            fg_color=("#9C27B0", "#7B1FA2"),
+            hover_color=("#BA68C8", "#6A1B9A")
+        )
+        templates_btn.pack(side="left", padx=5)
+
+        # Row 2: Filters
+        filters_frame = ctk.CTkFrame(toolbar_frame, fg_color="transparent")
+        filters_frame.pack(fill="x")
+
+        ctk.CTkLabel(
+            filters_frame,
+            text="Tipo:",
+            font=ctk.CTkFont(size=13)
+        ).pack(side="left", padx=(0, 10))
+
+        self.tipo_filter = ctk.CTkOptionMenu(
+            filters_frame,
+            values=["Todos", "Fixa Mensal", "Pessoal BA", "Pessoal RR", "Equipamento", "Projeto"],
+            command=lambda _: self.refresh_data(),
+            width=180
+        )
+        self.tipo_filter.set(self.filtro_inicial_tipo or "Todos")
+        self.tipo_filter.pack(side="left", padx=(0, 20))
+
+        ctk.CTkLabel(
+            filters_frame,
+            text="Estado:",
+            font=ctk.CTkFont(size=13)
+        ).pack(side="left", padx=(0, 10))
+
+        self.estado_filter = ctk.CTkOptionMenu(
+            filters_frame,
+            values=["Todos", "Pendente", "Vencido", "Pago"],
+            command=lambda _: self.refresh_data(),
+            width=120
+        )
+        self.estado_filter.set(self.filtro_inicial_estado or "Todos")
+        self.estado_filter.pack(side="left")
+
+    def on_add_click(self):
+        """Handle add button click"""
+        self.abrir_formulario(despesa=None)
+
+    def on_item_double_click(self, data: dict):
+        """Handle table row double-click (editar)"""
+        despesa = data.get('_despesa')
+        if despesa:
+            self.abrir_formulario(despesa)
+
+    def calculate_selection_total(self, selected_data: List[Dict[str, Any]]) -> float:
+        """Calculate total value of selected despesas"""
+        return sum(item.get('valor_com_iva', 0) for item in selected_data)
+
+    # ===== BULK OPERATION METHODS FOR ACTION BAR =====
+
+    def _editar_selecionada(self):
+        """Edita despesa selecionada"""
+        selected = self.get_selected_data()
+        if selected and len(selected) == 1:
+            self.on_item_double_click(selected[0])
+
+    def _duplicar_selecionadas(self):
+        """Duplica despesas selecionadas"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+        msg = f"Duplicar {num} despesa(s)?"
+        if not messagebox.askyesno("Confirmar", msg):
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            despesa = data.get('_despesa')
+            if despesa:
+                sucesso, nova, erro = self.manager.duplicar_despesa(despesa.id)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{despesa.numero}: {erro}")
+
+        if sucessos > 0:
+            self.refresh_data()
+            if not erros:
+                messagebox.showinfo("Sucesso", f"{sucessos} despesa(s) duplicada(s)")
+            else:
+                messagebox.showwarning("Parcial", f"{sucessos} sucesso(s), {len(erros)} erro(s):\n" + "\n".join(erros[:5]))
+        elif erros:
+            messagebox.showerror("Erro", "\n".join(erros[:5]))
+
+    def _pagar_selecionadas(self):
+        """Marca despesas selecionadas como pagas"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        # Filtrar apenas não pagas
+        unpaid = [d.get('_despesa') for d in selected
+                  if d.get('_despesa') and d.get('_despesa').estado != EstadoDespesa.PAGO]
+
+        if not unpaid:
+            messagebox.showinfo("Info", "Todas já estão pagas.")
+            return
+
+        if not messagebox.askyesno("Confirmar", f"Marcar {len(unpaid)} como pagas?"):
+            return
+
+        hoje = date.today()
+        erros = []
+
+        for despesa in unpaid:
+            sucesso, erro = self.manager.atualizar(
+                despesa.id,
+                estado=EstadoDespesa.PAGO,
+                data_pagamento=hoje
+            )
+            if not sucesso:
+                erros.append(f"{despesa.numero}: {erro}")
+
+        if not erros:
+            self.refresh_data()
+            messagebox.showinfo("Sucesso", f"{len(unpaid)} despesa(s) marcada(s) como paga(s)")
+        else:
+            messagebox.showerror("Erro", "\n".join(erros))
+            self.refresh_data()
+
+    def _apagar_selecionadas(self):
+        """Apaga despesas selecionadas"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+        geradas_template = sum(1 for d in selected
+                              if d.get('_despesa') and d.get('_despesa').despesa_template_id)
+
+        msg = f"Apagar {num} despesa(s)?"
+        if geradas_template > 0:
+            msg += f"\n\n⚠️ {geradas_template} foram geradas de templates."
+
+        if not messagebox.askyesno("Confirmar", msg):
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            despesa = data.get('_despesa')
+            if despesa:
+                sucesso, erro = self.manager.apagar(despesa.id)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{despesa.numero}: {erro}")
+
+        if sucessos > 0:
+            msg_result = f"✅ {sucessos} despesa(s) apagada(s)!"
+            if erros:
+                msg_result += f"\n\n⚠️ {len(erros)} erro(s)"
+            messagebox.showinfo("Resultado", msg_result)
+        else:
+            messagebox.showerror("Erro", "\n".join(erros[:5]))
+
+        self.refresh_data()
+
+    # ===== HELPER METHODS (MANTER) =====
 
     def tipo_to_label(self, tipo: TipoDespesa) -> str:
         """Convert tipo enum to label"""
@@ -350,15 +466,14 @@ class DespesasScreen(ctk.CTkFrame):
         }
         return mapping.get(estado, str(estado))
 
-    def aplicar_filtros(self, *args):
-        """Apply filters (dropdown filters trigger this, search triggers on_search_change)"""
-        # Trigger search which will also apply filters
-        self.on_search_change()
-
-    def after_save_callback(self):
-        """Callback after saving - reload data and clear selection"""
-        self.carregar_despesas()
-        self.table.clear_selection()
+    def get_estado_color(self, estado: EstadoDespesa) -> tuple:
+        """Get color for estado (returns tuple: light, dark mode) - Opção 3 Agora Inspired"""
+        color_map = {
+            EstadoDespesa.PAGO: ("#E8F5E0", "#4A7028"),        # Verde pastel - positivo
+            EstadoDespesa.PENDENTE: ("#FFF4CC", "#806020"),    # Dourado pastel - harmoniza com BA
+            EstadoDespesa.VENCIDO: ("#FFE5D0", "#8B4513")      # Laranja pastel - atenção urgente
+        }
+        return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
 
     def abrir_formulario(self, despesa=None):
         """Navigate to despesa_form screen for create/edit"""
@@ -371,9 +486,14 @@ class DespesasScreen(ctk.CTkFrame):
         else:
             messagebox.showerror("Erro", "Não foi possível abrir formulário")
 
+    def editar_despesa(self, data: dict):
+        """Edit despesa (triggered by double-click or context menu)"""
+        despesa = data.get('_despesa')
+        if despesa:
+            self.abrir_formulario(despesa)
+
     def gerar_despesas_recorrentes(self):
         """Gera despesas recorrentes para o mês atual"""
-        from datetime import date
         hoje = date.today()
         mes_nome = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
                     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"][hoje.month - 1]
@@ -393,7 +513,7 @@ class DespesasScreen(ctk.CTkFrame):
 
         # Mostrar resultado
         if geradas > 0:
-            self.carregar_despesas()  # Recarregar lista
+            self.refresh_data()  # Recarregar lista
             if erros:
                 msg = f"⚠️ {len(erros)} erro(s) ao gerar despesas:\n" + "\n".join(erros[:3])
                 if len(erros) > 3:
@@ -429,167 +549,13 @@ class DespesasScreen(ctk.CTkFrame):
         # Ao fechar, atualizar lista de despesas
         def on_close():
             dialog.destroy()
-            self.carregar_despesas()
+            self.refresh_data()
 
         dialog.protocol("WM_DELETE_WINDOW", on_close)
 
-    def editar_despesa(self, data: dict):
-        """Edit despesa (triggered by double-click)"""
-        despesa = data.get('_despesa')
-        if despesa:
-            self.abrir_formulario(despesa)
-
-    def apagar_despesa(self, data: dict):
-        """Apagar despesa individual"""
-        despesa = data.get('_despesa')
-        if not despesa:
-            return
-
-        # Mostrar informação se foi gerada de template
-        msg = f"Apagar despesa {despesa.numero}?"
-        if despesa.despesa_template_id:
-            msg += f"\n\n⚠️ Esta despesa foi gerada automaticamente do template {despesa.despesa_template.numero}."
-            msg += "\nAo apagar, ela não será recriada automaticamente."
-
-        resposta = messagebox.askyesno("Confirmar", msg)
-
-        if resposta:
-            sucesso, erro = self.manager.apagar(despesa.id)
-            if sucesso:
-                self.carregar_despesas()
-            else:
-                messagebox.showerror("Erro", f"Erro ao apagar: {erro}")
-
-    def apagar_selecionadas(self):
-        """Apagar despesas selecionadas"""
-        selected_data = self.table.get_selected_data()
-        if len(selected_data) == 0:
-            return
-
-        # Verificar quantas são geradas de templates
-        geradas_template = sum(
-            1 for item in selected_data
-            if item.get('_despesa') and item.get('_despesa').despesa_template_id
-        )
-
-        # Confirmar ação
-        msg = f"Apagar {len(selected_data)} despesa(s) selecionada(s)?"
-        if geradas_template > 0:
-            msg += f"\n\n⚠️ {geradas_template} despesa(s) foram geradas de templates."
-            msg += "\nAo apagar, elas não serão recriadas automaticamente."
-
-        resposta = messagebox.askyesno("Confirmar", msg)
-
-        if resposta:
-            sucesso_count = 0
-            erros = []
-
-            for item in selected_data:
-                despesa = item.get('_despesa')
-                if despesa:
-                    sucesso, erro = self.manager.apagar(despesa.id)
-                    if sucesso:
-                        sucesso_count += 1
-                    else:
-                        erros.append(f"{despesa.numero}: {erro}")
-
-            # Mostrar resultado
-            if sucesso_count > 0:
-                msg = f"✅ {sucesso_count} despesa(s) apagada(s) com sucesso!"
-                if erros:
-                    msg += f"\n\n⚠️ {len(erros)} erro(s):\n" + "\n".join(erros[:3])
-                messagebox.showinfo("Resultado", msg)
-            else:
-                messagebox.showerror("Erro", "Nenhuma despesa foi apagada:\n" + "\n".join(erros[:5]))
-
-            self.carregar_despesas()
-            self.table.clear_selection()
-
-    def on_selection_change(self, selected_data: list):
-        """Handle selection change in table"""
-        num_selected = len(selected_data)
-
-        if num_selected > 0:
-            # Show selection frame
-            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
-
-            # Show selection bar
-            self.cancel_btn.pack(side="left", padx=5)
-
-            # Show count
-            count_text = f"{num_selected} selecionada" if num_selected == 1 else f"{num_selected} selecionadas"
-            self.count_label.configure(text=count_text)
-            self.count_label.pack(side="left", padx=15)
-
-            # Show "Marcar como Pago" only if there are unpaid despesas
-            has_unpaid = any(
-                item.get('_despesa') and item.get('_despesa').estado != EstadoDespesa.PAGO
-                for item in selected_data
-            )
-            if has_unpaid:
-                self.marcar_pago_btn.pack(side="left", padx=5)
-
-            self.report_btn.pack(side="left", padx=5)
-            self.delete_btn.pack(side="left", padx=5)
-
-            # Calculate and show total
-            total = sum(item.get('valor_com_iva', 0) for item in selected_data)
-            self.total_label.configure(text=f"Total: €{total:,.2f}")
-            self.total_label.pack(side="left", padx=20)
-        else:
-            # Hide entire selection frame when nothing is selected
-            self.selection_frame.pack_forget()
-
-    def cancelar_selecao(self):
-        """Cancel selection"""
-        self.table.clear_selection()
-
-    def marcar_como_pago(self):
-        """Mark selected despesas as paid"""
-        selected_data = self.table.get_selected_data()
-        if len(selected_data) == 0:
-            return
-
-        # Filter only unpaid despesas
-        unpaid_despesas = [
-            item.get('_despesa') for item in selected_data
-            if item.get('_despesa') and item.get('_despesa').estado != EstadoDespesa.PAGO
-        ]
-
-        if len(unpaid_despesas) == 0:
-            messagebox.showinfo("Info", "Todas as despesas selecionadas já estão pagas.")
-            return
-
-        # Confirm action
-        resposta = messagebox.askyesno(
-            "Confirmar",
-            f"Marcar {len(unpaid_despesas)} despesa(s) como pagas?\n\n"
-            f"Data de pagamento será definida como hoje ({date.today().strftime('%Y-%m-%d')})."
-        )
-
-        if resposta:
-            hoje = date.today()
-            erros = []
-
-            for despesa in unpaid_despesas:
-                sucesso, erro = self.manager.atualizar(
-                    despesa.id,
-                    estado=EstadoDespesa.PAGO,
-                    data_pagamento=hoje
-                )
-                if not sucesso:
-                    erros.append(f"{despesa.numero}: {erro}")
-
-            if len(erros) == 0:
-                self.carregar_despesas()
-                self.table.clear_selection()
-            else:
-                messagebox.showerror("Erro", f"Erros ao marcar despesas:\n" + "\n".join(erros))
-                self.carregar_despesas()
-
     def criar_relatorio(self):
         """Create report for selected despesas and navigate to Relatorios tab"""
-        selected_data = self.table.get_selected_data()
+        selected_data = self.get_selected_data()
         if len(selected_data) > 0:
             # Extract despesa IDs from selected data
             despesa_ids = [item.get('id') for item in selected_data if item.get('id')]
@@ -605,120 +571,7 @@ class DespesasScreen(ctk.CTkFrame):
                     "Não foi possível navegar para a aba de Relatórios"
                 )
 
-    def on_search_change(self, *args):
-        """
-        Reactive search handler - called on every keystroke
-        Filters despesas dynamically as user types
-        """
-        search_text = self.search_var.get()
-
-        # Get base despesas from search
-        if search_text and search_text.strip():
-            # Use backend search method
-            despesas = self.manager.filtrar_por_texto(search_text)
-        else:
-            # No search text, get all
-            despesas = self.manager.listar_todas()
-
-        # Apply existing filters on top of search results
-        tipo = self.tipo_filter.get()
-        estado = self.estado_filter.get()
-
-        # Filter by tipo
-        if tipo != "Todos":
-            tipo_map = {
-                "Fixa Mensal": TipoDespesa.FIXA_MENSAL,
-                "Pessoal BA": TipoDespesa.PESSOAL_BRUNO,
-                "Pessoal RR": TipoDespesa.PESSOAL_RAFAEL,
-                "Equipamento": TipoDespesa.EQUIPAMENTO,
-                "Projeto": TipoDespesa.PROJETO
-            }
-            tipo_enum = tipo_map[tipo]
-            despesas = [d for d in despesas if d.tipo == tipo_enum]
-
-        # Filter by estado
-        if estado != "Todos":
-            estado_map = {
-                "Pendente": EstadoDespesa.PENDENTE,
-                "Vencido": EstadoDespesa.VENCIDO,
-                "Pago": EstadoDespesa.PAGO
-            }
-            estado_enum = estado_map[estado]
-            despesas = [d for d in despesas if d.estado == estado_enum]
-
-        # Update table with highlighting (pass search_text for visual markers)
-        search_term = search_text.strip() if search_text and search_text.strip() else None
-        data = [self.despesa_to_dict(d, search_text=search_term) for d in despesas]
-        self.table.set_data(data)
-
-    def limpar_pesquisa(self):
-        """Clear search field and refresh results"""
-        self.search_var.set("")
-        self.search_entry.focus()
-
-    def show_context_menu(self, event, data: dict):
-        """
-        Mostra menu de contexto (right-click) para uma despesa
-
-        Args:
-            event: Evento do clique (para posição)
-            data: Dados da linha clicada
-        """
-        despesa = data.get('_despesa')
-        if not despesa:
-            return
-
-        # Criar menu
-        menu = tk.Menu(self, tearoff=0)
-
-        # ✏️ Editar
-        menu.add_command(
-            label="✏️ Editar",
-            command=lambda: self.editar_despesa(data)
-        )
-
-        # 📋 Duplicar
-        menu.add_command(
-            label="📋 Duplicar",
-            command=lambda: self._duplicar_from_context(despesa)
-        )
-
-        menu.add_separator()
-
-        # Ações dependem do estado atual
-        if despesa.estado == EstadoDespesa.PENDENTE:
-            menu.add_command(
-                label="✅ Marcar como Pago",
-                command=lambda: self._marcar_pago_from_context(despesa)
-            )
-        elif despesa.estado == EstadoDespesa.VENCIDO:
-            menu.add_command(
-                label="✅ Marcar como Pago",
-                command=lambda: self._marcar_pago_from_context(despesa)
-            )
-            menu.add_command(
-                label="⏪ Voltar a Pendente",
-                command=lambda: self._marcar_pendente_from_context(despesa)
-            )
-        elif despesa.estado == EstadoDespesa.PAGO:
-            menu.add_command(
-                label="⏪ Voltar a Pendente",
-                command=lambda: self._marcar_pendente_from_context(despesa)
-            )
-
-        menu.add_separator()
-
-        # 🗑️ Apagar
-        menu.add_command(
-            label="🗑️ Apagar",
-            command=lambda: self._apagar_from_context(despesa)
-        )
-
-        # Mostrar menu na posição do cursor
-        try:
-            menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            menu.grab_release()
+    # ===== CONTEXT MENU HELPERS =====
 
     def _duplicar_from_context(self, despesa):
         """Duplica despesa a partir do menu de contexto"""
@@ -728,7 +581,7 @@ class DespesasScreen(ctk.CTkFrame):
                 "Duplicar Despesa",
                 f"Duplicar despesa {despesa.numero}?\n\n"
                 f"Fornecedor: {despesa.credor.nome if despesa.credor else '-'}\n"
-                f"Descrição: {despesa.descricao[:50]}...\n\n"
+                f"Descrição: {despesa.descricao[:50] if despesa.descricao else '-'}...\n\n"
                 f"A nova despesa será criada com estado PENDENTE\n"
                 f"e data de hoje."
             )
@@ -741,8 +594,7 @@ class DespesasScreen(ctk.CTkFrame):
 
             if sucesso:
                 # Recarregar lista
-                self.carregar_despesas()
-                self.table.clear_selection()
+                self.refresh_data()
 
                 # Abrir nova despesa para edição
                 messagebox.showinfo(
@@ -780,8 +632,7 @@ class DespesasScreen(ctk.CTkFrame):
             )
 
             if sucesso:
-                self.carregar_despesas()
-                self.table.clear_selection()
+                self.refresh_data()
                 messagebox.showinfo("Sucesso", f"Despesa {despesa.numero} marcada como paga")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao mudar estado")
@@ -808,8 +659,7 @@ class DespesasScreen(ctk.CTkFrame):
             )
 
             if sucesso:
-                self.carregar_despesas()
-                self.table.clear_selection()
+                self.refresh_data()
                 messagebox.showinfo("Sucesso", f"Despesa {despesa.numero} marcada como pendente")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao mudar estado")
@@ -821,11 +671,12 @@ class DespesasScreen(ctk.CTkFrame):
         """Apaga despesa a partir do menu de contexto"""
         try:
             # Confirmar exclusão
+            descricao_preview = despesa.descricao[:50] if despesa.descricao else '-'
             resposta = messagebox.askyesno(
                 "Confirmar Exclusão",
                 f"Tem certeza que deseja apagar a despesa {despesa.numero}?\n\n"
                 f"Fornecedor: {despesa.credor.nome if despesa.credor else '-'}\n"
-                f"Descrição: {despesa.descricao[:50]}...\n\n"
+                f"Descrição: {descricao_preview}...\n\n"
                 f"⚠️ ATENÇÃO: Esta ação não pode ser desfeita!\n"
                 f"⚠️ Isto vai afetar os cálculos de Saldos Pessoais!",
                 icon='warning'
@@ -837,8 +688,7 @@ class DespesasScreen(ctk.CTkFrame):
             sucesso, erro = self.manager.apagar(despesa.id)
 
             if sucesso:
-                self.carregar_despesas()
-                self.table.clear_selection()
+                self.refresh_data()
                 messagebox.showinfo("Sucesso", f"Despesa {despesa.numero} apagada com sucesso")
             else:
                 messagebox.showerror("Erro", erro or "Erro ao apagar despesa")
