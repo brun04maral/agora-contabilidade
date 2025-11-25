@@ -136,6 +136,63 @@ class ProjetosScreen(BaseScreen):
         ]
 
     def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
+        """
+        Define ações do context menu e barra de ações.
+
+        Args:
+            data: Dict com dados da linha (vazio {} quando criar barra de ações)
+        """
+        # Para barra de ações (data vazio): retorna TODAS as ações possíveis
+        if not data or '_projeto' not in data:
+            return [
+                {
+                    'label': '✏️ Editar',
+                    'command': self._editar_selecionado,
+                    'min_selection': 1,
+                    'max_selection': 1,
+                    'fg_color': ('#2196F3', '#1976D2'),
+                    'hover_color': ('#1976D2', '#1565C0'),
+                    'width': 100
+                },
+                {
+                    'label': '📋 Duplicar',
+                    'command': self._duplicar_selecionado,
+                    'min_selection': 1,
+                    'max_selection': 1,
+                    'fg_color': ('#9C27B0', '#7B1FA2'),
+                    'hover_color': ('#7B1FA2', '#6A1B9A'),
+                    'width': 110
+                },
+                {
+                    'label': '✅ Finalizar',
+                    'command': self._finalizar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#4CAF50', '#388E3C'),
+                    'hover_color': ('#388E3C', '#2E7D32'),
+                    'width': 100
+                },
+                {
+                    'label': '💰 Marcar Pago',
+                    'command': self._pagar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#4CAF50', '#388E3C'),
+                    'hover_color': ('#388E3C', '#2E7D32'),
+                    'width': 130
+                },
+                {
+                    'label': '🗑️ Apagar',
+                    'command': self._apagar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#F44336', '#D32F2F'),
+                    'hover_color': ('#D32F2F', '#C62828'),
+                    'width': 100
+                }
+            ]
+
+        # Para context menu (data com projeto específico): ações contextuais
         projeto = data.get('_projeto')
         if not projeto:
             return []
@@ -409,3 +466,141 @@ class ProjetosScreen(BaseScreen):
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro: {str(e)}")
+
+    # ========== Métodos para Barra de Ações (trabalham com seleção) ==========
+
+    def _editar_selecionado(self):
+        """Edita o único projeto selecionado."""
+        selected = self.get_selected_data()
+        if len(selected) == 1:
+            self.on_item_double_click(selected[0])
+
+    def _duplicar_selecionado(self):
+        """Duplica o único projeto selecionado."""
+        selected = self.get_selected_data()
+        if len(selected) == 1:
+            projeto = selected[0].get('_projeto')
+            if projeto:
+                self._duplicar(projeto)
+
+    def _finalizar_selecionados(self):
+        """Marca projetos selecionados como finalizados."""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+        resposta = messagebox.askyesno(
+            "Marcar como Finalizados",
+            f"Marcar {num} projeto(s) como finalizado(s)?"
+        )
+
+        if not resposta:
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            projeto = data.get('_projeto')
+            if projeto:
+                sucesso, erro = self.manager.mudar_estado(projeto.id, EstadoProjeto.FINALIZADO)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{projeto.numero}: {erro}")
+
+        # Mostrar resultado
+        if sucessos > 0:
+            self.refresh_data()
+            if len(erros) == 0:
+                messagebox.showinfo("Sucesso", f"{sucessos} projeto(s) marcado(s) como finalizado(s)")
+            else:
+                messagebox.showwarning(
+                    "Parcialmente Concluído",
+                    f"{sucessos} sucesso(s), {len(erros)} erro(s):\n" + "\n".join(erros[:5])
+                )
+        elif erros:
+            messagebox.showerror("Erro", "Erros:\n" + "\n".join(erros[:5]))
+
+    def _pagar_selecionados(self):
+        """Marca projetos selecionados como pagos."""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+        resposta = messagebox.askyesno(
+            "Marcar como Pagos",
+            f"Marcar {num} projeto(s) como pago(s)?"
+        )
+
+        if not resposta:
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            projeto = data.get('_projeto')
+            if projeto:
+                sucesso, erro = self.manager.mudar_estado(projeto.id, EstadoProjeto.PAGO)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{projeto.numero}: {erro}")
+
+        # Mostrar resultado
+        if sucessos > 0:
+            self.refresh_data()
+            if len(erros) == 0:
+                messagebox.showinfo("Sucesso", f"{sucessos} projeto(s) marcado(s) como pago(s)")
+            else:
+                messagebox.showwarning(
+                    "Parcialmente Concluído",
+                    f"{sucessos} sucesso(s), {len(erros)} erro(s):\n" + "\n".join(erros[:5])
+                )
+        elif erros:
+            messagebox.showerror("Erro", "Erros:\n" + "\n".join(erros[:5]))
+
+    def _apagar_selecionados(self):
+        """Apaga projetos selecionados."""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+        resposta = messagebox.askyesno(
+            "Confirmar Exclusão",
+            f"Apagar {num} projeto(s)?\n\n"
+            f"⚠️ Esta ação não pode ser desfeita!",
+            icon='warning'
+        )
+
+        if not resposta:
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            projeto = data.get('_projeto')
+            if projeto:
+                sucesso, erro = self.manager.apagar(projeto.id)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{projeto.numero}: {erro}")
+
+        # Mostrar resultado
+        if sucessos > 0:
+            self.refresh_data()
+            if len(erros) == 0:
+                messagebox.showinfo("Sucesso", f"{sucessos} projeto(s) apagado(s)")
+            else:
+                messagebox.showwarning(
+                    "Parcialmente Concluído",
+                    f"{sucessos} sucesso(s), {len(erros)} erro(s):\n" + "\n".join(erros[:5])
+                )
+        elif erros:
+            messagebox.showerror("Erro", "Erros:\n" + "\n".join(erros[:5]))
