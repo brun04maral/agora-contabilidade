@@ -19,15 +19,15 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (25/11/2025):**
-- 🎯 **Sistema de Templates UI - COMPLETO** - BaseScreen com 4/4 screens migrados (Projetos, Orçamentos, Despesas, Boletins)
+- 🎯 **Sistema de Templates UI - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** (Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores, Equipamento) 🎉
 
 **Última Feature Concluída:**
-- ✅ **Migração Completa para BaseScreen** (25/11/2025) - Migração completa e bem-sucedida de OrcamentosScreen (com fix crítico item_to_dict pass-through), DespesasScreen e BoletinsScreen. 4/4 screens principais usando BaseScreen template. Redução média de ~20% código. Padrões estabelecidos: A (objects - recomendado) e B (dicts - legado). Todos os screens agora compartilham layout unificado, APIs consistentes e comportamento previsível. **Ver:** memory/CHANGELOG.md (25/11/2025)
+- ✅ **Sistema BaseScreen 100% COMPLETO** (25/11/2025) - TODOS os 7 screens de listagem migrados para BaseScreen template! Sessão final completou ClientesScreen, FornecedoresScreen e EquipamentoScreen. Redução média de ~11% código (-489 linhas total). Padrões estabelecidos: A (objects - recomendado, 6/7 screens) e B (dicts - legado, 1/7 screen). Layout 100% consistente, APIs unificadas, manutenção simplificada. **Ver:** memory/CHANGELOG.md (25/11/2025 18:00)
 
 **Próximo Milestone:**
-- 📋 Testar e validar sistema BaseScreen completo (4 screens)
+- 📋 Testar e validar sistema BaseScreen completo (7/7 screens)
 - 📋 UX/UI Improvements - Orçamentos (DateRangePicker + Context Menus)
-- 📋 Testar sistema Orçamentos V2 completo (CLIENTE + EMPRESA)
+- 📋 Considerar BaseForm template para screens CRUD
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins
