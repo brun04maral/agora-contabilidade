@@ -3,9 +3,10 @@
 Tela de Fornecedores - Gestão de fornecedores/credores
 """
 import customtkinter as ctk
+from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from logic.fornecedores import FornecedoresManager
-from ui.components.data_table_v2 import DataTableV2
+from ui.components.base_screen import BaseScreen
 from database.models import EstatutoFornecedor
 from datetime import datetime
 from tkinter import messagebox
@@ -14,7 +15,7 @@ from assets.resources import get_icon, FORNECEDORES
 from utils.base_dialogs import BaseDialogMedium
 
 
-class FornecedoresScreen(ctk.CTkFrame):
+class FornecedoresScreen(BaseScreen):
     """
     Tela de gestão de Fornecedores
     """
@@ -27,129 +28,205 @@ class FornecedoresScreen(ctk.CTkFrame):
             parent: Parent widget
             db_session: SQLAlchemy database session
         """
-        super().__init__(parent, **kwargs)
-
         self.db_session = db_session
         self.manager = FornecedoresManager(db_session)
 
-        # Configure
-        self.configure(fg_color="transparent")
+        # Initialize filter widgets (created in toolbar_slot)
+        self.search_entry = None
+        self.estatuto_var = None
+        self.order_var = None
 
-        # Create widgets
-        self.create_widgets()
+        # Call parent __init__ (this will call abstract methods)
+        super().__init__(parent, db_session, **kwargs)
 
-        # Load data
-        self.carregar_fornecedores()
+    # ===== ABSTRACT METHODS FROM BaseScreen =====
 
-    def create_widgets(self):
-        """Create screen widgets"""
+    def get_screen_title(self) -> str:
+        """Return screen title"""
+        return "Fornecedores"
 
-        # Header
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
+    def get_screen_icon(self):
+        """Return screen icon (PIL Image or None)"""
+        return get_icon(FORNECEDORES, size=(28, 28))
 
-        # Title with PNG icon
-        icon_pil = get_icon(FORNECEDORES, size=(28, 28))
-        if icon_pil:
-            icon_ctk = ctk.CTkImage(
-                light_image=icon_pil,
-                dark_image=icon_pil,
-                size=(28, 28)
-            )
-            title_label = ctk.CTkLabel(
-                header_frame,
-                image=icon_ctk,
-                text=" Fornecedores",
-                compound="left",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        else:
-            title_label = ctk.CTkLabel(
-                header_frame,
-                text="🏢 Fornecedores",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        title_label.pack(side="left")
+    def get_table_columns(self) -> List[Dict[str, Any]]:
+        """Return table column definitions"""
+        return [
+            {"key": "numero", "label": "ID", "width": 100, 'sortable': True},
+            {"key": "nome", "label": "Nome", "width": 250, 'sortable': True},
+            {"key": "estatuto", "label": "Estatuto", "width": 120, 'sortable': True},
+            {"key": "area", "label": "Área", "width": 150, 'sortable': True},
+            {"key": "funcao", "label": "Função", "width": 150, 'sortable': True},
+            {"key": "classificacao", "label": "★", "width": 80, 'sortable': True},
+            {"key": "despesas_count", "label": "Despesas", "width": 100, 'sortable': True},
+        ]
 
-        # Buttons
-        button_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        button_frame.pack(side="right")
+    def load_data(self) -> List[Any]:
+        """Load fornecedores from database and return as list of objects"""
+        try:
+            # Get search filter (widget pode não existir em __init__)
+            search = None
+            if hasattr(self, 'search_entry') and self.search_entry:
+                try:
+                    search = self.search_entry.get().strip() or None
+                except Exception:
+                    pass
 
-        refresh_btn = ctk.CTkButton(
-            button_frame,
-            text="🔄 Atualizar",
-            command=self.carregar_fornecedores,
-            width=120,
-            height=35,
-            font=ctk.CTkFont(size=13)
-        )
-        refresh_btn.pack(side="left", padx=(0, 10))
+            # Get estatuto filter
+            estatuto = None
+            if hasattr(self, 'estatuto_var') and self.estatuto_var:
+                try:
+                    estatuto_str = self.estatuto_var.get()
+                    if estatuto_str != "TODOS":
+                        estatuto = EstatutoFornecedor[estatuto_str]
+                except Exception:
+                    pass
 
-        add_btn = ctk.CTkButton(
-            button_frame,
-            text="➕ Novo Fornecedor",
-            command=self.adicionar_fornecedor,
-            width=160,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#2196F3", "#1565C0"),
-            hover_color=("#1976D2", "#0D47A1")
-        )
-        add_btn.pack(side="left")
+            # Get order by filter
+            order_by = "numero"  # default
+            if hasattr(self, 'order_var') and self.order_var:
+                try:
+                    order_by = self.order_var.get()
+                except Exception:
+                    pass
 
-        # Filters
-        filter_frame = ctk.CTkFrame(self, fg_color="transparent")
-        filter_frame.pack(fill="x", padx=30, pady=(0, 20))
+            # Apply search or load all
+            if search:
+                fornecedores = self.manager.pesquisar(search)
+            else:
+                fornecedores = self.manager.listar_todos(estatuto=estatuto, order_by=order_by)
+
+            return fornecedores  # NUNCA None, sempre lista
+
+        except Exception as e:
+            print(f"ERROR in load_data(): {e}")
+            import traceback
+            traceback.print_exc()
+            return []  # SEMPRE retornar lista vazia em erro
+
+    def item_to_dict(self, item: Any) -> Dict[str, Any]:
+        """Convert fornecedor object to dict for table"""
+        color = self.get_estatuto_color(item.estatuto) if item.estatuto else ("#E0E0E0", "#4A4A4A")
+        despesas_count = len(item.despesas) if hasattr(item, 'despesas') and item.despesas else 0
+
+        return {
+            'id': item.id,
+            'numero': item.numero,
+            'nome': item.nome,
+            'estatuto': item.estatuto.value if item.estatuto else '-',
+            'area': item.area or '-',
+            'funcao': item.funcao or '-',
+            'classificacao': '★' * item.classificacao if item.classificacao else '-',
+            'despesas_count': despesas_count,  # Integer para sorting correto
+            '_bg_color': color,
+            '_fornecedor': item  # CRÍTICO: guardar objeto original
+        }
+
+    def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
+        """Define ações do context menu e barra de ações"""
+
+        # Para barra de ações (data vazio {} quando BaseScreen chama)
+        if not data or '_fornecedor' not in data:
+            return [
+                {
+                    'label': '✏️ Editar',
+                    'command': self._editar_selecionado,
+                    'min_selection': 1,
+                    'max_selection': 1,
+                    'fg_color': ('#2196F3', '#1976D2'),
+                    'hover_color': ('#1976D2', '#1565C0'),
+                    'width': 100
+                },
+                {
+                    'label': '📊 Exportar CSV',
+                    'command': self._exportar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#4CAF50', '#388E3C'),
+                    'hover_color': ('#66BB6A', '#2E7D32'),
+                    'width': 140
+                },
+                {
+                    'label': '🗑️ Apagar',
+                    'command': self._apagar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#F44336', '#C62828'),
+                    'hover_color': ('#D32F2F', '#B71C1C'),
+                    'width': 100
+                }
+            ]
+
+        # Para context menu (ações contextuais simples)
+        fornecedor = data.get('_fornecedor')
+        if not fornecedor:
+            return []
+
+        return [
+            {'label': '✏️ Editar', 'command': lambda: self.editar_fornecedor(fornecedor.id)},
+            {'separator': True},
+            {'label': '🗑️ Apagar', 'command': lambda: self.apagar_fornecedor(fornecedor.id)}
+        ]
+
+    # ===== OPTIONAL METHODS =====
+
+    def toolbar_slot(self, parent):
+        """Create custom toolbar with search, estatuto and order by filters"""
+        # Frame principal
+        toolbar_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        toolbar_frame.pack(fill="x", padx=0, pady=(0, 10))
 
         # Search box
         ctk.CTkLabel(
-            filter_frame,
+            toolbar_frame,
             text="Pesquisar:",
             font=ctk.CTkFont(size=13)
         ).pack(side="left", padx=(0, 10))
 
         self.search_entry = ctk.CTkEntry(
-            filter_frame,
+            toolbar_frame,
             placeholder_text="Nome, NIF, Área, Função...",
             width=300,
             height=35
         )
         self.search_entry.pack(side="left", padx=(0, 10))
-        self.search_entry.bind("<KeyRelease>", lambda e: self.pesquisar())
+        self.search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
 
+        # Botão Pesquisar (opcional, search é reativo)
         search_btn = ctk.CTkButton(
-            filter_frame,
-            text="🔍 Pesquisar",
-            command=self.pesquisar,
-            width=120,
+            toolbar_frame,
+            text="🔍",
+            command=self.refresh_data,
+            width=35,
             height=35
         )
         search_btn.pack(side="left", padx=(0, 10))
 
+        # Botão Limpar
         clear_btn = ctk.CTkButton(
-            filter_frame,
-            text="✖️ Limpar",
-            command=self.limpar_pesquisa,
-            width=100,
+            toolbar_frame,
+            text="✖️",
+            command=lambda: (self.search_entry.delete(0, 'end'), self.refresh_data()),
+            width=35,
             height=35,
             fg_color="gray",
             hover_color="darkgray"
         )
-        clear_btn.pack(side="left")
+        clear_btn.pack(side="left", padx=(0, 20))
 
         # Estatuto filter
         ctk.CTkLabel(
-            filter_frame,
+            toolbar_frame,
             text="Estatuto:",
             font=ctk.CTkFont(size=13)
-        ).pack(side="left", padx=(20, 10))
+        ).pack(side="left", padx=(0, 10))
 
         self.estatuto_var = ctk.StringVar(value="TODOS")
         estatuto_menu = ctk.CTkOptionMenu(
-            filter_frame,
+            toolbar_frame,
             variable=self.estatuto_var,
             values=["TODOS", "EMPRESA", "FREELANCER", "ESTADO"],
-            command=lambda x: self.carregar_fornecedores(),
+            command=lambda x: self.refresh_data(),
             width=130,
             height=35
         )
@@ -157,175 +234,48 @@ class FornecedoresScreen(ctk.CTkFrame):
 
         # Order by
         ctk.CTkLabel(
-            filter_frame,
+            toolbar_frame,
             text="Ordenar:",
             font=ctk.CTkFont(size=13)
         ).pack(side="left", padx=(0, 10))
 
         self.order_var = ctk.StringVar(value="numero")
         order_menu = ctk.CTkOptionMenu(
-            filter_frame,
+            toolbar_frame,
             variable=self.order_var,
             values=["numero", "nome", "estatuto", "area"],
-            command=lambda x: self.carregar_fornecedores(),
+            command=lambda x: self.refresh_data(),
             width=120,
             height=35
         )
         order_menu.pack(side="left")
 
-        # Selection actions bar (created but NOT packed - will be shown on selection)
-        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+    def on_add_click(self):
+        """Handle add button click"""
+        self.adicionar_fornecedor()
 
-        # Clear selection button
-        self.cancel_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="🗑️ Limpar Seleção",
-            command=self.cancelar_selecao,
-            width=150, height=35
-        )
-
-        # Export button
-        self.export_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="📊 Exportar CSV",
-            command=self.exportar_selecionados,
-            width=150, height=35,
-            fg_color=("#4CAF50", "#388E3C"),
-            hover_color=("#66BB6A", "#2E7D32")
-        )
-
-        # Selection count label
-        self.count_label = ctk.CTkLabel(
-            self.selection_frame,
-            text="",
-            font=ctk.CTkFont(size=13)
-        )
-
-        # Table container
-        table_container = ctk.CTkFrame(self)
-        table_container.pack(fill="both", expand=True, padx=30, pady=(0, 30))
-
-        # Create table
-        columns = [
-            {"key": "numero", "label": "ID", "width": 100},
-            {"key": "nome", "label": "Nome", "width": 250},
-            {"key": "estatuto", "label": "Estatuto", "width": 120},
-            {"key": "area", "label": "Área", "width": 150},
-            {"key": "funcao", "label": "Função", "width": 150},
-            {"key": "classificacao", "label": "★", "width": 80},
-            {"key": "despesas_count", "label": "Despesas", "width": 100},
-        ]
-
-        self.table = DataTableV2(
-            table_container,
-            columns=columns,
-            on_row_double_click=self.on_double_click,
-            on_selection_change=self.on_selection_change
-        )
-        self.table.pack(fill="both", expand=True)
-
-    def get_estatuto_color(self, estatuto: EstatutoFornecedor) -> tuple:
-        """Get color for estatuto (tonalidades diferentes da mesma cor)"""
-        color_map = {
-            EstatutoFornecedor.EMPRESA: ("#B3D9FF", "#5A8BB8"),      # Azul claro
-            EstatutoFornecedor.FREELANCER: ("#99CCFF", "#4D7A99"),  # Azul médio
-            EstatutoFornecedor.ESTADO: ("#80BFFF", "#406B8B")        # Azul escuro
-        }
-        return color_map.get(estatuto, ("#E0E0E0", "#4A4A4A"))
-
-    def carregar_fornecedores(self):
-        """Load and display fornecedores"""
-        # Get filters
-        estatuto_str = self.estatuto_var.get()
-        estatuto = None if estatuto_str == "TODOS" else EstatutoFornecedor[estatuto_str]
-        order_by = self.order_var.get()
-
-        fornecedores = self.manager.listar_todos(estatuto=estatuto, order_by=order_by)
-
-        # Prepare data
-        data = []
-        for fornecedor in fornecedores:
-            color = self.get_estatuto_color(fornecedor.estatuto) if fornecedor.estatuto else ("#E0E0E0", "#4A4A4A")
-            data.append({
-                "id": fornecedor.id,
-                "numero": fornecedor.numero,
-                "nome": fornecedor.nome,
-                "estatuto": fornecedor.estatuto.value if fornecedor.estatuto else "-",
-                "area": fornecedor.area or "-",
-                "funcao": fornecedor.funcao or "-",
-                "classificacao": "★" * fornecedor.classificacao if fornecedor.classificacao else "-",
-                "despesas_count": len(fornecedor.despesas),  # Keep as integer for proper sorting
-                "_bg_color": color,
-                "_fornecedor": fornecedor
-            })
-
-        self.table.set_data(data)
-
-    def pesquisar(self):
-        """Search fornecedores"""
-        termo = self.search_entry.get().strip()
-
-        if not termo:
-            self.carregar_fornecedores()
-            return
-
-        fornecedores = self.manager.pesquisar(termo)
-
-        # Prepare data
-        data = []
-        for fornecedor in fornecedores:
-            color = self.get_estatuto_color(fornecedor.estatuto) if fornecedor.estatuto else ("#E0E0E0", "#4A4A4A")
-            data.append({
-                "id": fornecedor.id,
-                "numero": fornecedor.numero,
-                "nome": fornecedor.nome,
-                "estatuto": fornecedor.estatuto.value if fornecedor.estatuto else "-",
-                "area": fornecedor.area or "-",
-                "funcao": fornecedor.funcao or "-",
-                "classificacao": "★" * fornecedor.classificacao if fornecedor.classificacao else "-",
-                "despesas_count": len(fornecedor.despesas),  # Keep as integer for proper sorting
-                "_bg_color": color,
-                "_fornecedor": fornecedor
-            })
-
-        self.table.set_data(data)
-
-    def limpar_pesquisa(self):
-        """Clear search"""
-        self.search_entry.delete(0, "end")
-        self.carregar_fornecedores()
-
-    def on_selection_change(self, selected_data: list):
-        """Handle selection change in table"""
-        num_selected = len(selected_data)
-
-        if num_selected > 0:
-            # Show selection frame
-            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
-            self.cancel_btn.pack(side="left", padx=(0, 10))
-            self.export_btn.pack(side="left", padx=(0, 20))
-            self.count_label.configure(text=f"{num_selected} fornecedor(es) selecionado(s)")
-            self.count_label.pack(side="left")
-        else:
-            # Hide entire selection frame when nothing is selected
-            self.selection_frame.pack_forget()
-
-    def on_double_click(self, data: dict):
-        """Handle double click - open for edit"""
-        fornecedor_id = data.get("id")
+    def on_item_double_click(self, data: dict):
+        """Handle table row double-click (editar)"""
+        fornecedor_id = data.get('id')
         if fornecedor_id:
             self.editar_fornecedor(fornecedor_id)
 
-    def cancelar_selecao(self):
-        """Clear selection"""
-        self.table.clear_selection()
+    def calculate_selection_total(self, selected_data: List[Dict[str, Any]]) -> float:
+        """Not applicable for Fornecedores - return 0"""
+        return 0.0
 
-    def exportar_selecionados(self):
-        """Export selected fornecedores to CSV"""
-        selected_data = self.table.get_selected_data()
+    # ===== BULK OPERATION METHODS FOR ACTION BAR =====
 
-        if not selected_data:
-            messagebox.showwarning("Aviso", "Nenhum fornecedor selecionado")
+    def _editar_selecionado(self):
+        """Edita fornecedor selecionado"""
+        selected = self.get_selected_data()
+        if selected and len(selected) == 1:
+            self.on_item_double_click(selected[0])
+
+    def _exportar_selecionados(self):
+        """Exporta fornecedores selecionados para CSV"""
+        selected = self.get_selected_data()
+        if not selected:
             return
 
         # Prepare filename
@@ -338,7 +288,7 @@ class FornecedoresScreen(ctk.CTkFrame):
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
                 writer.writeheader()
-                for item in selected_data:
+                for item in selected:
                     fornecedor = item.get('_fornecedor')
                     if fornecedor:
                         writer.writerow({
@@ -354,12 +304,61 @@ class FornecedoresScreen(ctk.CTkFrame):
                             'Despesas': str(len(fornecedor.despesas))
                         })
 
-            messagebox.showinfo(
-                "Sucesso",
-                f"Exportados {len(selected_data)} fornecedor(es) para {filename}"
-            )
+            messagebox.showinfo("Sucesso", f"Exportados {len(selected)} fornecedor(es) para {filename}")
+
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao exportar: {str(e)}")
+
+    def _apagar_selecionados(self):
+        """Apaga fornecedores selecionados"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
+
+        num = len(selected)
+
+        # Confirmar
+        resposta = messagebox.askyesno(
+            "Confirmar Eliminação",
+            f"Apagar {num} fornecedor(es)?\n\n"
+            f"⚠️ Esta ação não pode ser desfeita!"
+        )
+
+        if not resposta:
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            fornecedor = data.get('_fornecedor')
+            if fornecedor:
+                sucesso, erro = self.manager.apagar(fornecedor.id)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{fornecedor.nome}: {erro}")
+
+        if sucessos > 0:
+            msg = f"✅ {sucessos} fornecedor(es) apagado(s)!"
+            if erros:
+                msg += f"\n\n⚠️ {len(erros)} erro(s)"
+            messagebox.showinfo("Resultado", msg)
+        else:
+            messagebox.showerror("Erro", "\n".join(erros[:5]))
+
+        self.refresh_data()
+
+    # ===== HELPER METHODS (MANTER) =====
+
+    def get_estatuto_color(self, estatuto: EstatutoFornecedor) -> tuple:
+        """Get color for estatuto (tonalidades diferentes da mesma cor)"""
+        color_map = {
+            EstatutoFornecedor.EMPRESA: ("#B3D9FF", "#5A8BB8"),      # Azul claro
+            EstatutoFornecedor.FREELANCER: ("#99CCFF", "#4D7A99"),  # Azul médio
+            EstatutoFornecedor.ESTADO: ("#80BFFF", "#406B8B")        # Azul escuro
+        }
+        return color_map.get(estatuto, ("#E0E0E0", "#4A4A4A"))
 
     def adicionar_fornecedor(self):
         """Navigate to fornecedor_form screen for create"""
@@ -401,7 +400,7 @@ class FornecedoresScreen(ctk.CTkFrame):
         success, message = self.manager.apagar(fornecedor_id)
 
         if success:
-            self.carregar_fornecedores()
+            self.refresh_data()
         else:
             messagebox.showerror("Erro", message)
 
