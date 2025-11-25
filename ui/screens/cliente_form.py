@@ -1,322 +1,355 @@
 # -*- coding: utf-8 -*-
 """
-Tela de Formulário de Cliente - Screen dedicado para criar/editar clientes
-Segue mesmo padrão de ui/screens/projeto_form.py
+ClienteFormScreen - Formulário para criar/editar clientes
+
+Migrado para BaseForm framework (SPRINT 2)
+Segue padrão estabelecido em ui/components/base_form.py
 """
+
 import customtkinter as ctk
+from typing import List, Dict, Any, Optional
+import re
 from sqlalchemy.orm import Session
-from logic.clientes import ClientesManager
-from typing import Optional
 from tkinter import messagebox
 
+from ui.components.base_form import BaseForm
+from logic.clientes import ClientesManager
+from assets.resources import get_icon, CLIENTES
 
-class ClienteFormScreen(ctk.CTkFrame):
+
+class ClienteFormScreen(BaseForm):
     """
-    Screen para criar/editar clientes
+    Formulário para criar/editar clientes
 
     Navegação via MainWindow.show_screen("cliente_form", cliente_id=None/ID)
+
+    Modos:
+    - CREATE: cliente_id=None
+    - EDIT: cliente_id=<id>
     """
 
     def __init__(self, parent, db_session: Session, cliente_id: Optional[int] = None, **kwargs):
-        super().__init__(parent, **kwargs)
+        """
+        Initialize cliente form screen
 
+        Args:
+            parent: Parent widget
+            db_session: SQLAlchemy database session
+            cliente_id: ID do cliente (None para criar, ID para editar)
+        """
         self.db_session = db_session
         self.cliente_id = cliente_id
         self.manager = ClientesManager(db_session)
 
-        # Estado
-        self.cliente = None
-
-        # Configure
-        self.configure(fg_color="transparent")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # Create widgets
-        self.create_widgets()
-
-        # Load data se edição
+        # Load initial data if editing
+        initial_data = {}
         if cliente_id:
-            self.carregar_cliente()
+            cliente = self.manager.buscar_por_id(cliente_id)
+            if cliente:
+                initial_data = {
+                    'nome': cliente.nome,
+                    'nome_formal': cliente.nome_formal or '',
+                    'nif': cliente.nif or '',
+                    'pais': cliente.pais or 'Portugal',
+                    'morada': cliente.morada or '',
+                    'contacto': cliente.contacto or '',
+                    'email': cliente.email or '',
+                    'angariacao': cliente.angariacao or '',
+                    'nota': cliente.nota or '',
+                }
+            else:
+                messagebox.showerror("Erro", "Cliente não encontrado!")
+                # Will call after_cancel_callback to go back
+                kwargs['on_cancel_callback'] = self._voltar_para_lista
 
-    def create_widgets(self):
-        """Cria widgets da screen"""
-        # Container principal com scroll
-        main_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        main_container.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        main_container.grid_columnconfigure(0, weight=1)
-
-        # ========================================
-        # 1. HEADER
-        # ========================================
-        self.create_header(main_container)
-
-        # ========================================
-        # 2. CAMPOS DO CLIENTE
-        # ========================================
-        self.create_fields(main_container)
-
-        # ========================================
-        # 3. FOOTER COM BOTÕES
-        # ========================================
-        self.create_footer(main_container)
-
-    def create_header(self, parent):
-        """Cria header com botão voltar e título"""
-        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 20))
-        header_frame.grid_columnconfigure(1, weight=1)
-
-        # Botão voltar
-        voltar_btn = ctk.CTkButton(
-            header_frame,
-            text="⬅️ Voltar",
-            command=self.voltar,
-            width=100,
-            height=35,
-            fg_color="gray",
-            hover_color="#5a5a5a"
+        # Initialize BaseForm
+        super().__init__(
+            parent,
+            db_session=db_session,
+            initial_data=initial_data,
+            on_cancel_callback=self._voltar_para_lista,
+            **kwargs
         )
-        voltar_btn.grid(row=0, column=0, sticky="w", padx=(0, 20))
 
-        # Título
-        titulo = "Novo Cliente" if not self.cliente_id else "Editar Cliente"
-        self.title_label = ctk.CTkLabel(
-            header_frame,
-            text=titulo,
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        self.title_label.grid(row=0, column=1, sticky="w")
+    # ===== MÉTODOS ABSTRATOS OBRIGATÓRIOS =====
 
-    def create_fields(self, parent):
-        """Cria campos do formulário"""
-        fields_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        fields_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 20))
-        fields_frame.grid_columnconfigure(0, weight=1)
+    def get_form_title(self) -> str:
+        """Return form title"""
+        if self.cliente_id:
+            return "Editar Cliente"
+        return "Novo Cliente"
 
-        # Nome (required)
-        ctk.CTkLabel(fields_frame, text="Nome *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", pady=(0, 5))
-        ctk.CTkLabel(
-            fields_frame,
-            text="Nome curto para listagens (max 120 caracteres)",
-            font=ctk.CTkFont(size=11),
-            text_color="gray"
-        ).grid(row=1, column=0, sticky="w", pady=(0, 5))
-        self.nome_entry = ctk.CTkEntry(fields_frame, placeholder_text="Ex: Farmácia do Povo", height=35)
-        self.nome_entry.grid(row=2, column=0, sticky="ew", pady=(0, 18))
+    def get_form_icon(self):
+        """Return form icon"""
+        return get_icon(CLIENTES, size=(28, 28))
 
-        # Nome Formal
-        ctk.CTkLabel(fields_frame, text="Nome Formal", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=3, column=0, sticky="w", pady=(0, 5))
-        ctk.CTkLabel(
-            fields_frame,
-            text="Nome completo/formal da empresa (opcional, max 255 caracteres)",
-            font=ctk.CTkFont(size=11),
-            text_color="gray"
-        ).grid(row=4, column=0, sticky="w", pady=(0, 5))
-        self.nome_formal_entry = ctk.CTkEntry(
-            fields_frame,
-            placeholder_text="Ex: Farmácia Popular do Centro, Lda.",
-            height=35
-        )
-        self.nome_formal_entry.grid(row=5, column=0, sticky="ew", pady=(0, 18))
+    def get_fields_config(self) -> List[Dict[str, Any]]:
+        """
+        Return field configurations for cliente form
 
-        # NIF
-        ctk.CTkLabel(fields_frame, text="NIF / Tax ID", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=6, column=0, sticky="w", pady=(0, 8))
-        self.nif_entry = ctk.CTkEntry(
-            fields_frame,
-            placeholder_text="Número de identificação fiscal...",
-            height=35
-        )
-        self.nif_entry.grid(row=7, column=0, sticky="ew", pady=(0, 18))
+        Campos:
+        - nome (required)
+        - nome_formal
+        - nif (validator)
+        - pais (default: Portugal)
+        - morada (textarea)
+        - contacto
+        - email (validator)
+        - angariacao
+        - nota (textarea)
+        """
+        return [
+            # Nome (required)
+            {
+                "key": "nome",
+                "label": "Nome",
+                "type": "text",
+                "required": True,
+                "placeholder": "Ex: Farmácia do Povo",
+                "width": 500
+            },
 
-        # País
-        ctk.CTkLabel(fields_frame, text="País", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=8, column=0, sticky="w", pady=(0, 8))
-        self.pais_entry = ctk.CTkEntry(fields_frame, placeholder_text="Portugal", height=35)
-        self.pais_entry.grid(row=9, column=0, sticky="ew", pady=(0, 18))
+            # Nome Formal (opcional)
+            {
+                "key": "nome_formal",
+                "label": "Nome Formal",
+                "type": "text",
+                "placeholder": "Ex: Farmácia Popular do Centro, Lda.",
+                "width": 500
+            },
 
-        # Morada
-        ctk.CTkLabel(fields_frame, text="Morada", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=10, column=0, sticky="w", pady=(0, 8))
-        self.morada_entry = ctk.CTkTextbox(fields_frame, height=60)
-        self.morada_entry.grid(row=11, column=0, sticky="ew", pady=(0, 18))
+            # NIF (com validador)
+            {
+                "key": "nif",
+                "label": "NIF / Tax ID",
+                "type": "text",
+                "placeholder": "Número de identificação fiscal...",
+                "validator": self._validate_nif,
+                "width": 300
+            },
 
-        # Contacto e Email (side by side)
-        contacto_email_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        contacto_email_frame.grid(row=12, column=0, sticky="ew", pady=(0, 18))
-        contacto_email_frame.grid_columnconfigure((0, 1), weight=1)
+            # País (default: Portugal)
+            {
+                "key": "pais",
+                "label": "País",
+                "type": "text",
+                "default": "Portugal",
+                "placeholder": "Portugal",
+                "width": 300
+            },
 
-        ctk.CTkLabel(contacto_email_frame, text="Contacto", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", padx=(0, 12))
-        self.contacto_entry = ctk.CTkEntry(contacto_email_frame, placeholder_text="Telefone...", height=35)
-        self.contacto_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
+            # Morada (textarea)
+            {
+                "key": "morada",
+                "label": "Morada",
+                "type": "textarea",
+                "placeholder": "Endereço completo...",
+                "width": 500
+            },
 
-        ctk.CTkLabel(contacto_email_frame, text="Email", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=1, sticky="w")
-        self.email_entry = ctk.CTkEntry(contacto_email_frame, placeholder_text="email@exemplo.pt", height=35)
-        self.email_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
+            # Contacto
+            {
+                "key": "contacto",
+                "label": "Contacto",
+                "type": "text",
+                "placeholder": "Telefone...",
+                "width": 300
+            },
 
-        # Angariação
-        ctk.CTkLabel(fields_frame, text="Angariação", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=13, column=0, sticky="w", pady=(0, 8))
-        self.angariacao_entry = ctk.CTkEntry(
-            fields_frame,
-            placeholder_text="Como foi angariado este cliente...",
-            height=35
-        )
-        self.angariacao_entry.grid(row=14, column=0, sticky="ew", pady=(0, 18))
+            # Email (com validador)
+            {
+                "key": "email",
+                "label": "Email",
+                "type": "text",
+                "placeholder": "email@exemplo.pt",
+                "validator": self._validate_email,
+                "width": 400
+            },
 
-        # Nota
-        ctk.CTkLabel(fields_frame, text="Nota", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=15, column=0, sticky="w", pady=(0, 8))
-        self.nota_entry = ctk.CTkTextbox(fields_frame, height=80)
-        self.nota_entry.grid(row=16, column=0, sticky="ew", pady=(0, 10))
+            # Angariação
+            {
+                "key": "angariacao",
+                "label": "Angariação",
+                "type": "text",
+                "placeholder": "Como foi angariado este cliente...",
+                "width": 500
+            },
 
-    def create_footer(self, parent):
-        """Cria footer com botões"""
-        footer_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        footer_frame.grid(row=2, column=0, sticky="ew", padx=30, pady=(10, 30))
+            # Nota (textarea)
+            {
+                "key": "nota",
+                "label": "Nota",
+                "type": "textarea",
+                "placeholder": "Observações adicionais...",
+                "width": 500
+            },
+        ]
 
-        # Botão Guardar
-        save_btn = ctk.CTkButton(
-            footer_frame,
-            text="💾 Guardar",
-            command=self.guardar,
-            width=150,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#2196F3", "#1565C0"),
-            hover_color=("#1976D2", "#0D47A1")
-        )
-        save_btn.pack(side="left", padx=(0, 10))
+    def on_save(self, data: Dict[str, Any]) -> bool | str:
+        """
+        Handle save - create or update cliente
 
-        # Botão Cancelar
-        cancel_btn = ctk.CTkButton(
-            footer_frame,
-            text="Cancelar",
-            command=self.voltar,
-            width=130,
-            height=40,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#616161", "#424242")
-        )
-        cancel_btn.pack(side="left")
+        Args:
+            data: Dict com todos os valores do form
 
-    def carregar_cliente(self):
-        """Carrega dados do cliente para edição"""
-        self.cliente = self.manager.buscar_por_id(self.cliente_id)
-        if not self.cliente:
-            messagebox.showerror("Erro", "Cliente não encontrado!")
-            self.voltar()
-            return
-
-        # Atualizar título
-        self.title_label.configure(text=f"Editar Cliente {self.cliente.numero}")
-
-        c = self.cliente
-
-        # Nome
-        self.nome_entry.insert(0, c.nome)
-
-        # Nome Formal
-        if c.nome_formal:
-            self.nome_formal_entry.insert(0, c.nome_formal)
-
-        # NIF
-        if c.nif:
-            self.nif_entry.insert(0, c.nif)
-
-        # País
-        if c.pais:
-            self.pais_entry.insert(0, c.pais)
-
-        # Morada
-        if c.morada:
-            self.morada_entry.insert("1.0", c.morada)
-
-        # Contacto
-        if c.contacto:
-            self.contacto_entry.insert(0, c.contacto)
-
-        # Email
-        if c.email:
-            self.email_entry.insert(0, c.email)
-
-        # Angariação
-        if c.angariacao:
-            self.angariacao_entry.insert(0, c.angariacao)
-
-        # Nota
-        if c.nota:
-            self.nota_entry.insert("1.0", c.nota)
-
-    def guardar(self):
-        """Guarda o cliente"""
+        Returns:
+            True se sucesso, ou mensagem de erro
+        """
         try:
-            # Get values
-            nome = self.nome_entry.get().strip()
-            nome_formal = self.nome_formal_entry.get().strip()
-            nif = self.nif_entry.get().strip()
-            pais = self.pais_entry.get().strip() or "Portugal"
-            morada = self.morada_entry.get("1.0", "end-1c").strip()
-            contacto = self.contacto_entry.get().strip()
-            email = self.email_entry.get().strip()
-            angariacao = self.angariacao_entry.get().strip()
-            nota = self.nota_entry.get("1.0", "end-1c").strip()
+            # Prepare data (convert empty strings to None)
+            nome = data.get('nome', '').strip()
+            nome_formal = data.get('nome_formal', '').strip() or None
+            nif = data.get('nif', '').strip() or None
+            pais = data.get('pais', '').strip() or 'Portugal'
+            morada = data.get('morada', '').strip() or None
+            contacto = data.get('contacto', '').strip() or None
+            email = data.get('email', '').strip() or None
+            angariacao = data.get('angariacao', '').strip() or None
+            nota = data.get('nota', '').strip() or None
 
-            # Validate
+            # Validate nome (BaseForm já valida required, mas double check)
             if not nome:
-                messagebox.showerror("Erro", "Nome é obrigatório")
-                return
+                return "Nome é obrigatório"
+
+            # Validate NIF if provided (já foi validado pelo validator, mas double check)
+            if nif and not self._validate_nif(nif):
+                return "NIF inválido"
+
+            # Validate email if provided
+            if email and not self._validate_email(email):
+                return "Email inválido"
 
             # Create or update
             if self.cliente_id:
-                # Update
+                # UPDATE
                 success, cliente, message = self.manager.atualizar(
                     self.cliente_id,
                     nome=nome,
-                    nome_formal=nome_formal if nome_formal else None,
-                    nif=nif if nif else None,
+                    nome_formal=nome_formal,
+                    nif=nif,
                     pais=pais,
-                    morada=morada if morada else None,
-                    contacto=contacto if contacto else None,
-                    email=email if email else None,
-                    angariacao=angariacao if angariacao else None,
-                    nota=nota if nota else None
+                    morada=morada,
+                    contacto=contacto,
+                    email=email,
+                    angariacao=angariacao,
+                    nota=nota
                 )
 
-                if success:
-                    self.voltar()
-                else:
-                    messagebox.showerror("Erro", message)
+                if not success:
+                    return message or "Erro ao atualizar cliente"
+
             else:
-                # Create
+                # CREATE
                 success, cliente, message = self.manager.criar(
                     nome=nome,
-                    nome_formal=nome_formal if nome_formal else None,
-                    nif=nif if nif else None,
+                    nome_formal=nome_formal,
+                    nif=nif,
                     pais=pais,
-                    morada=morada if morada else None,
-                    contacto=contacto if contacto else None,
-                    email=email if email else None,
-                    angariacao=angariacao if angariacao else None,
-                    nota=nota if nota else None
+                    morada=morada,
+                    contacto=contacto,
+                    email=email,
+                    angariacao=angariacao,
+                    nota=nota
                 )
 
-                if success:
-                    self.voltar()
-                else:
-                    messagebox.showerror("Erro", message)
+                if not success:
+                    return message or "Erro ao criar cliente"
+
+            # Success!
+            return True
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
+            return f"Erro inesperado: {str(e)}"
 
-    def voltar(self):
-        """Volta para a lista de clientes"""
+    # ===== VALIDADORES =====
+
+    def _validate_nif(self, nif: str) -> bool:
+        """
+        Valida NIF (Número de Identificação Fiscal)
+
+        Regras simples:
+        - Deve ter entre 9 e 20 dígitos/caracteres
+        - Aceita números, letras e alguns caracteres especiais
+
+        Args:
+            nif: NIF a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not nif:
+            return True  # NIF é opcional
+
+        # Remove espaços
+        nif_clean = nif.strip()
+
+        # Deve ter pelo menos 9 caracteres
+        if len(nif_clean) < 9:
+            return False
+
+        # Não deve ter mais de 20 caracteres
+        if len(nif_clean) > 20:
+            return False
+
+        # Aceita alfanuméricos e alguns caracteres especiais (-, /, espaço)
+        if not re.match(r'^[A-Za-z0-9\s\-/]+$', nif_clean):
+            return False
+
+        return True
+
+    def _validate_email(self, email: str) -> bool:
+        """
+        Valida email
+
+        Regras simples:
+        - Formato básico: algo@algo.algo
+
+        Args:
+            email: Email a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not email:
+            return True  # Email é opcional
+
+        # Remove espaços
+        email_clean = email.strip()
+
+        # Regex simples para validar email
+        # Formato: local@domain.tld
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        return bool(re.match(pattern, email_clean))
+
+    # ===== CALLBACKS =====
+
+    def after_save_callback(self):
+        """
+        Executado após save bem-sucedido
+
+        Navega de volta para lista de clientes
+        """
+        self._voltar_para_lista()
+
+    def after_cancel_callback(self):
+        """
+        Executado após cancelar
+
+        Confirma e navega de volta para lista de clientes
+        """
+        resposta = messagebox.askyesno(
+            "Cancelar",
+            "Tem certeza que deseja cancelar?\n\nTodas as alterações serão perdidas."
+        )
+
+        if resposta:
+            self._voltar_para_lista()
+
+    # ===== HELPERS =====
+
+    def _voltar_para_lista(self):
+        """Navega de volta para lista de clientes"""
         main_window = self.master.master
         if hasattr(main_window, 'show_screen'):
             main_window.show_screen("clientes")
