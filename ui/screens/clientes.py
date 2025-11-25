@@ -4,10 +4,10 @@ Tela de Clientes - Gestão de clientes da Agora Media
 """
 import customtkinter as ctk
 import tkinter as tk
-from typing import Dict
+from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from logic.clientes import ClientesManager
-from ui.components.data_table_v2 import DataTableV2
+from ui.components.base_screen import BaseScreen
 from tkinter import messagebox
 import csv
 from datetime import datetime
@@ -15,7 +15,7 @@ from assets.resources import get_icon, CLIENTES
 from utils.base_dialogs import BaseDialogMedium
 
 
-class ClientesScreen(ctk.CTkFrame):
+class ClientesScreen(BaseScreen):
     """
     Tela de gestão de Clientes
     """
@@ -29,341 +29,240 @@ class ClientesScreen(ctk.CTkFrame):
             db_session: SQLAlchemy database session
             main_window: Reference to MainWindow for navigation
         """
-        super().__init__(parent, **kwargs)
-
         self.db_session = db_session
         self.manager = ClientesManager(db_session)
         self.main_window = main_window
 
-        # Configure
-        self.configure(fg_color="transparent")
+        # Initialize filter widgets (created in toolbar_slot)
+        self.search_entry = None
+        self.order_var = None
 
-        # Create widgets
-        self.create_widgets()
+        # Call parent __init__ (this will call abstract methods)
+        super().__init__(parent, db_session, **kwargs)
 
-        # Load data
-        self.carregar_clientes()
+    # ===== ABSTRACT METHODS FROM BaseScreen =====
 
-    def create_widgets(self):
-        """Create screen widgets"""
+    def get_screen_title(self) -> str:
+        """Return screen title"""
+        return "Clientes"
 
-        # Header
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
+    def get_screen_icon(self):
+        """Return screen icon (PIL Image or None)"""
+        return get_icon(CLIENTES, size=(28, 28))
 
-        # Title with PNG icon
-        icon_pil = get_icon(CLIENTES, size=(28, 28))
-        if icon_pil:
-            icon_ctk = ctk.CTkImage(
-                light_image=icon_pil,
-                dark_image=icon_pil,
-                size=(28, 28)
-            )
-            title_label = ctk.CTkLabel(
-                header_frame,
-                image=icon_ctk,
-                text=" Clientes",
-                compound="left",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        else:
-            title_label = ctk.CTkLabel(
-                header_frame,
-                text="👥 Clientes",
-                font=ctk.CTkFont(size=28, weight="bold")
-            )
-        title_label.pack(side="left")
+    def get_table_columns(self) -> List[Dict[str, Any]]:
+        """Return table column definitions"""
+        return [
+            {"key": "numero", "label": "ID", "width": 100, 'sortable': True},
+            {"key": "nome", "label": "Nome", "width": 300, 'sortable': True},
+            {"key": "nif", "label": "NIF", "width": 150, 'sortable': True},
+            {"key": "projetos_count", "label": "Projetos", "width": 100, 'sortable': True},
+        ]
 
-        # Buttons
-        button_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        button_frame.pack(side="right")
+    def load_data(self) -> List[Any]:
+        """Load clientes from database and return as list of objects"""
+        try:
+            # Get search filter (widget pode não existir em __init__)
+            search = None
+            if hasattr(self, 'search_entry') and self.search_entry:
+                try:
+                    search = self.search_entry.get().strip() or None
+                except Exception:
+                    pass
 
-        refresh_btn = ctk.CTkButton(
-            button_frame,
-            text="🔄 Atualizar",
-            command=self.carregar_clientes,
-            width=120,
-            height=35,
-            font=ctk.CTkFont(size=13)
-        )
-        refresh_btn.pack(side="left", padx=(0, 10))
+            # Get order by filter
+            order_by = "numero"  # default
+            if hasattr(self, 'order_var') and self.order_var:
+                try:
+                    order_by = self.order_var.get()
+                except Exception:
+                    pass
 
-        add_btn = ctk.CTkButton(
-            button_frame,
-            text="➕ Novo Cliente",
-            command=self.adicionar_cliente,
-            width=140,
-            height=35,
-            font=ctk.CTkFont(size=13),
-            fg_color=("#2196F3", "#1565C0"),
-            hover_color=("#1976D2", "#0D47A1")
-        )
-        add_btn.pack(side="left")
+            # Apply search or load all
+            if search:
+                clientes = self.manager.pesquisar(search)
+            else:
+                clientes = self.manager.listar_todos(order_by=order_by)
 
-        # Filters
-        filter_frame = ctk.CTkFrame(self, fg_color="transparent")
-        filter_frame.pack(fill="x", padx=30, pady=(0, 20))
+            return clientes  # NUNCA None, sempre lista
+
+        except Exception as e:
+            print(f"ERROR in load_data(): {e}")
+            import traceback
+            traceback.print_exc()
+            return []  # SEMPRE retornar lista vazia em erro
+
+    def item_to_dict(self, item: Any) -> Dict[str, Any]:
+        """Convert cliente object to dict for table"""
+        projetos_count = len(item.projetos) if hasattr(item, 'projetos') and item.projetos else 0
+
+        return {
+            'id': item.id,
+            'numero': item.numero,
+            'nome': item.nome,
+            'nif': item.nif or '-',
+            'projetos_count': projetos_count,  # Integer para sorting correto
+            '_cliente': item,  # CRÍTICO: guardar objeto original
+            '_has_projetos': projetos_count > 0
+        }
+
+    def get_context_menu_items(self, data: dict) -> List[Dict[str, Any]]:
+        """Define ações do context menu e barra de ações"""
+
+        # Para barra de ações (data vazio {} quando BaseScreen chama)
+        if not data or '_cliente' not in data:
+            return [
+                {
+                    'label': '✏️ Editar',
+                    'command': self._editar_selecionado,
+                    'min_selection': 1,
+                    'max_selection': 1,
+                    'fg_color': ('#2196F3', '#1976D2'),
+                    'hover_color': ('#1976D2', '#1565C0'),
+                    'width': 100
+                },
+                {
+                    'label': '📁 Ver Projetos',
+                    'command': self._ver_projetos_selecionado,
+                    'min_selection': 1,
+                    'max_selection': 1,  # ⚠️ Apenas 1 por vez
+                    'fg_color': ('#2196F3', '#1565C0'),
+                    'hover_color': ('#1976D2', '#0D47A1'),
+                    'width': 130
+                },
+                {
+                    'label': '📊 Exportar CSV',
+                    'command': self._exportar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#4CAF50', '#388E3C'),
+                    'hover_color': ('#66BB6A', '#2E7D32'),
+                    'width': 140
+                },
+                {
+                    'label': '🗑️ Apagar',
+                    'command': self._apagar_selecionados,
+                    'min_selection': 1,
+                    'max_selection': None,
+                    'fg_color': ('#F44336', '#C62828'),
+                    'hover_color': ('#D32F2F', '#B71C1C'),
+                    'width': 100
+                }
+            ]
+
+        # Para context menu (ações contextuais)
+        cliente = data.get('_cliente')
+        if not cliente:
+            return []
+
+        return [
+            {'label': '✏️ Editar', 'command': lambda: self._editar_from_context(cliente)},
+            {'separator': True},
+            {'label': '🗑️ Apagar', 'command': lambda: self._apagar_from_context(cliente)}
+        ]
+
+    # ===== OPTIONAL METHODS =====
+
+    def toolbar_slot(self, parent):
+        """Create custom toolbar with search and order by"""
+        # Frame principal
+        toolbar_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        toolbar_frame.pack(fill="x", padx=0, pady=(0, 10))
 
         # Search box
         ctk.CTkLabel(
-            filter_frame,
+            toolbar_frame,
             text="Pesquisar:",
             font=ctk.CTkFont(size=13)
         ).pack(side="left", padx=(0, 10))
 
         self.search_entry = ctk.CTkEntry(
-            filter_frame,
+            toolbar_frame,
             placeholder_text="Nome, NIF ou Email...",
             width=300,
             height=35
         )
         self.search_entry.pack(side="left", padx=(0, 10))
-        self.search_entry.bind("<KeyRelease>", lambda e: self.pesquisar())
+        self.search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
 
+        # Botão Pesquisar (opcional, search é reativo)
         search_btn = ctk.CTkButton(
-            filter_frame,
-            text="🔍 Pesquisar",
-            command=self.pesquisar,
-            width=120,
+            toolbar_frame,
+            text="🔍",
+            command=self.refresh_data,
+            width=35,
             height=35
         )
         search_btn.pack(side="left", padx=(0, 10))
 
+        # Botão Limpar
         clear_btn = ctk.CTkButton(
-            filter_frame,
-            text="✖️ Limpar",
-            command=self.limpar_pesquisa,
-            width=100,
+            toolbar_frame,
+            text="✖️",
+            command=lambda: (self.search_entry.delete(0, 'end'), self.refresh_data()),
+            width=35,
             height=35,
             fg_color="gray",
             hover_color="darkgray"
         )
-        clear_btn.pack(side="left")
+        clear_btn.pack(side="left", padx=(0, 20))
 
         # Order by
         ctk.CTkLabel(
-            filter_frame,
+            toolbar_frame,
             text="Ordenar por:",
             font=ctk.CTkFont(size=13)
-        ).pack(side="left", padx=(20, 10))
+        ).pack(side="left", padx=(0, 10))
 
         self.order_var = ctk.StringVar(value="numero")
         order_menu = ctk.CTkOptionMenu(
-            filter_frame,
+            toolbar_frame,
             variable=self.order_var,
             values=["numero", "nome", "nif"],
-            command=lambda x: self.carregar_clientes(),
+            command=lambda x: self.refresh_data(),
             width=120,
             height=35
         )
         order_menu.pack(side="left")
 
-        # Selection actions bar (created but NOT packed - will be shown on selection)
-        self.selection_frame = ctk.CTkFrame(self, fg_color="transparent")
+    def on_add_click(self):
+        """Handle add button click"""
+        self.adicionar_cliente()
 
-        # Clear selection button
-        self.cancel_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="🗑️ Limpar Seleção",
-            command=self.cancelar_selecao,
-            width=150, height=35
-        )
-
-        # Ver Projetos button (only shown when 1 cliente selected)
-        self.ver_projetos_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="📁 Ver Projetos",
-            command=self.ver_projetos_selecionado,
-            width=150, height=35,
-            fg_color=("#2196F3", "#1565C0"),
-            hover_color=("#1976D2", "#0D47A1")
-        )
-
-        # Export button
-        self.export_btn = ctk.CTkButton(
-            self.selection_frame,
-            text="📊 Exportar CSV",
-            command=self.exportar_selecionados,
-            width=150, height=35,
-            fg_color=("#4CAF50", "#388E3C"),
-            hover_color=("#66BB6A", "#2E7D32")
-        )
-
-        # Selection count label
-        self.count_label = ctk.CTkLabel(
-            self.selection_frame,
-            text="",
-            font=ctk.CTkFont(size=13)
-        )
-
-        # Table container
-        table_container = ctk.CTkFrame(self)
-        table_container.pack(fill="both", expand=True, padx=30, pady=(0, 30))
-
-        # Create table
-        columns = [
-            {"key": "numero", "label": "ID", "width": 100},
-            {"key": "nome", "label": "Nome", "width": 300},
-            {"key": "nif", "label": "NIF", "width": 150},
-            {"key": "projetos_count", "label": "Projetos", "width": 100},
-        ]
-
-        self.table = DataTableV2(
-            table_container,
-            columns=columns,
-            on_row_double_click=self.on_double_click,
-            on_selection_change=self.on_selection_change,
-            on_row_right_click=self.show_context_menu
-        )
-        self.table.pack(fill="both", expand=True)
-
-    def carregar_clientes(self):
-        """Load and display clientes"""
-        order_by = self.order_var.get()
-        clientes = self.manager.listar_todos(order_by=order_by)
-
-        # Prepare data
-        data = []
-        for cliente in clientes:
-            projetos_count = len(cliente.projetos)
-            data.append({
-                "id": cliente.id,
-                "numero": cliente.numero,
-                "nome": cliente.nome,
-                "nif": cliente.nif or "-",
-                "projetos_count": projetos_count,  # Keep as integer for proper sorting
-                # Store full data for export
-                "_cliente": cliente,
-                "_has_projetos": projetos_count > 0
-            })
-
-        self.table.set_data(data)
-
-    def pesquisar(self):
-        """Search clientes"""
-        termo = self.search_entry.get().strip()
-
-        if not termo:
-            self.carregar_clientes()
-            return
-
-        clientes = self.manager.pesquisar(termo)
-
-        # Prepare data
-        data = []
-        for cliente in clientes:
-            projetos_count = len(cliente.projetos)
-            data.append({
-                "id": cliente.id,
-                "numero": cliente.numero,
-                "nome": cliente.nome,
-                "nif": cliente.nif or "-",
-                "projetos_count": projetos_count,  # Keep as integer for proper sorting
-                "_cliente": cliente,
-                "_has_projetos": projetos_count > 0
-            })
-
-        self.table.set_data(data)
-
-    def limpar_pesquisa(self):
-        """Clear search"""
-        self.search_entry.delete(0, "end")
-        self.carregar_clientes()
-
-    def on_selection_change(self, selected_data: list):
-        """Handle selection change in table"""
-        num_selected = len(selected_data)
-
-        if num_selected > 0:
-            # Show selection frame
-            self.selection_frame.pack(fill="x", padx=30, pady=(0, 10))
-            self.cancel_btn.pack(side="left", padx=(0, 10))
-
-            # Show "Ver Projetos" button only when exactly 1 cliente is selected
-            if num_selected == 1:
-                self.ver_projetos_btn.pack(side="left", padx=(0, 10))
-            else:
-                self.ver_projetos_btn.pack_forget()
-
-            self.export_btn.pack(side="left", padx=(0, 20))
-            self.count_label.configure(text=f"{num_selected} cliente(s) selecionado(s)")
-            self.count_label.pack(side="left")
-        else:
-            # Hide entire selection frame when nothing is selected
-            self.selection_frame.pack_forget()
-
-    def on_double_click(self, data: Dict):
-        """Handle double click - open for edit"""
-        cliente_id = data.get("id")
+    def on_item_double_click(self, data: dict):
+        """Handle table row double-click (editar)"""
+        cliente_id = data.get('id')
         if cliente_id:
             self.editar_cliente(cliente_id)
 
-    def show_context_menu(self, event, data: dict):
-        """
-        Mostra menu de contexto (right-click) para um cliente
+    def calculate_selection_total(self, selected_data: List[Dict[str, Any]]) -> float:
+        """Not applicable for Clientes - return 0"""
+        return 0.0
 
-        Args:
-            event: Evento do clique (para posição)
-            data: Dados da linha clicada
-        """
-        cliente = data.get('_cliente')
-        if not cliente:
+    # ===== BULK OPERATION METHODS FOR ACTION BAR =====
+
+    def _editar_selecionado(self):
+        """Edita cliente selecionado"""
+        selected = self.get_selected_data()
+        if selected and len(selected) == 1:
+            self.on_item_double_click(selected[0])
+
+    def _ver_projetos_selecionado(self):
+        """Navega para projetos filtrados por cliente (APENAS 1)"""
+        selected = self.get_selected_data()
+        if not selected or len(selected) != 1:
             return
 
-        # Criar menu
-        menu = tk.Menu(self, tearoff=0)
-
-        # ✏️ Editar
-        menu.add_command(
-            label="✏️ Editar",
-            command=lambda: self._editar_from_context(cliente)
-        )
-
-        menu.add_separator()
-
-        # 🗑️ Apagar
-        menu.add_command(
-            label="🗑️ Apagar",
-            command=lambda: self._apagar_from_context(cliente)
-        )
-
-        # Mostrar menu na posição do cursor
-        try:
-            menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            menu.grab_release()
-
-    def _editar_from_context(self, cliente):
-        """Edita cliente a partir do menu de contexto"""
-        self.editar_cliente(cliente.id)
-
-    def _apagar_from_context(self, cliente):
-        """Apaga cliente a partir do menu de contexto"""
-        self.apagar_cliente(cliente.id)
-
-    def cancelar_selecao(self):
-        """Clear selection"""
-        self.table.clear_selection()
-
-    def ver_projetos_selecionado(self):
-        """Navigate to projetos screen filtered by selected cliente"""
-        selected_data = self.table.get_selected_data()
-
-        if len(selected_data) != 1:
-            return
-
-        cliente_id = selected_data[0].get("id")
+        cliente_id = selected[0].get('id')
 
         # Navigate to projetos with cliente filter
         if self.main_window and cliente_id:
             self.main_window.show_projetos(filtro_cliente_id=cliente_id)
 
-    def exportar_selecionados(self):
-        """Export selected clientes to CSV"""
-        selected_data = self.table.get_selected_data()
-
-        if not selected_data:
-            messagebox.showwarning("Aviso", "Nenhum cliente selecionado")
+    def _exportar_selecionados(self):
+        """Exporta clientes selecionados para CSV"""
+        selected = self.get_selected_data()
+        if not selected:
             return
 
         # Prepare filename
@@ -376,7 +275,7 @@ class ClientesScreen(ctk.CTkFrame):
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
                 writer.writeheader()
-                for item in selected_data:
+                for item in selected:
                     cliente = item.get('_cliente')
                     if cliente:
                         writer.writerow({
@@ -389,30 +288,52 @@ class ClientesScreen(ctk.CTkFrame):
                             'Projetos': str(len(cliente.projetos))
                         })
 
-            messagebox.showinfo(
-                "Sucesso",
-                f"Exportados {len(selected_data)} cliente(s) para {filename}"
-            )
+            messagebox.showinfo("Sucesso", f"Exportados {len(selected)} cliente(s) para {filename}")
+
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao exportar: {str(e)}")
 
-    def ver_projetos_cliente(self, row_data: Dict):
-        """
-        Navigate to projetos screen filtered by this cliente
+    def _apagar_selecionados(self):
+        """Apaga clientes selecionados"""
+        selected = self.get_selected_data()
+        if not selected:
+            return
 
-        Args:
-            row_data: Row data containing cliente info
-        """
-        # Check if cliente has projects
-        if not row_data.get("_has_projetos"):
-            return  # No projects to show
+        num = len(selected)
 
-        # Get cliente ID for filtering
-        cliente_id = row_data.get("id")
+        # Confirmar
+        resposta = messagebox.askyesno(
+            "Confirmar Eliminação",
+            f"Apagar {num} cliente(s)?\n\n"
+            f"⚠️ Esta ação não pode ser desfeita!"
+        )
 
-        # Navigate to projetos with cliente filter
-        if self.main_window and cliente_id:
-            self.main_window.show_projetos(filtro_cliente_id=cliente_id)
+        if not resposta:
+            return
+
+        sucessos = 0
+        erros = []
+
+        for data in selected:
+            cliente = data.get('_cliente')
+            if cliente:
+                sucesso, erro = self.manager.apagar(cliente.id)
+                if sucesso:
+                    sucessos += 1
+                else:
+                    erros.append(f"{cliente.nome}: {erro}")
+
+        if sucessos > 0:
+            msg = f"✅ {sucessos} cliente(s) apagado(s)!"
+            if erros:
+                msg += f"\n\n⚠️ {len(erros)} erro(s)"
+            messagebox.showinfo("Resultado", msg)
+        else:
+            messagebox.showerror("Erro", "\n".join(erros[:5]))
+
+        self.refresh_data()
+
+    # ===== HELPER METHODS (MANTER) =====
 
     def adicionar_cliente(self):
         """Navigate to cliente_form screen for create"""
@@ -454,9 +375,19 @@ class ClientesScreen(ctk.CTkFrame):
         success, message = self.manager.apagar(cliente_id)
 
         if success:
-            self.carregar_clientes()
+            self.refresh_data()
         else:
             messagebox.showerror("Erro", message)
+
+    # ===== CONTEXT MENU HELPERS =====
+
+    def _editar_from_context(self, cliente):
+        """Edita cliente a partir do menu de contexto"""
+        self.editar_cliente(cliente.id)
+
+    def _apagar_from_context(self, cliente):
+        """Apaga cliente a partir do menu de contexto"""
+        self.apagar_cliente(cliente.id)
 
 
 class ConfirmDialog(BaseDialogMedium):
