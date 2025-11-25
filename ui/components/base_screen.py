@@ -338,12 +338,14 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_chips_area(self):
         """Cria área para chips de filtros ativos."""
-        # Container (SÓ faz pack quando houver chips!)
-        self.chips_container = ctk.CTkFrame(self, fg_color="transparent")
-        # NÃO fazer pack aqui! Só quando adicionar primeiro chip
+        # Container SEMPRE no layout, começa com height=0 (invisível)
+        self.chips_container = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        self.chips_container.pack(fill="x", padx=30, pady=0)
+        self.chips_container.pack_propagate(False)  # NÃO expande automaticamente
 
         # Frame interno onde chips aparecem
         self.chips_frame = ctk.CTkFrame(self.chips_container, fg_color="transparent")
+        self.chips_frame.pack(fill="both", expand=True)
 
     def _add_filter_chip(self, filter_key: str, value: str):
         """Adiciona chip para filtro ativo."""
@@ -353,13 +355,8 @@ class BaseScreen(ctk.CTkFrame):
         if value in self._filter_chips[filter_key]:
             return  # Already exists
 
-        # Show container se ainda não visível (primeiro chip!)
-        if not self.chips_container.winfo_manager():
-            self.chips_container.pack(fill="x", padx=30, pady=0, before=self.selection_container)
-
-        # Show chips frame se ainda não visível
-        if not self.chips_frame.winfo_manager():
-            self.chips_frame.pack(fill="x", pady=(5, 0))
+        # Expandir container para mostrar chips (era height=0, agora 40px)
+        self.chips_container.configure(height=40)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -408,12 +405,10 @@ class BaseScreen(ctk.CTkFrame):
             if filter_key in self._filter_selections:
                 self._filter_selections[filter_key].discard(value)
 
-            # Hide chips frame if empty
+            # Colapsar container se vazio
             has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
             if not has_chips and not self._search_chip:
-                self.chips_frame.pack_forget()
-                # Hide container também
-                self.chips_container.pack_forget()
+                self.chips_container.configure(height=0)
 
             # Atualizar aparência do filtro
             self._update_filter_appearance(filter_key)
@@ -449,13 +444,8 @@ class BaseScreen(ctk.CTkFrame):
         if self._search_chip:
             return  # Already exists
 
-        # Show container se ainda não visível (primeiro chip!)
-        if not self.chips_container.winfo_manager():
-            self.chips_container.pack(fill="x", padx=30, pady=0, before=self.selection_container)
-
-        # Show chips frame se ainda não visível
-        if not self.chips_frame.winfo_manager():
-            self.chips_frame.pack(fill="x", pady=(5, 0))
+        # Expandir container para mostrar chips (era height=0, agora 40px)
+        self.chips_container.configure(height=40)
 
         # Create chip
         chip = ctk.CTkFrame(
@@ -496,12 +486,10 @@ class BaseScreen(ctk.CTkFrame):
             self._search_chip.destroy()
             self._search_chip = None
 
-            # Hide chips frame if empty
+            # Colapsar container se vazio
             has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
             if not has_chips and not self._search_chip:
-                self.chips_frame.pack_forget()
-                # Hide container também
-                self.chips_container.pack_forget()
+                self.chips_container.configure(height=0)
 
             # Clear search and refresh
             self.search_var.set("")
@@ -520,9 +508,10 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_selection_bar(self):
         """Cria a barra de seleção."""
-        # Container (SÓ faz pack quando houver seleção!)
-        self.selection_container = ctk.CTkFrame(self, fg_color="transparent")
-        # NÃO fazer pack aqui! Só quando houver seleção
+        # Container SEMPRE no layout, começa com height=0 (invisível)
+        self.selection_container = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        self.selection_container.pack(fill="x", padx=30, pady=0)
+        self.selection_container.pack_propagate(False)  # NÃO expande automaticamente
 
         self.selection_frame = ctk.CTkFrame(
             self.selection_container,
@@ -531,6 +520,7 @@ class BaseScreen(ctk.CTkFrame):
             border_width=1,
             border_color=("#E0E0E0", "#404040")
         )
+        self.selection_frame.pack(fill="both", expand=True, pady=5)
 
         # Botão limpar seleção
         self.cancel_btn = ctk.CTkButton(
@@ -610,10 +600,10 @@ class BaseScreen(ctk.CTkFrame):
                 self._search_chip.destroy()
                 self._search_chip = None
 
-                # Hide chips frame if empty
+                # Colapsar container se vazio
                 has_chips = any(len(chips) > 0 for chips in self._filter_chips.values())
                 if not has_chips:
-                    self.chips_frame.pack_forget()
+                    self.chips_container.configure(height=0)
 
         self.refresh_data()
 
@@ -664,13 +654,8 @@ class BaseScreen(ctk.CTkFrame):
         num_selected = len(selected_data)
 
         if num_selected > 0:
-            # Show container se ainda não visível (primeira seleção!)
-            if not self.selection_container.winfo_manager():
-                self.selection_container.pack(fill="x", padx=30, pady=0)
-
-            # Mostrar barra de seleção
-            if not self.selection_frame.winfo_manager():
-                self.selection_frame.pack(fill="x", pady=(5, 0))
+            # Expandir container para mostrar barra (era height=0, agora 50px)
+            self.selection_container.configure(height=50)
 
             self.cancel_btn.pack(side="left", padx=8)
 
@@ -688,9 +673,8 @@ class BaseScreen(ctk.CTkFrame):
                 self.total_label.configure(text=f"Total: €{total:,.2f}")
                 self.total_label.pack(side="left", padx=12)
         else:
-            # Esconder barra e container
-            self.selection_frame.pack_forget()
-            self.selection_container.pack_forget()
+            # Colapsar container para esconder barra
+            self.selection_container.configure(height=0)
 
     def _clear_selection(self):
         """Limpa a seleção da tabela."""
