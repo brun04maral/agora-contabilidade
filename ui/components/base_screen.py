@@ -172,7 +172,7 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_header(self):
         """Cria o header com título e botões."""
-        header_frame = ctk.CTkFrame(self, fg_color="blue")  # DEBUG: azul
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
         header_frame.pack(fill="x", padx=30, pady=(20, 20))  # 20px bottom (como DespesasScreen)
 
         # Título com ícone
@@ -261,8 +261,9 @@ class BaseScreen(ctk.CTkFrame):
 
     def _create_toolbar(self):
         """Cria toolbar compacto com pesquisa e filtros horizontais."""
-        toolbar = ctk.CTkFrame(self, fg_color="red")  # DEBUG: vermelho
+        toolbar = ctk.CTkFrame(self, fg_color="transparent", height=40)
         toolbar.pack(fill="x", padx=30, pady=(0, 10))  # ZERO top, 10px bottom (como DespesasScreen)
+        toolbar.pack_propagate(False)  # NÃO expande automaticamente
 
         # Search (compacta, só ícone lupa)
         if self.config.get('show_search', True):
@@ -339,7 +340,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_chips_area(self):
         """Cria área para chips de filtros ativos."""
         # Container com height FIXO (sempre reserva espaço, não empurra tabela)
-        self.chips_container = ctk.CTkFrame(self, fg_color="green", height=40)  # DEBUG: verde
+        self.chips_container = ctk.CTkFrame(self, fg_color="transparent", height=40)
         self.chips_container.pack(fill="x", padx=30, pady=0)
         self.chips_container.pack_propagate(False)  # NÃO expande automaticamente
 
@@ -510,7 +511,7 @@ class BaseScreen(ctk.CTkFrame):
     def _create_selection_bar(self):
         """Cria a barra de seleção."""
         # Container com height FIXO (sempre reserva espaço, não empurra tabela)
-        self.selection_container = ctk.CTkFrame(self, fg_color="yellow", height=50)  # DEBUG: amarelo
+        self.selection_container = ctk.CTkFrame(self, fg_color="transparent", height=50)
         self.selection_container.pack(fill="x", padx=30, pady=0)
         self.selection_container.pack_propagate(False)  # NÃO expande automaticamente
 
