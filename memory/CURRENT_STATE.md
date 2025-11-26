@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-25 WET
+**Última atualização:** 2025-11-26 WET
 **Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
 **Status Geral:** ✅ PRODUÇÃO READY
 
@@ -18,18 +18,18 @@
 
 ## 📌 Resumo Executivo
 
-**Sprint Atual (25/11/2025):**
-- 🎯 **Sistema BaseForm - SPRINT 1+2 COMPLETOS** - Framework para formulários CRUD criado + ClienteFormScreen migrado (1/7 forms) 🎯
+**Sprint Atual (26/11/2025):**
+- 🎯 **Sistema BaseForm - SPRINT 1-5 + EXTRA COMPLETOS** - 5/8 formulários migrados (Cliente, Fornecedor, Equipamento, Despesa) + Layout 2 Colunas + Bug Fix DataTableV2 (progresso 62.5%) 🚀
 - 🎉 **Sistema BaseScreen - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** (Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores, Equipamento) 🎉
 
 **Última Feature Concluída:**
-- ✅ **Sistema BaseForm SPRINT 1+2** (25/11/2025) - Framework BaseForm criado com 6 tipos de campo (text, number, dropdown, checkbox, date, textarea), 4 métodos abstratos obrigatórios, API unificada com validação padronizada. ClienteFormScreen migrado como primeira implementação real (serve como template). 6 forms restantes a migrar. Código declarativo vs imperativo, boilerplate UI removido. **Ver:** memory/CHANGELOG.md (25/11/2025 19:30)
+- ✅ **Sistema BaseForm SPRINT 3-5 + Layout 2 Colunas** (26/11/2025) - Migrados 3 forms (FornecedorFormScreen, EquipamentoFormScreen, DespesaFormScreen) com enums bidirecionais, dropdowns dinâmicos, validações Decimal, suporte IVA. Bug fix crítico em DataTableV2 (lambda closure). SPRINT EXTRA adiciona layout 2 colunas via parameter `columns=1|2` com colspan, zero breaking changes. Progresso: 5/8 forms (62.5%). **Ver:** memory/CHANGELOG.md (26/11/2025)
 
 **Próximo Milestone:**
-- 📋 **SPRINT 3:** Migrar FornecedorFormScreen para BaseForm (form simples-médio)
-- 📋 **SPRINT 4-8:** Migrar 5 forms restantes (Equipamento, Despesa, Orçamento, Projeto, Boletim)
+- 📋 **SPRINT 6-8:** Migrar 3 forms restantes (OrcamentoFormScreen, ProjetoFormScreen, BoletimFormScreen) para BaseForm - todos usarão layout 2 colunas
 - 📋 Testar e validar sistema BaseScreen completo (7/7 screens)
 - 📋 UX/UI Improvements - Orçamentos (DateRangePicker + Context Menus)
+- 📋 IRS Retido em Despesas (requisito futuro documentado)
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins

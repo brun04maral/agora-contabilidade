@@ -42,31 +42,34 @@ LEGENDA DE PRIORIDADES
    Status: Pronto para testes (migração 100% completa - 7/7 screens)
    Ver: memory/CHANGELOG.md (25/11/2025 18:00 - Sistema BaseScreen 100% COMPLETO)
 
-3. Migrar Formulários para BaseForm (SPRINT 3+)
+3. Migrar Formulários para BaseForm (SPRINT 3-8)
 
-   Sistema BaseForm criado ✅ (SPRINT 1 + 2):
-   ├─ ✅ BaseForm framework (faaa731)
-   ├─ ✅ ClienteFormScreen migrado (cff8ddb)
-   └─ 📋 Pendentes: 6 forms restantes
+   Sistema BaseForm criado ✅ + Layout 2 Colunas ✅:
+   ├─ ✅ SPRINT 1: BaseForm framework (faaa731)
+   ├─ ✅ SPRINT 2: ClienteFormScreen migrado (cff8ddb)
+   ├─ ✅ SPRINT 3: FornecedorFormScreen migrado (12083aa)
+   ├─ ✅ SPRINT 4: EquipamentoFormScreen migrado (038d9ae)
+   ├─ ✅ SPRINT 5: DespesaFormScreen migrado (ad0cbba)
+   ├─ ✅ SPRINT EXTRA: Suporte 2 colunas (800467e)
+   └─ 📋 Pendentes: 3 forms restantes
 
-   **SPRINT 3 (Próximo):**
-   └─ FornecedorFormScreen
-      - Form simples-médio (similar a Cliente)
-      - Campos: nome, estatuto (enum), área, função, NIF, contacto, email
-      - Validadores: NIF, email, estatuto
+   **Progresso:** 5/8 forms completos (62.5%)
 
-   **SPRINT 4-8 (Futuros):**
-   ├─ EquipamentoFormScreen (médio)
-   ├─ DespesaFormScreen (médio)
-   ├─ OrcamentoFormScreen (médio)
-   ├─ ProjetoFormScreen (complexo)
-   └─ BoletimFormScreen (avançado)
+   **SPRINT 6-8 (Próximos):**
+   ├─ OrcamentoFormScreen (médio-complexo, 2 colunas)
+   ├─ ProjetoFormScreen (complexo, 2 colunas)
+   └─ BoletimFormScreen (avançado, 2 colunas)
 
-   **Objetivo:** 7/7 forms com layout consistente, validação padronizada, código DRY
+   **Objetivo:** 8/8 forms com layout consistente (1 ou 2 colunas), validação padronizada, código DRY
 
-   Estimativa: 1 form por sessão (6 sessões restantes)
-   Status: SPRINT 1 + 2 completos (25/11/2025)
-   Ver: memory/CHANGELOG.md (25/11/2025 19:30 - Sistema BaseForm)
+   **Nova Feature (SPRINT EXTRA):**
+   - Suporte layout 2 colunas (parameter `columns=1|2`)
+   - Suporte `colspan=2` para campos full-width
+   - Zero breaking changes (forms existentes continuam 1 coluna)
+
+   Estimativa: 1 form por sessão (3 sessões restantes)
+   Status: SPRINT 1-5 + EXTRA completos (26/11/2025)
+   Ver: memory/CHANGELOG.md (26/11/2025 - SPRINT 3-5 + Layout 2 Colunas)
 
 4. UX/UI Improvements - Orçamentos (20 melhorias)
 
@@ -188,50 +191,76 @@ LEGENDA DE PRIORIDADES
     Ver: memory/DEV_SETUP.md (adicionar secção Build)
 
 11. Dashboard Fiscal (após Migration 027)
-    
+
     ├─ Card IVA a pagar (trimestre atual)
     ├─ Card IRS retido (mês atual)
     ├─ Card SS a pagar (mês atual)
     ├─ Calendário de obrigações fiscais
     └─ Alertas de prazos próximos
-    
+
     Ver: memory/FISCAL.md (Secção 8)
+
+12. IRS Retido em Despesas (Requisito Futuro)
+
+    **Contexto:**
+    Formulário de Despesas precisa suportar campo IRS Retido para recibos de freelancers.
+
+    **Tarefas:**
+    ├─ Especificar fluxograma/casos de uso (com e sem IVA, com e sem IRS)
+    ├─ Adicionar campo `irs_retido` no model Despesa (migration)
+    ├─ Implementar campo condicional no DespesaFormScreen
+    │  - Só mostrar se tipo = Freelancer/Recibo Verde
+    │  - Pode ser percentual ou valor fixo
+    ├─ Adicionar campo calculado `valor_liquido` (readonly)
+    │  - valor_liquido = valor_com_iva - irs_retido
+    ├─ Atualizar validações contextuais
+    ├─ Documentar regras legais (quando obrigatório, quando opcional)
+    └─ Realizar testes de UI (casos onde IVA e IRS coexistem)
+
+    **Compatibilidade:**
+    - Deve funcionar com lógica existente de IVA (fixo/variável/não aplicável)
+    - Campos IVA e IRS não devem conflituar
+
+    Estimativa: 1-2 sessões
+    Prioridade: Após SPRINT 6-8 (forms restantes)
+    Status: 📝 Documentado (26/11/2025)
+    Ver: memory/CHANGELOG.md (26/11/2025 - Planeamento IRS Retido)
 
 ====================================================================
 🟢 Baixa Prioridade - Backlog
 ====================================================================
 
-12. Integração TOConline, BizDocs, BPI Net Empresas (importação manual)
+13. Integração TOConline, BizDocs, BPI Net Empresas (importação manual)
     - Importação manual (CSV) de faturas TOConline, despesas BizDocs e movimentos da conta BPI Empresas
     - Sem automação/API nesta fase (MVP)
     - Matching associativo: sugestão automática de projeto/despesa/receita para reconciliação
     - Referências: INTEGRACOES.md, FISCAL.md, DATABASE_SCHEMA.md
     - Pendente revisão futura, não prioritário
 
-13. Notificações e Alertas
+14. Notificações e Alertas
     - Despesas vencidas
     - Orçamentos aguardando aprovação há > 7 dias
     - Projetos sem movimento há > 30 dias
     - Prazos fiscais próximos
 
-14. Sistema de Backup Automático
+15. Sistema de Backup Automático
     - Backup diário da BD (agora_media.db)
     - Rotação (manter últimos 7 dias)
     - Opcional: upload cloud (Google Drive, Dropbox)
 
-15. Relatórios Avançados
+16. Relatórios Avançados
     - Relatório de rendibilidade por cliente
     - Relatório de custos por tipo
     - Análise de margens (receitas vs custos)
     - Export multi-formato (PDF, Excel, CSV)
 
-16. Multi-utilizador (Futuro distante)
+17. Multi-utilizador (Futuro distante)
     - Sistema de autenticação
     - Permissões por role
     - Auditoria de alterações
     - Nota: Não prioritário (apenas 2 sócios)
 
-17. App Mobile (Exploratório)
+18. App Mobile (Exploratório)
     - Consulta rápida de saldos
     - Adicionar despesas em movimento
     - Push notifications
@@ -258,14 +287,12 @@ Para contexto e decisões:
 
 Ver memory/CHANGELOG.md para histórico completo.
 
-Últimas 7 features (Novembro 2025):
+Últimas 5 features (Novembro 2025):
+- ✅ 26/11: **Sistema BaseForm SPRINT 3-5 + Layout 2 Colunas** - 3 forms migrados (Fornecedor, Equipamento, Despesa) + suporte columns=1|2 + bug fix DataTableV2 - Progresso: 5/8 forms (62.5%) - Ver CHANGELOG.md (26/11/2025) 🚀
 - ✅ 25/11: **Sistema BaseForm SPRINT 1+2** - Framework criado + ClienteFormScreen migrado (1/7 forms) - 6 tipos campo, API unificada - Ver CHANGELOG.md (25/11/2025 19:30) 🎯
 - ✅ 25/11: **SISTEMA BaseScreen 100% COMPLETO** - 7/7 screens migrados (Clientes, Fornecedores, Equipamento finais) - ~11% redução código total (-489 linhas) - Ver CHANGELOG.md (25/11/2025 18:00) 🎉
 - ✅ 25/11: Migração Completa para BaseScreen - OrcamentosScreen, DespesasScreen, BoletinsScreen migrados (4/4) - Ver CHANGELOG.md (25/11/2025 16:00)
 - ✅ 24/11: Sistema Templates UI - BaseScreen implementado + ProjectsScreen migrado (-36% código) - Ver CHANGELOG.md (24/11/2025)
-- ✅ 24/11: Refatoração TipoProjeto (EMPRESA|PESSOAL + owner) - migrations 027-028
-- ✅ 24/11: UI Saldos com subsecções "não pagos" e "boletins pendentes"
-- ✅ 24/11: Refatoração Screens Dedicados - fornecedores e equipamento (padrão projetos 6/6)
 
 Para histórico anterior: Ver memory/CHANGELOG.md
 

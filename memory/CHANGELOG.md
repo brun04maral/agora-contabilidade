@@ -4,6 +4,406 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-26] 🚀 SISTEMA BaseForm - SPRINT 3-5 + Layout 2 Colunas
+
+### ✅ SPRINTS 3, 4, 5 e EXTRA COMPLETOS
+
+**Status:** SPRINT 3, 4, 5 e EXTRA COMPLETOS (26/11/2025)
+**Impacto:** 3 forms migrados + suporte layout 2 colunas + bug fix
+**Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
+**Commits:** 12083aa, 038d9ae, ad0cbba, 7898665, 800467e
+
+### 🎉 VISÃO GERAL
+
+Migração de 3 formulários para BaseForm (Fornecedor, Equipamento, Despesa) + nova feature de layout 2 colunas + correção de bug crítico em DataTableV2.
+
+**Progress Sistema BaseForm:**
+- ✅ SPRINT 1: BaseForm framework criado (faaa731)
+- ✅ SPRINT 2: ClienteFormScreen migrado (cff8ddb)
+- ✅ SPRINT 3: FornecedorFormScreen migrado (12083aa)
+- ✅ SPRINT 4: EquipamentoFormScreen migrado (038d9ae)
+- ✅ SPRINT 5: DespesaFormScreen migrado (ad0cbba)
+- ✅ SPRINT EXTRA: Suporte 2 colunas (800467e)
+- 📋 Pendente: 3 forms restantes (Orçamento, Projeto, Boletim)
+
+**Progresso:** 5/8 forms completos (62.5%)
+
+---
+
+### 🏗️ SPRINT 3/∞: FornecedorFormScreen → BaseForm
+
+**Commit:** 12083aa - refactor(ui): migrar FornecedorFormScreen para BaseForm [SPRINT 3/∞]
+**Data:** 26/11/2025
+**Ficheiro:** `ui/screens/fornecedor_form.py` (~438 linhas)
+
+**Campos Migrados (12):**
+- nome (text, required)
+- estatuto (dropdown: EMPRESA, FREELANCER, ESTADO)
+- area, funcao (text)
+- classificacao (number, 0-5 estrelas)
+- nif (text + validador)
+- iban (text)
+- morada (textarea)
+- contacto (text)
+- email (text + validador)
+- website (text)
+- nota (textarea)
+
+**Validadores Criados (3):**
+- `_validate_nif()` - validação NIF (9-20 caracteres alfanuméricos)
+- `_validate_email()` - validação email (formato padrão)
+- `_validate_classificacao()` - validação 0-5 estrelas
+
+**Conversões Enum:**
+```python
+# Load (enum → string display)
+tipo_display_map = {
+    TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
+    ...
+}
+
+# Save (string → enum)
+tipo_map = {
+    "Fixa Mensal": TipoDespesa.FIXA_MENSAL,
+    ...
+}
+```
+
+**Campos Removidos (legacy não-essenciais):**
+- validade_seguro_trabalho (DatePicker condicional)
+- website open button (funcionalidade não-standard)
+- radio buttons para estatuto/classificacao (agora dropdown/number)
+
+**Redução:** ~180 linhas boilerplate UI removido
+
+---
+
+### 🏗️ SPRINT 4/∞: EquipamentoFormScreen → BaseForm
+
+**Commit:** 038d9ae - refactor(ui): migrar EquipamentoFormScreen para BaseForm [SPRINT 4/∞]
+**Data:** 26/11/2025
+**Ficheiro:** `ui/screens/equipamento_form.py` (~408 linhas)
+
+**Campos Migrados (10):**
+- produto (text, required)
+- tipo (dropdown dinâmico via `manager.obter_tipos()`, required)
+- valor_compra (number, required, min=0, €)
+- preco_aluguer (number, opcional, min=0, €)
+- quantidade (number, required, min=1, default=1)
+- estado (text)
+- fornecedor (text)
+- data_compra (date picker)
+- garantia_ate (date picker, **novo campo**)
+- notas (textarea)
+
+**Validadores Criados (3):**
+- `_validate_valor_compra()` - validação >= 0
+- `_validate_preco_aluguer()` - validação >= 0 (opcional)
+- `_validate_quantidade()` - validação >= 1 (inteiro)
+
+**Dropdown Dinâmico:**
+```python
+# No __init__, ANTES de chamar super().__init__()
+tipos_raw = self.manager.obter_tipos()
+self.tipos_disponiveis = [t for t in tipos_raw if t != "Todos"]
+
+# Fallback se DB vazio
+if not self.tipos_disponiveis:
+    self.tipos_disponiveis = ["Vídeo", "Áudio", "Iluminação", "Outro"]
+```
+
+**Campos Removidos (legacy não-essenciais):**
+- label/categoria, descricao (textarea)
+- numero_serie, mac_address, referencia
+- tamanho, localizacao, uso_pessoal
+- fatura_url, foto_url
+- Layout manual 2-3 colunas
+
+**Redução:** ~240 linhas boilerplate UI removido
+
+---
+
+### 🏗️ SPRINT 5/∞: DespesaFormScreen → BaseForm
+
+**Commit:** ad0cbba - refactor(ui): migrar DespesaFormScreen para BaseForm [SPRINT 5/∞]
+**Data:** 26/11/2025
+**Ficheiro:** `ui/screens/despesa_form.py` (~457 linhas)
+
+**Campos Migrados (10) - Baseados no Schema DB Real:**
+- data (date, required)
+- tipo (dropdown: Fixa Mensal, Pessoal BA, Pessoal RR, Equipamento, Projeto)
+- credor (dropdown dinâmico via `manager.obter_fornecedores()`, required)
+- projeto (dropdown dinâmico via `manager.obter_projetos()`, opcional)
+- descricao (textarea, required)
+- valor_sem_iva (number, required, min=0, €)
+- valor_com_iva (number, required, min=0, €)
+- estado (dropdown: Pendente, Vencido, Pago)
+- data_pagamento (date picker, condicional)
+- nota (textarea, opcional)
+
+**Validadores Criados (2):**
+- `_validate_valor_sem_iva()` - validação >= 0, suporta vírgula → ponto
+- `_validate_valor_com_iva()` - validação >= 0, suporta vírgula → ponto
+
+**Enums Implementados (2):**
+- `TipoDespesa` - 5 valores (FIXA_MENSAL, PESSOAL_BRUNO, PESSOAL_RAFAEL, EQUIPAMENTO, PROJETO)
+- `EstadoDespesa` - 3 valores (PENDENTE, VENCIDO, PAGO)
+
+**Conversões Implementadas:**
+- Enum ↔ string bidirecionais (tipo, estado)
+- Nome → ID (credor, projeto via maps)
+- Suporte Decimal com replace vírgula → ponto
+
+**Validação Condicional:**
+```python
+# Se estado = Pago, data_pagamento é obrigatória
+if estado == EstadoDespesa.PAGO and not data_pagamento:
+    return "Data de Pagamento é obrigatória quando estado é 'Pago'"
+```
+
+**Nota Importante:**
+Esta implementação é baseada no **schema DB real atual**. O prompt original sugeria campos adicionais (taxa_iva, vencimento, cliente_id) que **não existem no schema atual**. Ver secção "Planeamento Futuro" abaixo.
+
+**Redução:** ~180 linhas boilerplate UI removido
+
+---
+
+### 🐛 BUG FIX: DataTableV2 Lambda Closure
+
+**Commit:** 7898665 - fix(ui): corrigir closure em lambdas do DataTableV2.add_row
+**Data:** 26/11/2025
+**Ficheiro:** `ui/components/data_table_v2.py`
+
+**Problema:**
+```
+TypeError: DataTableV2.add_row.<locals>.<lambda>() missing 1 required positional argument: 'e'
+```
+
+**Causa Raiz:**
+Lambdas dentro do loop `for col in self.columns:` sofriam de **late binding** - capturavam variáveis por referência em vez de valor. Quando o loop terminava, todas as lambdas apontavam para a última versão das variáveis `label` e `data`.
+
+**Solução:**
+Captura explícita de todas as variáveis como argumentos default nas lambdas:
+
+```python
+# ANTES (problemático)
+label.bind("<Enter>", lambda e, rf=row_frame: self._on_row_enter(e, rf))
+label.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
+
+# DEPOIS (corrigido)
+label.bind("<Enter>", lambda e, rf=row_frame, lbl=label: self._on_row_enter(e, rf))
+label.bind("<Double-Button-1>", lambda e, d=dict(data), lbl=label: self._on_row_double_click(d))
+```
+
+**Mudanças:**
+- Adicionado `lbl=label` em todas as lambdas para capturar cada label individual
+- Mudado `d=data` para `d=dict(data)` para criar cópia do dicionário
+- Adicionados comentários explicando o problema de closure
+
+**Status:** ✅ Corrigido e testado
+
+---
+
+### 🎨 SPRINT EXTRA: Suporte Layout 2 Colunas no BaseForm
+
+**Commit:** 800467e - feat(ui): adicionar suporte 2 colunas ao BaseForm
+**Data:** 26/11/2025
+**Ficheiro:** `ui/components/base_form.py`
+**Linhas:** +94 / -7 (net: +87)
+
+**Nova Feature: Layout Flexível**
+
+BaseForm agora suporta 2 tipos de layout:
+1. **1 coluna (default):** Campos empilhados verticalmente (pack) - mantém compatibilidade 100%
+2. **2 colunas (novo):** Campos em grid 2x com melhor aproveitamento de espaço
+
+**Parâmetro `columns` no `__init__`:**
+```python
+def __init__(self, parent, db_session=None, columns=1, ...)
+    # columns: 1 ou 2 (default=1)
+    # Validação: lança ValueError se valor inválido
+```
+
+**Nova propriedade `colspan` em Field Config:**
+```python
+{
+    "key": "observacoes",
+    "type": "textarea",
+    "colspan": 2  # ← NOVO: ocupa 2 colunas (full-width)
+}
+# Default: colspan=1
+```
+
+**Implementação `fields_slot()`:**
+
+**Layout 1 coluna (PACK):**
+```python
+if self.num_columns == 1:
+    for field_config in fields_config:
+        field_frame = self._create_field(parent, field_config)
+        field_frame.pack(fill="x", pady=(0, 15))
+```
+
+**Layout 2 colunas (GRID):**
+```python
+elif self.num_columns == 2:
+    grid_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    grid_frame.grid_columnconfigure(0, weight=1)
+    grid_frame.grid_columnconfigure(1, weight=1)
+
+    row, col = 0, 0
+    for field_config in fields_config:
+        colspan = field_config.get("colspan", 1)
+        field_frame = self._create_field(grid_frame, field_config)
+        field_frame.grid(row=row, column=col, columnspan=colspan, sticky="ew")
+
+        # Calcular próxima posição
+        if colspan == 2:
+            row += 1; col = 0
+        else:
+            col += 1
+            if col >= 2:
+                row += 1; col = 0
+```
+
+**Refactor `_create_field()`:**
+- **Antes:** Fazia `.pack()` do field_frame internamente
+- **Depois:** Retorna o field_frame **sem posicionar** (positioning feito pelo caller)
+- **Type hint:** Adicionado `→ ctk.CTkFrame`
+
+**Estrutura Visual (Layout 2 Colunas):**
+```
+┌──────────────────────────┬──────────────────────────┐
+│ Campo A (col 0)          │ Campo B (col 1)          │
+├──────────────────────────┴──────────────────────────┤
+│ Campo C (colspan=2, full-width)                     │
+├──────────────────────────┬──────────────────────────┤
+│ Campo D (col 0)          │ Campo E (col 1)          │
+└──────────────────────────┴──────────────────────────┘
+```
+
+**Exemplo de Uso:**
+```python
+# Form simples (1 coluna) - SEM MUDANÇAS
+class ClienteFormScreen(BaseForm):
+    def __init__(self, parent, db_session, **kwargs):
+        super().__init__(parent, db_session, **kwargs)  # columns=1 implícito
+
+# Form complexo (2 colunas) - NOVA FEATURE
+class ProjetoFormScreen(BaseForm):
+    def __init__(self, parent, db_session, **kwargs):
+        super().__init__(parent, db_session, columns=2, **kwargs)  # ← Novo!
+
+    def get_fields_config(self):
+        return [
+            {"key": "nome", "type": "text", "colspan": 2},      # Full-width
+            {"key": "cliente", "type": "dropdown"},              # Col 0
+            {"key": "estado", "type": "dropdown"},               # Col 1
+            {"key": "obs", "type": "textarea", "colspan": 2},   # Full-width
+        ]
+```
+
+**Compatibilidade Retroativa:**
+- ✅ **Zero breaking changes**
+- ✅ Forms existentes continuam funcionando (default `columns=1`)
+- ✅ Layout 1 coluna usa `.pack()` exatamente como antes
+- ✅ Nenhuma lógica foi alterada no caminho 1 coluna
+
+**Documentação Atualizada:**
+- Adicionada seção "SUPORTE LAYOUTS" no docstring
+- Exemplos de uso para 1 e 2 colunas
+- Documentação do parâmetro `colspan`
+
+**Status:** ✅ Pronto para produção (SPRINT 7: ProjetoFormScreen)
+
+---
+
+### 📋 PLANEAMENTO FUTURO: IRS Retido em Despesas
+
+**Status:** 📝 Documentado, não implementado
+**Prioridade:** 🟡 Média (após SPRINT 6-8)
+
+**Requisito:**
+O formulário de Despesas precisa suportar **IRS Retido** (para recibos de freelancers):
+
+**Novo Campo:**
+- `irs_retido` (number ou percentage, condicional)
+
+**Lógica:**
+- Só relevante para certas despesas/tipos (ex: recibos verdes de freelancers)
+- Pode ser dropdown/flag: "Despesa sujeita a retenção IRS?"
+  - Se sim: permite introduzir valor do IRS Retido
+  - Pode ser percentual ou valor fixo conforme legislação/fatura
+- Campo calculado: `valor_liquido = valor_com_iva - irs_retido` (readonly)
+
+**Sugestão de Campos (exemplo futuro):**
+```python
+[
+    {"key": "valor_sem_iva", "type": "number", "required": True},
+    {"key": "taxa_iva", "type": "dropdown", "values": ["0%", "6%", "13%", "23%", "Variável"]},
+    {"key": "valor_com_iva", "type": "number", "required": True},
+    {"key": "irs_retido", "type": "number", "label": "IRS Retido"},  # ← NOVO
+    {"key": "valor_liquido", "type": "number", "readonly": True},    # ← CALCULADO
+]
+```
+
+**Regras:**
+- Só mostrar campo IRS Retido se tipo de despesa for Freelancer/Recibo Verde
+- Validação obrigatória para IRS Retido se relevante
+- No `on_save()`: garantir cálculos corretos (valor_liquido)
+- Atualizar documentação/GUIA_CONSOLIDADO quando implementado
+
+**Compatibilidade:**
+- Deve funcionar em conjunto com lógica existente de IVA
+- IVA poderá ser fixo, variável ou não aplicável
+- Em despesas com ambos (IVA e IRS), campos não devem conflituar
+
+**Próximos Passos:**
+- Especificar fluxograma/casos de uso (com e sem IVA, com e sem IRS)
+- Implementar campo `irs_retido` com validações contextuais
+- Rever calculadora de totais e integração com reports
+- Documentar regras legais (quando mostrar IRS, quando é opcional)
+- Realizar testes de UI (casos onde ambos IVA/IRS coexistem)
+
+**Ver:**
+- `ui/screens/despesa_form.py` (implementação atual)
+- memory/DATABASE_SCHEMA.md (eventual migration para campo novo)
+
+---
+
+### 📊 ESTATÍSTICAS DESTA SESSÃO
+
+**Commits Processados:** 5
+- 3 features (FornecedorForm, EquipamentoForm, DespesaForm)
+- 1 bug fix (DataTableV2 closure)
+- 1 nova feature (layout 2 colunas)
+
+**Forms Migrados:** 3 (total acumulado: 5/8 = 62.5%)
+- FornecedorFormScreen: 12 campos, 3 validadores
+- EquipamentoFormScreen: 10 campos, 3 validadores, dropdown dinâmico
+- DespesaFormScreen: 10 campos, 2 validadores, 2 enums
+
+**Código Reduzido:** ~600 linhas boilerplate UI removido
+**Código Adicionado:** ~87 linhas (feature 2 colunas)
+
+**Validadores Criados:** 8 (total sistema)
+**Dropdowns Dinâmicos:** 3 (tipos equipamento, credores, projetos)
+**Conversões Enum:** 2 (TipoDespesa, EstadoDespesa)
+
+**Status Sistema BaseForm:**
+- ✅ Framework completo e estável
+- ✅ Layout 1 coluna (100% compatível)
+- ✅ Layout 2 colunas (pronto para produção)
+- ✅ 5/8 forms migrados (62.5%)
+- 📋 3 forms pendentes: Orçamento, Projeto, Boletim
+
+**Ver:**
+- memory/TODO.md (progresso tasks)
+- memory/CURRENT_STATE.md (sprint atual)
+- memory/ARCHITECTURE.md (padrões BaseForm)
+
+---
+
 ## [2025-11-25 19:30] 🎯 SISTEMA BaseForm - Framework para Formulários CRUD
 
 ### ✅ NOVO SISTEMA DE TEMPLATES PARA FORMULÁRIOS
