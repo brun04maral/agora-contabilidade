@@ -633,18 +633,21 @@ class DataTableV2(ctk.CTkFrame):
                 ToolTip(label, original_value)
 
             # Propagate scroll events and hover from labels to canvas/row
-            label.bind("<Enter>", lambda e, rf=row_frame: self._on_row_enter(e, rf))
-            label.bind("<Leave>", lambda e, rf=row_frame: self._on_row_leave(e, rf))
+            # Capture row_frame in closure to avoid late binding issues
+            label.bind("<Enter>", lambda e, rf=row_frame, lbl=label: self._on_row_enter(e, rf))
+            label.bind("<Leave>", lambda e, rf=row_frame, lbl=label: self._on_row_leave(e, rf))
 
             # Bind click for selection and double-click for edit
-            label.bind("<Button-1>", lambda e, rf=row_frame: self._on_row_click(e, rf))
-            label.bind("<Double-Button-1>", lambda e, d=data: self._on_row_double_click(d))
+            # Capture row_frame and data in closure
+            label.bind("<Button-1>", lambda e, rf=row_frame, lbl=label: self._on_row_click(e, rf))
+            label.bind("<Double-Button-1>", lambda e, d=dict(data), lbl=label: self._on_row_double_click(d))
 
             # Bind right-click for context menu (propagate from label to row handler)
+            # Capture data in closure
             if self.is_mac:
-                label.bind("<Button-2>", lambda e, d=data: self._on_row_right_click(e, d))
+                label.bind("<Button-2>", lambda e, d=dict(data), lbl=label: self._on_row_right_click(e, d))
             else:
-                label.bind("<Button-3>", lambda e, d=data: self._on_row_right_click(e, d))
+                label.bind("<Button-3>", lambda e, d=dict(data), lbl=label: self._on_row_right_click(e, d))
 
             # Bind keyboard shortcuts
             self._bind_shortcuts_to_widget(label)
