@@ -1,419 +1,435 @@
 # -*- coding: utf-8 -*-
 """
-Tela de Formulário de Fornecedor - Screen dedicado para criar/editar fornecedores
-Segue mesmo padrão de ui/screens/projeto_form.py
+FornecedorFormScreen - Formulário para criar/editar fornecedores
+
+Migrado para BaseForm framework (SPRINT 3)
+Segue padrão estabelecido em ui/components/base_form.py
 """
+
 import customtkinter as ctk
+from typing import List, Dict, Any, Optional
+import re
 from sqlalchemy.orm import Session
+from tkinter import messagebox
+
+from ui.components.base_form import BaseForm
 from logic.fornecedores import FornecedoresManager
 from database.models import EstatutoFornecedor
-from ui.components.date_picker_dropdown import DatePickerDropdown
-from typing import Optional
-from datetime import datetime
-from tkinter import messagebox
-import webbrowser
+from assets.resources import get_icon, FORNECEDORES
 
 
-class FornecedorFormScreen(ctk.CTkFrame):
+class FornecedorFormScreen(BaseForm):
     """
-    Screen para criar/editar fornecedores
+    Formulário para criar/editar fornecedores
 
     Navegação via MainWindow.show_screen("fornecedor_form", fornecedor_id=None/ID)
+
+    Modos:
+    - CREATE: fornecedor_id=None
+    - EDIT: fornecedor_id=<id>
     """
 
     def __init__(self, parent, db_session: Session, fornecedor_id: Optional[int] = None, **kwargs):
-        super().__init__(parent, **kwargs)
+        """
+        Initialize fornecedor form screen
 
+        Args:
+            parent: Parent widget
+            db_session: SQLAlchemy database session
+            fornecedor_id: ID do fornecedor (None para criar, ID para editar)
+        """
         self.db_session = db_session
         self.fornecedor_id = fornecedor_id
         self.manager = FornecedoresManager(db_session)
 
-        # Estado
-        self.fornecedor = None
-
-        # Configure
-        self.configure(fg_color="transparent")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # Create widgets
-        self.create_widgets()
-
-        # Load data se edição
+        # Load initial data if editing
+        initial_data = {}
         if fornecedor_id:
-            self.carregar_fornecedor()
-
-        # Set initial visibility of seguro field
-        self._toggle_seguro_field()
-
-    def create_widgets(self):
-        """Cria widgets da screen"""
-        # Container principal com scroll
-        main_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        main_container.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        main_container.grid_columnconfigure(0, weight=1)
-
-        # ========================================
-        # 1. HEADER
-        # ========================================
-        self.create_header(main_container)
-
-        # ========================================
-        # 2. CAMPOS DO FORNECEDOR
-        # ========================================
-        self.create_fields(main_container)
-
-        # ========================================
-        # 3. FOOTER COM BOTÕES
-        # ========================================
-        self.create_footer(main_container)
-
-    def create_header(self, parent):
-        """Cria header com botão voltar e título"""
-        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 20))
-        header_frame.grid_columnconfigure(1, weight=1)
-
-        # Botão voltar
-        voltar_btn = ctk.CTkButton(
-            header_frame,
-            text="⬅️ Voltar",
-            command=self.voltar,
-            width=100,
-            height=35,
-            fg_color="gray",
-            hover_color="#5a5a5a"
-        )
-        voltar_btn.grid(row=0, column=0, sticky="w", padx=(0, 20))
-
-        # Título
-        titulo = "Novo Fornecedor" if not self.fornecedor_id else "Editar Fornecedor"
-        self.title_label = ctk.CTkLabel(
-            header_frame,
-            text=titulo,
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        self.title_label.grid(row=0, column=1, sticky="w")
-
-    def create_fields(self, parent):
-        """Cria campos do formulário"""
-        fields_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        fields_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 20))
-        fields_frame.grid_columnconfigure(0, weight=1)
-
-        # Nome (required)
-        ctk.CTkLabel(fields_frame, text="Nome *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", pady=(0, 8))
-        self.nome_entry = ctk.CTkEntry(fields_frame, placeholder_text="Nome do fornecedor...", height=35)
-        self.nome_entry.grid(row=1, column=0, sticky="ew", pady=(0, 18))
-
-        # Estatuto (required)
-        ctk.CTkLabel(fields_frame, text="Estatuto *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=2, column=0, sticky="w", pady=(0, 8))
-        self.estatuto_var = ctk.StringVar(value="FREELANCER")
-        estatuto_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        estatuto_frame.grid(row=3, column=0, sticky="w", pady=(0, 18))
-        for estatuto in ["EMPRESA", "FREELANCER", "ESTADO"]:
-            ctk.CTkRadioButton(
-                estatuto_frame, text=estatuto, variable=self.estatuto_var, value=estatuto,
-                command=self._toggle_seguro_field
-            ).pack(side="left", padx=(0, 20))
-
-        # Área e Função (side by side)
-        area_funcao_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        area_funcao_frame.grid(row=4, column=0, sticky="ew", pady=(0, 18))
-        area_funcao_frame.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(area_funcao_frame, text="Área", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", padx=(0, 12))
-        self.area_entry = ctk.CTkEntry(area_funcao_frame, placeholder_text="Ex: Produção, Som...", height=35)
-        self.area_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
-
-        ctk.CTkLabel(area_funcao_frame, text="Função", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=1, sticky="w")
-        self.funcao_entry = ctk.CTkEntry(area_funcao_frame, placeholder_text="Ex: Editor, Realizador...", height=35)
-        self.funcao_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
-
-        # Classificação
-        ctk.CTkLabel(fields_frame, text="Classificação (1-5 estrelas)", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=5, column=0, sticky="w", pady=(0, 8))
-        self.classificacao_var = ctk.StringVar(value="0")
-        class_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        class_frame.grid(row=6, column=0, sticky="w", pady=(0, 18))
-        for i in range(6):
-            text = "Nenhuma" if i == 0 else "★" * i
-            ctk.CTkRadioButton(class_frame, text=text, variable=self.classificacao_var, value=str(i)).pack(
-                side="left", padx=(0, 15))
-
-        # NIF e IBAN (side by side)
-        nif_iban_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        nif_iban_frame.grid(row=7, column=0, sticky="ew", pady=(0, 18))
-        nif_iban_frame.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(nif_iban_frame, text="NIF / Tax ID", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", padx=(0, 12))
-        self.nif_entry = ctk.CTkEntry(nif_iban_frame, placeholder_text="Número fiscal...", height=35)
-        self.nif_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
-
-        ctk.CTkLabel(nif_iban_frame, text="IBAN", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=1, sticky="w")
-        self.iban_entry = ctk.CTkEntry(nif_iban_frame, placeholder_text="PT50...", height=35)
-        self.iban_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
-
-        # Morada
-        ctk.CTkLabel(fields_frame, text="Morada", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=8, column=0, sticky="w", pady=(0, 8))
-        self.morada_entry = ctk.CTkTextbox(fields_frame, height=60)
-        self.morada_entry.grid(row=9, column=0, sticky="ew", pady=(0, 18))
-
-        # Contacto e Email (side by side)
-        contacto_email_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        contacto_email_frame.grid(row=10, column=0, sticky="ew", pady=(0, 18))
-        contacto_email_frame.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(contacto_email_frame, text="Contacto", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", padx=(0, 12))
-        self.contacto_entry = ctk.CTkEntry(contacto_email_frame, placeholder_text="Telefone...", height=35)
-        self.contacto_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
-
-        ctk.CTkLabel(contacto_email_frame, text="Email", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=1, sticky="w")
-        self.email_entry = ctk.CTkEntry(contacto_email_frame, placeholder_text="email@exemplo.pt", height=35)
-        self.email_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
-
-        # Website
-        ctk.CTkLabel(fields_frame, text="Website", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=11, column=0, sticky="w", pady=(0, 8))
-        website_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        website_frame.grid(row=12, column=0, sticky="ew", pady=(0, 18))
-        website_frame.grid_columnconfigure(0, weight=1)
-        self.website_entry = ctk.CTkEntry(website_frame, placeholder_text="https://exemplo.pt", height=35)
-        self.website_entry.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkButton(
-            website_frame, text="🔗 Abrir", width=80, height=35, command=self._open_website,
-            fg_color=("#2196F3", "#1565C0"), hover_color=("#1976D2", "#0D47A1")
-        ).grid(row=0, column=1)
-
-        # Seguro frame (only for FREELANCER)
-        self.seguro_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        ctk.CTkLabel(self.seguro_frame, text="Validade Seguro Trabalho", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", pady=(0, 8))
-        self.seguro_picker = DatePickerDropdown(self.seguro_frame, placeholder="Selecionar data de validade...")
-        self.seguro_picker.grid(row=1, column=0, sticky="ew")
-        self.seguro_frame.grid_columnconfigure(0, weight=1)
-
-        # Nota
-        ctk.CTkLabel(fields_frame, text="Nota", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=14, column=0, sticky="w", pady=(0, 8))
-        self.nota_entry = ctk.CTkTextbox(fields_frame, height=80)
-        self.nota_entry.grid(row=15, column=0, sticky="ew", pady=(0, 10))
-
-    def create_footer(self, parent):
-        """Cria footer com botões"""
-        footer_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        footer_frame.grid(row=2, column=0, sticky="ew", padx=30, pady=(10, 30))
-
-        # Botão Guardar
-        save_btn = ctk.CTkButton(
-            footer_frame,
-            text="💾 Guardar",
-            command=self.guardar,
-            width=150,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#2196F3", "#1565C0"),
-            hover_color=("#1976D2", "#0D47A1")
-        )
-        save_btn.pack(side="left", padx=(0, 10))
-
-        # Botão Cancelar
-        cancel_btn = ctk.CTkButton(
-            footer_frame,
-            text="Cancelar",
-            command=self.voltar,
-            width=130,
-            height=40,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#616161", "#424242")
-        )
-        cancel_btn.pack(side="left")
-
-    def _toggle_seguro_field(self):
-        """Mostra/oculta campo de seguro baseado no estatuto"""
-        estatuto = self.estatuto_var.get()
-        if estatuto == "FREELANCER":
-            self.seguro_frame.grid(row=13, column=0, sticky="ew", pady=(0, 18))
-        else:
-            self.seguro_frame.grid_forget()
-
-    def _open_website(self):
-        """Abre o website no browser padrão"""
-        website = self.website_entry.get().strip()
-        if website:
-            if not website.startswith(('http://', 'https://')):
-                website = 'https://' + website
-            webbrowser.open(website)
-        else:
-            messagebox.showerror("Erro", "Nenhum website para abrir")
-
-    def carregar_fornecedor(self):
-        """Carrega dados do fornecedor para edição"""
-        self.fornecedor = self.manager.buscar_por_id(self.fornecedor_id)
-        if not self.fornecedor:
-            messagebox.showerror("Erro", "Fornecedor não encontrado!")
-            self.voltar()
-            return
-
-        # Atualizar título
-        self.title_label.configure(text=f"Editar Fornecedor {self.fornecedor.numero}")
-
-        f = self.fornecedor
-
-        # Nome
-        self.nome_entry.insert(0, f.nome)
-
-        # Estatuto
-        if f.estatuto:
-            self.estatuto_var.set(f.estatuto.value)
-
-        # Área
-        if f.area:
-            self.area_entry.insert(0, f.area)
-
-        # Função
-        if f.funcao:
-            self.funcao_entry.insert(0, f.funcao)
-
-        # Classificação
-        if f.classificacao:
-            self.classificacao_var.set(str(f.classificacao))
-
-        # NIF
-        if f.nif:
-            self.nif_entry.insert(0, f.nif)
-
-        # IBAN
-        if f.iban:
-            self.iban_entry.insert(0, f.iban)
-
-        # Morada
-        if f.morada:
-            self.morada_entry.insert("1.0", f.morada)
-
-        # Contacto
-        if f.contacto:
-            self.contacto_entry.insert(0, f.contacto)
-
-        # Email
-        if f.email:
-            self.email_entry.insert(0, f.email)
-
-        # Website
-        if f.website:
-            self.website_entry.insert(0, f.website)
-
-        # Validade seguro
-        if f.validade_seguro_trabalho:
-            if hasattr(f.validade_seguro_trabalho, 'date'):
-                self.seguro_picker.set_date(f.validade_seguro_trabalho.date())
+            fornecedor = self.manager.buscar_por_id(fornecedor_id)
+            if fornecedor:
+                initial_data = {
+                    'nome': fornecedor.nome,
+                    'estatuto': fornecedor.estatuto.value if fornecedor.estatuto else 'FREELANCER',
+                    'area': fornecedor.area or '',
+                    'funcao': fornecedor.funcao or '',
+                    'classificacao': str(fornecedor.classificacao or 0),
+                    'nif': fornecedor.nif or '',
+                    'iban': fornecedor.iban or '',
+                    'morada': fornecedor.morada or '',
+                    'contacto': fornecedor.contacto or '',
+                    'email': fornecedor.email or '',
+                    'website': fornecedor.website or '',
+                    'nota': fornecedor.nota or '',
+                }
             else:
-                self.seguro_picker.set_date(f.validade_seguro_trabalho)
+                messagebox.showerror("Erro", "Fornecedor não encontrado!")
+                kwargs['on_cancel_callback'] = self._voltar_para_lista
 
-        # Nota
-        if f.nota:
-            self.nota_entry.insert("1.0", f.nota)
+        # Initialize BaseForm
+        super().__init__(
+            parent,
+            db_session=db_session,
+            initial_data=initial_data,
+            on_cancel_callback=self._voltar_para_lista,
+            **kwargs
+        )
 
-        # Update seguro visibility
-        self._toggle_seguro_field()
+    # ===== MÉTODOS ABSTRATOS OBRIGATÓRIOS =====
 
-    def guardar(self):
-        """Guarda o fornecedor"""
+    def get_form_title(self) -> str:
+        """Return form title"""
+        if self.fornecedor_id:
+            return "Editar Fornecedor"
+        return "Novo Fornecedor"
+
+    def get_form_icon(self):
+        """Return form icon"""
+        return get_icon(FORNECEDORES, size=(28, 28))
+
+    def get_fields_config(self) -> List[Dict[str, Any]]:
+        """
+        Return field configurations for fornecedor form
+
+        Campos:
+        - nome (required)
+        - estatuto (dropdown: EMPRESA, FREELANCER, ESTADO)
+        - area
+        - funcao
+        - classificacao (0-5 stars)
+        - nif (validator)
+        - iban
+        - morada (textarea)
+        - contacto
+        - email (validator)
+        - website
+        - nota (textarea)
+        """
+        return [
+            # Nome (required)
+            {
+                "key": "nome",
+                "label": "Nome",
+                "type": "text",
+                "required": True,
+                "placeholder": "Nome do fornecedor...",
+                "width": 500
+            },
+
+            # Estatuto (dropdown com enum)
+            {
+                "key": "estatuto",
+                "label": "Estatuto",
+                "type": "dropdown",
+                "values": ["EMPRESA", "FREELANCER", "ESTADO"],
+                "default": "FREELANCER",
+                "required": True,
+                "width": 200
+            },
+
+            # Área
+            {
+                "key": "area",
+                "label": "Área",
+                "type": "text",
+                "placeholder": "Ex: Produção, Som...",
+                "width": 300
+            },
+
+            # Função
+            {
+                "key": "funcao",
+                "label": "Função",
+                "type": "text",
+                "placeholder": "Ex: Editor, Realizador...",
+                "width": 300
+            },
+
+            # Classificação (0-5 stars)
+            {
+                "key": "classificacao",
+                "label": "Classificação (0-5 estrelas)",
+                "type": "number",
+                "default": "0",
+                "placeholder": "0-5",
+                "validator": self._validate_classificacao,
+                "width": 150
+            },
+
+            # NIF (com validador)
+            {
+                "key": "nif",
+                "label": "NIF / Tax ID",
+                "type": "text",
+                "placeholder": "Número fiscal...",
+                "validator": self._validate_nif,
+                "width": 300
+            },
+
+            # IBAN
+            {
+                "key": "iban",
+                "label": "IBAN",
+                "type": "text",
+                "placeholder": "PT50...",
+                "width": 400
+            },
+
+            # Morada (textarea)
+            {
+                "key": "morada",
+                "label": "Morada",
+                "type": "textarea",
+                "placeholder": "Endereço completo...",
+                "width": 500
+            },
+
+            # Contacto
+            {
+                "key": "contacto",
+                "label": "Contacto",
+                "type": "text",
+                "placeholder": "Telefone...",
+                "width": 300
+            },
+
+            # Email (com validador)
+            {
+                "key": "email",
+                "label": "Email",
+                "type": "text",
+                "placeholder": "email@exemplo.pt",
+                "validator": self._validate_email,
+                "width": 400
+            },
+
+            # Website
+            {
+                "key": "website",
+                "label": "Website",
+                "type": "text",
+                "placeholder": "https://exemplo.pt",
+                "width": 400
+            },
+
+            # Nota (textarea)
+            {
+                "key": "nota",
+                "label": "Nota",
+                "type": "textarea",
+                "placeholder": "Observações adicionais...",
+                "width": 500
+            },
+        ]
+
+    def on_save(self, data: Dict[str, Any]) -> bool | str:
+        """
+        Handle save - create or update fornecedor
+
+        Args:
+            data: Dict com todos os valores do form
+
+        Returns:
+            True se sucesso, ou mensagem de erro
+        """
         try:
-            # Get values
-            nome = self.nome_entry.get().strip()
-            estatuto_str = self.estatuto_var.get()
-            area = self.area_entry.get().strip()
-            funcao = self.funcao_entry.get().strip()
-            classificacao = int(self.classificacao_var.get())
-            nif = self.nif_entry.get().strip()
-            iban = self.iban_entry.get().strip()
-            morada = self.morada_entry.get("1.0", "end-1c").strip()
-            contacto = self.contacto_entry.get().strip()
-            email = self.email_entry.get().strip()
-            website = self.website_entry.get().strip()
-            nota = self.nota_entry.get("1.0", "end-1c").strip()
+            # Prepare data (convert empty strings to None)
+            nome = data.get('nome', '').strip()
+            estatuto_str = data.get('estatuto', 'FREELANCER').strip()
+            area = data.get('area', '').strip() or None
+            funcao = data.get('funcao', '').strip() or None
+            classificacao_str = data.get('classificacao', '0').strip()
+            nif = data.get('nif', '').strip() or None
+            iban = data.get('iban', '').strip() or None
+            morada = data.get('morada', '').strip() or None
+            contacto = data.get('contacto', '').strip() or None
+            email = data.get('email', '').strip() or None
+            website = data.get('website', '').strip() or None
+            nota = data.get('nota', '').strip() or None
 
-            # Validate
+            # Validate nome (BaseForm já valida required, mas double check)
             if not nome:
-                messagebox.showerror("Erro", "Nome é obrigatório")
-                return
+                return "Nome é obrigatório"
 
-            # Parse estatuto
+            # Parse estatuto enum
             try:
                 estatuto = EstatutoFornecedor[estatuto_str]
-            except:
-                messagebox.showerror("Erro", "Estatuto inválido")
-                return
+            except (KeyError, AttributeError):
+                return "Estatuto inválido"
 
-            # Parse seguro date
-            validade_seguro = None
-            if self.seguro_picker.get():
-                seguro_date = self.seguro_picker.get_date()
-                validade_seguro = datetime.combine(seguro_date, datetime.min.time())
+            # Parse classificacao
+            try:
+                classificacao = int(classificacao_str) if classificacao_str else 0
+                if classificacao < 0 or classificacao > 5:
+                    return "Classificação deve estar entre 0 e 5"
+            except ValueError:
+                return "Classificação inválida"
+
+            # Validate NIF if provided
+            if nif and not self._validate_nif(nif):
+                return "NIF inválido"
+
+            # Validate email if provided
+            if email and not self._validate_email(email):
+                return "Email inválido"
 
             # Create or update
             if self.fornecedor_id:
-                # Update
+                # UPDATE
                 success, fornecedor, message = self.manager.atualizar(
                     self.fornecedor_id,
                     nome=nome,
                     estatuto=estatuto,
-                    area=area if area else None,
-                    funcao=funcao if funcao else None,
+                    area=area,
+                    funcao=funcao,
                     classificacao=classificacao if classificacao > 0 else None,
-                    nif=nif if nif else None,
-                    iban=iban if iban else None,
-                    morada=morada if morada else None,
-                    contacto=contacto if contacto else None,
-                    email=email if email else None,
-                    website=website if website else None,
-                    validade_seguro_trabalho=validade_seguro,
-                    nota=nota if nota else None
+                    nif=nif,
+                    iban=iban,
+                    morada=morada,
+                    contacto=contacto,
+                    email=email,
+                    website=website,
+                    validade_seguro_trabalho=None,  # Campo removido nesta migração
+                    nota=nota
                 )
 
-                if success:
-                    self.voltar()
-                else:
-                    messagebox.showerror("Erro", message)
+                if not success:
+                    return message or "Erro ao atualizar fornecedor"
+
             else:
-                # Create
+                # CREATE
                 success, fornecedor, message = self.manager.criar(
                     nome=nome,
                     estatuto=estatuto,
-                    area=area if area else None,
-                    funcao=funcao if funcao else None,
+                    area=area,
+                    funcao=funcao,
                     classificacao=classificacao if classificacao > 0 else None,
-                    nif=nif if nif else None,
-                    iban=iban if iban else None,
-                    morada=morada if morada else None,
-                    contacto=contacto if contacto else None,
-                    email=email if email else None,
-                    website=website if website else None,
-                    validade_seguro_trabalho=validade_seguro,
-                    nota=nota if nota else None
+                    nif=nif,
+                    iban=iban,
+                    morada=morada,
+                    contacto=contacto,
+                    email=email,
+                    website=website,
+                    validade_seguro_trabalho=None,  # Campo removido nesta migração
+                    nota=nota
                 )
 
-                if success:
-                    self.voltar()
-                else:
-                    messagebox.showerror("Erro", message)
+                if not success:
+                    return message or "Erro ao criar fornecedor"
+
+            # Success!
+            return True
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
+            return f"Erro inesperado: {str(e)}"
 
-    def voltar(self):
-        """Volta para a lista de fornecedores"""
+    # ===== VALIDADORES =====
+
+    def _validate_nif(self, nif: str) -> bool:
+        """
+        Valida NIF (Número de Identificação Fiscal)
+
+        Regras simples:
+        - Deve ter entre 9 e 20 dígitos/caracteres
+        - Aceita números, letras e alguns caracteres especiais
+
+        Args:
+            nif: NIF a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not nif:
+            return True  # NIF é opcional
+
+        # Remove espaços
+        nif_clean = nif.strip()
+
+        # Deve ter pelo menos 9 caracteres
+        if len(nif_clean) < 9:
+            return False
+
+        # Não deve ter mais de 20 caracteres
+        if len(nif_clean) > 20:
+            return False
+
+        # Aceita alfanuméricos e alguns caracteres especiais (-, /, espaço)
+        if not re.match(r'^[A-Za-z0-9\s\-/]+$', nif_clean):
+            return False
+
+        return True
+
+    def _validate_email(self, email: str) -> bool:
+        """
+        Valida email
+
+        Regras simples:
+        - Formato básico: algo@algo.algo
+
+        Args:
+            email: Email a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not email:
+            return True  # Email é opcional
+
+        # Remove espaços
+        email_clean = email.strip()
+
+        # Regex simples para validar email
+        # Formato: local@domain.tld
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        return bool(re.match(pattern, email_clean))
+
+    def _validate_classificacao(self, classificacao: str) -> bool:
+        """
+        Valida classificação (0-5 estrelas)
+
+        Args:
+            classificacao: Classificação a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not classificacao:
+            return True  # Pode ser vazio (default 0)
+
+        try:
+            valor = int(classificacao)
+            return 0 <= valor <= 5
+        except ValueError:
+            return False
+
+    # ===== CALLBACKS =====
+
+    def after_save_callback(self):
+        """
+        Executado após save bem-sucedido
+
+        Navega de volta para lista de fornecedores
+        """
+        self._voltar_para_lista()
+
+    def after_cancel_callback(self):
+        """
+        Executado após cancelar
+
+        Confirma e navega de volta para lista de fornecedores
+        """
+        resposta = messagebox.askyesno(
+            "Cancelar",
+            "Tem certeza que deseja cancelar?\n\nTodas as alterações serão perdidas."
+        )
+
+        if resposta:
+            self._voltar_para_lista()
+
+    # ===== HELPERS =====
+
+    def _voltar_para_lista(self):
+        """Navega de volta para lista de fornecedores"""
         main_window = self.master.master
         if hasattr(main_window, 'show_screen'):
             main_window.show_screen("fornecedores")
