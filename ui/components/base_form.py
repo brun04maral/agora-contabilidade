@@ -8,6 +8,21 @@ GUIA RÁPIDO PARA DEVS:
 BaseForm é um template genérico para criar formulários CRUD consistentes.
 Similar ao BaseScreen, usa o padrão Template Method com slots personalizáveis.
 
+SUPORTE LAYOUTS:
+----------------
+- 1 coluna (default): Forms simples, campos empilhados verticalmente
+- 2 colunas: Forms complexos, melhor aproveitamento de espaço horizontal
+
+Uso:
+    # 1 coluna (default)
+    super().__init__(parent, db_session)
+
+    # 2 colunas
+    super().__init__(parent, db_session, columns=2)
+
+Campos podem ter colspan=2 para ocupar largura total (só em layout 2 colunas):
+    {"key": "obs", "type": "textarea", "colspan": 2}
+
 MÉTODOS ABSTRATOS OBRIGATÓRIOS (4):
 -----------------------------------
 1. get_form_title() → str
@@ -30,6 +45,7 @@ MÉTODOS ABSTRATOS OBRIGATÓRIOS (4):
          "width": 300,                  # Largura do widget (opcional)
          "validator": func,             # Função de validação custom (opcional)
          "readonly": False,             # Campo read-only? (opcional, default=False)
+         "colspan": 2,                  # Ocupa 2 colunas (só em layout 2 colunas, opcional, default=1)
      }
 
 4. on_save(data: dict) → bool|str
@@ -108,6 +124,7 @@ class BaseForm(ctk.CTkFrame, ABC):
     def __init__(self,
                  parent,
                  db_session=None,
+                 columns: int = 1,
                  initial_data: Optional[Dict[str, Any]] = None,
                  on_cancel_callback: Optional[Callable] = None,
                  **kwargs):
@@ -117,14 +134,20 @@ class BaseForm(ctk.CTkFrame, ABC):
         Args:
             parent: Parent widget
             db_session: SQLAlchemy database session (opcional)
+            columns: Número de colunas no layout (1 ou 2, default=1)
             initial_data: Dados iniciais para preencher form (modo edit)
             on_cancel_callback: Callback ao cancelar
         """
         super().__init__(parent, **kwargs)
 
         self.db_session = db_session
+        self.num_columns = columns  # Store layout configuration (1 or 2)
         self.initial_data = initial_data or {}
         self._on_cancel_callback = on_cancel_callback
+
+        # Validate columns parameter
+        if self.num_columns not in [1, 2]:
+            raise ValueError(f"columns must be 1 or 2, got {self.num_columns}")
 
         # Storage para widgets de campos
         self.field_widgets = {}  # {"key": widget}
@@ -245,11 +268,64 @@ class BaseForm(ctk.CTkFrame, ABC):
         title_label.pack(side="left")
 
     def fields_slot(self, parent):
-        """Create form fields (default: creates fields from config)"""
+        """
+        Create form fields with flexible layout (1 or 2 columns)
+
+        Layout 1 coluna: campos empilhados verticalmente (pack)
+        Layout 2 colunas: campos em grid 2x com suporte a colspan
+        """
         fields_config = self.get_fields_config()
 
-        for field_config in fields_config:
-            self._create_field(parent, field_config)
+        if self.num_columns == 1:
+            # ========== LAYOUT 1 COLUNA (PACK - ATUAL) ==========
+            # Mantém compatibilidade total com forms existentes
+            for field_config in fields_config:
+                field_frame = self._create_field(parent, field_config)
+                field_frame.pack(fill="x", pady=(0, 15))
+
+        elif self.num_columns == 2:
+            # ========== LAYOUT 2 COLUNAS (GRID - NOVO) ==========
+            # Container com grid para layout 2 colunas
+            grid_frame = ctk.CTkFrame(parent, fg_color="transparent")
+            grid_frame.pack(fill="both", expand=True, padx=0, pady=0)
+
+            # Configurar 2 colunas com peso igual
+            grid_frame.grid_columnconfigure(0, weight=1)
+            grid_frame.grid_columnconfigure(1, weight=1)
+
+            # Posicionar campos em grid
+            row = 0
+            col = 0
+
+            for field_config in fields_config:
+                # Obter colspan (default=1)
+                colspan = field_config.get("colspan", 1)
+
+                # Criar campo
+                field_frame = self._create_field(grid_frame, field_config)
+
+                # Posicionar em grid
+                field_frame.grid(
+                    row=row,
+                    column=col,
+                    columnspan=colspan,
+                    sticky="ew",
+                    padx=10,
+                    pady=(0, 15)
+                )
+
+                # Calcular próxima posição
+                if colspan == 2:
+                    # Campo full-width: próximo campo na linha seguinte, coluna 0
+                    row += 1
+                    col = 0
+                else:
+                    # Campo normal (1 coluna): avançar coluna
+                    col += 1
+                    if col >= 2:
+                        # Completou linha: próxima linha, coluna 0
+                        row += 1
+                        col = 0
 
     def footer_slot(self, parent):
         """Create form footer (default: Cancel + Save buttons)"""
@@ -291,8 +367,17 @@ class BaseForm(ctk.CTkFrame, ABC):
 
     # ===== FIELD CREATION (INTERNAL) =====
 
-    def _create_field(self, parent, config: Dict[str, Any]):
-        """Create a single field based on config"""
+    def _create_field(self, parent, config: Dict[str, Any]) -> ctk.CTkFrame:
+        """
+        Create a single field based on config
+
+        Args:
+            parent: Parent container
+            config: Field configuration dict
+
+        Returns:
+            Field frame (NOT packed/gridded - positioning done by caller)
+        """
         field_type = config.get("type")
         key = config.get("key")
         label = config.get("label", key)
@@ -300,9 +385,8 @@ class BaseForm(ctk.CTkFrame, ABC):
         width = config.get("width", 400)
         readonly = config.get("readonly", False)
 
-        # Field container
+        # Field container (NOT packed - positioning done by fields_slot)
         field_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        field_frame.pack(fill="x", pady=(0, 15))
 
         # Label with required indicator
         label_text = f"{label}{'*' if required else ''}"
@@ -405,6 +489,9 @@ class BaseForm(ctk.CTkFrame, ABC):
         default = config.get("default")
         if default is not None and field_type not in ["dropdown", "checkbox"]:
             self._set_field_value(key, default)
+
+        # Return field frame (positioning done by caller)
+        return field_frame
 
     def _validate_number(self, value):
         """Validate that input is a valid number"""
