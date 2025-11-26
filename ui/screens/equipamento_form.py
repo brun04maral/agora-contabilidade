@@ -1,19 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-Formulário de Equipamento - Screen dedicado para criar/editar equipamento
+EquipamentoFormScreen - Formulário para criar/editar equipamento
+
+Migrado para BaseForm framework (SPRINT 4)
+Segue padrão estabelecido em ui/components/base_form.py
 """
+
 import customtkinter as ctk
-from typing import Optional
+from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from tkinter import messagebox
 
+from ui.components.base_form import BaseForm
 from logic.equipamento import EquipamentoManager
-from ui.components.date_picker_dropdown import DatePickerDropdown
+from assets.resources import get_icon, EQUIPAMENTO
 
 
-class EquipamentoFormScreen(ctk.CTkFrame):
+class EquipamentoFormScreen(BaseForm):
     """
-    Screen dedicado para criar/editar equipamento
+    Formulário para criar/editar equipamento
+
+    Navegação via MainWindow.show_screen("equipamento_form", equipamento_id=None/ID)
+
+    Modos:
+    - CREATE: equipamento_id=None
+    - EDIT: equipamento_id=<id>
     """
 
     def __init__(self, parent, db_session: Session, equipamento_id: Optional[int] = None, **kwargs):
@@ -23,423 +34,374 @@ class EquipamentoFormScreen(ctk.CTkFrame):
         Args:
             parent: Parent widget
             db_session: SQLAlchemy database session
-            equipamento_id: ID do equipamento para editar (None = criar novo)
+            equipamento_id: ID do equipamento (None para criar, ID para editar)
         """
-        super().__init__(parent, **kwargs)
-
         self.db_session = db_session
-        self.manager = EquipamentoManager(db_session)
         self.equipamento_id = equipamento_id
-        self.equipamento = None
+        self.manager = EquipamentoManager(db_session)
+        self.is_create = (equipamento_id is None)
 
-        # Load equipamento if editing
+        # Obter tipos ANTES de chamar super().__init__()
+        # Remove "Todos" da lista (usado apenas para filtros, não para criar equipamento)
+        tipos_raw = self.manager.obter_tipos()
+        self.tipos_disponiveis = [t for t in tipos_raw if t != "Todos"]
+
+        # Se lista vazia, adiciona opção default
+        if not self.tipos_disponiveis:
+            self.tipos_disponiveis = ["Vídeo", "Áudio", "Iluminação", "Outro"]
+
+        # Load initial data if editing
+        initial_data = {}
         if equipamento_id:
-            self.equipamento = self.manager.obter_equipamento(equipamento_id)
-            if not self.equipamento:
-                messagebox.showerror("Erro", "Equipamento não encontrado")
-                self.voltar()
-                return
+            equipamento = self.manager.obter_equipamento(equipamento_id)
+            if equipamento:
+                initial_data = {
+                    'produto': equipamento.produto,
+                    'tipo': equipamento.tipo or '',
+                    'valor_compra': str(float(equipamento.valor_compra)) if equipamento.valor_compra else '0',
+                    'preco_aluguer': str(float(equipamento.preco_aluguer)) if equipamento.preco_aluguer else '',
+                    'quantidade': str(equipamento.quantidade) if equipamento.quantidade else '1',
+                    'estado': equipamento.estado or '',
+                    'fornecedor': equipamento.fornecedor or '',
+                    'data_compra': equipamento.data_compra,  # date object ou None
+                    'garantia_ate': None,  # Campo novo, não existe no legacy
+                    'notas': equipamento.nota or '',
+                }
+            else:
+                messagebox.showerror("Erro", "Equipamento não encontrado!")
+                kwargs['on_cancel_callback'] = self._voltar_para_lista
 
-        # Configure
-        self.configure(fg_color="transparent")
-
-        # Layout with grid for proper scroll support
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # Create widgets
-        self.create_widgets()
-
-        # Load data if editing
-        if self.equipamento:
-            self.load_data()
-
-    def create_widgets(self):
-        """Create screen widgets"""
-
-        # Main scrollable container
-        self.scroll_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll_frame.grid(row=0, column=0, sticky="nsew", padx=30, pady=30)
-        self.scroll_frame.grid_columnconfigure(0, weight=1)
-
-        # Header
-        header_frame = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 20))
-
-        # Back button
-        back_btn = ctk.CTkButton(
-            header_frame,
-            text="< Voltar",
-            command=self.voltar,
-            width=100,
-            height=35,
-            fg_color="gray",
-            hover_color="darkgray"
+        # Initialize BaseForm
+        super().__init__(
+            parent,
+            db_session=db_session,
+            initial_data=initial_data,
+            on_cancel_callback=self._voltar_para_lista,
+            **kwargs
         )
-        back_btn.pack(side="left")
 
-        # Title
-        if self.equipamento:
-            title_text = f"Editar Equipamento #{self.equipamento.numero}"
-        else:
-            title_text = "Novo Equipamento"
+    # ===== MÉTODOS ABSTRATOS OBRIGATÓRIOS =====
 
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text=title_text,
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        title_label.pack(side="left", padx=20)
+    def get_form_title(self) -> str:
+        """Return form title"""
+        if self.equipamento_id:
+            return "Editar Equipamento"
+        return "Novo Equipamento"
 
-        # Form container
-        form_frame = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
-        form_frame.grid(row=1, column=0, sticky="ew")
-        form_frame.grid_columnconfigure(0, weight=1)
+    def get_form_icon(self):
+        """Return form icon"""
+        return get_icon(EQUIPAMENTO, size=(28, 28))
 
-        current_row = 0
+    def get_fields_config(self) -> List[Dict[str, Any]]:
+        """
+        Return field configurations for equipamento form
 
-        # ID (auto-generated or display)
-        if not self.equipamento:
-            proximo = self.manager.proximo_numero()
-            id_label = ctk.CTkLabel(
-                form_frame,
-                text=f"ID: {proximo}",
-                font=ctk.CTkFont(size=14, weight="bold")
-            )
-            id_label.grid(row=current_row, column=0, sticky="w", pady=(0, 15))
-            self.numero_value = proximo
-        else:
-            id_label = ctk.CTkLabel(
-                form_frame,
-                text=f"ID: {self.equipamento.numero}",
-                font=ctk.CTkFont(size=14, weight="bold")
-            )
-            id_label.grid(row=current_row, column=0, sticky="w", pady=(0, 15))
-            self.numero_value = self.equipamento.numero
-        current_row += 1
+        Campos:
+        - produto (required)
+        - tipo (dropdown dinâmico, required)
+        - valor_compra (number, required, min=0)
+        - preco_aluguer (number, min=0)
+        - quantidade (number, required, min=1, default=1)
+        - estado
+        - fornecedor
+        - data_compra (date)
+        - garantia_ate (date)
+        - notas (textarea)
+        """
+        return [
+            # Produto (required)
+            {
+                "key": "produto",
+                "label": "Produto",
+                "type": "text",
+                "required": True,
+                "placeholder": "Nome do equipamento...",
+                "width": 500
+            },
 
-        # Produto *
-        ctk.CTkLabel(
-            form_frame,
-            text="Produto *",
-            font=ctk.CTkFont(size=13, weight="bold")
-        ).grid(row=current_row, column=0, sticky="w", pady=(10, 5))
-        current_row += 1
+            # Tipo (dropdown dinâmico, required)
+            {
+                "key": "tipo",
+                "label": "Tipo",
+                "type": "dropdown",
+                "values": self.tipos_disponiveis,
+                "required": True,
+                "width": 300
+            },
 
-        self.produto_entry = ctk.CTkEntry(form_frame, height=35)
-        self.produto_entry.grid(row=current_row, column=0, sticky="ew", pady=(0, 10))
-        current_row += 1
+            # Valor Compra (required, min=0)
+            {
+                "key": "valor_compra",
+                "label": "Valor Compra (€)",
+                "type": "number",
+                "required": True,
+                "placeholder": "0.00",
+                "validator": self._validate_valor_compra,
+                "width": 250
+            },
 
-        # Tipo e Label (2 columns)
-        tipo_label_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        tipo_label_frame.grid(row=current_row, column=0, sticky="ew", pady=(10, 10))
-        tipo_label_frame.grid_columnconfigure((0, 1), weight=1)
-        current_row += 1
+            # Preço Aluguer (opcional, min=0)
+            {
+                "key": "preco_aluguer",
+                "label": "Preço Aluguer/dia (€)",
+                "type": "number",
+                "placeholder": "0.00",
+                "validator": self._validate_preco_aluguer,
+                "width": 250
+            },
 
-        # Tipo
-        tipo_col = ctk.CTkFrame(tipo_label_frame, fg_color="transparent")
-        tipo_col.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(tipo_col, text="Tipo", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.tipo_entry = ctk.CTkEntry(tipo_col, placeholder_text="Ex: Vídeo, Áudio, Iluminação", height=35)
-        self.tipo_entry.pack(fill="x")
+            # Quantidade (required, min=1, default=1)
+            {
+                "key": "quantidade",
+                "label": "Quantidade",
+                "type": "number",
+                "required": True,
+                "default": "1",
+                "placeholder": "1",
+                "validator": self._validate_quantidade,
+                "width": 150
+            },
 
-        # Label
-        label_col = ctk.CTkFrame(tipo_label_frame, fg_color="transparent")
-        label_col.grid(row=0, column=1, sticky="ew")
-        ctk.CTkLabel(label_col, text="Label/Categoria", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.label_entry = ctk.CTkEntry(label_col, placeholder_text="Categoria", height=35)
-        self.label_entry.pack(fill="x")
+            # Estado
+            {
+                "key": "estado",
+                "label": "Estado",
+                "type": "text",
+                "placeholder": "Ex: Novo, Usado, Avariado...",
+                "width": 300
+            },
 
-        # Descrição
-        ctk.CTkLabel(
-            form_frame,
-            text="Descrição",
-            font=ctk.CTkFont(size=13)
-        ).grid(row=current_row, column=0, sticky="w", pady=(10, 5))
-        current_row += 1
+            # Fornecedor
+            {
+                "key": "fornecedor",
+                "label": "Fornecedor",
+                "type": "text",
+                "placeholder": "Nome do fornecedor...",
+                "width": 400
+            },
 
-        self.descricao_entry = ctk.CTkTextbox(form_frame, height=60)
-        self.descricao_entry.grid(row=current_row, column=0, sticky="ew", pady=(0, 10))
-        current_row += 1
+            # Data Compra
+            {
+                "key": "data_compra",
+                "label": "Data Compra",
+                "type": "date",
+            },
 
-        # Valores (2 columns)
-        valores_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        valores_frame.grid(row=current_row, column=0, sticky="ew", pady=(10, 10))
-        valores_frame.grid_columnconfigure((0, 1), weight=1)
-        current_row += 1
+            # Garantia até
+            {
+                "key": "garantia_ate",
+                "label": "Garantia até",
+                "type": "date",
+            },
 
-        # Valor compra
-        left_frame = ctk.CTkFrame(valores_frame, fg_color="transparent")
-        left_frame.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(left_frame, text="Valor Compra (€)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.valor_compra_entry = ctk.CTkEntry(left_frame, placeholder_text="0.00", height=35)
-        self.valor_compra_entry.pack(fill="x")
+            # Notas (textarea)
+            {
+                "key": "notas",
+                "label": "Notas/Observações",
+                "type": "textarea",
+                "placeholder": "Observações adicionais sobre o equipamento...",
+                "width": 500
+            },
+        ]
 
-        # Preço aluguer
-        right_frame = ctk.CTkFrame(valores_frame, fg_color="transparent")
-        right_frame.grid(row=0, column=1, sticky="ew")
-        ctk.CTkLabel(right_frame, text="Preço Aluguer/dia (€)", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.preco_aluguer_entry = ctk.CTkEntry(right_frame, placeholder_text="0.00", height=35)
-        self.preco_aluguer_entry.pack(fill="x")
+    def on_save(self, data: Dict[str, Any]) -> bool | str:
+        """
+        Handle save - create or update equipamento
 
-        # Quantidade e Estado (2 columns)
-        detalhes_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        detalhes_frame.grid(row=current_row, column=0, sticky="ew", pady=(10, 10))
-        detalhes_frame.grid_columnconfigure((0, 1), weight=1)
-        current_row += 1
+        Args:
+            data: Dict com todos os valores do form
 
-        # Quantidade
-        qtd_frame = ctk.CTkFrame(detalhes_frame, fg_color="transparent")
-        qtd_frame.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(qtd_frame, text="Quantidade", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.quantidade_entry = ctk.CTkEntry(qtd_frame, placeholder_text="1", height=35)
-        self.quantidade_entry.pack(fill="x")
-
-        # Estado
-        estado_frame = ctk.CTkFrame(detalhes_frame, fg_color="transparent")
-        estado_frame.grid(row=0, column=1, sticky="ew")
-        ctk.CTkLabel(estado_frame, text="Estado", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.estado_entry = ctk.CTkEntry(estado_frame, placeholder_text="Novo, Usado, etc", height=35)
-        self.estado_entry.pack(fill="x")
-
-        # Fornecedor e Data de Compra (2 columns)
-        fornecedor_data_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        fornecedor_data_frame.grid(row=current_row, column=0, sticky="ew", pady=(10, 10))
-        fornecedor_data_frame.grid_columnconfigure((0, 1), weight=1)
-        current_row += 1
-
-        # Fornecedor
-        fornecedor_col = ctk.CTkFrame(fornecedor_data_frame, fg_color="transparent")
-        fornecedor_col.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(fornecedor_col, text="Fornecedor", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.fornecedor_entry = ctk.CTkEntry(fornecedor_col, height=35)
-        self.fornecedor_entry.pack(fill="x")
-
-        # Data de Compra
-        data_col = ctk.CTkFrame(fornecedor_data_frame, fg_color="transparent")
-        data_col.grid(row=0, column=1, sticky="ew")
-        ctk.CTkLabel(data_col, text="Data Compra", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.data_compra_picker = DatePickerDropdown(data_col, placeholder="Selecionar data de compra...")
-        self.data_compra_picker.pack(fill="x")
-
-        # Especificações técnicas (3 columns)
-        specs_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        specs_frame.grid(row=current_row, column=0, sticky="ew", pady=(10, 10))
-        specs_frame.grid_columnconfigure((0, 1, 2), weight=1)
-        current_row += 1
-
-        # Número de Série
-        serie_col = ctk.CTkFrame(specs_frame, fg_color="transparent")
-        serie_col.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(serie_col, text="Nº Série", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.numero_serie_entry = ctk.CTkEntry(serie_col, height=35)
-        self.numero_serie_entry.pack(fill="x")
-
-        # MAC Address
-        mac_col = ctk.CTkFrame(specs_frame, fg_color="transparent")
-        mac_col.grid(row=0, column=1, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(mac_col, text="MAC Address", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.mac_address_entry = ctk.CTkEntry(mac_col, height=35)
-        self.mac_address_entry.pack(fill="x")
-
-        # Referência
-        ref_col = ctk.CTkFrame(specs_frame, fg_color="transparent")
-        ref_col.grid(row=0, column=2, sticky="ew")
-        ctk.CTkLabel(ref_col, text="Referência", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.referencia_entry = ctk.CTkEntry(ref_col, height=35)
-        self.referencia_entry.pack(fill="x")
-
-        # Tamanho, Localização, Uso Pessoal (3 columns)
-        outros_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        outros_frame.grid(row=current_row, column=0, sticky="ew", pady=(10, 10))
-        outros_frame.grid_columnconfigure((0, 1, 2), weight=1)
-        current_row += 1
-
-        # Tamanho
-        tamanho_col = ctk.CTkFrame(outros_frame, fg_color="transparent")
-        tamanho_col.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(tamanho_col, text="Tamanho", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.tamanho_entry = ctk.CTkEntry(tamanho_col, height=35)
-        self.tamanho_entry.pack(fill="x")
-
-        # Localização
-        loc_col = ctk.CTkFrame(outros_frame, fg_color="transparent")
-        loc_col.grid(row=0, column=1, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(loc_col, text="Localização", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.localizacao_entry = ctk.CTkEntry(loc_col, height=35)
-        self.localizacao_entry.pack(fill="x")
-
-        # Uso Pessoal
-        uso_col = ctk.CTkFrame(outros_frame, fg_color="transparent")
-        uso_col.grid(row=0, column=2, sticky="ew")
-        ctk.CTkLabel(uso_col, text="Uso Pessoal", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.uso_pessoal_entry = ctk.CTkEntry(uso_col, placeholder_text="BA, RR, Empresa", height=35)
-        self.uso_pessoal_entry.pack(fill="x")
-
-        # URLs (Fatura e Foto)
-        urls_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        urls_frame.grid(row=current_row, column=0, sticky="ew", pady=(10, 10))
-        urls_frame.grid_columnconfigure((0, 1), weight=1)
-        current_row += 1
-
-        # Fatura URL
-        fatura_col = ctk.CTkFrame(urls_frame, fg_color="transparent")
-        fatura_col.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ctk.CTkLabel(fatura_col, text="URL Fatura", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.fatura_url_entry = ctk.CTkEntry(fatura_col, height=35)
-        self.fatura_url_entry.pack(fill="x")
-
-        # Foto URL
-        foto_col = ctk.CTkFrame(urls_frame, fg_color="transparent")
-        foto_col.grid(row=0, column=1, sticky="ew")
-        ctk.CTkLabel(foto_col, text="URL Foto", font=ctk.CTkFont(size=13)).pack(anchor="w", pady=(0, 5))
-        self.foto_url_entry = ctk.CTkEntry(foto_col, height=35)
-        self.foto_url_entry.pack(fill="x")
-
-        # Nota
-        ctk.CTkLabel(
-            form_frame,
-            text="Nota",
-            font=ctk.CTkFont(size=13)
-        ).grid(row=current_row, column=0, sticky="w", pady=(10, 5))
-        current_row += 1
-
-        self.nota_entry = ctk.CTkTextbox(form_frame, height=60)
-        self.nota_entry.grid(row=current_row, column=0, sticky="ew", pady=(0, 10))
-        current_row += 1
-
-        # Buttons
-        button_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        button_frame.grid(row=current_row, column=0, sticky="ew", pady=(20, 0))
-
-        cancel_btn = ctk.CTkButton(
-            button_frame,
-            text="Cancelar",
-            command=self.voltar,
-            width=140,
-            height=40,
-            fg_color="gray",
-            hover_color="darkgray"
-        )
-        cancel_btn.pack(side="left", padx=(0, 10))
-
-        save_btn = ctk.CTkButton(
-            button_frame,
-            text="Guardar",
-            command=self.guardar,
-            width=140,
-            height=40,
-            fg_color=("#2196F3", "#1565C0"),
-            hover_color=("#1976D2", "#0D47A1")
-        )
-        save_btn.pack(side="right")
-
-    def load_data(self):
-        """Load equipamento data into form"""
-        if not self.equipamento:
-            return
-
-        # Identificação
-        self.produto_entry.insert(0, self.equipamento.produto or "")
-        self.tipo_entry.insert(0, self.equipamento.tipo or "")
-        self.label_entry.insert(0, self.equipamento.label or "")
-
-        if self.equipamento.descricao:
-            self.descricao_entry.insert("1.0", self.equipamento.descricao)
-
-        # Valores
-        self.valor_compra_entry.insert(0, str(float(self.equipamento.valor_compra or 0)))
-        self.preco_aluguer_entry.insert(0, str(float(self.equipamento.preco_aluguer or 0)))
-
-        # Quantidade e Estado
-        self.quantidade_entry.insert(0, str(self.equipamento.quantidade or 1))
-        self.estado_entry.insert(0, self.equipamento.estado or "")
-
-        # Fornecedor e Data
-        self.fornecedor_entry.insert(0, self.equipamento.fornecedor or "")
-        if self.equipamento.data_compra:
-            self.data_compra_picker.set_date(self.equipamento.data_compra)
-
-        # Especificações técnicas
-        self.numero_serie_entry.insert(0, self.equipamento.numero_serie or "")
-        self.mac_address_entry.insert(0, self.equipamento.mac_address or "")
-        self.referencia_entry.insert(0, self.equipamento.referencia or "")
-
-        # Outros
-        self.tamanho_entry.insert(0, self.equipamento.tamanho or "")
-        self.localizacao_entry.insert(0, self.equipamento.localizacao or "")
-        self.uso_pessoal_entry.insert(0, self.equipamento.uso_pessoal or "")
-
-        # URLs
-        self.fatura_url_entry.insert(0, self.equipamento.fatura_url or "")
-        self.foto_url_entry.insert(0, self.equipamento.foto_url or "")
-
-        # Nota
-        if self.equipamento.nota:
-            self.nota_entry.insert("1.0", self.equipamento.nota)
-
-    def guardar(self):
-        """Save equipamento"""
-        # Validate
-        produto = self.produto_entry.get().strip()
-        if not produto:
-            messagebox.showerror("Erro", "Produto é obrigatório")
-            return
-
-        # Parse valores
+        Returns:
+            True se sucesso, ou mensagem de erro
+        """
         try:
-            valor_compra = float(self.valor_compra_entry.get().strip() or 0)
-            preco_aluguer = float(self.preco_aluguer_entry.get().strip() or 0)
-            quantidade = int(self.quantidade_entry.get().strip() or 1)
+            # Prepare data (convert empty strings to None)
+            produto = data.get('produto', '').strip()
+            tipo = data.get('tipo', '').strip()
+            estado = data.get('estado', '').strip() or None
+            fornecedor = data.get('fornecedor', '').strip() or None
+            notas = data.get('notas', '').strip() or None
+
+            # Validate produto e tipo (BaseForm já valida required, mas double check)
+            if not produto:
+                return "Produto é obrigatório"
+
+            if not tipo:
+                return "Tipo é obrigatório"
+
+            # Parse valores numéricos
+            try:
+                valor_compra_str = data.get('valor_compra', '').strip()
+                if not valor_compra_str:
+                    return "Valor de Compra é obrigatório"
+
+                valor_compra = float(valor_compra_str)
+                if valor_compra < 0:
+                    return "Valor de Compra deve ser >= 0"
+
+            except ValueError:
+                return "Valor de Compra inválido"
+
+            try:
+                preco_aluguer_str = data.get('preco_aluguer', '').strip()
+                if preco_aluguer_str:
+                    preco_aluguer = float(preco_aluguer_str)
+                    if preco_aluguer < 0:
+                        return "Preço de Aluguer deve ser >= 0"
+                else:
+                    preco_aluguer = None
+
+            except ValueError:
+                return "Preço de Aluguer inválido"
+
+            try:
+                quantidade_str = data.get('quantidade', '').strip()
+                if not quantidade_str:
+                    return "Quantidade é obrigatória"
+
+                quantidade = int(quantidade_str)
+                if quantidade < 1:
+                    return "Quantidade deve ser >= 1"
+
+            except ValueError:
+                return "Quantidade inválida (deve ser um número inteiro)"
+
+            # Parse datas (BaseForm já retorna date objects ou None)
+            data_compra = data.get('data_compra')  # date object ou None
+            garantia_ate = data.get('garantia_ate')  # date object ou None
+
+            # Prepare data dict for manager
+            equipamento_data = {
+                "produto": produto,
+                "tipo": tipo,
+                "valor_compra": valor_compra,
+                "preco_aluguer": preco_aluguer,
+                "quantidade": quantidade,
+                "estado": estado,
+                "fornecedor": fornecedor,
+                "data_compra": data_compra,
+                "nota": notas,  # Note: campo no DB é 'nota', não 'notas'
+            }
+
+            # Create or update
+            if self.equipamento_id:
+                # UPDATE
+                sucesso, equipamento, erro = self.manager.atualizar_equipamento(
+                    self.equipamento_id,
+                    **equipamento_data
+                )
+
+                if not sucesso:
+                    return erro or "Erro ao atualizar equipamento"
+
+            else:
+                # CREATE
+                # Obter próximo número disponível
+                proximo_numero = self.manager.proximo_numero()
+
+                sucesso, equipamento, erro = self.manager.criar_equipamento(
+                    numero=proximo_numero,
+                    **equipamento_data
+                )
+
+                if not sucesso:
+                    return erro or "Erro ao criar equipamento"
+
+            # Success!
+            return True
+
+        except Exception as e:
+            return f"Erro inesperado: {str(e)}"
+
+    # ===== VALIDADORES =====
+
+    def _validate_valor_compra(self, valor: str) -> bool:
+        """
+        Valida Valor de Compra
+
+        Args:
+            valor: Valor a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not valor:
+            return False  # Obrigatório
+
+        try:
+            val = float(valor)
+            return val >= 0
         except ValueError:
-            messagebox.showerror("Erro", "Valores numéricos inválidos")
-            return
+            return False
 
-        # Parse data de compra
-        data_compra = None
-        if self.data_compra_picker.get():
-            data_compra = self.data_compra_picker.get_date()
+    def _validate_preco_aluguer(self, valor: str) -> bool:
+        """
+        Valida Preço de Aluguer
 
-        # Prepare data
-        data = {
-            "produto": produto,
-            "tipo": self.tipo_entry.get().strip() or None,
-            "label": self.label_entry.get().strip() or None,
-            "descricao": self.descricao_entry.get("1.0", "end-1c").strip() or None,
-            "valor_compra": valor_compra,
-            "preco_aluguer": preco_aluguer,
-            "quantidade": quantidade,
-            "estado": self.estado_entry.get().strip() or None,
-            "fornecedor": self.fornecedor_entry.get().strip() or None,
-            "data_compra": data_compra,
-            "numero_serie": self.numero_serie_entry.get().strip() or None,
-            "mac_address": self.mac_address_entry.get().strip() or None,
-            "referencia": self.referencia_entry.get().strip() or None,
-            "tamanho": self.tamanho_entry.get().strip() or None,
-            "localizacao": self.localizacao_entry.get().strip() or None,
-            "uso_pessoal": self.uso_pessoal_entry.get().strip() or None,
-            "fatura_url": self.fatura_url_entry.get().strip() or None,
-            "foto_url": self.foto_url_entry.get().strip() or None,
-            "nota": self.nota_entry.get("1.0", "end-1c").strip() or None,
-        }
+        Args:
+            valor: Valor a validar
 
-        # Save
-        if self.equipamento:
-            # Update
-            sucesso, _, erro = self.manager.atualizar_equipamento(self.equipamento.id, **data)
-        else:
-            # Create
-            sucesso, _, erro = self.manager.criar_equipamento(numero=self.numero_value, **data)
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not valor:
+            return True  # Opcional
 
-        if sucesso:
-            self.voltar()
-        else:
-            messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
+        try:
+            val = float(valor)
+            return val >= 0
+        except ValueError:
+            return False
 
-    def voltar(self):
-        """Navigate back to equipamento list"""
+    def _validate_quantidade(self, valor: str) -> bool:
+        """
+        Valida Quantidade
+
+        Args:
+            valor: Valor a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not valor:
+            return False  # Obrigatório
+
+        try:
+            val = int(valor)
+            return val >= 1
+        except ValueError:
+            return False
+
+    # ===== CALLBACKS =====
+
+    def after_save_callback(self):
+        """
+        Executado após save bem-sucedido
+
+        Navega de volta para lista de equipamento
+        """
+        self._voltar_para_lista()
+
+    def after_cancel_callback(self):
+        """
+        Executado após cancelar
+
+        Confirma e navega de volta para lista de equipamento
+        """
+        resposta = messagebox.askyesno(
+            "Cancelar",
+            "Tem certeza que deseja cancelar?\n\nTodas as alterações serão perdidas."
+        )
+
+        if resposta:
+            self._voltar_para_lista()
+
+    # ===== HELPERS =====
+
+    def _voltar_para_lista(self):
+        """Navega de volta para lista de equipamento"""
         main_window = self.master.master
         if hasattr(main_window, 'show_screen'):
             main_window.show_screen("equipamento")
-        elif hasattr(main_window, 'show_equipamento'):
-            main_window.show_equipamento()
+        else:
+            messagebox.showerror("Erro", "Não foi possível navegar de volta")
