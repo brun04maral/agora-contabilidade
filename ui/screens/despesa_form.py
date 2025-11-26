@@ -1,321 +1,345 @@
 # -*- coding: utf-8 -*-
 """
-Tela de Formulário de Despesa - Screen dedicado para criar/editar despesas
-Segue mesmo padrão de ui/screens/projeto_form.py
+DespesaFormScreen - Formulário para criar/editar despesas
+
+Migrado para BaseForm framework (SPRINT 5)
+Segue padrão estabelecido em ui/components/base_form.py
 """
+
 import customtkinter as ctk
+from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
-from logic.despesas import DespesasManager
-from ui.components.date_picker_dropdown import DatePickerDropdown
-from database.models import TipoDespesa, EstadoDespesa
-from typing import Optional
-from datetime import date
 from tkinter import messagebox
 from decimal import Decimal
 
+from ui.components.base_form import BaseForm
+from logic.despesas import DespesasManager
+from assets.resources import get_icon, DESPESAS
+from database.models.despesa import TipoDespesa, EstadoDespesa
 
-class DespesaFormScreen(ctk.CTkFrame):
+
+class DespesaFormScreen(BaseForm):
     """
-    Screen para criar/editar despesas
+    Formulário para criar/editar despesas
 
     Navegação via MainWindow.show_screen("despesa_form", despesa_id=None/ID)
+
+    Modos:
+    - CREATE: despesa_id=None
+    - EDIT: despesa_id=<id>
     """
 
     def __init__(self, parent, db_session: Session, despesa_id: Optional[int] = None, **kwargs):
-        super().__init__(parent, **kwargs)
+        """
+        Initialize despesa form screen
 
+        Args:
+            parent: Parent widget
+            db_session: SQLAlchemy database session
+            despesa_id: ID da despesa (None para criar, ID para editar)
+        """
         self.db_session = db_session
         self.despesa_id = despesa_id
         self.manager = DespesasManager(db_session)
+        self.is_create = (despesa_id is None)
 
-        # Estado
-        self.despesa = None
-        self.fornecedores_map = {}
-        self.projetos_map = {}
+        # Obter listas dinâmicas ANTES de chamar super().__init__()
+        self.fornecedores = self.manager.obter_fornecedores()
+        self.fornecedores_map = {f"{f.numero} - {f.nome}": f.id for f in self.fornecedores}
+        self.fornecedor_options = ["(Nenhum)"] + [f"{f.numero} - {f.nome}" for f in self.fornecedores]
 
-        # Configure
-        self.configure(fg_color="transparent")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        self.projetos = self.manager.obter_projetos()
+        self.projetos_map = {f"{p.numero} - {p.descricao[:30]}": p.id for p in self.projetos}
+        self.projeto_options = ["(Nenhum)"] + [f"{p.numero} - {p.descricao[:30]}" for p in self.projetos]
 
-        # Create widgets
-        self.create_widgets()
-
-        # Load data se edição
+        # Load initial data if editing
+        initial_data = {}
         if despesa_id:
-            self.carregar_despesa()
+            despesa = self.manager.obter_por_id(despesa_id)
+            if despesa:
+                # Tipo: enum → string display
+                tipo_display_map = {
+                    TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
+                    TipoDespesa.PESSOAL_BRUNO: "Pessoal BA",
+                    TipoDespesa.PESSOAL_RAFAEL: "Pessoal RR",
+                    TipoDespesa.EQUIPAMENTO: "Equipamento",
+                    TipoDespesa.PROJETO: "Projeto"
+                }
 
-    def create_widgets(self):
-        """Cria widgets da screen"""
-        # Container principal com scroll
-        main_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        main_container.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        main_container.grid_columnconfigure(0, weight=1)
+                # Estado: enum → string display
+                estado_display_map = {
+                    EstadoDespesa.PENDENTE: "Pendente",
+                    EstadoDespesa.VENCIDO: "Vencido",
+                    EstadoDespesa.PAGO: "Pago"
+                }
 
-        # ========================================
-        # 1. HEADER
-        # ========================================
-        self.create_header(main_container)
+                # Credor: object → string display
+                credor_display = "(Nenhum)"
+                if despesa.credor:
+                    credor_display = f"{despesa.credor.numero} - {despesa.credor.nome}"
 
-        # ========================================
-        # 2. CAMPOS DA DESPESA
-        # ========================================
-        self.create_fields(main_container)
+                # Projeto: object → string display
+                projeto_display = "(Nenhum)"
+                if despesa.projeto:
+                    projeto_display = f"{despesa.projeto.numero} - {despesa.projeto.descricao[:30]}"
 
-        # ========================================
-        # 3. FOOTER COM BOTÕES
-        # ========================================
-        self.create_footer(main_container)
+                initial_data = {
+                    'data': despesa.data,  # date object
+                    'tipo': tipo_display_map.get(despesa.tipo, "Fixa Mensal"),
+                    'credor': credor_display,
+                    'projeto': projeto_display,
+                    'descricao': despesa.descricao or '',
+                    'valor_sem_iva': str(float(despesa.valor_sem_iva)) if despesa.valor_sem_iva else '0.00',
+                    'valor_com_iva': str(float(despesa.valor_com_iva)) if despesa.valor_com_iva else '0.00',
+                    'estado': estado_display_map.get(despesa.estado, "Pendente"),
+                    'data_pagamento': despesa.data_pagamento,  # date object ou None
+                    'nota': despesa.nota or '',
+                }
+            else:
+                messagebox.showerror("Erro", "Despesa não encontrada!")
+                kwargs['on_cancel_callback'] = self._voltar_para_lista
 
-    def create_header(self, parent):
-        """Cria header com botão voltar e título"""
-        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 20))
-        header_frame.grid_columnconfigure(1, weight=1)
-
-        # Botão voltar
-        voltar_btn = ctk.CTkButton(
-            header_frame,
-            text="⬅️ Voltar",
-            command=self.voltar,
-            width=100,
-            height=35,
-            fg_color="gray",
-            hover_color="#5a5a5a"
+        # Initialize BaseForm
+        super().__init__(
+            parent,
+            db_session=db_session,
+            initial_data=initial_data,
+            on_cancel_callback=self._voltar_para_lista,
+            **kwargs
         )
-        voltar_btn.grid(row=0, column=0, sticky="w", padx=(0, 20))
 
-        # Título
-        titulo = "Nova Despesa" if not self.despesa_id else "Editar Despesa"
-        self.title_label = ctk.CTkLabel(
-            header_frame,
-            text=titulo,
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        self.title_label.grid(row=0, column=1, sticky="w")
+    # ===== MÉTODOS ABSTRATOS OBRIGATÓRIOS =====
 
-    def create_fields(self, parent):
-        """Cria campos do formulário"""
-        fields_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        fields_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 20))
-        fields_frame.grid_columnconfigure(0, weight=1)
+    def get_form_title(self) -> str:
+        """Return form title"""
+        if self.despesa_id:
+            return "Editar Despesa"
+        return "Nova Despesa"
 
-        # Tipo
-        ctk.CTkLabel(fields_frame, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", pady=(0, 8))
+    def get_form_icon(self):
+        """Return form icon"""
+        return get_icon(DESPESAS, size=(28, 28))
 
-        self.tipo_var = ctk.StringVar(value="FIXA_MENSAL")
-        tipo_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        tipo_frame.grid(row=1, column=0, sticky="w", pady=(0, 18))
+    def get_fields_config(self) -> List[Dict[str, Any]]:
+        """
+        Return field configurations for despesa form
 
-        tipos = [
-            ("Fixa Mensal", "FIXA_MENSAL"),
-            ("Pessoal BA", "PESSOAL_BRUNO"),
-            ("Pessoal RR", "PESSOAL_RAFAEL"),
-            ("Equipamento", "EQUIPAMENTO"),
-            ("Projeto", "PROJETO")
+        Campos (baseados no DB real):
+        - data (date, required)
+        - tipo (dropdown, required)
+        - credor (dropdown dinâmico, required)
+        - projeto (dropdown dinâmico, opcional)
+        - descricao (textarea, required)
+        - valor_sem_iva (number, required, min=0)
+        - valor_com_iva (number, required, min=0)
+        - estado (dropdown, required)
+        - data_pagamento (date, opcional)
+        - nota (textarea, opcional)
+        """
+        return [
+            # Data (required)
+            {
+                "key": "data",
+                "label": "Data",
+                "type": "date",
+                "required": True,
+            },
+
+            # Tipo (dropdown 5 opções, required)
+            {
+                "key": "tipo",
+                "label": "Tipo",
+                "type": "dropdown",
+                "values": ["Fixa Mensal", "Pessoal BA", "Pessoal RR", "Equipamento", "Projeto"],
+                "default": "Fixa Mensal",
+                "required": True,
+                "width": 300
+            },
+
+            # Credor/Fornecedor (dropdown dinâmico, required)
+            {
+                "key": "credor",
+                "label": "Credor/Fornecedor",
+                "type": "dropdown",
+                "values": self.fornecedor_options,
+                "default": "(Nenhum)",
+                "required": True,
+                "width": 400
+            },
+
+            # Projeto associado (dropdown dinâmico, opcional)
+            {
+                "key": "projeto",
+                "label": "Projeto Associado",
+                "type": "dropdown",
+                "values": self.projeto_options,
+                "default": "(Nenhum)",
+                "width": 400
+            },
+
+            # Descrição (textarea, required)
+            {
+                "key": "descricao",
+                "label": "Descrição",
+                "type": "textarea",
+                "required": True,
+                "placeholder": "Descrição da despesa...",
+                "width": 500
+            },
+
+            # Valor sem IVA (number, required, min=0)
+            {
+                "key": "valor_sem_iva",
+                "label": "Valor s/ IVA (€)",
+                "type": "number",
+                "required": True,
+                "placeholder": "0.00",
+                "validator": self._validate_valor_sem_iva,
+                "width": 250
+            },
+
+            # Valor com IVA (number, required, min=0)
+            {
+                "key": "valor_com_iva",
+                "label": "Valor c/ IVA (€)",
+                "type": "number",
+                "required": True,
+                "placeholder": "0.00",
+                "validator": self._validate_valor_com_iva,
+                "width": 250
+            },
+
+            # Estado (dropdown 3 opções, required)
+            {
+                "key": "estado",
+                "label": "Estado",
+                "type": "dropdown",
+                "values": ["Pendente", "Vencido", "Pago"],
+                "default": "Pendente",
+                "required": True,
+                "width": 200
+            },
+
+            # Data Pagamento (date, opcional)
+            {
+                "key": "data_pagamento",
+                "label": "Data Pagamento (se pago)",
+                "type": "date",
+            },
+
+            # Nota (textarea, opcional)
+            {
+                "key": "nota",
+                "label": "Nota",
+                "type": "textarea",
+                "placeholder": "Observações adicionais...",
+                "width": 500
+            },
         ]
 
-        for label, value in tipos:
-            ctk.CTkRadioButton(tipo_frame, text=label, variable=self.tipo_var, value=value).pack(side="left", padx=(0, 15))
+    def on_save(self, data: Dict[str, Any]) -> bool | str:
+        """
+        Handle save - create or update despesa
 
-        # Data
-        ctk.CTkLabel(fields_frame, text="Data *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=2, column=0, sticky="w", pady=(0, 8))
-        self.data_picker = DatePickerDropdown(fields_frame, placeholder="Selecionar data...")
-        self.data_picker.grid(row=3, column=0, sticky="ew", pady=(0, 18))
+        Args:
+            data: Dict com todos os valores do form
 
-        # Credor/Fornecedor
-        ctk.CTkLabel(fields_frame, text="Credor/Fornecedor", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=4, column=0, sticky="w", pady=(0, 8))
-        fornecedores = self.manager.obter_fornecedores()
-        fornecedor_options = ["(Nenhum)"] + [f"{f.numero} - {f.nome}" for f in fornecedores]
-        self.credor_dropdown = ctk.CTkOptionMenu(fields_frame, values=fornecedor_options, width=400, height=35)
-        self.credor_dropdown.grid(row=5, column=0, sticky="w", pady=(0, 18))
-        self.fornecedores_map = {f"{f.numero} - {f.nome}": f.id for f in fornecedores}
-
-        # Projeto associado
-        ctk.CTkLabel(fields_frame, text="Projeto Associado", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=6, column=0, sticky="w", pady=(0, 8))
-        projetos = self.manager.obter_projetos()
-        projeto_options = ["(Nenhum)"] + [f"{p.numero} - {p.descricao[:30]}" for p in projetos]
-        self.projeto_dropdown = ctk.CTkOptionMenu(fields_frame, values=projeto_options, width=400, height=35)
-        self.projeto_dropdown.grid(row=7, column=0, sticky="w", pady=(0, 18))
-        self.projetos_map = {f"{p.numero} - {p.descricao[:30]}": p.id for p in projetos}
-
-        # Descrição
-        ctk.CTkLabel(fields_frame, text="Descrição *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=8, column=0, sticky="w", pady=(0, 8))
-        self.descricao_entry = ctk.CTkTextbox(fields_frame, height=90)
-        self.descricao_entry.grid(row=9, column=0, sticky="ew", pady=(0, 18))
-
-        # Valores
-        valores_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        valores_frame.grid(row=10, column=0, sticky="ew", pady=(0, 18))
-        valores_frame.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(valores_frame, text="Valor sem IVA *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", padx=(0, 12))
-        self.valor_sem_iva_entry = ctk.CTkEntry(valores_frame, placeholder_text="0.00", height=35)
-        self.valor_sem_iva_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
-
-        ctk.CTkLabel(valores_frame, text="Valor com IVA *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=1, sticky="w")
-        self.valor_com_iva_entry = ctk.CTkEntry(valores_frame, placeholder_text="0.00", height=35)
-        self.valor_com_iva_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
-
-        # Estado
-        ctk.CTkLabel(fields_frame, text="Estado *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=11, column=0, sticky="w", pady=(0, 8))
-        self.estado_dropdown = ctk.CTkOptionMenu(fields_frame, values=["Pendente", "Vencido", "Pago"], height=35)
-        self.estado_dropdown.grid(row=12, column=0, sticky="w", pady=(0, 18))
-
-        # Data pagamento
-        ctk.CTkLabel(fields_frame, text="Data Pagamento (se pago)", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=13, column=0, sticky="w", pady=(0, 8))
-        self.data_pagamento_picker = DatePickerDropdown(fields_frame, placeholder="Selecionar data de pagamento...")
-        self.data_pagamento_picker.grid(row=14, column=0, sticky="ew", pady=(0, 18))
-
-        # Nota
-        ctk.CTkLabel(fields_frame, text="Nota", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=15, column=0, sticky="w", pady=(0, 8))
-        self.nota_entry = ctk.CTkTextbox(fields_frame, height=70)
-        self.nota_entry.grid(row=16, column=0, sticky="ew", pady=(0, 10))
-
-    def create_footer(self, parent):
-        """Cria footer com botões"""
-        footer_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        footer_frame.grid(row=2, column=0, sticky="ew", padx=30, pady=(10, 30))
-
-        # Botão Guardar
-        save_btn = ctk.CTkButton(
-            footer_frame,
-            text="💾 Guardar",
-            command=self.guardar,
-            width=150,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#F44336", "#C62828"),
-            hover_color=("#E57373", "#B71C1C")
-        )
-        save_btn.pack(side="left", padx=(0, 10))
-
-        # Botão Cancelar
-        cancel_btn = ctk.CTkButton(
-            footer_frame,
-            text="Cancelar",
-            command=self.voltar,
-            width=130,
-            height=40,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#616161", "#424242")
-        )
-        cancel_btn.pack(side="left")
-
-    def carregar_despesa(self):
-        """Carrega dados da despesa para edição"""
-        self.despesa = self.manager.obter_por_id(self.despesa_id)
-        if not self.despesa:
-            messagebox.showerror("Erro", "Despesa não encontrada!")
-            self.voltar()
-            return
-
-        # Atualizar título
-        self.title_label.configure(text=f"Editar Despesa {self.despesa.numero}")
-
-        d = self.despesa
-
-        # Tipo
-        self.tipo_var.set(d.tipo.value)
-
-        # Data
-        if d.data:
-            self.data_picker.set_date(d.data)
-
-        # Credor
-        if d.credor:
-            credor_str = f"{d.credor.numero} - {d.credor.nome}"
-            self.credor_dropdown.set(credor_str)
-
-        # Projeto
-        if d.projeto:
-            projeto_str = f"{d.projeto.numero} - {d.projeto.descricao[:30]}"
-            self.projeto_dropdown.set(projeto_str)
-
-        # Descrição
-        self.descricao_entry.insert("1.0", d.descricao or "")
-
-        # Valores
-        self.valor_sem_iva_entry.insert(0, str(d.valor_sem_iva))
-        self.valor_com_iva_entry.insert(0, str(d.valor_com_iva))
-
-        # Estado
-        estado_map = {
-            EstadoDespesa.PENDENTE: "Pendente",
-            EstadoDespesa.VENCIDO: "Vencido",
-            EstadoDespesa.PAGO: "Pago"
-        }
-        self.estado_dropdown.set(estado_map[d.estado])
-
-        # Data pagamento
-        if d.data_pagamento:
-            self.data_pagamento_picker.set_date(d.data_pagamento)
-
-        # Nota
-        if d.nota:
-            self.nota_entry.insert("1.0", d.nota)
-
-    def guardar(self):
-        """Guarda a despesa"""
+        Returns:
+            True se sucesso, ou mensagem de erro
+        """
         try:
-            # Get values
-            tipo_str = self.tipo_var.get()
-            tipo = TipoDespesa[tipo_str]
+            # ===== 1. PARSE TIPO (string → enum) =====
+            tipo_str = data.get('tipo', '').strip()
+            tipo_map = {
+                "Fixa Mensal": TipoDespesa.FIXA_MENSAL,
+                "Pessoal BA": TipoDespesa.PESSOAL_BRUNO,
+                "Pessoal RR": TipoDespesa.PESSOAL_RAFAEL,
+                "Equipamento": TipoDespesa.EQUIPAMENTO,
+                "Projeto": TipoDespesa.PROJETO
+            }
 
-            if not self.data_picker.get():
-                messagebox.showerror("Erro", "Data é obrigatória")
-                return
-            data_despesa = self.data_picker.get_date()
+            if tipo_str not in tipo_map:
+                return "Tipo de despesa inválido"
 
-            credor_str = self.credor_dropdown.get()
-            credor_id = self.fornecedores_map.get(credor_str) if credor_str != "(Nenhum)" else None
+            tipo = tipo_map[tipo_str]
 
-            projeto_str = self.projeto_dropdown.get()
-            projeto_id = self.projetos_map.get(projeto_str) if projeto_str != "(Nenhum)" else None
+            # ===== 2. PARSE DATA (date object, required) =====
+            data_despesa = data.get('data')
+            if not data_despesa:
+                return "Data é obrigatória"
 
-            descricao = self.descricao_entry.get("1.0", "end-1c").strip()
+            # ===== 3. PARSE CREDOR (string → ID) =====
+            credor_str = data.get('credor', '').strip()
+            if not credor_str or credor_str == "(Nenhum)":
+                return "Credor/Fornecedor é obrigatório"
+
+            credor_id = self.fornecedores_map.get(credor_str)
+            if not credor_id:
+                return "Credor/Fornecedor inválido"
+
+            # ===== 4. PARSE PROJETO (string → ID, opcional) =====
+            projeto_str = data.get('projeto', '').strip()
+            if projeto_str and projeto_str != "(Nenhum)":
+                projeto_id = self.projetos_map.get(projeto_str)
+            else:
+                projeto_id = None
+
+            # ===== 5. PARSE DESCRIÇÃO (required) =====
+            descricao = data.get('descricao', '').strip()
             if not descricao:
-                messagebox.showerror("Erro", "Descrição é obrigatória")
-                return
+                return "Descrição é obrigatória"
 
-            valor_sem_iva_str = self.valor_sem_iva_entry.get().strip()
-            if not valor_sem_iva_str:
-                messagebox.showerror("Erro", "Valor sem IVA é obrigatório")
-                return
-            valor_sem_iva = Decimal(valor_sem_iva_str.replace(',', '.'))
+            # ===== 6. PARSE VALORES (required, min=0) =====
+            try:
+                valor_sem_iva_str = data.get('valor_sem_iva', '').strip()
+                if not valor_sem_iva_str:
+                    return "Valor s/ IVA é obrigatório"
 
-            valor_com_iva_str = self.valor_com_iva_entry.get().strip()
-            if not valor_com_iva_str:
-                messagebox.showerror("Erro", "Valor com IVA é obrigatório")
-                return
-            valor_com_iva = Decimal(valor_com_iva_str.replace(',', '.'))
+                valor_sem_iva = Decimal(valor_sem_iva_str.replace(',', '.'))
+                if valor_sem_iva < 0:
+                    return "Valor s/ IVA deve ser >= 0"
 
+            except (ValueError, TypeError):
+                return "Valor s/ IVA inválido"
+
+            try:
+                valor_com_iva_str = data.get('valor_com_iva', '').strip()
+                if not valor_com_iva_str:
+                    return "Valor c/ IVA é obrigatório"
+
+                valor_com_iva = Decimal(valor_com_iva_str.replace(',', '.'))
+                if valor_com_iva < 0:
+                    return "Valor c/ IVA deve ser >= 0"
+
+            except (ValueError, TypeError):
+                return "Valor c/ IVA inválido"
+
+            # ===== 7. PARSE ESTADO (string → enum) =====
+            estado_str = data.get('estado', '').strip()
             estado_map = {
                 "Pendente": EstadoDespesa.PENDENTE,
                 "Vencido": EstadoDespesa.VENCIDO,
                 "Pago": EstadoDespesa.PAGO
             }
-            estado = estado_map[self.estado_dropdown.get()]
 
-            data_pagamento = None
-            if self.data_pagamento_picker.get():
-                data_pagamento = self.data_pagamento_picker.get_date()
+            if estado_str not in estado_map:
+                return "Estado inválido"
 
-            nota = self.nota_entry.get("1.0", "end-1c").strip() or None
+            estado = estado_map[estado_str]
 
-            # Create or update
+            # ===== 8. PARSE DATA PAGAMENTO (date object, condicional) =====
+            data_pagamento = data.get('data_pagamento')  # date object ou None
+
+            # Validação: se estado = Pago, data_pagamento é obrigatória
+            if estado == EstadoDespesa.PAGO and not data_pagamento:
+                return "Data de Pagamento é obrigatória quando estado é 'Pago'"
+
+            # ===== 9. PARSE NOTA (opcional) =====
+            nota = data.get('nota', '').strip() or None
+
+            # ===== 10. CREATE OR UPDATE =====
             if self.despesa_id:
+                # UPDATE
                 sucesso, erro = self.manager.atualizar(
                     self.despesa_id,
                     tipo=tipo,
@@ -329,7 +353,12 @@ class DespesaFormScreen(ctk.CTkFrame):
                     data_pagamento=data_pagamento,
                     nota=nota
                 )
+
+                if not sucesso:
+                    return erro or "Erro ao atualizar despesa"
+
             else:
+                # CREATE
                 sucesso, despesa, erro = self.manager.criar(
                     tipo=tipo,
                     data=data_despesa,
@@ -343,18 +372,83 @@ class DespesaFormScreen(ctk.CTkFrame):
                     nota=nota
                 )
 
-            if sucesso:
-                self.voltar()
-            else:
-                messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
+                if not sucesso:
+                    return erro or "Erro ao criar despesa"
 
-        except ValueError as e:
-            messagebox.showerror("Erro", f"Erro nos dados: {e}")
+            # Success!
+            return True
+
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
+            return f"Erro inesperado: {str(e)}"
 
-    def voltar(self):
-        """Volta para a lista de despesas"""
+    # ===== VALIDADORES =====
+
+    def _validate_valor_sem_iva(self, valor: str) -> bool:
+        """
+        Valida Valor sem IVA
+
+        Args:
+            valor: Valor a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not valor:
+            return False  # Obrigatório
+
+        try:
+            val = float(valor.replace(',', '.'))
+            return val >= 0
+        except ValueError:
+            return False
+
+    def _validate_valor_com_iva(self, valor: str) -> bool:
+        """
+        Valida Valor com IVA
+
+        Args:
+            valor: Valor a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not valor:
+            return False  # Obrigatório
+
+        try:
+            val = float(valor.replace(',', '.'))
+            return val >= 0
+        except ValueError:
+            return False
+
+    # ===== CALLBACKS =====
+
+    def after_save_callback(self):
+        """
+        Executado após save bem-sucedido
+
+        Navega de volta para lista de despesas
+        """
+        self._voltar_para_lista()
+
+    def after_cancel_callback(self):
+        """
+        Executado após cancelar
+
+        Confirma e navega de volta para lista de despesas
+        """
+        resposta = messagebox.askyesno(
+            "Cancelar",
+            "Tem certeza que deseja cancelar?\n\nTodas as alterações serão perdidas."
+        )
+
+        if resposta:
+            self._voltar_para_lista()
+
+    # ===== HELPERS =====
+
+    def _voltar_para_lista(self):
+        """Navega de volta para lista de despesas"""
         main_window = self.master.master
         if hasattr(main_window, 'show_screen'):
             main_window.show_screen("despesas")
