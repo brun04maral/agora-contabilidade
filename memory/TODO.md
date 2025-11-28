@@ -1,6 +1,6 @@
 # 📋 TODO.md - Tarefas Priorizadas
 
-Última atualização: 2025-11-24 WET
+Última atualização: 2025-11-28 WET
 
 ====================================================================
 LEGENDA DE PRIORIDADES
@@ -42,11 +42,11 @@ LEGENDA DE PRIORIDADES
    Status: Pronto para testes (migração 100% completa - 7/7 screens)
    Ver: memory/CHANGELOG.md (25/11/2025 18:00 - Sistema BaseScreen 100% COMPLETO)
 
-3. ✅ Sistema BaseForm COMPLETO - 6/6 Forms Elegíveis Migrados (100%)
+3. Sistema BaseForm - 7/8 Forms Migrados (87.5%)
 
-   **STATUS:** ✅ OBJETIVO ATINGIDO (26/11/2025)
+   **STATUS:** 🚀 QUASE COMPLETO - 7/8 forms migrados (28/11/2025)
 
-   Sistema BaseForm criado ✅ + Layout 2 Colunas ✅ + Todos forms elegíveis migrados ✅:
+   Sistema BaseForm criado ✅ + Layout 2 Colunas ✅ + Tabs Customizadas ✅:
    ├─ ✅ SPRINT 1: BaseForm framework (faaa731)
    ├─ ✅ SPRINT 2: ClienteFormScreen migrado (cff8ddb)
    ├─ ✅ SPRINT 3: FornecedorFormScreen migrado (12083aa)
@@ -54,28 +54,34 @@ LEGENDA DE PRIORIDADES
    ├─ ✅ SPRINT 5: DespesaFormScreen migrado (ad0cbba)
    ├─ ✅ SPRINT EXTRA: Suporte 2 colunas (800467e)
    ├─ ✅ SPRINT 7: ProjetoFormScreen migrado (a63a2ca) ← layout 2 colunas!
-   ├─ ✅ Bug Fix: DataTableV2 Lambda Closure (7898665)
-   ├─ ❌ OrcamentoFormScreen: NÃO ELEGÍVEL (2.175 linhas, arquitetura DUAL complexa)
-   └─ ❌ BoletimFormScreen: NÃO ELEGÍVEL (905 linhas, sub-componente tabela linhas)
+   ├─ ✅ SPRINT 8: BoletimFormScreen migrado (18dbf14) ← tabs customizadas! 🎉
+   ├─ ✅ Bug Fix: DataTableV2 Lambda Closure (24171f0)
+   └─ ❌ OrcamentoFormScreen: Pendente (2.175 linhas, arquitetura DUAL complexa)
 
-   **Progresso Final:** **6/6 forms elegíveis (100%)** ✅ | 2 forms mantidos custom
+   **Progresso:** **7/8 forms (87.5%)** 🚀 | 1 form restante (Orçamento)
 
-   **Forms Migrados (6):**
+   **Forms Migrados (7):**
    1. ClienteFormScreen (358 linhas, layout 1 coluna)
    2. FornecedorFormScreen (438 linhas, layout 1 coluna)
    3. EquipamentoFormScreen (408 linhas, layout 1 coluna)
    4. DespesaFormScreen (456 linhas, layout 1 coluna)
    5. ProjetoFormScreen (486 linhas, **layout 2 colunas**) ← PRIMEIRO!
+   6. BoletimFormScreen (905→887 linhas, **tabs customizadas**) ← INOVADOR! 🎯
 
-   **Forms Não Elegíveis (Decisão Técnica - 2):**
+   **Abordagem Tabs Customizadas (SPRINT 8):**
+   - Herda BaseForm para infraestrutura (callbacks, validação)
+   - get_fields_config() retorna lista vazia
+   - Layout custom com CTkTabview (2 tabs: Dados Gerais, Deslocações)
+   - Mantém funcionalidade complexa (LinhaDialog, cálculos automáticos)
+   - **Resultado:** Prova que BaseForm é flexível para forms complexos!
+
+   **Form Restante (1):**
    - OrcamentoFormScreen: Arquitetura DUAL (CLIENTE + EMPRESA), 8 dialogs, tabelas dinâmicas
-   - BoletimFormScreen: Sub-componente complexo (tabela linhas), cálculos automáticos
-
-   **Objetivo Atingido:** ✅ **100% dos forms CRUD tradicionais migrados**
 
    **Features Implementadas:**
    - 6 tipos de campo (text, number, dropdown, checkbox, date, textarea)
    - Layout 1 coluna (pack) + Layout 2 colunas (grid + colspan)
+   - **Tabs customizadas** (NOVO - SPRINT 8) ← abordagem híbrida inovadora
    - Validação unificada (required + custom validators)
    - Enums bidirecionais
    - Suporte Decimal
@@ -85,12 +91,12 @@ LEGENDA DE PRIORIDADES
    - Callbacks padronizados
    - Zero breaking changes
 
-   **Resultado:** Sistema BaseForm demonstra excelente arquitetura ao fornecer template robusto
-   para forms CRUD tradicionais (6/6 = 100%) enquanto corretamente evita forçar migrações de
-   aplicações complexas que beneficiam de implementações custom.
+   **Resultado:** Sistema BaseForm demonstra excelente arquitetura e flexibilidade ao suportar
+   tanto forms CRUD tradicionais (6 forms) quanto forms complexos com tabs customizadas (1 form).
+   87.5% de cobertura com apenas 1 form restante.
 
-   Concluído: 26/11/2025
-   Ver: memory/CHANGELOG.md (26/11/2025 - SPRINT 7 + DECISÕES TÉCNICAS FINAIS)
+   Última atualização: 28/11/2025
+   Ver: memory/CHANGELOG.md (28/11/2025 - SPRINT 8 + UNIFORMIZAÇÃO BA/RR)
 
 4. UX/UI Improvements - Orçamentos (20 melhorias)
 
@@ -309,11 +315,11 @@ Para contexto e decisões:
 Ver memory/CHANGELOG.md para histórico completo.
 
 Últimas 5 features (Novembro 2025):
-- ✅ 26/11: **✨ SISTEMA BaseForm 100% COMPLETO** - SPRINT 7 (ProjetoFormScreen) + Decisões técnicas finais - 6/6 forms elegíveis migrados (100%) - Layout 2 colunas implementado e usado - 2 forms complexos mantidos custom (decisão arquitetural) - Ver CHANGELOG.md (26/11/2025 - SPRINT 7) 🎉🚀
+- ✅ 28/11: **✨ SPRINT 8 + UNIFORMIZAÇÃO BA/RR** - BoletimFormScreen migrado com tabs customizadas (905→887 linhas) + Uniformização sócios BRUNO→BA, RAFAEL→RR em toda a aplicação + 36 boletins e 3 despesas migrados na BD + Scripts migração criados - Progresso: 7/8 forms (87.5%) - Ver CHANGELOG.md (28/11/2025) 🎉🚀
+- ✅ 26/11: **✨ SISTEMA BaseForm SPRINT 7** - ProjetoFormScreen migrado + Decisões técnicas finais - 6/6 forms elegíveis migrados (100%) - Layout 2 colunas implementado e usado - 2 forms complexos mantidos custom (decisão arquitetural) - Ver CHANGELOG.md (26/11/2025 - SPRINT 7) 🎉
 - ✅ 26/11: **Sistema BaseForm SPRINT 3-5 + Layout 2 Colunas** - 3 forms migrados (Fornecedor, Equipamento, Despesa) + suporte columns=1|2 + bug fix DataTableV2 - Progresso: 5/8 forms (62.5%) - Ver CHANGELOG.md (26/11/2025) 🚀
 - ✅ 25/11: **Sistema BaseForm SPRINT 1+2** - Framework criado + ClienteFormScreen migrado (1/7 forms) - 6 tipos campo, API unificada - Ver CHANGELOG.md (25/11/2025 19:30) 🎯
 - ✅ 25/11: **SISTEMA BaseScreen 100% COMPLETO** - 7/7 screens migrados (Clientes, Fornecedores, Equipamento finais) - ~11% redução código total (-489 linhas) - Ver CHANGELOG.md (25/11/2025 18:00) 🎉
-- ✅ 25/11: Migração Completa para BaseScreen - OrcamentosScreen, DespesasScreen, BoletinsScreen migrados (4/4) - Ver CHANGELOG.md (25/11/2025 16:00)
 
 Para histórico anterior: Ver memory/CHANGELOG.md
 

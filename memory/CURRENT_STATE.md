@@ -1,6 +1,6 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-26 WET
+**Última atualização:** 2025-11-28 WET
 **Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
 **Status Geral:** ✅ PRODUÇÃO READY
 
@@ -18,12 +18,13 @@
 
 ## 📌 Resumo Executivo
 
-**Sprint Atual (26/11/2025):**
-- ✅ **Sistema BaseForm - 100% COMPLETO (6/6 FORMS ELEGÍVEIS)** - SPRINT 7 finalizado com ProjetoFormScreen (layout 2 colunas) + Decisões técnicas sobre forms não elegíveis (Orçamento, Boletim mantidos custom) 🎉🚀
+**Sprint Atual (28/11/2025):**
+- 🚀 **Sistema BaseForm - 7/8 FORMS (87.5%)** - SPRINT 8 finalizado com BoletimFormScreen usando abordagem inovadora de tabs customizadas (905→887 linhas) 🎉
+- ✅ **Uniformização BA/RR Completa** - Sócios BRUNO→BA, RAFAEL→RR uniformizados em toda a aplicação + 36 boletins e 3 despesas migrados na base de dados
 - 🎉 **Sistema BaseScreen - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** (Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores, Equipamento) 🎉
 
 **Última Feature Concluída:**
-- ✅ **Sistema BaseForm 100% COMPLETO - SPRINT 7** (26/11/2025) - ProjetoFormScreen migrado com layout 2 colunas (PRIMEIRO form a usar!) + Decisões técnicas finais: 6/6 forms elegíveis migrados (Cliente, Fornecedor, Equipamento, Despesa, Projeto). OrcamentoFormScreen (2.175 linhas) e BoletimFormScreen (905 linhas) mantidos custom por complexidade arquitetural (decisão técnica). Framework robusto com 6 tipos campo, 2 layouts (1 e 2 colunas), validação unificada, zero breaking changes. **Ver:** memory/CHANGELOG.md (26/11/2025 - SPRINT 7 + DECISÕES TÉCNICAS FINAIS)
+- ✅ **SPRINT 8 + Uniformização BA/RR** (28/11/2025) - BoletimFormScreen migrado para BaseForm usando abordagem inovadora de "tabs customizadas" (herda infraestrutura mas implementa layout próprio com CTkTabview - 2 tabs: Dados Gerais + Deslocações). Prova flexibilidade do BaseForm para forms complexos. Uniformização completa BRUNO→BA, RAFAEL→RR em 35+ ficheiros Python + migrations BD (36 boletins, 3 despesas). Scripts criados: migrate_socio_names_simple.py, check_database.py. Bug fix lambda closure DataTableV2. Progresso: 7/8 forms (87.5%), apenas OrcamentoFormScreen pendente. **Ver:** memory/CHANGELOG.md (28/11/2025 - SPRINT 8 + UNIFORMIZAÇÃO BA/RR)
 
 **Próximo Milestone:**
 - 📋 Testar e validar sistema BaseScreen completo (7/7 screens)

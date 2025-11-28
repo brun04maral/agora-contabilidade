@@ -4,6 +4,225 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-11-28] ✅ SISTEMA BaseForm - SPRINT 8 + UNIFORMIZAÇÃO BA/RR
+
+### ✅ SPRINT 8 COMPLETO + UNIFORMIZAÇÃO SÓCIOS
+
+**Status:** SPRINT 8 COMPLETO - BoletimFormScreen migrado + BA/RR uniformizado (28/11/2025)
+**Impacto:** Sistema BaseForm 7/8 forms (87.5%) + Aplicação uniformizada
+**Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
+**Commits:** 18dbf14, ab9ee81, f47812b, 50df991, 24171f0
+
+### 🎉 VISÃO GERAL
+
+**SPRINT 8** migra **BoletimFormScreen** (905→887 linhas, -2%) para BaseForm usando **tabs customizadas** - um form previamente marcado como "não elegível" foi migrado com sucesso usando abordagem inovadora!
+
+**BREAKING CHANGE:** Uniformização completa de nomes dos sócios de `BRUNO`/`RAFAEL` para `BA`/`RR` em toda a aplicação (35+ ficheiros).
+
+**Progresso Sistema BaseForm:**
+- ✅ SPRINT 1: BaseForm framework
+- ✅ SPRINT 2: ClienteFormScreen
+- ✅ SPRINT 3: FornecedorFormScreen
+- ✅ SPRINT 4: EquipamentoFormScreen
+- ✅ SPRINT 5: DespesaFormScreen
+- ✅ SPRINT 7: ProjetoFormScreen (layout 2 colunas)
+- ✅ **SPRINT 8: BoletimFormScreen (tabs customizadas)** ← NOVO!
+- ❌ OrcamentoFormScreen: Pendente (arquitetura DUAL complexa)
+
+**Progresso:** **7/8 forms migrados (87.5%)** ✅
+
+---
+
+### 🏗️ SPRINT 8: BoletimFormScreen → BaseForm (TABS CUSTOMIZADAS)
+
+**Commit:** 18dbf14 - refactor(ui): migrar BoletimFormScreen para BaseForm com tabs customizadas
+**Data:** 28/11/2025
+**Ficheiro:** `ui/screens/boletim_form.py` (905→887 linhas, -2%)
+**Layout:** **TABS CUSTOMIZADAS** (2 tabs: Dados Gerais + Deslocações)
+
+**Abordagem Inovadora:**
+Este form foi previamente marcado como "NÃO ELEGÍVEL" devido à complexidade (sub-componentes com tabelas dinâmicas). Foi migrado com sucesso usando uma abordagem híbrida:
+- Herda de BaseForm para infraestrutura (header, title, icon, save/cancel buttons)
+- Usa tabs customizadas (`CTkTabview`) que sobrescrevem o layout padrão
+- `get_fields_config()` retorna lista vazia (campos criados manualmente)
+- `on_save()` lê valores diretamente dos widgets (não usa fields)
+
+**Estrutura com 2 Tabs:**
+
+**Tab 1: Dados Gerais**
+- Campos: Sócio, Mês, Ano, Data Emissão, Descrição, Nota
+- Valores de Referência (read-only): Dia Nacional, Dia Estrangeiro, Km
+- Totais Calculados (read-only): Ajudas Nacionais, Ajudas Estrangeiro, Kms, TOTAL
+- Layout: Grid 3 colunas (Sócio + Mês + Ano)
+
+**Tab 2: Deslocações**
+- DataTableV2 com colunas: #, Projeto, Serviço, Localidade, Tipo, Dias, Kms
+- Botões: ➕ Adicionar Deslocação, 🗑️ Apagar Linha, 📋 Duplicar Boletim
+- LinhaDialog mantido para add/edit de deslocações (dialog completo)
+
+**Fluxo Especial Mantido:**
+- Boletim deve ser salvo ANTES de adicionar deslocações
+- Mensagem ao criar: "Boletim X criado! Agora pode adicionar deslocações."
+- Form não fecha após criar, permitindo adicionar linhas imediatamente
+- on_save() retorna `False` no modo CREATE para não fechar form
+
+**Métodos BaseForm Implementados:**
+```python
+get_form_title() → "Novo Boletim" / "Editar Boletim {numero}"
+get_form_icon() → BOLETINS icon (28x28)
+get_fields_config() → [] # vazio - tabs customizadas
+on_save(data) → bool # salva campos principais, recalcula totais
+```
+
+**Métodos Customizados:**
+- `_create_tabs()` - cria CTkTabview com 2 tabs
+- `_create_tab_dados_gerais()` - popula tab 1 com campos
+- `_create_tab_deslocacoes()` - popula tab 2 com DataTableV2
+- `_carregar_linhas()` - carrega deslocações na tabela
+- `_adicionar_linha()` - abre LinhaDialog para nova deslocação
+- `_editar_linha()` - abre LinhaDialog para editar (double-click)
+- `_apagar_linha()` - remove deslocação selecionada
+- `_duplicar_boletim()` - duplica boletim completo (incluindo linhas)
+
+**LinhaDialog Mantido:**
+- Dialog completo para add/edit de deslocações
+- Campos: Projeto, Serviço, Localidade, Tipo, Dias, Kms, Datas/Horas início/fim
+- Auto-preenchimento ao selecionar projeto
+- Validações: serviço obrigatório, valores >= 0
+
+**Ver:** memory/ARCHITECTURE.md (Secção BaseForm - Tabs Customizadas)
+
+---
+
+### 🔄 BREAKING CHANGE: Uniformização BA/RR
+
+**Commits:**
+- ab9ee81: refactor(models): uniformizar nomes dos sócios para BA e RR em toda a aplicação
+- f47812b: fix(ui): corrigir enum Socio no BoletimFormScreen
+- 50df991: fix(scripts): melhorar script de migração com detecção automática da BD
+
+**Data:** 28/11/2025
+**Impacto:** 35+ ficheiros modificados, 20 ficheiros alterados no último commit
+**Pedido:** Utilizador quis uniformizar abreviações dos sócios em toda a aplicação
+
+**Alterações nos Modelos:**
+
+`database/models/boletim.py`:
+```python
+class Socio(enum.Enum):
+    """Enum para identificar o sócio"""
+    BA = "BA"      # era BRUNO = "BRUNO"
+    RR = "RR"      # era RAFAEL = "RAFAEL"
+```
+
+`database/models/despesa.py`:
+```python
+class TipoDespesa(enum.Enum):
+    FIXA_MENSAL = "FIXA_MENSAL"
+    PESSOAL_BA = "PESSOAL_BA"          # era PESSOAL_BRUNO
+    PESSOAL_RR = "PESSOAL_RR"          # era PESSOAL_RAFAEL
+    EQUIPAMENTO = "EQUIPAMENTO"
+    PROJETO = "PROJETO"
+```
+
+**Substituições em Massa (find/sed):**
+- `Socio.BRUNO` → `Socio.BA` (todos ficheiros .py)
+- `Socio.RAFAEL` → `Socio.RR` (todos ficheiros .py)
+- `TipoDespesa.PESSOAL_BRUNO` → `TipoDespesa.PESSOAL_BA`
+- `TipoDespesa.PESSOAL_RAFAEL` → `TipoDespesa.PESSOAL_RR`
+- `"PESSOAL_BRUNO"` → `"PESSOAL_BA"` (strings)
+- `"PESSOAL_RAFAEL"` → `"PESSOAL_RR"` (strings)
+
+**Ficheiros Afetados (35+ ficheiros):**
+- UI screens: boletim_form, despesa_form, boletins, despesas, relatorios, saldos, templates_despesas
+- Logic managers: boletins, relatorios, saldos
+- Migrations: 002, 014, 018, 027, 028
+- Scripts: import_from_excel, setup_database, test_saldos, validar_saldos
+- Tests: todos os testes de boletins, despesas, projetos, relatórios
+- Memory docs: CHANGELOG, DATABASE_SCHEMA, GUIA_COMPLETO, etc.
+
+**Scripts de Migração Criados:**
+
+`scripts/migrate_socio_names_simple.py`:
+- Migração de dados na base de dados SQLite
+- Detecção automática de BD (agora_media.db, agora.db, data/)
+- Verifica se tabelas existem antes de migrar
+- Atualiza: boletins.socio (BRUNO→BA, RAFAEL→RR)
+- Atualiza: despesas.tipo (PESSOAL_BRUNO→PESSOAL_BA, PESSOAL_RAFAEL→PESSOAL_RR)
+- Estatísticas antes/depois da migração
+
+`scripts/check_database.py`:
+- Utilitário para diagnosticar BDs
+- Lista todas as BDs .db no projeto
+- Mostra tabelas e número de registos
+- Recomenda qual BD usar
+
+**Migração de Dados Executada:**
+```
+BD: agora_media.db
+
+ANTES:
+- Boletins com BRUNO/RAFAEL: 36
+- Despesas com PESSOAL_BRUNO/PESSOAL_RAFAEL: 3
+
+MIGRAÇÃO:
+- 20 boletins: BRUNO → BA
+- 16 boletins: RAFAEL → RR
+- 0 despesas: PESSOAL_BRUNO → PESSOAL_BA
+- 3 despesas: PESSOAL_RAFAEL → PESSOAL_RR
+
+DEPOIS:
+- Boletins com BRUNO/RAFAEL: 0 ✅
+- Despesas com PESSOAL_BRUNO/PESSOAL_RAFAEL: 0 ✅
+- Boletins com BA/RR: 36 ✅
+- Despesas com PESSOAL_BA/PESSOAL_RR: 3 ✅
+```
+
+**IMPORTANTE:**
+Migração de dados é **manual** e deve ser executada uma vez em cada ambiente:
+```bash
+python3 scripts/migrate_socio_names_simple.py
+```
+
+---
+
+### 🐛 BUG FIX: Lambda Closure DataTableV2
+
+**Commit:** 24171f0 - fix(ui): simplificar lambdas no DataTableV2 (remover parâmetro lbl não usado)
+**Data:** 28/11/2025
+**Ficheiro:** `ui/components/data_table_v2.py`
+
+**Problema:**
+Erro ao retornar para lista de projetos após cancelar form:
+```
+TypeError: DataTableV2.add_row.<locals>.<lambda>() missing 1 required positional argument: 'e'
+```
+
+**Análise:**
+Os lambdas no método `add_row()` tinham um parâmetro extra `lbl=label` que estava a ser capturado mas nunca usado. Isto causava algum comportamento estranho na forma como Python geria os closures.
+
+**Solução:**
+Simplificados lambdas removendo parâmetro desnecessário:
+
+**Antes:**
+```python
+label.bind("<Enter>", lambda e, rf=row_frame, lbl=label: self._on_row_enter(e, rf))
+label.bind("<Double-Button-1>", lambda e, d=dict(data), lbl=label: self._on_row_double_click(d))
+```
+
+**Depois:**
+```python
+label.bind("<Enter>", lambda e, rf=row_frame: self._on_row_enter(e, rf))
+label.bind("<Double-Button-1>", lambda e, d=dict(data): self._on_row_double_click(d))
+```
+
+Mantidos apenas os parâmetros realmente usados: `rf` (row_frame) e `d` (data).
+
+**Teste:**
+Cache Python limpo + aplicação reiniciada → erro resolvido ✅
+
+---
+
 ## [2025-11-26] ✅ SISTEMA BaseForm - SPRINT 7 + DECISÕES TÉCNICAS FINAIS
 
 ### ✅ SPRINT 7 COMPLETO + SISTEMA BASEFORM 100% (6/6 FORMS ELEGÍVEIS)
