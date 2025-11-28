@@ -12,14 +12,52 @@ import os
 
 def migrate_socio_names():
     """Migra nomes dos sócios na base de dados"""
-    # Path to database
-    db_path = os.path.join(os.path.dirname(__file__), '..', 'agora.db')
+    # Path to database - try agora_media.db first, then agora.db
+    project_root = os.path.join(os.path.dirname(__file__), '..')
 
-    if not os.path.exists(db_path):
-        print(f"❌ Base de dados não encontrada: {db_path}")
+    db_candidates = [
+        os.path.join(project_root, 'agora_media.db'),
+        os.path.join(project_root, 'agora.db'),
+        os.path.join(project_root, 'data', 'agora_contabilidade.db'),
+    ]
+
+    db_path = None
+    for candidate in db_candidates:
+        if os.path.exists(candidate):
+            db_path = candidate
+            break
+
+    if not db_path:
+        print(f"❌ Base de dados não encontrada!")
+        print(f"   Tentei:")
+        for candidate in db_candidates:
+            print(f"   - {candidate}")
+        print(f"\n💡 Execute: python3 scripts/check_database.py")
+        print(f"   para ver quais bases de dados existem")
         return
 
     print(f"📁 Base de dados: {db_path}")
+
+    # Verify tables exist
+    try:
+        test_conn = sqlite3.connect(db_path)
+        test_cursor = test_conn.cursor()
+        test_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='boletins'")
+        if not test_cursor.fetchone():
+            print(f"\n⚠️  A base de dados não tem a tabela 'boletins'")
+            test_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+            tables = test_cursor.fetchall()
+            if tables:
+                print(f"   Tabelas encontradas: {', '.join([t[0] for t in tables])}")
+            else:
+                print(f"   Nenhuma tabela encontrada - base de dados vazia?")
+            test_conn.close()
+            print(f"\n💡 Execute: python3 scripts/check_database.py")
+            return
+        test_conn.close()
+    except Exception as e:
+        print(f"❌ Erro ao verificar base de dados: {str(e)}")
+        return
 
     print("=" * 80)
     print("MIGRAÇÃO: Uniformizar nomes dos sócios (BRUNO→BA, RAFAEL→RR)")
