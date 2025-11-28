@@ -175,7 +175,7 @@ class BoletinsManager:
         Returns:
             Valor sugerido (saldo atual)
         """
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             saldo_data = self.saldos_calculator.calcular_saldo_bruno()
         else:
             saldo_data = self.saldos_calculator.calcular_saldo_rafael()

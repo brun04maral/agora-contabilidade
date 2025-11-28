@@ -128,7 +128,7 @@ def seed_example_data(db_session):
     # Create example boletim
     boletim1 = Boletim(
         numero="#B0001",
-        socio=Socio.BRUNO,
+        socio=Socio.BA,
         data_emissao=date(2025, 1, 31),
         valor=Decimal("500.00"),
         descricao="Ajudas de custo - Janeiro 2025",

@@ -60,8 +60,8 @@ class DespesaFormScreen(BaseForm):
                 # Tipo: enum → string display
                 tipo_display_map = {
                     TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
-                    TipoDespesa.PESSOAL_BRUNO: "Pessoal BA",
-                    TipoDespesa.PESSOAL_RAFAEL: "Pessoal RR",
+                    TipoDespesa.PESSOAL_BA: "Pessoal BA",
+                    TipoDespesa.PESSOAL_RR: "Pessoal RR",
                     TipoDespesa.EQUIPAMENTO: "Equipamento",
                     TipoDespesa.PROJETO: "Projeto"
                 }
@@ -252,8 +252,8 @@ class DespesaFormScreen(BaseForm):
             tipo_str = data.get('tipo', '').strip()
             tipo_map = {
                 "Fixa Mensal": TipoDespesa.FIXA_MENSAL,
-                "Pessoal BA": TipoDespesa.PESSOAL_BRUNO,
-                "Pessoal RR": TipoDespesa.PESSOAL_RAFAEL,
+                "Pessoal BA": TipoDespesa.PESSOAL_BA,
+                "Pessoal RR": TipoDespesa.PESSOAL_RR,
                 "Equipamento": TipoDespesa.EQUIPAMENTO,
                 "Projeto": TipoDespesa.PROJETO
             }

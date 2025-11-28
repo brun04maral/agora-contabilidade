@@ -146,8 +146,8 @@ class TemplatesDespesasScreen(ctk.CTkFrame):
         """Format tipo for display"""
         tipo_map = {
             TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
-            TipoDespesa.PESSOAL_BRUNO: "Pessoal BA",
-            TipoDespesa.PESSOAL_RAFAEL: "Pessoal RR",
+            TipoDespesa.PESSOAL_BA: "Pessoal BA",
+            TipoDespesa.PESSOAL_RR: "Pessoal RR",
             TipoDespesa.EQUIPAMENTO: "Equipamento",
             TipoDespesa.PROJETO: "Projeto"
         }
@@ -280,8 +280,8 @@ class FormularioTemplateDialog(BaseDialogLarge):
 
         tipos = [
             ("Fixa Mensal", "FIXA_MENSAL"),
-            ("Pessoal BA", "PESSOAL_BRUNO"),
-            ("Pessoal RR", "PESSOAL_RAFAEL"),
+            ("Pessoal BA", "PESSOAL_BA"),
+            ("Pessoal RR", "PESSOAL_RR"),
             ("Equipamento", "EQUIPAMENTO"),
             ("Projeto", "PROJETO")
         ]

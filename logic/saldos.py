@@ -66,7 +66,7 @@ class SaldosCalculator:
             Dict com breakdown completo do saldo
         """
         return self._calcular_saldo(
-            Socio.BRUNO,
+            Socio.BA,
             incluir_investimento,
             data_inicio,
             data_fim
@@ -90,7 +90,7 @@ class SaldosCalculator:
             Dict com breakdown completo do saldo
         """
         return self._calcular_saldo(
-            Socio.RAFAEL,
+            Socio.RR,
             incluir_investimento,
             data_inicio,
             data_fim
@@ -133,8 +133,8 @@ class SaldosCalculator:
             }
         """
         # Determinar owner e tipo de despesa pessoal
-        owner = 'BA' if socio == Socio.BRUNO else 'RR'
-        tipo_despesa = TipoDespesa.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoDespesa.PESSOAL_RAFAEL
+        owner = 'BA' if socio == Socio.BA else 'RR'
+        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == Socio.BA else TipoDespesa.PESSOAL_RR
 
         # === CALCULAR INs (Entradas) ===
 
@@ -160,7 +160,7 @@ class SaldosCalculator:
 
         # 2. Prémios de projetos da empresa (apenas PAGOS)
         # ✅ CORREÇÃO: Prémios só contam no saldo quando projeto está pago
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             query_premios = self.db_session.query(
                 func.sum(Projeto.premio_bruno)
             ).filter(
@@ -190,7 +190,7 @@ class SaldosCalculator:
         investimento = Decimal("0.00")
         if incluir_investimento:
             investimento = (
-                self.INVESTIMENTO_INICIAL_BRUNO if socio == Socio.BRUNO
+                self.INVESTIMENTO_INICIAL_BRUNO if socio == Socio.BA
                 else self.INVESTIMENTO_INICIAL_RAFAEL
             )
 
@@ -287,7 +287,7 @@ class SaldosCalculator:
 
         # === PRÉMIOS NÃO FATURADOS (Projetos FINALIZADOS) ===
         # Não contam no saldo atual, mas permitem calcular saldo projetado
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             query_premios_nao_faturados = self.db_session.query(
                 func.sum(Projeto.premio_bruno)
             ).filter(
@@ -456,8 +456,8 @@ class SaldosCalculator:
         Returns:
             Dict com listas detalhadas de projetos, despesas e boletins
         """
-        owner = 'BA' if socio == Socio.BRUNO else 'RR'
-        tipo_despesa = TipoDespesa.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoDespesa.PESSOAL_RAFAEL
+        owner = 'BA' if socio == Socio.BA else 'RR'
+        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == Socio.BA else TipoDespesa.PESSOAL_RR
 
         # Projetos pessoais
         projetos_pessoais = self.db_session.query(Projeto).filter(
@@ -468,7 +468,7 @@ class SaldosCalculator:
 
         # Projetos com prémios (apenas PAGOS)
         # ✅ CORREÇÃO: Prémios só contam no saldo quando projeto está pago
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             projetos_premios = self.db_session.query(Projeto).filter(
                 Projeto.premio_bruno > 0,
                 Projeto.estado == EstadoProjeto.PAGO

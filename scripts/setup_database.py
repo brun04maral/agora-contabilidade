@@ -215,7 +215,7 @@ def setup_database():
             # Boletim Bruno - €600
             boletim1 = Boletim(
                 numero="#B0001",
-                socio=Socio.BRUNO,
+                socio=Socio.BA,
                 data_emissao=date(2025, 1, 31),
                 valor=Decimal("600.00"),
                 descricao="Ajudas de custo - Janeiro 2025",
@@ -227,7 +227,7 @@ def setup_database():
             # Boletim Rafael - €800 (pendente)
             boletim2 = Boletim(
                 numero="#B0002",
-                socio=Socio.RAFAEL,
+                socio=Socio.RR,
                 data_emissao=date(2025, 1, 31),
                 valor=Decimal("800.00"),
                 descricao="Ajudas de custo - Janeiro 2025",

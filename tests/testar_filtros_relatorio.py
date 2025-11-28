@@ -75,7 +75,7 @@ for socio_data in relatorio['socios']:
 # Test 5: Filtro apenas para BA
 print("\n\n[TESTE 5] Filtro: EMPRESA + Sócio BRUNO")
 print("-" * 80)
-relatorio = manager.gerar_relatorio_saldos(socio=Socio.BRUNO, filtro_tipo_projeto="empresa")
+relatorio = manager.gerar_relatorio_saldos(socio=Socio.BA, filtro_tipo_projeto="empresa")
 for socio_data in relatorio['socios']:
     print(f"\n{socio_data['nome']}:")
     print(f"  Projetos Pessoais: {len(socio_data.get('projetos_pessoais_list', []))} items (deve ser 0)")

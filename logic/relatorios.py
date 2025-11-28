@@ -54,11 +54,11 @@ class RelatoriosManager:
         """
 
         # Calcular saldos e buscar detalhes
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             saldo_bruno = self.saldos_calculator.calcular_saldo_bruno()
             detalhes_bruno = self._get_detalhes_saldo_bruno(filtro_tipo_projeto)
             socios_data = [self._format_socio_data_detalhado("BA", saldo_bruno, detalhes_bruno, "#4CAF50")]
-        elif socio == Socio.RAFAEL:
+        elif socio == Socio.RR:
             saldo_rafael = self.saldos_calculator.calcular_saldo_rafael()
             detalhes_rafael = self._get_detalhes_saldo_rafael(filtro_tipo_projeto)
             socios_data = [self._format_socio_data_detalhado("RR", saldo_rafael, detalhes_rafael, "#efd578")]
@@ -398,8 +398,8 @@ class RelatoriosManager:
         # Calculate statistics
         stats_por_tipo = {
             TipoDespesa.FIXA_MENSAL: {'count': 0, 'valor': Decimal('0')},
-            TipoDespesa.PESSOAL_BRUNO: {'count': 0, 'valor': Decimal('0')},
-            TipoDespesa.PESSOAL_RAFAEL: {'count': 0, 'valor': Decimal('0')},
+            TipoDespesa.PESSOAL_BA: {'count': 0, 'valor': Decimal('0')},
+            TipoDespesa.PESSOAL_RR: {'count': 0, 'valor': Decimal('0')},
             TipoDespesa.EQUIPAMENTO: {'count': 0, 'valor': Decimal('0')},
             TipoDespesa.PROJETO: {'count': 0, 'valor': Decimal('0')}
         }
@@ -489,8 +489,8 @@ class RelatoriosManager:
         from database.models import TipoDespesa
         mapping = {
             TipoDespesa.FIXA_MENSAL: "Fixa Mensal",
-            TipoDespesa.PESSOAL_BRUNO: "Pessoal BA",
-            TipoDespesa.PESSOAL_RAFAEL: "Pessoal RR",
+            TipoDespesa.PESSOAL_BA: "Pessoal BA",
+            TipoDespesa.PESSOAL_RR: "Pessoal RR",
             TipoDespesa.EQUIPAMENTO: "Equipamento",
             TipoDespesa.PROJETO: "Projeto"
         }
@@ -551,8 +551,8 @@ class RelatoriosManager:
 
         # Calculate statistics
         stats_por_socio = {
-            Socio.BRUNO: {'count': 0, 'valor': Decimal('0')},
-            Socio.RAFAEL: {'count': 0, 'valor': Decimal('0')}
+            Socio.BA: {'count': 0, 'valor': Decimal('0')},
+            Socio.RR: {'count': 0, 'valor': Decimal('0')}
         }
 
         stats_por_estado = {
@@ -579,7 +579,7 @@ class RelatoriosManager:
             # Format boletim for table
             boletins_formatados.append({
                 'numero': boletim.numero,
-                'socio': "BA" if boletim.socio == Socio.BRUNO else "RR",
+                'socio': "BA" if boletim.socio == Socio.BA else "RR",
                 'data_emissao': boletim.data_emissao.strftime("%Y-%m-%d") if boletim.data_emissao else '-',
                 'valor': float(boletim.valor),
                 'valor_fmt': self._format_currency(float(boletim.valor)),
@@ -592,7 +592,7 @@ class RelatoriosManager:
         stats_socio_fmt = []
         for socio_bol, stats in stats_por_socio.items():
             stats_socio_fmt.append({
-                'socio': "BA" if socio_bol == Socio.BRUNO else "RR",
+                'socio': "BA" if socio_bol == Socio.BA else "RR",
                 'count': stats['count'],
                 'valor': float(stats['valor']),
                 'valor_fmt': self._format_currency(float(stats['valor']))
@@ -617,7 +617,7 @@ class RelatoriosManager:
             'data_inicio': data_inicio,
             'data_fim': data_fim,
             'filtros': {
-                'socio': "BA" if socio == Socio.BRUNO else ("RR" if socio == Socio.RAFAEL else "Todos"),
+                'socio': "BA" if socio == Socio.BA else ("RR" if socio == Socio.RR else "Todos"),
                 'estado': self._get_estado_boletim_label(estado) if estado else 'Todos'
             },
             'total_boletins': len(boletins),
@@ -690,13 +690,13 @@ class RelatoriosManager:
 
         # Boletins pagos
         boletins = self.db_session.query(Boletim).filter(
-            Boletim.socio == Socio.BRUNO,
+            Boletim.socio == Socio.BA,
             Boletim.estado == EstadoBoletim.PAGO
         ).all()
 
         # Despesas pessoais pagas
         despesas_pessoais = self.db_session.query(Despesa).filter(
-            Despesa.tipo == TipoDespesa.PESSOAL_BRUNO,
+            Despesa.tipo == TipoDespesa.PESSOAL_BA,
             Despesa.estado == EstadoDespesa.PAGO
         ).all()
 
@@ -740,13 +740,13 @@ class RelatoriosManager:
 
         # Boletins pagos
         boletins = self.db_session.query(Boletim).filter(
-            Boletim.socio == Socio.RAFAEL,
+            Boletim.socio == Socio.RR,
             Boletim.estado == EstadoBoletim.PAGO
         ).all()
 
         # Despesas pessoais pagas
         despesas_pessoais = self.db_session.query(Despesa).filter(
-            Despesa.tipo == TipoDespesa.PESSOAL_RAFAEL,
+            Despesa.tipo == TipoDespesa.PESSOAL_RR,
             Despesa.estado == EstadoDespesa.PAGO
         ).all()
 

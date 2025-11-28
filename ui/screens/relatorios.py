@@ -419,9 +419,9 @@ class RelatoriosScreen(ctk.CTkFrame):
                 socio_str = self.socio_filter.get()
                 socio = None
                 if socio_str == "BA":
-                    socio = Socio.BRUNO
+                    socio = Socio.BA
                 elif socio_str == "RR":
-                    socio = Socio.RAFAEL
+                    socio = Socio.RR
 
                 self.current_report_data = self.manager.gerar_relatorio_saldos(
                     socio=socio,

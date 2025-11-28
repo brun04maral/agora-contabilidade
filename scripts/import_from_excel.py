@@ -595,14 +595,14 @@ class ExcelImporter:
                 tipo = TipoDespesa.FIXA_MENSAL
             elif tipo_str and 'pessoal' in str(tipo_str).lower():
                 if out_col and 'bruno' in str(out_col).lower():
-                    tipo = TipoDespesa.PESSOAL_BRUNO
+                    tipo = TipoDespesa.PESSOAL_BA
                 elif out_col and 'rafael' in str(out_col).lower():
-                    tipo = TipoDespesa.PESSOAL_RAFAEL
+                    tipo = TipoDespesa.PESSOAL_RR
                 else:
                     if 'bruno' in str(credor_nome).lower():
-                        tipo = TipoDespesa.PESSOAL_BRUNO
+                        tipo = TipoDespesa.PESSOAL_BA
                     elif 'rafael' in str(credor_nome).lower():
-                        tipo = TipoDespesa.PESSOAL_RAFAEL
+                        tipo = TipoDespesa.PESSOAL_RR
                     else:
                         tipo = TipoDespesa.PROJETO
             elif tipo_str and 'equipamento' in str(tipo_str).lower():
@@ -834,9 +834,9 @@ class ExcelImporter:
             # Determinar sócio
             socio = None
             if 'bruno' in str(credor_nome).lower():
-                socio = Socio.BRUNO
+                socio = Socio.BA
             elif 'rafael' in str(credor_nome).lower():
-                socio = Socio.RAFAEL
+                socio = Socio.RR
             else:
                 print(f"  ⚠️  {numero}: Não foi possível determinar sócio de '{credor_nome}'")
                 continue
@@ -870,14 +870,14 @@ class ExcelImporter:
             existing = self._exists_boletim(socio, data_emissao, valor)
             if existing:
                 self.stats['boletins']['skip'] += 1
-                socio_icon = "👤B" if socio == Socio.BRUNO else "👤R"
+                socio_icon = "👤B" if socio == Socio.BA else "👤R"
                 print(f"  ⏭️  {numero}: {socio_icon} €{float(valor):,.2f} (já existe)")
                 continue
 
             # DRY RUN: Não gravar
             if self.dry_run:
                 self.stats['boletins']['new'] += 1
-                socio_icon = "👤B" if socio == Socio.BRUNO else "👤R"
+                socio_icon = "👤B" if socio == Socio.BA else "👤R"
                 print(f"  🔍 {numero}: {socio_icon} €{float(valor):,.2f} (seria criado)")
                 continue
 
@@ -899,7 +899,7 @@ class ExcelImporter:
                         estado_icon = "⏳"
 
                     self.stats['boletins']['new'] += 1
-                    socio_icon = "👤B" if socio == Socio.BRUNO else "👤R"
+                    socio_icon = "👤B" if socio == Socio.BA else "👤R"
                     print(f"  ✅ {numero}: {socio_icon} {estado_icon} €{float(valor):,.2f} (criado)")
                 else:
                     self.stats['boletins']['error'] += 1

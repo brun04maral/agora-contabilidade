@@ -11,8 +11,8 @@ import enum
 
 class Socio(enum.Enum):
     """Enum para identificar o sócio"""
-    BRUNO = "BRUNO"
-    RAFAEL = "RAFAEL"
+    BA = "BA"
+    RR = "RR"
 
 
 class EstadoBoletim(enum.Enum):

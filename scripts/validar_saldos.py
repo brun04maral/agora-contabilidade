@@ -25,7 +25,7 @@ print('=' * 60)
 print('📊 VALIDAÇÃO FINAL - SALDOS PESSOAIS')
 print('=' * 60)
 
-for socio in [Socio.BRUNO, Socio.RAFAEL]:
+for socio in [Socio.BA, Socio.RR]:
     print(f'\n👤 {socio.value.upper()}:')
 
     # Projetos pessoais RECEBIDOS
@@ -55,7 +55,7 @@ for socio in [Socio.BRUNO, Socio.RAFAEL]:
     print(f'   (-) Despesas fixas ÷2: €{total_fixas:,.2f}')
 
     # PESSOAIS
-    tipo_pessoal = TipoDespesa.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoDespesa.PESSOAL_RAFAEL
+    tipo_pessoal = TipoDespesa.PESSOAL_BA if socio == Socio.BA else TipoDespesa.PESSOAL_RR
     despesas_pessoais = session.query(Despesa).filter(
         and_(
             Despesa.tipo == tipo_pessoal,

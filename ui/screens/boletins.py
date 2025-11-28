@@ -79,7 +79,7 @@ class BoletinsScreen(BaseScreen):
 
             # Apply socio filter
             if socio != "Todos":
-                socio_enum = Socio.BRUNO if socio == "BA" else Socio.RAFAEL
+                socio_enum = Socio.BA if socio == "BA" else Socio.RR
                 boletins = [b for b in boletins if b.socio == socio_enum]
 
             # Apply estado filter
@@ -103,7 +103,7 @@ class BoletinsScreen(BaseScreen):
         return {
             'id': item.id,
             'numero': item.numero,
-            'socio': "BA" if item.socio == Socio.BRUNO else "RR",
+            'socio': "BA" if item.socio == Socio.BA else "RR",
             'data_emissao': item.data_emissao.strftime("%Y-%m-%d") if item.data_emissao else '-',
             'linhas': str(num_linhas),
             'valor': float(item.valor),

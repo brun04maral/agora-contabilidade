@@ -67,7 +67,7 @@ class BoletimFormScreen(BaseForm):
         else:
             # Defaults for CREATE mode
             initial_data = {
-                'socio': Socio.BRUNO.value,
+                'socio': Socio.BA.value,
                 'mes': str(date.today().month),
                 'ano': str(date.today().year),
                 'data_emissao': date.today(),
@@ -245,7 +245,7 @@ class BoletimFormScreen(BaseForm):
             command=self._socio_mudou
         )
         self.socio_dropdown.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(8, 0))
-        self.socio_dropdown.set(self.initial_data.get('socio', Socio.BRUNO.value))
+        self.socio_dropdown.set(self.initial_data.get('socio', Socio.BA.value))
 
         # Mês
         ctk.CTkLabel(row1, text="Mês *", font=ctk.CTkFont(size=14, weight="bold")).grid(

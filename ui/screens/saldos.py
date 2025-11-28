@@ -94,11 +94,11 @@ class SaldosScreen(ctk.CTkFrame):
         saldos_container.grid_columnconfigure(1, weight=1)
 
         # BA's saldo
-        self.bruno_frame = self.create_saldo_card(saldos_container, "BA", Socio.BRUNO)
+        self.bruno_frame = self.create_saldo_card(saldos_container, "BA", Socio.BA)
         self.bruno_frame.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
 
         # RR's saldo
-        self.rafael_frame = self.create_saldo_card(saldos_container, "RR", Socio.RAFAEL)
+        self.rafael_frame = self.create_saldo_card(saldos_container, "RR", Socio.RR)
         self.rafael_frame.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
 
     def create_saldo_card(self, parent, nome: str, socio: Socio) -> ctk.CTkFrame:
@@ -117,7 +117,7 @@ class SaldosScreen(ctk.CTkFrame):
         card.grid_columnconfigure(0, weight=1)
 
         # Header with Agora colors (matching dashboard)
-        header_color = "#C9941F" if socio == Socio.BRUNO else "#A67F1B"  # Agora yellow colors
+        header_color = "#C9941F" if socio == Socio.BA else "#A67F1B"  # Agora yellow colors
         header = ctk.CTkFrame(card, fg_color=header_color, corner_radius=10)
         header.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 0))
 
@@ -158,7 +158,7 @@ class SaldosScreen(ctk.CTkFrame):
         saldo_projetado_label.pack(pady=(5, 0))
 
         # Store reference to update later
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             self.bruno_saldo_label = saldo_value
             self.bruno_saldo_projetado_label = saldo_projetado_label
         else:
@@ -203,7 +203,7 @@ class SaldosScreen(ctk.CTkFrame):
         ins_items_frame = ctk.CTkFrame(ins_frame, fg_color="transparent")
         ins_items_frame.pack(fill="x", pady=(10, 0))
 
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             self.bruno_ins_frame = ins_items_frame
         else:
             self.rafael_ins_frame = ins_items_frame
@@ -246,7 +246,7 @@ class SaldosScreen(ctk.CTkFrame):
         outs_items_frame = ctk.CTkFrame(outs_frame, fg_color="transparent")
         outs_items_frame.pack(fill="x", pady=(10, 0))
 
-        if socio == Socio.BRUNO:
+        if socio == Socio.BA:
             self.bruno_outs_frame = outs_items_frame
         else:
             self.rafael_outs_frame = outs_items_frame

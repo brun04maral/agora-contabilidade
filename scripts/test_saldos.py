@@ -105,7 +105,7 @@ def create_test_data(db_session):
     # Boletim BA: €400
     boletim_bruno = Boletim(
         numero="#B0001",
-        socio=Socio.BRUNO,
+        socio=Socio.BA,
         data_emissao=date(2025, 1, 31),
         valor=Decimal("400.00"),
         descricao="Ajudas de custo Janeiro",

@@ -14,12 +14,12 @@ class TipoDespesa(enum.Enum):
     Enum para tipo de despesa - CRÍTICO para cálculo de saldos!
 
     FIXA_MENSAL: Dividida por 2, cada sócio desconta metade nos OUTs
-    PESSOAL_BRUNO/PESSOAL_RAFAEL: Desconta apenas do sócio específico
+    PESSOAL_BA/PESSOAL_RR: Desconta apenas do sócio específico
     EQUIPAMENTO: Pode descontar do saldo se for para uso pessoal
     """
     FIXA_MENSAL = "FIXA_MENSAL"
-    PESSOAL_BRUNO = "PESSOAL_BRUNO"
-    PESSOAL_RAFAEL = "PESSOAL_RAFAEL"
+    PESSOAL_BA = "PESSOAL_BA"
+    PESSOAL_RR = "PESSOAL_RR"
     EQUIPAMENTO = "EQUIPAMENTO"
     PROJETO = "PROJETO"  # Despesa associada a um projeto específico
 
@@ -37,7 +37,7 @@ class Despesa(Base):
 
     IMPORTANTE: O campo 'tipo' determina como impacta os saldos pessoais:
     - FIXA_MENSAL: Divide por 2, cada sócio desconta metade
-    - PESSOAL_BRUNO/PESSOAL_RAFAEL: Desconta apenas do sócio específico
+    - PESSOAL_BA/PESSOAL_RR: Desconta apenas do sócio específico
     - EQUIPAMENTO: Pode descontar do saldo se configurado
     - PROJETO: Associada a projeto, não impacta saldos diretamente
     """
