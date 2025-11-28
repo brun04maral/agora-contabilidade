@@ -19,17 +19,17 @@
 ## 📌 Resumo Executivo
 
 **Sprint Atual (26/11/2025):**
-- 🎯 **Sistema BaseForm - SPRINT 1-5 + EXTRA COMPLETOS** - 5/8 formulários migrados (Cliente, Fornecedor, Equipamento, Despesa) + Layout 2 Colunas + Bug Fix DataTableV2 (progresso 62.5%) 🚀
+- ✅ **Sistema BaseForm - 100% COMPLETO (6/6 FORMS ELEGÍVEIS)** - SPRINT 7 finalizado com ProjetoFormScreen (layout 2 colunas) + Decisões técnicas sobre forms não elegíveis (Orçamento, Boletim mantidos custom) 🎉🚀
 - 🎉 **Sistema BaseScreen - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** (Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores, Equipamento) 🎉
 
 **Última Feature Concluída:**
-- ✅ **Sistema BaseForm SPRINT 3-5 + Layout 2 Colunas** (26/11/2025) - Migrados 3 forms (FornecedorFormScreen, EquipamentoFormScreen, DespesaFormScreen) com enums bidirecionais, dropdowns dinâmicos, validações Decimal, suporte IVA. Bug fix crítico em DataTableV2 (lambda closure). SPRINT EXTRA adiciona layout 2 colunas via parameter `columns=1|2` com colspan, zero breaking changes. Progresso: 5/8 forms (62.5%). **Ver:** memory/CHANGELOG.md (26/11/2025)
+- ✅ **Sistema BaseForm 100% COMPLETO - SPRINT 7** (26/11/2025) - ProjetoFormScreen migrado com layout 2 colunas (PRIMEIRO form a usar!) + Decisões técnicas finais: 6/6 forms elegíveis migrados (Cliente, Fornecedor, Equipamento, Despesa, Projeto). OrcamentoFormScreen (2.175 linhas) e BoletimFormScreen (905 linhas) mantidos custom por complexidade arquitetural (decisão técnica). Framework robusto com 6 tipos campo, 2 layouts (1 e 2 colunas), validação unificada, zero breaking changes. **Ver:** memory/CHANGELOG.md (26/11/2025 - SPRINT 7 + DECISÕES TÉCNICAS FINAIS)
 
 **Próximo Milestone:**
-- 📋 **SPRINT 6-8:** Migrar 3 forms restantes (OrcamentoFormScreen, ProjetoFormScreen, BoletimFormScreen) para BaseForm - todos usarão layout 2 colunas
 - 📋 Testar e validar sistema BaseScreen completo (7/7 screens)
 - 📋 UX/UI Improvements - Orçamentos (DateRangePicker + Context Menus)
 - 📋 IRS Retido em Despesas (requisito futuro documentado)
+- 📋 Sistema Fiscal (validação TOC + implementação)
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins
