@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-Tela de Formulário de Boletim - Screen dedicado para criar/editar boletins
-Segue mesmo padrão de ui/screens/projeto_form.py
+Tela de Formulário de Boletim - Migrado para BaseForm com tabs
+
+Usa BaseForm template com layout customizado de tabs:
+- Tab 1: Dados Gerais (campos principais do boletim)
+- Tab 2: Deslocações (tabela de linhas com add/edit/delete)
+
+Migrado para BaseForm em 2025-11-28.
 """
 import customtkinter as ctk
 from sqlalchemy.orm import Session
 from decimal import Decimal
 from datetime import date, time
 import tkinter.messagebox as messagebox
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 from logic.boletins import BoletinsManager
 from logic.boletim_linhas import BoletimLinhasManager
@@ -16,24 +21,27 @@ from logic.valores_referencia import ValoresReferenciaManager
 from logic.projetos import ProjetosManager
 from database.models.boletim import Socio
 from database.models.boletim_linha import TipoDeslocacao
+from ui.components.base_form import BaseForm
 from ui.components.data_table_v2 import DataTableV2
 from ui.components.date_picker_dropdown import DatePickerDropdown
 from utils.base_dialogs import BaseDialogLarge
+from assets.resources import BOLETINS, get_icon
 
 
-class BoletimFormScreen(ctk.CTkFrame):
+class BoletimFormScreen(BaseForm):
     """
     Screen para criar/editar boletins
+    Herda de BaseForm para layout consistente com tabs customizadas.
 
     Navegação via MainWindow.show_screen("boletim_form", boletim_id=None/ID)
     """
 
     def __init__(self, parent, db_session: Session, boletim_id: Optional[int] = None, **kwargs):
-        super().__init__(parent, **kwargs)
-
         self.db_session = db_session
         self.boletim_id = boletim_id
+        self.is_create = (boletim_id is None)
 
+        # Managers
         self.boletins_manager = BoletinsManager(db_session)
         self.linhas_manager = BoletimLinhasManager(db_session)
         self.valores_manager = ValoresReferenciaManager(db_session)
@@ -42,84 +50,189 @@ class BoletimFormScreen(ctk.CTkFrame):
         # Estado
         self.boletim = None
 
-        # Configure
-        self.configure(fg_color="transparent")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # Create widgets
-        self.create_widgets()
-
-        # Load data se edição
+        # Load data if editing
+        initial_data = {}
         if boletim_id:
-            self.carregar_boletim()
+            self.boletim = self.boletins_manager.obter_por_id(boletim_id)
+            if self.boletim:
+                b = self.boletim
+                initial_data = {
+                    'socio': b.socio.value,
+                    'mes': str(b.mes) if b.mes else str(date.today().month),
+                    'ano': str(b.ano) if b.ano else str(date.today().year),
+                    'data_emissao': b.data_emissao if b.data_emissao else date.today(),
+                    'descricao': b.descricao or '',
+                    'nota': b.nota or '',
+                }
         else:
-            # New boletim - suggest default values
-            self.sugerir_valores_referencia()
+            # Defaults for CREATE mode
+            initial_data = {
+                'socio': Socio.BA.value,
+                'mes': str(date.today().month),
+                'ano': str(date.today().year),
+                'data_emissao': date.today(),
+                'descricao': '',
+                'nota': '',
+            }
 
-    def create_widgets(self):
-        """Cria widgets da screen"""
-        # Container principal com scroll
-        main_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        main_container.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        main_container.grid_columnconfigure(0, weight=1)
-
-        # ========================================
-        # 1. HEADER
-        # ========================================
-        self.create_header(main_container)
-
-        # ========================================
-        # 2. CAMPOS DO BOLETIM
-        # ========================================
-        self.create_fields(main_container)
-
-        # ========================================
-        # 3. SECÇÃO DE LINHAS (deslocações)
-        # ========================================
-        self.create_linhas_section(main_container)
-
-        # ========================================
-        # 4. FOOTER COM BOTÕES
-        # ========================================
-        self.create_footer(main_container)
-
-    def create_header(self, parent):
-        """Cria header com botão voltar e título"""
-        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 20))
-        header_frame.grid_columnconfigure(1, weight=1)
-
-        # Botão voltar
-        voltar_btn = ctk.CTkButton(
-            header_frame,
-            text="⬅️ Voltar",
-            command=self.voltar,
-            width=100,
-            height=35,
-            fg_color="gray",
-            hover_color="#5a5a5a"
+        # Initialize BaseForm (NO columns - we'll use tabs)
+        super().__init__(
+            parent,
+            db_session=db_session,
+            initial_data=initial_data,
+            on_cancel_callback=self._voltar_para_lista,
+            **kwargs
         )
-        voltar_btn.grid(row=0, column=0, sticky="w", padx=(0, 20))
 
-        # Título
-        titulo = "Novo Boletim" if not self.boletim_id else "Editar Boletim"
-        self.title_label = ctk.CTkLabel(
-            header_frame,
-            text=titulo,
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        self.title_label.grid(row=0, column=1, sticky="w")
+        # Create tabs AFTER super().__init__()
+        self._create_tabs()
 
-    def create_fields(self, parent):
-        """Cria campos do formulário"""
-        fields_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        fields_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 20))
-        fields_frame.grid_columnconfigure(0, weight=1)
+        # Load linhas if editing
+        if self.boletim:
+            self._carregar_linhas()
+            self._atualizar_valores_referencia_display()
+            self._atualizar_totais_display()
+        else:
+            self._sugerir_valores_referencia()
+
+    # ========== BaseForm REQUIRED methods ==========
+
+    def get_form_title(self) -> str:
+        if self.is_create:
+            return "Novo Boletim"
+        elif self.boletim:
+            return f"Editar Boletim {self.boletim.numero}"
+        else:
+            return "Editar Boletim"
+
+    def get_form_icon(self):
+        return get_icon(BOLETINS, size=(28, 28))
+
+    def get_fields_config(self) -> List[Dict[str, Any]]:
+        """
+        NOTA: Este form usa tabs customizadas, não fields padrão.
+        Retornamos lista vazia porque sobrescrevemos a criação de widgets.
+        """
+        return []
+
+    def on_save(self, data: dict) -> bool:
+        """
+        Guarda o boletim (campos principais apenas).
+        As linhas são geridas separadamente via LinhaDialog.
+        """
+        try:
+            # Get values from widgets (não podemos usar 'data' porque não temos fields padrão)
+            socio_str = self.socio_dropdown.get()
+            mes = int(self.mes_dropdown.get())
+            ano_str = self.ano_entry.get().strip()
+            data_emissao = self.data_emissao_picker.get_date()
+            descricao = self.descricao_entry.get("1.0", "end-1c").strip() or None
+            nota = self.nota_entry.get("1.0", "end-1c").strip() or None
+
+            # Validations
+            if not ano_str:
+                messagebox.showerror("Erro", "Ano é obrigatório")
+                return False
+
+            ano = int(ano_str)
+
+            if not data_emissao:
+                messagebox.showerror("Erro", "Data de emissão é obrigatória")
+                return False
+
+            socio = Socio(socio_str)
+
+            # Get valores de referência
+            val_nacional, val_estrangeiro, val_km = self.valores_manager.obter_ou_default(ano)
+
+            if self.boletim:
+                # Update existing
+                b = self.boletim
+                b.socio = socio
+                b.mes = mes
+                b.ano = ano
+                b.data_emissao = data_emissao
+                b.descricao = descricao
+                b.nota = nota
+
+                # Update valores de referência
+                b.val_dia_nacional = val_nacional
+                b.val_dia_estrangeiro = val_estrangeiro
+                b.val_km = val_km
+
+                # Recalculate totals
+                self.linhas_manager.recalcular_totais_boletim(b.id)
+
+                self.db_session.commit()
+                self.db_session.refresh(b)
+
+                messagebox.showinfo("Sucesso", f"Boletim {b.numero} atualizado com sucesso!")
+                return True
+
+            else:
+                # Create new
+                sucesso, novo_boletim, erro = self.boletins_manager.criar(
+                    socio=socio,
+                    mes=mes,
+                    ano=ano,
+                    data_emissao=data_emissao,
+                    val_dia_nacional=val_nacional,
+                    val_dia_estrangeiro=val_estrangeiro,
+                    val_km=val_km,
+                    descricao=descricao,
+                    nota=nota
+                )
+
+                if sucesso:
+                    # Switch to edit mode
+                    self.boletim = novo_boletim
+                    self.boletim_id = novo_boletim.id
+                    self.is_create = False
+
+                    # Update title
+                    self.title_label.configure(text=f"Editar Boletim {novo_boletim.numero}")
+
+                    messagebox.showinfo("Sucesso", f"Boletim {novo_boletim.numero} criado! Agora pode adicionar deslocações.")
+                    return False  # Don't close form, allow adding linhas
+
+                else:
+                    messagebox.showerror("Erro", erro or "Erro ao criar boletim")
+                    return False
+
+        except ValueError as e:
+            messagebox.showerror("Erro", f"Valores inválidos: {str(e)}")
+            return False
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
+            return False
+
+    # ========== CUSTOM LAYOUT ==========
+
+    def _create_tabs(self):
+        """Cria estrutura de tabs customizada (sobrescreve layout padrão do BaseForm)"""
+        # Create tabview
+        self.tabview = ctk.CTkTabview(self, height=600)
+        self.tabview.pack(fill="both", expand=True, padx=30, pady=(0, 20))
+
+        # Create tabs
+        self.tab_dados_gerais = self.tabview.add("Dados Gerais")
+        self.tab_deslocacoes = self.tabview.add("Deslocações")
+
+        # Populate tabs
+        self._create_tab_dados_gerais()
+        self._create_tab_deslocacoes()
+
+    def _create_tab_dados_gerais(self):
+        """Cria conteúdo da tab Dados Gerais"""
+        parent = self.tab_dados_gerais
+
+        # Container com scroll
+        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Row 1: Sócio + Mês + Ano
-        row1 = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        row1.grid(row=0, column=0, sticky="ew", pady=(0, 15))
+        row1 = ctk.CTkFrame(scroll, fg_color="transparent")
+        row1.pack(fill="x", pady=(0, 15))
         row1.grid_columnconfigure((0, 1, 2), weight=1)
 
         # Sócio
@@ -129,9 +242,10 @@ class BoletimFormScreen(ctk.CTkFrame):
             row1,
             values=[socio.value for socio in Socio],
             height=35,
-            command=self.socio_mudou
+            command=self._socio_mudou
         )
         self.socio_dropdown.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(8, 0))
+        self.socio_dropdown.set(self.initial_data.get('socio', Socio.BA.value))
 
         # Mês
         ctk.CTkLabel(row1, text="Mês *", font=ctk.CTkFont(size=14, weight="bold")).grid(
@@ -142,25 +256,28 @@ class BoletimFormScreen(ctk.CTkFrame):
             height=35
         )
         self.mes_dropdown.grid(row=1, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
-        self.mes_dropdown.set(str(date.today().month))
+        self.mes_dropdown.set(self.initial_data.get('mes', str(date.today().month)))
 
         # Ano
         ctk.CTkLabel(row1, text="Ano *", font=ctk.CTkFont(size=14, weight="bold")).grid(
             row=0, column=2, sticky="w")
         self.ano_entry = ctk.CTkEntry(row1, height=35)
         self.ano_entry.grid(row=1, column=2, sticky="ew", pady=(8, 0))
-        self.ano_entry.insert(0, str(date.today().year))
-        self.ano_entry.bind("<FocusOut>", lambda e: self.ano_mudou())
+        self.ano_entry.insert(0, self.initial_data.get('ano', str(date.today().year)))
+        self.ano_entry.bind("<FocusOut>", lambda e: self._ano_mudou())
 
         # Data Emissão
-        ctk.CTkLabel(fields_frame, text="Data de Emissão *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=2, column=0, sticky="w", pady=(0, 8))
-        self.data_emissao_picker = DatePickerDropdown(fields_frame, default_date=date.today())
-        self.data_emissao_picker.grid(row=3, column=0, sticky="ew", pady=(0, 18))
+        ctk.CTkLabel(scroll, text="Data de Emissão *", font=ctk.CTkFont(size=14, weight="bold")).pack(
+            anchor="w", pady=(15, 8))
+        self.data_emissao_picker = DatePickerDropdown(
+            scroll,
+            default_date=self.initial_data.get('data_emissao', date.today())
+        )
+        self.data_emissao_picker.pack(fill="x", pady=(0, 18))
 
         # Valores de Referência (read-only display)
-        valores_label_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        valores_label_frame.grid(row=4, column=0, sticky="ew", pady=(0, 10))
+        valores_label_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        valores_label_frame.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(
             valores_label_frame,
@@ -190,8 +307,8 @@ class BoletimFormScreen(ctk.CTkFrame):
         self.val_km_label.pack(side="left")
 
         # Totais Calculados (read-only display)
-        totais_label_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        totais_label_frame.grid(row=5, column=0, sticky="ew", pady=(0, 18))
+        totais_label_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        totais_label_frame.pack(fill="x", pady=(0, 18))
 
         ctk.CTkLabel(
             totais_label_frame,
@@ -228,26 +345,32 @@ class BoletimFormScreen(ctk.CTkFrame):
         self.valor_total_label.pack(side="left")
 
         # Descrição
-        ctk.CTkLabel(fields_frame, text="Descrição", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=6, column=0, sticky="w", pady=(0, 8))
-        self.descricao_entry = ctk.CTkTextbox(fields_frame, height=60)
-        self.descricao_entry.grid(row=7, column=0, sticky="ew", pady=(0, 18))
+        ctk.CTkLabel(scroll, text="Descrição", font=ctk.CTkFont(size=14, weight="bold")).pack(
+            anchor="w", pady=(15, 8))
+        self.descricao_entry = ctk.CTkTextbox(scroll, height=60)
+        self.descricao_entry.pack(fill="x", pady=(0, 18))
+        if self.initial_data.get('descricao'):
+            self.descricao_entry.insert("1.0", self.initial_data['descricao'])
 
         # Nota
-        ctk.CTkLabel(fields_frame, text="Nota", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=8, column=0, sticky="w", pady=(0, 8))
-        self.nota_entry = ctk.CTkTextbox(fields_frame, height=60)
-        self.nota_entry.grid(row=9, column=0, sticky="ew", pady=(0, 10))
+        ctk.CTkLabel(scroll, text="Nota", font=ctk.CTkFont(size=14, weight="bold")).pack(
+            anchor="w", pady=(0, 8))
+        self.nota_entry = ctk.CTkTextbox(scroll, height=60)
+        self.nota_entry.pack(fill="x", pady=(0, 10))
+        if self.initial_data.get('nota'):
+            self.nota_entry.insert("1.0", self.initial_data['nota'])
 
-    def create_linhas_section(self, parent):
-        """Cria secção de linhas (deslocações)"""
-        linhas_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        linhas_frame.grid(row=2, column=0, sticky="ew", padx=30, pady=(0, 20))
-        linhas_frame.grid_columnconfigure(0, weight=1)
+    def _create_tab_deslocacoes(self):
+        """Cria conteúdo da tab Deslocações"""
+        parent = self.tab_deslocacoes
 
-        # Header com título e botão adicionar
-        linhas_header = ctk.CTkFrame(linhas_frame, fg_color="transparent")
-        linhas_header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        # Container
+        container = ctk.CTkFrame(parent, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Header com botão adicionar
+        linhas_header = ctk.CTkFrame(container, fg_color="transparent")
+        linhas_header.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(
             linhas_header,
@@ -258,7 +381,7 @@ class BoletimFormScreen(ctk.CTkFrame):
         add_linha_btn = ctk.CTkButton(
             linhas_header,
             text="➕ Adicionar Deslocação",
-            command=self.adicionar_linha,
+            command=self._adicionar_linha,
             width=180,
             height=35,
             fg_color=("#4CAF50", "#388E3C"),
@@ -278,154 +401,49 @@ class BoletimFormScreen(ctk.CTkFrame):
         ]
 
         self.linhas_table = DataTableV2(
-            linhas_frame,
+            container,
             columns=columns,
-            on_row_double_click=self.editar_linha,
-            height=200
+            on_row_double_click=self._editar_linha,
+            height=300
         )
-        self.linhas_table.grid(row=1, column=0, sticky="ew")
+        self.linhas_table.pack(fill="both", expand=True)
 
         # Botão apagar linha
-        self.delete_linha_btn = ctk.CTkButton(
-            linhas_frame,
+        delete_linha_btn = ctk.CTkButton(
+            container,
             text="🗑️ Apagar Linha Selecionada",
-            command=self.apagar_linha,
+            command=self._apagar_linha,
             width=220,
             height=35,
             fg_color=("#F44336", "#C62828"),
             hover_color=("#E57373", "#B71C1C")
         )
-        self.delete_linha_btn.grid(row=2, column=0, sticky="e", pady=(10, 0))
+        delete_linha_btn.pack(side="right", pady=(10, 0))
 
-    def create_footer(self, parent):
-        """Cria footer com botões"""
-        footer_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        footer_frame.grid(row=3, column=0, sticky="ew", padx=30, pady=(10, 30))
-
-        # Botão Guardar
-        save_btn = ctk.CTkButton(
-            footer_frame,
-            text="💾 Guardar",
-            command=self.guardar,
-            width=150,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#4CAF50", "#388E3C"),
-            hover_color=("#66BB6A", "#2E7D32")
-        )
-        save_btn.pack(side="left", padx=(0, 10))
-
-        # Botão Cancelar
-        cancel_btn = ctk.CTkButton(
-            footer_frame,
-            text="Cancelar",
-            command=self.voltar,
-            width=130,
-            height=40,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#616161", "#424242")
-        )
-        cancel_btn.pack(side="left", padx=(0, 10))
-
-        # Botão Duplicar (só quando edita)
+        # Botão duplicar (só quando edita)
         if self.boletim_id:
             duplicate_btn = ctk.CTkButton(
-                footer_frame,
-                text="📋 Duplicar",
-                command=self.duplicar_boletim,
-                width=140,
-                height=40,
-                font=ctk.CTkFont(size=14),
+                container,
+                text="📋 Duplicar Boletim",
+                command=self._duplicar_boletim,
+                width=180,
+                height=35,
                 fg_color=("#2196F3", "#1976D2"),
                 hover_color=("#64B5F6", "#1565C0")
             )
-            duplicate_btn.pack(side="left")
+            duplicate_btn.pack(side="right", padx=(0, 10), pady=(10, 0))
 
-    def carregar_boletim(self):
-        """Carrega dados do boletim para edição"""
-        self.boletim = self.boletins_manager.obter_por_id(self.boletim_id)
-        if not self.boletim:
-            messagebox.showerror("Erro", "Boletim não encontrado!")
-            self.voltar()
-            return
+    # ========== EVENT HANDLERS ==========
 
-        # Atualizar título
-        self.title_label.configure(text=f"Editar Boletim {self.boletim.numero}")
-
-        b = self.boletim
-
-        # Socio
-        self.socio_dropdown.set(b.socio.value)
-
-        # Mês/Ano
-        if b.mes:
-            self.mes_dropdown.set(str(b.mes))
-        if b.ano:
-            self.ano_entry.delete(0, "end")
-            self.ano_entry.insert(0, str(b.ano))
-
-        # Data emissão
-        if b.data_emissao:
-            self.data_emissao_picker.set_date(b.data_emissao)
-
-        # Valores de referência
-        if b.val_dia_nacional:
-            self.val_nacional_label.configure(text=f"Dia Nacional: €{float(b.val_dia_nacional):.2f}")
-        if b.val_dia_estrangeiro:
-            self.val_estrangeiro_label.configure(text=f"Dia Estrangeiro: €{float(b.val_dia_estrangeiro):.2f}")
-        if b.val_km:
-            self.val_km_label.configure(text=f"Km: €{float(b.val_km):.2f}")
-
-        # Totais
-        self.atualizar_totais_display()
-
-        # Descrição/Nota
-        if b.descricao:
-            self.descricao_entry.insert("1.0", b.descricao)
-        if b.nota:
-            self.nota_entry.insert("1.0", b.nota)
-
-        # Carregar linhas
-        self.carregar_linhas()
-
-    def carregar_linhas(self):
-        """Load boletim linhas into table"""
-        if not self.boletim:
-            self.linhas_table.set_data([])
-            return
-
-        linhas = self.linhas_manager.listar_por_boletim(self.boletim.id)
-        data = [self.linha_to_dict(linha) for linha in linhas]
-        self.linhas_table.set_data(data)
-
-    def linha_to_dict(self, linha) -> dict:
-        """Convert linha to dict for table display"""
-        projeto_str = "-"
-        if linha.projeto_id and linha.projeto:
-            projeto_str = linha.projeto.numero
-
-        return {
-            'id': linha.id,
-            'ordem': str(linha.ordem),
-            'projeto': projeto_str,
-            'servico': linha.servico[:30] + "..." if len(linha.servico) > 30 else linha.servico,
-            'localidade': linha.localidade or "-",
-            'tipo': linha.tipo.value,
-            'dias': f"{float(linha.dias):.1f}",
-            'kms': str(linha.kms),
-            '_linha': linha
-        }
-
-    def socio_mudou(self, *args):
+    def _socio_mudou(self, *args):
         """Handle socio change - update valores de referência"""
-        self.sugerir_valores_referencia()
+        self._sugerir_valores_referencia()
 
-    def ano_mudou(self):
+    def _ano_mudou(self):
         """Handle ano change - update valores de referência"""
-        self.sugerir_valores_referencia()
+        self._sugerir_valores_referencia()
 
-    def sugerir_valores_referencia(self):
+    def _sugerir_valores_referencia(self):
         """Fetch and display valores de referência based on ano"""
         try:
             ano_str = self.ano_entry.get().strip()
@@ -435,14 +453,26 @@ class BoletimFormScreen(ctk.CTkFrame):
             ano = int(ano_str)
             val_nacional, val_estrangeiro, val_km = self.valores_manager.obter_ou_default(ano)
 
-            self.val_nacional_label.configure(text=f"Dia Nacional: €{float(val_nacional):.2f}")
-            self.val_estrangeiro_label.configure(text=f"Dia Estrangeiro: €{float(val_estrangeiro):.2f}")
-            self.val_km_label.configure(text=f"Km: €{float(val_km):.2f}")
+            self._atualizar_valores_referencia_display(val_nacional, val_estrangeiro, val_km)
 
         except ValueError:
             pass
 
-    def atualizar_totais_display(self):
+    def _atualizar_valores_referencia_display(self, val_nacional=None, val_estrangeiro=None, val_km=None):
+        """Update valores de referência display"""
+        if val_nacional is None and self.boletim:
+            val_nacional = self.boletim.val_dia_nacional
+            val_estrangeiro = self.boletim.val_dia_estrangeiro
+            val_km = self.boletim.val_km
+
+        if val_nacional:
+            self.val_nacional_label.configure(text=f"Dia Nacional: €{float(val_nacional):.2f}")
+        if val_estrangeiro:
+            self.val_estrangeiro_label.configure(text=f"Dia Estrangeiro: €{float(val_estrangeiro):.2f}")
+        if val_km:
+            self.val_km_label.configure(text=f"Km: €{float(val_km):.2f}")
+
+    def _atualizar_totais_display(self):
         """Update totais display from boletim"""
         if not self.boletim:
             return
@@ -462,7 +492,7 @@ class BoletimFormScreen(ctk.CTkFrame):
             text=f"TOTAL: €{float(b.valor_total):.2f}"
         )
 
-    def adicionar_linha(self):
+    def _adicionar_linha(self):
         """Open dialog to add new linha"""
         if not self.boletim:
             messagebox.showerror("Erro", "Grave o boletim primeiro antes de adicionar deslocações.")
@@ -472,10 +502,10 @@ class BoletimFormScreen(ctk.CTkFrame):
         dialog.wait_window()
 
         # Reload
-        self.carregar_linhas()
-        self.refresh_boletim()
+        self._carregar_linhas()
+        self._refresh_boletim()
 
-    def editar_linha(self, row_data):
+    def _editar_linha(self, row_data):
         """Edit linha (double-click handler)"""
         linha = row_data.get('_linha')
         if not linha:
@@ -485,10 +515,10 @@ class BoletimFormScreen(ctk.CTkFrame):
         dialog.wait_window()
 
         # Reload
-        self.carregar_linhas()
-        self.refresh_boletim()
+        self._carregar_linhas()
+        self._refresh_boletim()
 
-    def apagar_linha(self):
+    def _apagar_linha(self):
         """Delete selected linha"""
         selected_data = self.linhas_table.get_selected_data()
         if len(selected_data) == 0:
@@ -507,97 +537,46 @@ class BoletimFormScreen(ctk.CTkFrame):
         if resposta:
             sucesso, erro = self.linhas_manager.eliminar(linha.id)
             if sucesso:
-                self.carregar_linhas()
-                self.refresh_boletim()
+                self._carregar_linhas()
+                self._refresh_boletim()
             else:
                 messagebox.showerror("Erro", erro or "Erro ao apagar linha")
 
-    def refresh_boletim(self):
+    def _refresh_boletim(self):
         """Refresh boletim from database and update totais display"""
         if self.boletim:
             self.db_session.refresh(self.boletim)
-            self.atualizar_totais_display()
+            self._atualizar_totais_display()
 
-    def guardar(self):
-        """Guarda o boletim"""
-        try:
-            # Get values
-            socio_str = self.socio_dropdown.get()
-            mes = int(self.mes_dropdown.get())
-            ano_str = self.ano_entry.get().strip()
-            data_emissao = self.data_emissao_picker.get_date()
-            descricao = self.descricao_entry.get("1.0", "end-1c").strip() or None
-            nota = self.nota_entry.get("1.0", "end-1c").strip() or None
+    def _carregar_linhas(self):
+        """Load boletim linhas into table"""
+        if not self.boletim:
+            self.linhas_table.set_data([])
+            return
 
-            # Validations
-            if not ano_str:
-                messagebox.showerror("Erro", "Ano é obrigatório")
-                return
+        linhas = self.linhas_manager.listar_por_boletim(self.boletim.id)
+        data = [self._linha_to_dict(linha) for linha in linhas]
+        self.linhas_table.set_data(data)
 
-            ano = int(ano_str)
+    def _linha_to_dict(self, linha) -> dict:
+        """Convert linha to dict for table display"""
+        projeto_str = "-"
+        if linha.projeto_id and linha.projeto:
+            projeto_str = linha.projeto.numero
 
-            if not data_emissao:
-                messagebox.showerror("Erro", "Data de emissão é obrigatória")
-                return
+        return {
+            'id': linha.id,
+            'ordem': str(linha.ordem),
+            'projeto': projeto_str,
+            'servico': linha.servico[:30] + "..." if len(linha.servico) > 30 else linha.servico,
+            'localidade': linha.localidade or "-",
+            'tipo': linha.tipo.value,
+            'dias': f"{float(linha.dias):.1f}",
+            'kms': str(linha.kms),
+            '_linha': linha
+        }
 
-            socio = Socio(socio_str)
-
-            # Get valores de referência
-            val_nacional, val_estrangeiro, val_km = self.valores_manager.obter_ou_default(ano)
-
-            if self.boletim:
-                # Update existing
-                b = self.boletim
-                b.socio = socio
-                b.mes = mes
-                b.ano = ano
-                b.data_emissao = data_emissao
-                b.descricao = descricao
-                b.nota = nota
-
-                # Update valores de referência
-                b.val_dia_nacional = val_nacional
-                b.val_dia_estrangeiro = val_estrangeiro
-                b.val_km = val_km
-
-                # Recalculate totals
-                self.linhas_manager.recalcular_totais_boletim(b.id)
-
-                self.db_session.commit()
-                self.db_session.refresh(b)
-
-                self.voltar()
-
-            else:
-                # Create new
-                sucesso, novo_boletim, erro = self.boletins_manager.criar(
-                    socio=socio,
-                    mes=mes,
-                    ano=ano,
-                    data_emissao=data_emissao,
-                    val_dia_nacional=val_nacional,
-                    val_dia_estrangeiro=val_estrangeiro,
-                    val_km=val_km,
-                    nota=nota
-                )
-
-                if sucesso:
-                    # Switch to edit mode
-                    self.boletim = novo_boletim
-                    self.boletim_id = novo_boletim.id
-                    self.title_label.configure(text=f"Editar Boletim {novo_boletim.numero}")
-
-                    messagebox.showinfo("Sucesso", f"Boletim {novo_boletim.numero} criado! Agora pode adicionar deslocações.")
-
-                else:
-                    messagebox.showerror("Erro", erro or "Erro ao criar boletim")
-
-        except ValueError as e:
-            messagebox.showerror("Erro", f"Valores inválidos: {str(e)}")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
-
-    def duplicar_boletim(self):
+    def _duplicar_boletim(self):
         """Duplica o boletim atual"""
         try:
             if not self.boletim:
@@ -626,14 +605,16 @@ class BoletimFormScreen(ctk.CTkFrame):
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao duplicar boletim: {str(e)}")
 
-    def voltar(self):
-        """Volta para a lista de boletins"""
+    def _voltar_para_lista(self):
+        """Navega de volta para lista de boletins"""
         main_window = self.master.master
         if hasattr(main_window, 'show_screen'):
             main_window.show_screen("boletins")
         else:
             messagebox.showerror("Erro", "Não foi possível navegar de volta")
 
+
+# ========== DIALOG FOR LINHA ADD/EDIT ==========
 
 class LinhaDialog(BaseDialogLarge):
     """
