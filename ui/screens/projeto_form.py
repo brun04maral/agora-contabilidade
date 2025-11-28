@@ -1,380 +1,484 @@
 # -*- coding: utf-8 -*-
 """
-Tela de Formulário de Projeto - Screen dedicado para criar/editar projetos
-Segue mesmo padrão de ui/screens/orcamento_form.py
+ProjetoFormScreen - Formulário para criar/editar projetos
+
+Migrado para BaseForm framework (SPRINT 7)
+Primeiro form a usar layout 2 colunas (columns=2)
+Segue padrão estabelecido em ui/components/base_form.py
 """
+
 import customtkinter as ctk
+from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
-from logic.projetos import ProjetosManager
-from logic.clientes import ClientesManager
-from ui.components.date_picker_dropdown import DatePickerDropdown
-from ui.components.date_range_picker_dropdown import DateRangePickerDropdown
-from database.models import TipoProjeto, EstadoProjeto
-from typing import Optional
-from datetime import date
 from tkinter import messagebox
 from decimal import Decimal
+from datetime import date
+
+from ui.components.base_form import BaseForm
+from logic.projetos import ProjetosManager
+from logic.clientes import ClientesManager
+from assets.resources import get_icon, PROJETOS
+from database.models.projeto import TipoProjeto, EstadoProjeto
 
 
-class ProjetoFormScreen(ctk.CTkFrame):
+class ProjetoFormScreen(BaseForm):
     """
-    Screen para criar/editar projetos
+    Formulário para criar/editar projetos
 
     Navegação via MainWindow.show_screen("projeto_form", projeto_id=None/ID)
+
+    Modos:
+    - CREATE: projeto_id=None
+    - EDIT: projeto_id=<id>
+
+    FEATURES:
+    - Layout 2 COLUNAS (primeiro form a usar columns=2)
+    - Campos organizados em grid responsivo
+    - Período usa 2 date pickers separados (data_inicio + data_fim)
     """
 
     def __init__(self, parent, db_session: Session, projeto_id: Optional[int] = None, **kwargs):
-        super().__init__(parent, **kwargs)
+        """
+        Initialize projeto form screen
 
+        Args:
+            parent: Parent widget
+            db_session: SQLAlchemy database session
+            projeto_id: ID do projeto (None para criar, ID para editar)
+        """
         self.db_session = db_session
         self.projeto_id = projeto_id
         self.manager = ProjetosManager(db_session)
         self.clientes_manager = ClientesManager(db_session)
+        self.is_create = (projeto_id is None)
 
-        # Estado
-        self.projeto = None
-        self.clientes_map = {}
-
-        # Configure
-        self.configure(fg_color="transparent")
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # Create widgets
-        self.create_widgets()
-
-        # Load data se edição
-        if projeto_id:
-            self.carregar_projeto()
-
-    def create_widgets(self):
-        """Cria widgets da screen"""
-        # Container principal com scroll
-        main_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        main_container.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        main_container.grid_columnconfigure(0, weight=1)
-
-        # ========================================
-        # 1. HEADER
-        # ========================================
-        self.create_header(main_container)
-
-        # ========================================
-        # 2. CAMPOS DO PROJETO
-        # ========================================
-        self.create_fields(main_container)
-
-        # ========================================
-        # 3. FOOTER COM BOTÕES
-        # ========================================
-        self.create_footer(main_container)
-
-    def create_header(self, parent):
-        """Cria header com botão voltar e título"""
-        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 20))
-        header_frame.grid_columnconfigure(1, weight=1)
-
-        # Botão voltar
-        voltar_btn = ctk.CTkButton(
-            header_frame,
-            text="⬅️ Voltar",
-            command=self.voltar,
-            width=100,
-            height=35,
-            fg_color="gray",
-            hover_color="#5a5a5a"
-        )
-        voltar_btn.grid(row=0, column=0, sticky="w", padx=(0, 20))
-
-        # Título
-        titulo = "Novo Projeto" if not self.projeto_id else "Editar Projeto"
-        self.title_label = ctk.CTkLabel(
-            header_frame,
-            text=titulo,
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        self.title_label.grid(row=0, column=1, sticky="w")
-
-    def create_fields(self, parent):
-        """Cria campos do formulário"""
-        fields_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        fields_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 20))
-        fields_frame.grid_columnconfigure(0, weight=1)
-
-        # Tipo e Responsável (mesma linha)
-        tipo_owner_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        tipo_owner_frame.grid(row=0, column=0, sticky="ew", pady=(0, 18))
-        tipo_owner_frame.grid_columnconfigure((0, 1), weight=1)
-
-        # Tipo
-        ctk.CTkLabel(tipo_owner_frame, text="Tipo *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", padx=(0, 12))
-        self.tipo_dropdown = ctk.CTkOptionMenu(tipo_owner_frame, values=["Empresa", "Pessoal"], width=200, height=35)
-        self.tipo_dropdown.grid(row=1, column=0, sticky="w", padx=(0, 12), pady=(8, 0))
-
-        # Responsável
-        ctk.CTkLabel(tipo_owner_frame, text="Responsável *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=1, sticky="w")
-        self.owner_dropdown = ctk.CTkOptionMenu(tipo_owner_frame, values=["BA", "RR"], width=100, height=35)
-        self.owner_dropdown.grid(row=1, column=1, sticky="w", pady=(8, 0))
-
-        # Cliente
-        ctk.CTkLabel(fields_frame, text="Cliente", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=2, column=0, sticky="w", pady=(0, 8))
-
-        clientes = self.manager.obter_clientes()
-        cliente_options = ["(Nenhum)"] + [f"{c.numero} - {c.nome}" for c in clientes]
-        self.cliente_dropdown = ctk.CTkOptionMenu(fields_frame, values=cliente_options, width=400, height=35)
-        self.cliente_dropdown.grid(row=3, column=0, sticky="w", pady=(0, 18))
+        # Obter clientes ANTES de chamar super().__init__()
+        clientes = self.clientes_manager.listar_todos(order_by="nome")
+        self.cliente_options = ["(Nenhum)"] + [f"{c.numero} - {c.nome}" for c in clientes]
         self.clientes_map = {f"{c.numero} - {c.nome}": c.id for c in clientes}
 
-        # Descrição
-        ctk.CTkLabel(fields_frame, text="Descrição *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=4, column=0, sticky="w", pady=(0, 8))
-        self.descricao_entry = ctk.CTkTextbox(fields_frame, height=90)
-        self.descricao_entry.grid(row=5, column=0, sticky="ew", pady=(0, 18))
+        # Load initial data if editing
+        initial_data = {}
+        if projeto_id:
+            projeto = self.manager.obter_por_id(projeto_id)
+            if projeto:
+                # Tipo: enum → string display
+                tipo_display = "Empresa" if projeto.tipo == TipoProjeto.EMPRESA else "Pessoal"
 
-        # Valor
-        ctk.CTkLabel(fields_frame, text="Valor sem IVA *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=6, column=0, sticky="w", pady=(0, 8))
-        self.valor_entry = ctk.CTkEntry(fields_frame, placeholder_text="0.00", height=35)
-        self.valor_entry.grid(row=7, column=0, sticky="ew", pady=(0, 18))
+                # Estado: enum → string display
+                estado_display_map = {
+                    EstadoProjeto.ATIVO: "Ativo",
+                    EstadoProjeto.FINALIZADO: "Finalizado",
+                    EstadoProjeto.PAGO: "Pago",
+                    EstadoProjeto.ANULADO: "Anulado"
+                }
 
-        # Datas
-        datas_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        datas_frame.grid(row=8, column=0, sticky="ew", pady=(0, 18))
-        datas_frame.grid_columnconfigure((0, 1), weight=1)
+                # Cliente: object → string display
+                cliente_display = "(Nenhum)"
+                if projeto.cliente:
+                    cliente_display = f"{projeto.cliente.numero} - {projeto.cliente.nome}"
 
-        # Período do projeto
-        ctk.CTkLabel(datas_frame, text="Período do Projeto", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, columnspan=2, sticky="w")
-        self.periodo_picker = DateRangePickerDropdown(datas_frame, placeholder="Selecionar período...")
-        self.periodo_picker.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 12))
+                initial_data = {
+                    'numero': projeto.numero,
+                    'tipo': tipo_display,
+                    'owner': projeto.owner,
+                    'cliente': cliente_display,
+                    'descricao': projeto.descricao or '',
+                    'valor_sem_iva': str(float(projeto.valor_sem_iva)) if projeto.valor_sem_iva else '0.00',
+                    'data_inicio': projeto.data_inicio,  # date object ou None
+                    'data_fim': projeto.data_fim,  # date object ou None
+                    'data_faturacao': projeto.data_faturacao,  # date object ou None
+                    'data_vencimento': projeto.data_vencimento,  # date object ou None
+                    'estado': estado_display_map.get(projeto.estado, "Ativo"),
+                    'premio_bruno': str(float(projeto.premio_bruno)) if projeto.premio_bruno else '',
+                    'premio_rafael': str(float(projeto.premio_rafael)) if projeto.premio_rafael else '',
+                    'nota': projeto.nota or '',
+                }
+            else:
+                messagebox.showerror("Erro", "Projeto não encontrado!")
+                kwargs['on_cancel_callback'] = self._voltar_para_lista
+        else:
+            # Defaults para modo CREATE
+            initial_data = {
+                'tipo': 'Empresa',
+                'owner': 'BA',
+                'estado': 'Ativo',
+                'data_inicio': date.today(),
+            }
 
-        # Data faturação
-        ctk.CTkLabel(datas_frame, text="Data Faturação", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=2, column=0, sticky="w", padx=(0, 12))
-        self.data_faturacao_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar...")
-        self.data_faturacao_picker.grid(row=3, column=0, sticky="ew", padx=(0, 12), pady=(8, 12))
-
-        # Data vencimento
-        ctk.CTkLabel(datas_frame, text="Data Vencimento", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=2, column=1, sticky="w")
-        self.data_vencimento_picker = DatePickerDropdown(datas_frame, placeholder="Selecionar...")
-        self.data_vencimento_picker.grid(row=3, column=1, sticky="ew", pady=(8, 12))
-
-        # Estado
-        ctk.CTkLabel(fields_frame, text="Estado *", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=9, column=0, sticky="w", pady=(0, 8))
-        self.estado_dropdown = ctk.CTkOptionMenu(fields_frame, values=["Ativo", "Finalizado", "Pago", "Anulado"], height=35)
-        self.estado_dropdown.grid(row=10, column=0, sticky="w", pady=(0, 18))
-
-        # Prémios
-        premios_frame = ctk.CTkFrame(fields_frame, fg_color="transparent")
-        premios_frame.grid(row=11, column=0, sticky="ew", pady=(0, 18))
-        premios_frame.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkLabel(premios_frame, text="Prémio BA (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=0, sticky="w", padx=(0, 12))
-        self.premio_bruno_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=35)
-        self.premio_bruno_entry.grid(row=1, column=0, sticky="ew", padx=(0, 12), pady=(8, 0))
-
-        ctk.CTkLabel(premios_frame, text="Prémio RR (€)", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=0, column=1, sticky="w")
-        self.premio_rafael_entry = ctk.CTkEntry(premios_frame, placeholder_text="0.00", height=35)
-        self.premio_rafael_entry.grid(row=1, column=1, sticky="ew", pady=(8, 0))
-
-        # Nota
-        ctk.CTkLabel(fields_frame, text="Nota", font=ctk.CTkFont(size=14, weight="bold")).grid(
-            row=12, column=0, sticky="w", pady=(0, 8))
-        self.nota_entry = ctk.CTkTextbox(fields_frame, height=70)
-        self.nota_entry.grid(row=13, column=0, sticky="ew", pady=(0, 10))
-
-    def create_footer(self, parent):
-        """Cria footer com botões"""
-        footer_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        footer_frame.grid(row=2, column=0, sticky="ew", padx=30, pady=(10, 30))
-
-        # Botão Guardar
-        save_btn = ctk.CTkButton(
-            footer_frame,
-            text="💾 Guardar",
-            command=self.guardar,
-            width=150,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#4CAF50", "#388E3C"),
-            hover_color=("#66BB6A", "#2E7D32")
+        # Initialize BaseForm com 2 COLUNAS
+        super().__init__(
+            parent,
+            db_session=db_session,
+            columns=2,  # ← LAYOUT 2 COLUNAS!
+            initial_data=initial_data,
+            on_cancel_callback=self._voltar_para_lista,
+            **kwargs
         )
-        save_btn.pack(side="left", padx=(0, 10))
 
-        # Botão Cancelar
-        cancel_btn = ctk.CTkButton(
-            footer_frame,
-            text="Cancelar",
-            command=self.voltar,
-            width=130,
-            height=40,
-            font=ctk.CTkFont(size=14),
-            fg_color=("#757575", "#616161"),
-            hover_color=("#616161", "#424242")
-        )
-        cancel_btn.pack(side="left")
+    # ===== MÉTODOS ABSTRATOS OBRIGATÓRIOS =====
 
-    def carregar_projeto(self):
-        """Carrega dados do projeto para edição"""
-        self.projeto = self.manager.obter_por_id(self.projeto_id)
-        if not self.projeto:
-            messagebox.showerror("Erro", "Projeto não encontrado!")
-            self.voltar()
-            return
+    def get_form_title(self) -> str:
+        """Return form title"""
+        if self.projeto_id:
+            return "Editar Projeto"
+        return "Novo Projeto"
 
-        # Atualizar título
-        self.title_label.configure(text=f"Editar Projeto {self.projeto.numero}")
+    def get_form_icon(self):
+        """Return form icon"""
+        return get_icon(PROJETOS, size=(28, 28))
 
-        # Tipo e Owner
-        tipo_label = "Empresa" if self.projeto.tipo == TipoProjeto.EMPRESA else "Pessoal"
-        self.tipo_dropdown.set(tipo_label)
-        self.owner_dropdown.set(self.projeto.owner)
+    def get_fields_config(self) -> List[Dict[str, Any]]:
+        """
+        Return field configurations for projeto form
 
-        # Cliente
-        if self.projeto.cliente:
-            cliente_str = f"{self.projeto.cliente.numero} - {self.projeto.cliente.nome}"
-            self.cliente_dropdown.set(cliente_str)
+        Layout 2 COLUNAS com colspan para campos full-width
 
-        # Descrição
-        self.descricao_entry.insert("1.0", self.projeto.descricao or "")
+        Campos (baseados no DB real):
+        - numero (readonly, gerado automaticamente)
+        - tipo (dropdown: Empresa/Pessoal, required)
+        - owner (dropdown: BA/RR, required)
+        - cliente (dropdown dinâmico, opcional)
+        - descricao (textarea, required, full-width)
+        - valor_sem_iva (number, required)
+        - data_inicio (date)
+        - data_fim (date)
+        - data_faturacao (date)
+        - data_vencimento (date)
+        - estado (dropdown, required)
+        - premio_bruno (number, Decimal)
+        - premio_rafael (number, Decimal)
+        - nota (textarea, full-width)
+        """
+        return [
+            # LINHA 1 - Número (readonly, full-width)
+            {
+                "key": "numero",
+                "label": "Número",
+                "type": "text",
+                "readonly": True,
+                "placeholder": "(Será gerado automaticamente)",
+                "colspan": 2,
+                "width": 300
+            },
 
-        # Valor
-        self.valor_entry.insert(0, str(self.projeto.valor_sem_iva))
+            # LINHA 2 - Tipo e Owner (duas colunas)
+            {
+                "key": "tipo",
+                "label": "Tipo",
+                "type": "dropdown",
+                "values": ["Empresa", "Pessoal"],
+                "default": "Empresa",
+                "required": True,
+                "width": 250
+            },
+            {
+                "key": "owner",
+                "label": "Responsável",
+                "type": "dropdown",
+                "values": ["BA", "RR"],
+                "default": "BA",
+                "required": True,
+                "width": 150
+            },
 
-        # Datas
-        if self.projeto.data_inicio:
-            self.periodo_picker.set_range(self.projeto.data_inicio, self.projeto.data_fim)
-        if self.projeto.data_faturacao:
-            self.data_faturacao_picker.set_date(self.projeto.data_faturacao)
-        if self.projeto.data_vencimento:
-            self.data_vencimento_picker.set_date(self.projeto.data_vencimento)
+            # LINHA 3 - Cliente (full-width)
+            {
+                "key": "cliente",
+                "label": "Cliente",
+                "type": "dropdown",
+                "values": self.cliente_options,
+                "default": "(Nenhum)",
+                "colspan": 2,
+                "width": 500
+            },
 
-        # Estado
-        estado_map = {
-            EstadoProjeto.ATIVO: "Ativo",
-            EstadoProjeto.FINALIZADO: "Finalizado",
-            EstadoProjeto.PAGO: "Pago",
-            EstadoProjeto.ANULADO: "Anulado"
-        }
-        self.estado_dropdown.set(estado_map[self.projeto.estado])
+            # LINHA 4 - Descrição (full-width)
+            {
+                "key": "descricao",
+                "label": "Descrição",
+                "type": "textarea",
+                "required": True,
+                "placeholder": "Descrição do projeto...",
+                "colspan": 2,
+                "width": 600
+            },
 
-        # Prémios
-        if self.projeto.premio_bruno:
-            self.premio_bruno_entry.insert(0, str(self.projeto.premio_bruno))
-        if self.projeto.premio_rafael:
-            self.premio_rafael_entry.insert(0, str(self.projeto.premio_rafael))
+            # LINHA 5 - Valor e Estado (duas colunas)
+            {
+                "key": "valor_sem_iva",
+                "label": "Valor s/ IVA (€)",
+                "type": "number",
+                "required": True,
+                "placeholder": "0.00",
+                "validator": self._validate_valor,
+                "width": 250
+            },
+            {
+                "key": "estado",
+                "label": "Estado",
+                "type": "dropdown",
+                "values": ["Ativo", "Finalizado", "Pago", "Anulado"],
+                "default": "Ativo",
+                "required": True,
+                "width": 250
+            },
 
-        # Nota
-        if self.projeto.nota:
-            self.nota_entry.insert("1.0", self.projeto.nota)
+            # LINHA 6 - Data Início e Data Fim (duas colunas)
+            {
+                "key": "data_inicio",
+                "label": "Data Início",
+                "type": "date",
+            },
+            {
+                "key": "data_fim",
+                "label": "Data Fim Prevista",
+                "type": "date",
+            },
 
-    def guardar(self):
-        """Guarda o projeto"""
+            # LINHA 7 - Data Faturação e Data Vencimento (duas colunas)
+            {
+                "key": "data_faturacao",
+                "label": "Data Faturação",
+                "type": "date",
+            },
+            {
+                "key": "data_vencimento",
+                "label": "Data Vencimento",
+                "type": "date",
+            },
+
+            # LINHA 8 - Prémios (duas colunas)
+            {
+                "key": "premio_bruno",
+                "label": "Prémio BA (€)",
+                "type": "number",
+                "placeholder": "0.00",
+                "validator": self._validate_premio,
+                "width": 250
+            },
+            {
+                "key": "premio_rafael",
+                "label": "Prémio RR (€)",
+                "type": "number",
+                "placeholder": "0.00",
+                "validator": self._validate_premio,
+                "width": 250
+            },
+
+            # LINHA 9 - Nota (full-width)
+            {
+                "key": "nota",
+                "label": "Nota",
+                "type": "textarea",
+                "placeholder": "Observações adicionais...",
+                "colspan": 2,
+                "width": 600
+            },
+        ]
+
+    def on_save(self, data: Dict[str, Any]) -> bool | str:
+        """
+        Handle save - create or update projeto
+
+        Args:
+            data: Dict com todos os valores do form
+
+        Returns:
+            True se sucesso, ou mensagem de erro
+        """
         try:
-            # Get values
-            tipo_str = self.tipo_dropdown.get()
-            tipo = TipoProjeto.EMPRESA if tipo_str == "Empresa" else TipoProjeto.PESSOAL
-            owner = self.owner_dropdown.get()
+            # Prepare data (convert empty strings to None)
+            descricao = data.get('descricao', '').strip()
+            tipo_str = data.get('tipo', 'Empresa').strip()
+            owner = data.get('owner', 'BA').strip()
+            estado_str = data.get('estado', 'Ativo').strip()
+            nota = data.get('nota', '').strip() or None
 
-            cliente_str = self.cliente_dropdown.get()
-            cliente_id = self.clientes_map.get(cliente_str) if cliente_str != "(Nenhum)" else None
-
-            descricao = self.descricao_entry.get("1.0", "end-1c").strip()
+            # Validate descricao (BaseForm já valida required, mas double check)
             if not descricao:
-                messagebox.showerror("Erro", "Descrição é obrigatória")
-                return
+                return "Descrição é obrigatória"
 
-            valor_str = self.valor_entry.get().strip()
-            if not valor_str:
-                messagebox.showerror("Erro", "Valor é obrigatório")
-                return
-            valor = Decimal(valor_str.replace(',', '.'))
+            # Parse tipo enum
+            tipo_map = {
+                "Empresa": TipoProjeto.EMPRESA,
+                "Pessoal": TipoProjeto.PESSOAL
+            }
+            tipo = tipo_map.get(tipo_str, TipoProjeto.EMPRESA)
 
-            # Datas
-            data_inicio = self.periodo_picker.start_date if self.periodo_picker.get() else None
-            data_fim = self.periodo_picker.end_date if self.periodo_picker.get() else None
-            data_faturacao = self.data_faturacao_picker.get_date() if self.data_faturacao_picker.get() else None
-            data_vencimento = self.data_vencimento_picker.get_date() if self.data_vencimento_picker.get() else None
-
-            # Estado
+            # Parse estado enum
             estado_map = {
                 "Ativo": EstadoProjeto.ATIVO,
                 "Finalizado": EstadoProjeto.FINALIZADO,
                 "Pago": EstadoProjeto.PAGO,
                 "Anulado": EstadoProjeto.ANULADO
             }
-            estado = estado_map[self.estado_dropdown.get()]
+            estado = estado_map.get(estado_str, EstadoProjeto.ATIVO)
 
-            # Prémios
-            premio_bruno = None
-            if self.premio_bruno_entry.get():
-                premio_bruno = Decimal(self.premio_bruno_entry.get().replace(',', '.'))
+            # Parse cliente
+            cliente_str = data.get('cliente', '(Nenhum)').strip()
+            if cliente_str == "(Nenhum)":
+                cliente_id = None
+            else:
+                cliente_id = self.clientes_map.get(cliente_str)
+                if cliente_id is None and cliente_str != "(Nenhum)":
+                    return f"Cliente '{cliente_str}' não encontrado"
 
-            premio_rafael = None
-            if self.premio_rafael_entry.get():
-                premio_rafael = Decimal(self.premio_rafael_entry.get().replace(',', '.'))
+            # Parse valor_sem_iva
+            try:
+                valor_sem_iva_str = data.get('valor_sem_iva', '').strip()
+                if not valor_sem_iva_str:
+                    return "Valor sem IVA é obrigatório"
 
-            # Nota
-            nota = self.nota_entry.get("1.0", "end-1c").strip() or None
+                valor_sem_iva = Decimal(valor_sem_iva_str.replace(',', '.'))
+                if valor_sem_iva < 0:
+                    return "Valor sem IVA deve ser >= 0"
+
+            except (ValueError, TypeError):
+                return "Valor sem IVA inválido"
+
+            # Parse prémios
+            try:
+                premio_bruno_str = data.get('premio_bruno', '').strip()
+                if premio_bruno_str:
+                    premio_bruno = Decimal(premio_bruno_str.replace(',', '.'))
+                    if premio_bruno < 0:
+                        return "Prémio BA deve ser >= 0"
+                else:
+                    premio_bruno = None
+
+                premio_rafael_str = data.get('premio_rafael', '').strip()
+                if premio_rafael_str:
+                    premio_rafael = Decimal(premio_rafael_str.replace(',', '.'))
+                    if premio_rafael < 0:
+                        return "Prémio RR deve ser >= 0"
+                else:
+                    premio_rafael = None
+
+            except (ValueError, TypeError):
+                return "Prémios inválidos"
+
+            # Parse datas (BaseForm já retorna date objects ou None)
+            data_inicio = data.get('data_inicio')  # date object ou None
+            data_fim = data.get('data_fim')  # date object ou None
+            data_faturacao = data.get('data_faturacao')  # date object ou None
+            data_vencimento = data.get('data_vencimento')  # date object ou None
+
+            # Validação: data_fim >= data_inicio (se ambas preenchidas)
+            if data_inicio and data_fim and data_fim < data_inicio:
+                return "Data Fim não pode ser anterior à Data Início"
+
+            # Prepare data dict for manager
+            projeto_data = {
+                "tipo": tipo,
+                "owner": owner,
+                "cliente_id": cliente_id,
+                "descricao": descricao,
+                "valor_sem_iva": valor_sem_iva,
+                "data_inicio": data_inicio,
+                "data_fim": data_fim,
+                "data_faturacao": data_faturacao,
+                "data_vencimento": data_vencimento,
+                "estado": estado,
+                "premio_bruno": premio_bruno,
+                "premio_rafael": premio_rafael,
+                "nota": nota,
+            }
 
             # Create or update
             if self.projeto_id:
-                # Update
+                # UPDATE
                 sucesso, erro = self.manager.atualizar(
                     self.projeto_id,
-                    tipo=tipo,
-                    owner=owner,
-                    cliente_id=cliente_id,
-                    descricao=descricao,
-                    valor_sem_iva=valor,
-                    data_inicio=data_inicio,
-                    data_fim=data_fim,
-                    data_faturacao=data_faturacao,
-                    data_vencimento=data_vencimento,
-                    estado=estado,
-                    premio_bruno=premio_bruno,
-                    premio_rafael=premio_rafael,
-                    nota=nota
+                    **projeto_data
                 )
+
+                if not sucesso:
+                    return erro or "Erro ao atualizar projeto"
+
             else:
-                # Create
+                # CREATE
                 sucesso, projeto, erro = self.manager.criar(
-                    tipo=tipo,
-                    owner=owner,
-                    cliente_id=cliente_id,
-                    descricao=descricao,
-                    valor_sem_iva=valor,
-                    data_inicio=data_inicio,
-                    data_fim=data_fim,
-                    data_faturacao=data_faturacao,
-                    data_vencimento=data_vencimento,
-                    estado=estado,
-                    premio_bruno=premio_bruno,
-                    premio_rafael=premio_rafael,
-                    nota=nota
+                    **projeto_data
                 )
 
-            if sucesso:
-                self.voltar()
-            else:
-                messagebox.showerror("Erro", f"Erro ao guardar: {erro}")
+                if not sucesso:
+                    return erro or "Erro ao criar projeto"
 
-        except ValueError as e:
-            messagebox.showerror("Erro", f"Erro nos dados: {e}")
+            # Success!
+            return True
+
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
+            return f"Erro inesperado: {str(e)}"
 
-    def voltar(self):
-        """Volta para a lista de projetos"""
-        # Navigate back to projetos list
+    # ===== VALIDADORES =====
+
+    def _validate_valor(self, valor: str) -> bool:
+        """
+        Valida Valor sem IVA
+
+        Args:
+            valor: Valor a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not valor:
+            return False  # Obrigatório
+
+        try:
+            val = Decimal(valor.replace(',', '.'))
+            return val >= 0
+        except (ValueError, TypeError):
+            return False
+
+    def _validate_premio(self, valor: str) -> bool:
+        """
+        Valida Prémio
+
+        Args:
+            valor: Valor a validar
+
+        Returns:
+            True se válido, False caso contrário
+        """
+        if not valor:
+            return True  # Opcional
+
+        try:
+            val = Decimal(valor.replace(',', '.'))
+            return val >= 0
+        except (ValueError, TypeError):
+            return False
+
+    # ===== CALLBACKS =====
+
+    def after_save_callback(self):
+        """
+        Executado após save bem-sucedido
+
+        Navega de volta para lista de projetos
+        """
+        self._voltar_para_lista()
+
+    def after_cancel_callback(self):
+        """
+        Executado após cancelar
+
+        Confirma e navega de volta para lista de projetos
+        """
+        resposta = messagebox.askyesno(
+            "Cancelar",
+            "Tem certeza que deseja cancelar?\n\nTodas as alterações serão perdidas."
+        )
+
+        if resposta:
+            self._voltar_para_lista()
+
+    # ===== HELPERS =====
+
+    def _voltar_para_lista(self):
+        """Navega de volta para lista de projetos"""
         main_window = self.master.master
         if hasattr(main_window, 'show_screen'):
             main_window.show_screen("projetos")
