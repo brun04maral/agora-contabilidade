@@ -29,9 +29,9 @@ FREQUÊNCIA RECOMENDADA:
 1.1 BACKUP AUTOMÁTICO DIÁRIO
 --------------------
 
-Ficheiro: scripts/backup-db.sh
+Ficheiro: `scripts/backup-db.sh`
 
----
+```bash
 #!/bin/bash
 
 # Backup automático PostgreSQL
@@ -76,27 +76,27 @@ echo "[$(date)] ✅ Limpeza completa"
 # rclone copy ${BACKUP_FILE} gdrive:agora-backups/
 
 echo "[$(date)] 🎉 Backup completo!"
----
+```
 
 Dar permissões:
----
+```bash
 chmod +x scripts/backup-db.sh
----
+```
 
 Configurar cron (executar 3h da manhã):
----
+```bash
 crontab -e
 
 # Adicionar linha:
 0 3 * * * /path/to/agora-contabilidade/scripts/backup-db.sh >> /var/log/agora-backup.log 2>&1
----
+```
 
 1.2 BACKUP FICHEIROS UPLOAD
 --------------------
 
-Ficheiro: scripts/backup-uploads.sh
+Ficheiro: `scripts/backup-uploads.sh`
 
----
+```bash
 #!/bin/bash
 
 # Backup de ficheiros uploaded (PDFs, imagens)
@@ -116,7 +116,7 @@ echo "✅ Backup uploads criado: uploads_${DATE}.tar.gz"
 
 # Limpar backups > 60 dias
 find ${BACKUP_DIR} -name "uploads_*.tar.gz" -mtime +60 -delete
----
+```
 
 1.3 RESTAURAR BACKUP
 --------------------
@@ -124,14 +124,14 @@ find ${BACKUP_DIR} -name "uploads_*.tar.gz" -mtime +60 -delete
 Processo manual:
 
 PASSO 1: Parar aplicação
----
+```bash
 docker-compose down
 # OU
 systemctl stop agora-contabilidade
----
+```
 
 PASSO 2: Restaurar database
----
+```bash
 # Listar backups disponíveis
 ls -lh /var/backups/agora-contabilidade/
 
@@ -146,10 +146,10 @@ psql -U agora_user -h localhost -c "CREATE DATABASE agora_contabilidade;"
 gunzip -c ${BACKUP_FILE} | psql -U agora_user -h localhost agora_contabilidade
 
 echo "✅ Database restaurada"
----
+```
 
 PASSO 3: Restaurar uploads (se necessário)
----
+```bash
 UPLOAD_BACKUP="/var/backups/agora-contabilidade/uploads/uploads_20251218.tar.gz"
 
 # Limpar uploads actuais
@@ -157,29 +157,29 @@ rm -rf ./data/uploads/*
 
 # Extrair backup
 tar -xzf ${UPLOAD_BACKUP} -C ./
----
+```
 
 PASSO 4: Reiniciar aplicação
----
+```bash
 docker-compose up -d
 # OU
 systemctl start agora-contabilidade
----
+```
 
 PASSO 5: Verificar
----
+```bash
 # Testar login
 curl http://localhost:7331
 
 # Verificar logs
 docker-compose logs -f app
----
+```
 
 1.4 BACKUP PARA CLOUD
 --------------------
 
 Opção A: AWS S3
----
+```bash
 # Instalar AWS CLI
 sudo apt install awscli
 
@@ -196,10 +196,10 @@ aws s3 cp ${BACKUP_FILE} ${S3_BUCKET}/database/
 aws s3 cp /var/backups/agora-contabilidade/uploads/ ${S3_BUCKET}/uploads/ --recursive
 
 echo "✅ Backup enviado para S3"
----
+```
 
 Opção B: Google Drive (rclone)
----
+```bash
 # Instalar rclone
 curl https://rclone.org/install.sh | sudo bash
 
@@ -208,10 +208,10 @@ rclone config
 
 # Script
 rclone copy /var/backups/agora-contabilidade gdrive:agora-backups/
----
+```
 
 Opção C: Rsync para servidor remoto
----
+```bash
 #!/bin/bash
 REMOTE_USER="backup"
 REMOTE_HOST="backup.example.com"
@@ -220,7 +220,7 @@ REMOTE_PATH="/backups/agora/"
 rsync -avz --delete \
   /var/backups/agora-contabilidade/ \
   ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}
----
+```
 
 ==================================================
 2. ACTUALIZAÇÕES DE SISTEMA
@@ -231,7 +231,7 @@ rsync -avz --delete \
 
 Procedimento mensal:
 
----
+```bash
 # Ver dependências desactualizadas
 npm outdated
 
@@ -246,7 +246,7 @@ npm run dev
 git add package*.json
 git commit -m "chore: update dependencies"
 git push
----
+```
 
 CRÍTICO: Testar sempre em dev antes de produção!
 
@@ -261,7 +261,7 @@ Dependências críticas a monitorizar:
 
 Quando nova versão Prisma sai:
 
----
+```bash
 # Ver versão actual
 npx prisma --version
 
@@ -276,14 +276,14 @@ npx prisma migrate status
 
 # Testar
 npm run build
----
+```
 
 2.3 ACTUALIZAR NEXT.JS
 --------------------
 
 Cuidado: Major versions podem ter breaking changes!
 
----
+```bash
 # Ver versão actual
 npm list next
 
@@ -298,14 +298,14 @@ npm run build
 
 # Testar todas as rotas
 npm run dev
----
+```
 
 2.4 ACTUALIZAR DOCKER IMAGES
 --------------------
 
 Se usar Docker em produção:
 
----
+```bash
 # Rebuild image
 docker-compose build --no-cache
 
@@ -320,7 +320,7 @@ docker-compose logs -f app
 
 # Verificar saúde
 curl http://localhost:7331/api/health
----
+```
 
 ==================================================
 3. MONITORIZAÇÃO
@@ -329,9 +329,9 @@ curl http://localhost:7331/api/health
 3.1 HEALTH CHECK ENDPOINT
 --------------------
 
-Ficheiro: app/api/health/route.ts
+Ficheiro: `app/api/health/route.ts`
 
----
+```typescript
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
@@ -360,10 +360,10 @@ export async function GET() {
     )
   }
 }
----
+```
 
 Monitorizar via cron:
----
+```bash
 #!/bin/bash
 # scripts/health-check.sh
 
@@ -382,12 +382,12 @@ else
     # Ou email
     # echo "Sistema DOWN" | mail -s "Alerta Agora" admin@agoramedia.pt
 fi
----
+```
 
 Cron (executar de 15 em 15 minutos):
----
+```bash
 */15 * * * * /path/to/scripts/health-check.sh >> /var/log/agora-health.log 2>&1
----
+```
 
 3.2 LOGS
 --------------------
@@ -395,7 +395,7 @@ Cron (executar de 15 em 15 minutos):
 Ver logs aplicação:
 
 Docker:
----
+```bash
 # Últimas 100 linhas
 docker-compose logs --tail=100 app
 
@@ -404,22 +404,22 @@ docker-compose logs -f app
 
 # Procurar erros
 docker-compose logs app | grep ERROR
----
+```
 
 Systemd:
----
+```bash
 journalctl -u agora-contabilidade -n 100
 journalctl -u agora-contabilidade -f
----
+```
 
 Log PostgreSQL:
----
+```bash
 # Localização comum
 tail -f /var/log/postgresql/postgresql-16-main.log
 
 # Via Docker
 docker-compose logs db
----
+```
 
 3.3 MÉTRICAS IMPORTANTES
 --------------------
@@ -427,33 +427,33 @@ docker-compose logs db
 Verificar semanalmente:
 
 □ Espaço em disco
----
+```bash
 df -h
 # /var deve ter > 20% livre
----
+```
 
 □ Uso memória
----
+```bash
 free -h
 # Swap não deve estar cheio
----
+```
 
 □ Tamanho database
----
+```bash
 psql -U agora_user -h localhost agora_contabilidade -c "\l+"
----
+```
 
 □ Número de transactions
----
+```bash
 psql -U agora_user -h localhost agora_contabilidade \
   -c "SELECT COUNT(*) FROM transactions;"
----
+```
 
 □ Erros recentes
----
+```bash
 docker-compose logs app --since 24h | grep -i error | wc -l
 # Deve ser 0 ou muito baixo
----
+```
 
 ==================================================
 4. TROUBLESHOOTING COMUM
@@ -465,7 +465,7 @@ docker-compose logs app --since 24h | grep -i error | wc -l
 SINTOMA: docker-compose up falha ou app crasha
 
 DIAGNÓSTICO:
----
+```bash
 # Ver logs
 docker-compose logs app
 
@@ -476,21 +476,21 @@ netstat -tulpn | grep 7331
 # Verificar .env
 cat .env | grep DATABASE_URL
 # Credenciais correctas?
----
+```
 
 SOLUÇÕES:
 
 Problema: Porta 7331 em uso
----
+```bash
 # Matar processo
 lsof -ti:7331 | xargs kill -9
 
 # Ou mudar porta no .env
 PORT=7332
----
+```
 
 Problema: Database não conecta
----
+```bash
 # Testar conexão manual
 psql postgresql://user:pass@localhost:5432/agora_contabilidade
 
@@ -499,13 +499,13 @@ systemctl status postgresql
 
 # Reiniciar PostgreSQL
 sudo systemctl restart postgresql
----
+```
 
 Problema: Prisma Client desactualizado
----
+```bash
 npx prisma generate
 npm run build
----
+```
 
 4.2 QUERIES LENTAS
 --------------------
@@ -513,7 +513,7 @@ npm run build
 SINTOMA: Dashboard demora > 3 segundos a carregar
 
 DIAGNÓSTICO:
----
+```bash
 # Enable query logging
 # Adicionar ao .env:
 DEBUG=prisma:query
@@ -523,12 +523,12 @@ docker-compose restart app
 
 # Ver queries
 docker-compose logs app | grep "prisma:query"
----
+```
 
 SOLUÇÕES:
 
 Adicionar indexes:
----
+```prisma
 # Editar schema.prisma
 model Transaction {
   // ...
@@ -536,16 +536,18 @@ model Transaction {
   @@index([userId, projectCode])
   @@index([issuedAt])
 }
+```
 
+```bash
 # Criar migration
 npx prisma migrate dev --name add_performance_indexes
 
 # Deploy
 npx prisma migrate deploy
----
+```
 
 Optimizar queries:
----
+```typescript
 // Antes (N+1 queries)
 const transactions = await prisma.transaction.findMany()
 for (const t of transactions) {
@@ -556,7 +558,7 @@ for (const t of transactions) {
 const transactions = await prisma.transaction.findMany({
   include: { user: true }
 })
----
+```
 
 4.3 ERROS DE CÁLCULO (SALDOS ERRADOS)
 --------------------
@@ -564,7 +566,7 @@ const transactions = await prisma.transaction.findMany({
 SINTOMA: Saldos na UI não batem com expectativa
 
 DIAGNÓSTICO:
----
+```bash
 # Abrir Prisma Studio
 npx prisma studio
 
@@ -577,7 +579,9 @@ npx prisma studio
 
 # Executar query SQL directa
 psql -U agora_user agora_contabilidade
+```
 
+```sql
 SELECT 
   type,
   "categoryCode",
@@ -587,12 +591,12 @@ SELECT
 FROM transactions
 WHERE "userId" = 'bruno-uuid'
 GROUP BY type, "categoryCode", "projectCode";
----
+```
 
 SOLUÇÕES COMUNS:
 
 Problema: Despesas não estão negativas
----
+```sql
 # Verificar em Prisma Studio
 # Transactions type='expense' devem ter total < 0
 
@@ -600,26 +604,26 @@ Problema: Despesas não estão negativas
 UPDATE transactions 
 SET total = -ABS(total)
 WHERE type = 'expense' AND total > 0;
----
+```
 
 Problema: Estado pagamento inconsistente
----
+```sql
 # Verificar extra JSON
 SELECT id, extra->>'estado_pagamento' 
 FROM transactions 
 WHERE type = 'expense';
 
 # Deve ser 'PAGO' ou 'PENDENTE'
----
+```
 
 Problema: Conversão cêntimos errada
----
+```sql
 # Transactions devem estar em cêntimos (x100)
 # 150.00 EUR = 15000 cêntimos
 
 # Se valores estão errados, corrigir:
 UPDATE transactions SET total = total * 100 WHERE ...;
----
+```
 
 4.4 FICHEIROS UPLOAD NÃO APARECEM
 --------------------
@@ -627,7 +631,7 @@ UPDATE transactions SET total = total * 100 WHERE ...;
 SINTOMA: PDFs uploaded não aparecem na UI
 
 DIAGNÓSTICO:
----
+```bash
 # Verificar directório existe
 ls -la ./data/uploads
 
@@ -637,12 +641,12 @@ ls -la ./data/uploads
 # Verificar .env
 echo $UPLOAD_PATH
 # Deve apontar para directório correcto
----
+```
 
 SOLUÇÕES:
 
 Corrigir permissões:
----
+```bash
 # Dar ownership ao user correcto
 sudo chown -R www-data:www-data ./data/uploads
 
@@ -651,13 +655,13 @@ sudo chown -R 1000:1000 ./data/uploads
 
 # Permissões 755
 chmod 755 ./data/uploads
----
+```
 
 Criar directório:
----
+```bash
 mkdir -p ./data/uploads
 chmod 755 ./data/uploads
----
+```
 
 4.5 ERROS TOCONLINE API
 --------------------
@@ -665,7 +669,7 @@ chmod 755 ./data/uploads
 SINTOMA: Emissão de facturas falha
 
 DIAGNÓSTICO:
----
+```bash
 # Verificar API key
 psql agora_contabilidade -c \
   "SELECT value FROM settings WHERE code = 'TOCONLINE_API_KEY';"
@@ -673,12 +677,12 @@ psql agora_contabilidade -c \
 # Testar conexão manualmente
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://api.toconline.pt/v1/customers
----
+```
 
 SOLUÇÕES:
 
 Problema: API key inválida
----
+```sql
 # Gerar nova key em toconline.pt
 # Actualizar no sistema:
 
@@ -687,17 +691,17 @@ Problema: API key inválida
 UPDATE settings 
 SET value = 'nova_api_key' 
 WHERE code = 'TOCONLINE_API_KEY';
----
+```
 
 Problema: Cliente não existe
----
+```
 # Criar cliente primeiro
 # Verificar NIF está correcto
 # Email é obrigatório
----
+```
 
 Problema: Rate limit
----
+```typescript
 # TOConline pode ter limites de requests
 # Implementar retry com backoff
 
@@ -711,7 +715,7 @@ async function emitirComRetry(transactionId, maxRetries = 3) {
     }
   }
 }
----
+```
 
 ==================================================
 5. PROCEDIMENTOS DE EMERGÊNCIA
@@ -723,37 +727,37 @@ async function emitirComRetry(transactionId, maxRetries = 3) {
 PASSOS:
 
 1. Verificar o que está down
----
+```bash
 # App?
 curl http://localhost:7331
 
 # Database?
 psql -U agora_user -h localhost agora_contabilidade -c "SELECT 1"
----
+```
 
 2. Reiniciar serviços
----
+```bash
 # Docker
 docker-compose restart
 
 # Systemd
 sudo systemctl restart agora-contabilidade
 sudo systemctl restart postgresql
----
+```
 
 3. Se persistir, restaurar último backup
----
+```bash
 # Ver backup mais recente
 ls -lt /var/backups/agora-contabilidade/ | head -n 5
 
 # Restaurar (ver secção 1.3)
----
+```
 
 4. Notificar utilizadores
----
+```
 # Se vai demorar > 15 min
 # Email/SMS para Bruno e Rafael
----
+```
 
 5.2 CORRUPÇÃO DE DADOS
 --------------------
@@ -763,28 +767,28 @@ SINTOMA: Dados inconsistentes, valores estranhos
 PASSOS:
 
 1. Parar sistema IMEDIATAMENTE
----
+```bash
 docker-compose down
----
+```
 
 2. Fazer backup do estado actual
----
+```bash
 pg_dump agora_contabilidade > corrupted_backup_$(date +%Y%m%d_%H%M%S).sql
----
+```
 
 3. Analisar o problema
----
+```bash
 # Usar Prisma Studio
 npx prisma studio
 
 # Queries SQL para investigar
----
+```
 
 4. Restaurar último backup bom
----
+```bash
 # Identificar último backup antes da corrupção
 # Restaurar (ver 1.3)
----
+```
 
 5. Re-inserir dados críticos manualmente se necessário
 
@@ -796,33 +800,33 @@ Se backup falhou e perderam-se dados:
 1. NÃO ENTRAR EM PÂNICO
 2. Parar sistema
 3. Verificar backups disponíveis:
----
+```bash
 ls -lh /var/backups/agora-contabilidade/
 ls -lh /var/backups/agora-contabilidade/uploads/
----
+```
 
 4. Se backups cloud, restaurar:
----
+```bash
 # S3
 aws s3 cp s3://agora-backups/database/backup_YYYYMMDD.sql.gz ./
 
 # Google Drive
 rclone copy gdrive:agora-backups/ ./restore/
----
+```
 
 5. Restaurar backup mais recente possível
 
 6. Avaliar lacuna de dados:
----
+```
 # Último backup: 18/12/2025 03:00
 # Perda de dados: 18/12/2025 03:00 - 14:00 (11 horas)
----
+```
 
 7. Recuperar manualmente:
    - Consultar emails de notificações
    - Exportar dados de app Python (se ainda activa)
    - Consultar facturas TOConline
-   - Recontrução manual
+   - Reconstrucao manual
 
 ==================================================
 6. SEGURANÇA
@@ -832,46 +836,46 @@ rclone copy gdrive:agora-backups/ ./restore/
 --------------------
 
 □ Passwords actualizadas
----
+```bash
 # Mudar passwords users a cada 3 meses
 # Usar passwords fortes (> 16 chars)
----
+```
 
 □ API keys rotacionadas
----
+```
 # TOConline API key
 # Outras integrações
----
+```
 
 □ SSL/TLS válido
----
+```bash
 # Se usar HTTPS, verificar certificado não expirou
 openssl s_client -connect localhost:443 -servername agoramedia.pt
----
+```
 
 □ Firewall configurado
----
+```bash
 # Apenas portas necessárias abertas
 sudo ufw status
 
 # PostgreSQL: apenas localhost
 # App: apenas 7331 (se necessário)
----
+```
 
 □ Logs auditados
----
+```bash
 # Procurar tentativas login falhadas
 grep "login failed" /var/log/agora-*.log
 
 # Verificar acessos suspeitos
----
+```
 
 6.2 BACKUP ENCRYPTION
 --------------------
 
 Encriptar backups sensíveis:
 
----
+```bash
 #!/bin/bash
 # Backup encriptado com GPG
 
@@ -891,12 +895,12 @@ echo "✅ Backup encriptado: ${ENCRYPTED_FILE}"
 
 # Upload encriptado
 aws s3 cp ${ENCRYPTED_FILE} s3://agora-backups/encrypted/
----
+```
 
 Desencriptar:
----
+```bash
 gpg --decrypt backup_20251218.sql.gz.gpg | gunzip | psql agora_contabilidade
----
+```
 
 ==================================================
 7. DOCUMENTAÇÃO PARA EQUIPA
@@ -908,7 +912,7 @@ gpg --decrypt backup_20251218.sql.gz.gpg | gunzip | psql agora_contabilidade
 Criar ficheiro: RUNBOOK.md
 
 Conteúdo:
----
+```markdown
 # RUNBOOK - Operações Diárias
 
 ## Contactos de Emergência
@@ -944,14 +948,14 @@ Se receber email/SMS alerta:
 1. Verificar /api/health
 2. Ver logs
 3. Contactar equipa se necessário
----
+```
 
 7.2 CHANGE LOG
 --------------------
 
 Manter ficheiro: CHANGELOG.md
 
----
+```markdown
 # Changelog
 
 ## [1.2.0] - 2025-01-15
@@ -975,7 +979,7 @@ Manter ficheiro: CHANGELOG.md
 - Migração completa de app Python
 - Cálculo saldos pessoais
 - Dashboard fiscal
----
+```
 
 ==================================================
 CHECKLIST MANUTENÇÃO MENSAL
@@ -1036,24 +1040,32 @@ LINKS:
 COMANDOS ÚTEIS:
 
 Prisma:
-  npx prisma studio
-  npx prisma migrate status
-  npx prisma db push
+```bash
+npx prisma studio
+npx prisma migrate status
+npx prisma db push
+```
 
 Docker:
-  docker-compose ps
-  docker-compose logs -f
-  docker-compose exec app sh
+```bash
+docker-compose ps
+docker-compose logs -f
+docker-compose exec app sh
+```
 
 PostgreSQL:
-  psql -U user -d dbname
-  \dt (listar tabelas)
-  \d table (descrever tabela)
-  \q (sair)
+```bash
+psql -U user -d dbname
+\dt         # listar tabelas
+\d table    # descrever tabela
+\q          # sair
+```
 
 Git:
-  git log --oneline -10
-  git diff
-  git status
+```bash
+git log --oneline -10
+git diff
+git status
+```
 
 ==================================================
