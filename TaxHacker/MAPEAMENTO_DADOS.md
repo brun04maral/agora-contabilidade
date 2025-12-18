@@ -12,6 +12,7 @@ ANÁLISE: SCHEMA TAXHACKER (PRISMA) - O QUE EXISTE
 
 MODELO Transaction (CORE do TaxHacker):
 ----------------------------------------
+```prisma
 id                    String (UUID)
 userId                String (UUID)
 name                  String?           // Nome/descrição
@@ -32,27 +33,33 @@ issuedAt              DateTime?         // Data da transação
 createdAt             DateTime
 updatedAt             DateTime
 text                  String?           // Full-text search
+```
 
 MODELO Category:
 ----------------------------------------
+```prisma
 id         String (UUID)
 userId     String (UUID)
 code       String                        // Ex: "RECEBIDO", "FIXA_MENSAL"
 name       String                        // Nome display
 color      String                        // Hex color
 llm_prompt String?                       // AI prompt (não usar)
+```
 
 MODELO Project:
 ----------------------------------------
+```prisma
 id         String (UUID)
 userId     String (UUID)
 code       String                        // Ex: "EMPRESA", "PESSOAL_BRUNO"
 name       String
 color      String
 llm_prompt String?
+```
 
 MODELO Field (Custom Fields):
 ----------------------------------------
+```prisma
 id                  String (UUID)
 userId              String (UUID)
 code                String                // Ex: "premio_bruno"
@@ -64,9 +71,11 @@ isVisibleInList     Boolean
 isVisibleInAnalysis Boolean
 isRequired          Boolean
 isExtra             Boolean               // Se é custom field
+```
 
 MODELO File:
 ----------------------------------------
+```prisma
 id                String (UUID)
 userId            String (UUID)
 filename          String
@@ -76,6 +85,7 @@ metadata          Json?
 isReviewed        Boolean
 isSplitted        Boolean
 cachedParseResult Json?
+```
 
 ==================================================
 ANÁLISE: MODELOS AGORA CONTABILIDADE (PYTHON)
@@ -83,6 +93,7 @@ ANÁLISE: MODELOS AGORA CONTABILIDADE (PYTHON)
 
 PROJETO (projeto.py):
 ----------------------------------------
+```python
 id                    Integer
 numero                String(20)          // #P0001
 tipo                  Enum                // EMPRESA|PESSOAL_BRUNO|PESSOAL_RAFAEL
@@ -99,9 +110,11 @@ premio_rafael         Numeric(10,2)
 nota                  Text
 created_at            DateTime
 updated_at            DateTime
+```
 
 DESPESA (despesa.py):
 ----------------------------------------
+```python
 id                    Integer
 numero                String(20)          // #D000001
 tipo                  Enum                // FIXA_MENSAL|PESSOAL_X|EQUIPAMENTO|PROJETO
@@ -115,9 +128,11 @@ estado                Enum                // PENDENTE|PAGO
 nota                  Text
 created_at            DateTime
 updated_at            DateTime
+```
 
 BOLETIM (boletim.py):
 ----------------------------------------
+```python
 id                    Integer
 numero                String(20)          // #B0001
 socio                 Enum                // BRUNO|RAFAEL
@@ -129,9 +144,11 @@ data_pagamento        Date?
 nota                  Text
 created_at            DateTime
 updated_at            DateTime
+```
 
 CLIENTE (cliente.py):
 ----------------------------------------
+```python
 id                    Integer
 numero                String(20)          // #C0001
 nome                  String(100)
@@ -139,9 +156,11 @@ nif                   String(20)
 pais                  String(50)
 email                 String(100)
 morada                Text
+```
 
 FORNECEDOR (fornecedor.py):
 ----------------------------------------
+```python
 id                    Integer
 numero                String(20)          // #F0001
 nome                  String(100)
@@ -150,9 +169,11 @@ area                  String(50)
 nif                   String(20)
 funcao                String(100)
 classificacao         Integer(1-5)
+```
 
 EQUIPAMENTO (equipamento.py):
 ----------------------------------------
+```python
 id                    Integer
 nome                  String(100)
 categoria             String(50)
@@ -161,6 +182,7 @@ valor_compra          Numeric(10,2)
 vida_util_anos        Integer
 valor_actual          Numeric(10,2)
 nota                  Text
+```
 
 ==================================================
 MAPEAMENTO REAL: PROJETO → TRANSACTION
@@ -175,6 +197,7 @@ TaxHacker Transaction permite:
 ESTRATÉGIA MAPEAMENTO:
 ----------------------------------------
 
+```
 Projeto Python                →  TaxHacker Transaction
 ----------------------------------------
 id                            →  id (gerar novo UUID)
@@ -208,45 +231,58 @@ cliente_id                    →  extra.cliente_id
 
 type (fixo)                   →  'income'
 userId                        →  ID do Bruno ou Rafael
+```
 
 EXEMPLO CONCRETO:
 ----------------------------------------
+
 Projeto Python:
-  id: 1
-  numero: "#P0001"
-  tipo: PESSOAL_BRUNO
-  descricao: "Vídeo Corporativo RTP"
-  valor_sem_iva: 1500.00
-  estado: RECEBIDO
-  premio_bruno: 0
-  premio_rafael: 0
-  data_faturacao: 2025-01-20
+```json
+{
+  "id": 1,
+  "numero": "#P0001",
+  "tipo": "PESSOAL_BRUNO",
+  "descricao": "Vídeo Corporativo RTP",
+  "valor_sem_iva": 1500.00,
+  "estado": "RECEBIDO",
+  "premio_bruno": 0,
+  "premio_rafael": 0,
+  "data_faturacao": "2025-01-20"
+}
+```
 
 Transaction TaxHacker:
-  id: "uuid-generated"
-  userId: "bruno-uuid"
-  type: "income"
-  name: "Vídeo Corporativo RTP"
-  total: 150000              // 1500.00 * 100 cêntimos
-  projectCode: "PESSOAL_BRUNO"
-  categoryCode: "RECEBIDO"
-  issuedAt: "2025-01-20T00:00:00Z"
-  extra: {
-    numero_projeto: "#P0001",
-    premio_bruno: 0,
-    premio_rafael: 0,
-    data_inicio: "2025-01-10",
-    data_fim: null,
-    data_vencimento: null,
-    cliente_id: 1,
-    cliente_nome: "RTP",
-    cliente_nif: "500776088"
+```json
+{
+  "id": "uuid-generated",
+  "userId": "bruno-uuid",
+  "type": "income",
+  "name": "Vídeo Corporativo RTP",
+  "total": 150000,
+  "projectCode": "PESSOAL_BRUNO",
+  "categoryCode": "RECEBIDO",
+  "issuedAt": "2025-01-20T00:00:00Z",
+  "extra": {
+    "numero_projeto": "#P0001",
+    "premio_bruno": 0,
+    "premio_rafael": 0,
+    "data_inicio": "2025-01-10",
+    "data_fim": null,
+    "data_vencimento": null,
+    "cliente_id": 1,
+    "cliente_nome": "RTP",
+    "cliente_nif": "500776088"
   }
+}
+```
+
+NOTA: `total: 150000` = 1500.00 EUR × 100 cêntimos
 
 ==================================================
 MAPEAMENTO REAL: DESPESA → TRANSACTION
 ==================================================
 
+```
 Despesa Python                →  TaxHacker Transaction
 ----------------------------------------
 id                            →  id (novo UUID)
@@ -278,39 +314,53 @@ projeto_id                    →  projectCode (se aplicável)
 
 type (fixo)                   →  'expense'
 userId                        →  ID do user
+```
 
 EXEMPLO CONCRETO:
 ----------------------------------------
+
 Despesa Python:
-  id: 1
-  numero: "#D000001"
-  tipo: FIXA_MENSAL
-  descricao: "Contabilidade - Janeiro 2025"
-  valor_sem_iva: 150.00
-  valor_com_iva: 184.50
-  estado: PAGO
-  data: 2025-01-31
+```json
+{
+  "id": 1,
+  "numero": "#D000001",
+  "tipo": "FIXA_MENSAL",
+  "descricao": "Contabilidade - Janeiro 2025",
+  "valor_sem_iva": 150.00,
+  "valor_com_iva": 184.50,
+  "estado": "PAGO",
+  "data": "2025-01-31"
+}
+```
 
 Transaction TaxHacker:
-  id: "uuid-generated"
-  userId: "bruno-uuid"         // ou sistema
-  type: "expense"
-  name: "Contabilidade - Janeiro 2025"
-  total: -15000                // NEGATIVO! 150.00 * 100
-  categoryCode: "FIXA_MENSAL"
-  issuedAt: "2025-01-31T00:00:00Z"
-  extra: {
-    numero_despesa: "#D000001",
-    valor_com_iva: 18450,      // também em cêntimos
-    estado_pagamento: "PAGO",
-    fornecedor_id: 1,
-    fornecedor_nome: "Silva Contabilidade"
+```json
+{
+  "id": "uuid-generated",
+  "userId": "bruno-uuid",
+  "type": "expense",
+  "name": "Contabilidade - Janeiro 2025",
+  "total": -15000,
+  "categoryCode": "FIXA_MENSAL",
+  "issuedAt": "2025-01-31T00:00:00Z",
+  "extra": {
+    "numero_despesa": "#D000001",
+    "valor_com_iva": 18450,
+    "estado_pagamento": "PAGO",
+    "fornecedor_id": 1,
+    "fornecedor_nome": "Silva Contabilidade"
   }
+}
+```
+
+NOTA: `total: -15000` = NEGATIVO! 150.00 EUR × 100 cêntimos
+NOTA: `valor_com_iva: 18450` = 184.50 × 100 também em cêntimos
 
 ==================================================
 MAPEAMENTO REAL: BOLETIM → TRANSACTION
 ==================================================
 
+```
 Boletim Python                →  TaxHacker Transaction
 ----------------------------------------
 id                            →  id (novo UUID)
@@ -332,33 +382,45 @@ nota                          →  note
 type (fixo)                   →  'expense'
 categoryCode                  →  'BOLETIM'
 userId                        →  ID do sócio
+```
 
 EXEMPLO CONCRETO:
 ----------------------------------------
+
 Boletim Python:
-  id: 1
-  numero: "#B0001"
-  socio: BRUNO
-  valor: 600.00
-  descricao: "Ajudas de custo - Janeiro"
-  estado: PAGO
-  data_emissao: 2025-01-31
-  data_pagamento: 2025-02-05
+```json
+{
+  "id": 1,
+  "numero": "#B0001",
+  "socio": "BRUNO",
+  "valor": 600.00,
+  "descricao": "Ajudas de custo - Janeiro",
+  "estado": "PAGO",
+  "data_emissao": "2025-01-31",
+  "data_pagamento": "2025-02-05"
+}
+```
 
 Transaction TaxHacker:
-  id: "uuid-generated"
-  userId: "bruno-uuid"
-  type: "expense"
-  name: "Ajudas de custo - Janeiro"
-  total: -60000                // NEGATIVO! 600 * 100
-  categoryCode: "BOLETIM"
-  issuedAt: "2025-01-31T00:00:00Z"
-  extra: {
-    numero_boletim: "#B0001",
-    socio: "BRUNO",
-    estado_boletim: "PAGO",
-    data_pagamento: "2025-02-05"
+```json
+{
+  "id": "uuid-generated",
+  "userId": "bruno-uuid",
+  "type": "expense",
+  "name": "Ajudas de custo - Janeiro",
+  "total": -60000,
+  "categoryCode": "BOLETIM",
+  "issuedAt": "2025-01-31T00:00:00Z",
+  "extra": {
+    "numero_boletim": "#B0001",
+    "socio": "BRUNO",
+    "estado_boletim": "PAGO",
+    "data_pagamento": "2025-02-05"
   }
+}
+```
+
+NOTA: `total: -60000` = NEGATIVO! 600 EUR × 100 cêntimos
 
 ==================================================
 ENTIDADES QUE NÃO EXISTEM NO TAXHACKER
@@ -366,9 +428,11 @@ ENTIDADES QUE NÃO EXISTEM NO TAXHACKER
 
 EQUIPAMENTO:
 ----------------------------------------
+
 ❌ NÃO existe modelo Equipment no TaxHacker
 ✅ CRIAR NOVO modelo no Prisma:
 
+```prisma
 model Equipment {
   id            String   @id @default(uuid()) @db.Uuid
   userId        String   @map("user_id") @db.Uuid
@@ -387,12 +451,15 @@ model Equipment {
   
   @@map("equipment")
 }
+```
 
 ORÇAMENTOS:
 ----------------------------------------
+
 ❌ NÃO existe modelo Budget no TaxHacker
 ✅ CRIAR NOVO modelo no Prisma:
 
+```prisma
 model Budget {
   id          String       @id @default(uuid()) @db.Uuid
   userId      String       @map("user_id") @db.Uuid
@@ -444,6 +511,7 @@ enum BudgetStatus {
   REJECTED
   CONVERTED
 }
+```
 
 ==================================================
 CUSTOM FIELDS A CRIAR NO TAXHACKER
@@ -452,38 +520,61 @@ CUSTOM FIELDS A CRIAR NO TAXHACKER
 IMPORTANTE: TaxHacker já tem sistema de Custom Fields!
 Criar via UI ou seed script:
 
-1. premio_bruno
-   - type: number
-   - name: "Prémio Bruno"
-   - isVisibleInList: true
+```typescript
+// 1. premio_bruno
+{
+  code: "premio_bruno",
+  type: "number",
+  name: "Prémio Bruno",
+  isVisibleInList: true
+}
 
-2. premio_rafael
-   - type: number
-   - name: "Prémio Rafael"
-   - isVisibleInList: true
+// 2. premio_rafael
+{
+  code: "premio_rafael",
+  type: "number",
+  name: "Prémio Rafael",
+  isVisibleInList: true
+}
 
-3. socio
-   - type: select
-   - options: ["BRUNO", "RAFAEL"]
-   - name: "Sócio"
-   - isRequired: true (para boletins)
+// 3. socio
+{
+  code: "socio",
+  type: "select",
+  options: { values: ["BRUNO", "RAFAEL"] },
+  name: "Sócio",
+  isRequired: true  // para boletins
+}
 
-4. cliente_nome
-   - type: string
-   - name: "Cliente"
+// 4. cliente_nome
+{
+  code: "cliente_nome",
+  type: "string",
+  name: "Cliente"
+}
 
-5. cliente_nif
-   - type: string
-   - name: "NIF Cliente"
+// 5. cliente_nif
+{
+  code: "cliente_nif",
+  type: "string",
+  name: "NIF Cliente"
+}
 
-6. fornecedor_nome
-   - type: string
-   - name: "Fornecedor"
+// 6. fornecedor_nome
+{
+  code: "fornecedor_nome",
+  type: "string",
+  name: "Fornecedor"
+}
 
-7. estado_pagamento
-   - type: select
-   - options: ["PENDENTE", "PAGO"]
-   - name: "Estado Pagamento"
+// 7. estado_pagamento
+{
+  code: "estado_pagamento",
+  type: "select",
+  options: { values: ["PENDENTE", "PAGO"] },
+  name: "Estado Pagamento"
+}
+```
 
 ==================================================
 CATEGORIES E PROJECTS A CRIAR
@@ -491,58 +582,100 @@ CATEGORIES E PROJECTS A CRIAR
 
 PROJECTS (via seed ou UI):
 ----------------------------------------
-code: 'EMPRESA'
-name: 'Agora Media'
-color: '#10b981'
 
-code: 'PESSOAL_BRUNO'
-name: 'Projetos Bruno'
-color: '#3b82f6'
+```typescript
+// Projeto 1
+{
+  code: 'EMPRESA',
+  name: 'Agora Media',
+  color: '#10b981'
+}
 
-code: 'PESSOAL_RAFAEL'
-name: 'Projetos Rafael'
-color: '#8b5cf6'
+// Projeto 2
+{
+  code: 'PESSOAL_BRUNO',
+  name: 'Projetos Bruno',
+  color: '#3b82f6'
+}
+
+// Projeto 3
+{
+  code: 'PESSOAL_RAFAEL',
+  name: 'Projetos Rafael',
+  color: '#8b5cf6'
+}
+```
 
 CATEGORIES (via seed):
 ----------------------------------------
-// Estados de Projeto
-code: 'NAO_FATURADO'
-name: 'Não Faturado'
-color: '#9ca3af'
 
-code: 'FATURADO'
-name: 'Faturado'
-color: '#f59e0b'
+```typescript
+// ========================================
+// ESTADOS DE PROJETO
+// ========================================
 
-code: 'RECEBIDO'
-name: 'Recebido'
-color: '#22c55e'
+{
+  code: 'NAO_FATURADO',
+  name: 'Não Faturado',
+  color: '#9ca3af'
+}
 
-// Tipos de Despesa
-code: 'FIXA_MENSAL'
-name: 'Despesa Fixa'
-color: '#ef4444'
+{
+  code: 'FATURADO',
+  name: 'Faturado',
+  color: '#f59e0b'
+}
 
-code: 'DESPESA_PESSOAL_BRUNO'
-name: 'Despesa Pessoal Bruno'
-color: '#3b82f6'
+{
+  code: 'RECEBIDO',
+  name: 'Recebido',
+  color: '#22c55e'
+}
 
-code: 'DESPESA_PESSOAL_RAFAEL'
-name: 'Despesa Pessoal Rafael'
-color: '#8b5cf6'
+// ========================================
+// TIPOS DE DESPESA
+// ========================================
 
-code: 'DESPESA_EQUIPAMENTO'
-name: 'Equipamento'
-color: '#6366f1'
+{
+  code: 'FIXA_MENSAL',
+  name: 'Despesa Fixa',
+  color: '#ef4444'
+}
 
-code: 'DESPESA_PROJETO'
-name: 'Despesa de Projeto'
-color: '#f97316'
+{
+  code: 'DESPESA_PESSOAL_BRUNO',
+  name: 'Despesa Pessoal Bruno',
+  color: '#3b82f6'
+}
 
-// Boletins
-code: 'BOLETIM'
-name: 'Boletim'
-color: '#ec4899'
+{
+  code: 'DESPESA_PESSOAL_RAFAEL',
+  name: 'Despesa Pessoal Rafael',
+  color: '#8b5cf6'
+}
+
+{
+  code: 'DESPESA_EQUIPAMENTO',
+  name: 'Equipamento',
+  color: '#6366f1'
+}
+
+{
+  code: 'DESPESA_PROJETO',
+  name: 'Despesa de Projeto',
+  color: '#f97316'
+}
+
+// ========================================
+// BOLETINS
+// ========================================
+
+{
+  code: 'BOLETIM',
+  name: 'Boletim',
+  color: '#ec4899'
+}
+```
 
 ==================================================
 VALIDAÇÃO: VALORES MONETÁRIOS
@@ -551,17 +684,25 @@ VALIDAÇÃO: VALORES MONETÁRIOS
 ⚠️ CRÍTICO: TaxHacker usa CÊNTIMOS (Int)
 
 CONVERSÃO CORRECTA:
+```
 Python Decimal(1500.00) → TaxHacker 150000
+```
 
 FÓRMULA:
+```javascript
 valor_taxhacker = int(valor_python * 100)
+```
 
 EXEMPLOS:
+```
 1500.00 EUR → 150000
   23.50 EUR →   2350
    0.99 EUR →     99
+```
 
 DESPESAS SÃO NEGATIVAS:
-  150.00 EUR → -15000
+```
+150.00 EUR → -15000
+```
 
 ==================================================
