@@ -32,7 +32,7 @@ DOCUMENTOS DISPONÍVEIS
 
 ---
 
-2. MAPEAMENTO_DADOS_REAL.md
+2. MAPEAMENTO_DADOS.md
    Análise detalhada de schemas e conversões
    
    Conteúdo:
@@ -236,7 +236,7 @@ PAPEL: Developer (Novo no Projeto)
 --------------------
 1. README.md (contexto)
 2. SETUP_INICIAL.md (setup ambiente)
-3. MAPEAMENTO_DADOS_REAL.md (entender dados)
+3. MAPEAMENTO_DADOS.md (entender dados)
 4. ARQUITETURA.md (estrutura código)
 5. FEATURES_CUSTOMIZADAS.md (implementar)
 
@@ -247,7 +247,7 @@ PAPEL: Developer (Implementação)
 Consultar conforme necessário:
 - FEATURES_CUSTOMIZADAS.md → implementar feature
 - ARQUITETURA.md → onde colocar código
-- MAPEAMENTO_DADOS_REAL.md → entender conversões
+- MAPEAMENTO_DADOS.md → entender conversões
 
 PAPEL: DevOps / Sysadmin
 --------------------
@@ -265,67 +265,89 @@ COMANDOS MAIS USADOS:
 --------------------
 
 Setup inicial:
-  git clone https://github.com/brun04maral/agora-contabilidade.git
-  cd agora-contabilidade
-  npm install
-  cp .env.example .env
-  # (configurar .env)
-  npx prisma generate
-  npx prisma migrate dev
-  npm run dev
+```bash
+git clone https://github.com/brun04maral/agora-contabilidade.git
+cd agora-contabilidade
+npm install
+cp .env.example .env
+# (configurar .env)
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
 
 Desenvolvimento:
-  npm run dev              # Dev server
-  npx prisma studio        # GUI database
-  npx prisma migrate dev   # Nova migration
-  npm run build            # Build produção
+```bash
+npm run dev              # Dev server
+npx prisma studio        # GUI database
+npx prisma migrate dev   # Nova migration
+npm run build            # Build produção
+```
 
 Migração dados:
-  npx ts-node lib/migrations/run-all.ts
+```bash
+npx ts-node lib/migrations/run-all.ts
+```
 
 Backup:
-  ./scripts/backup-db.sh
+```bash
+./scripts/backup-db.sh
+```
 
 Deploy:
-  docker-compose up -d
-  docker-compose logs -f app
+```bash
+docker-compose up -d
+docker-compose logs -f app
+```
 
 PATHS IMPORTANTES:
 --------------------
 
 Lógica negócio:
-  lib/agora/saldos.ts      # Cálculo saldos
-  lib/agora/impostos.ts    # Cálculos fiscais
-  lib/agora/equipamento.ts # Gestão equipamento
-  lib/agora/orcamentos.ts  # Sistema orçamentos
-  lib/agora/toconline/     # Integração TOConline
+```
+lib/agora/saldos.ts      # Cálculo saldos
+lib/agora/impostos.ts    # Cálculos fiscais
+lib/agora/equipamento.ts # Gestão equipamento
+lib/agora/orcamentos.ts  # Sistema orçamentos
+lib/agora/toconline/     # Integração TOConline
+```
 
 API routes:
-  app/api/agora/saldos/route.ts
-  app/api/agora/impostos/route.ts
-  app/api/agora/equipamento/route.ts
-  app/api/agora/orcamentos/route.ts
-  app/api/agora/toconline/invoices/route.ts
+```
+app/api/agora/saldos/route.ts
+app/api/agora/impostos/route.ts
+app/api/agora/equipamento/route.ts
+app/api/agora/orcamentos/route.ts
+app/api/agora/toconline/invoices/route.ts
+```
 
 Páginas:
-  app/(app)/saldos/page.tsx
-  app/(app)/impostos/page.tsx
-  app/(app)/equipamento/page.tsx
-  app/(app)/orcamentos/page.tsx
+```
+app/(app)/saldos/page.tsx
+app/(app)/impostos/page.tsx
+app/(app)/equipamento/page.tsx
+app/(app)/orcamentos/page.tsx
+```
 
 Componentes:
-  components/agora/saldo-card.tsx
-  components/agora/equipment-table.tsx
-  components/agora/budget-form.tsx
+```
+components/agora/saldo-card.tsx
+components/agora/equipment-table.tsx
+components/agora/budget-form.tsx
+```
 
 Database:
-  prisma/schema.prisma     # Schema
-  prisma/migrations/       # Migrations
+```
+prisma/schema.prisma     # Schema
+prisma/migrations/       # Migrations
+```
 
 Scripts:
-  scripts/backup-db.sh     # Backup database
-  scripts/health-check.sh  # Monitorização
-  lib/migrations/          # Migração Python→Prisma
+```
+scripts/backup-db.sh     # Backup database
+scripts/health-check.sh  # Monitorização
+lib/migrations/          # Migração Python→Prisma
+```
 
 ==================================================
 CONVENÇÕES DE CÓDIGO
@@ -338,7 +360,7 @@ NAMING:
 - Constants: UPPER_SNAKE_CASE (USER_IDS)
 
 ESTRUTURA COMPONENTES:
----
+```typescript
 'use client' // Se necessário
 
 import { ... } from '...'
@@ -350,10 +372,10 @@ export function ComponentName({ props }: Props) {
   // Handlers
   // Render
 }
----
+```
 
 ESTRUTURA API ROUTES:
----
+```typescript
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 
@@ -365,7 +387,7 @@ export async function GET(request: NextRequest) {
   
   return NextResponse.json(data)
 }
----
+```
 
 COMENTÁRIOS:
 - Código deve ser self-explanatory
@@ -373,11 +395,13 @@ COMENTÁRIOS:
 - Explicar "porquê", não "o quê"
 
 COMMITS:
-  feat: nova feature
-  fix: bug fix
-  chore: manutenção
-  docs: documentação
-  refactor: refactoring
+```
+feat: nova feature
+fix: bug fix
+chore: manutenção
+docs: documentação
+refactor: refactoring
+```
 
 ==================================================
 FAQ - PERGUNTAS FREQUENTES
@@ -391,9 +415,11 @@ R: TaxHacker já tem 80% da funcionalidade core (auth, transactions, UI).
    Poupar ~6 semanas de desenvolvimento.
 
 P: Como actualizar do TaxHacker upstream?
-R: git remote add upstream https://github.com/vas3k/TaxHacker.git
+R: ```bash
+   git remote add upstream https://github.com/vas3k/TaxHacker.git
    git fetch upstream
-   git cherry-pick commits específicos (cuidado com conflitos)
+   git cherry-pick commits específicos  # (cuidado com conflitos)
+   ```
 
 P: Valores em cêntimos ou euros?
 R: Database: SEMPRE cêntimos (Int)
@@ -412,9 +438,11 @@ R: 1. Ler ARQUITETURA.md para saber onde colocar código
    5. Criar componentes em components/agora/
 
 P: Como testar localmente?
-R: npm run dev
-   Abrir http://localhost:7331
-   Usar Prisma Studio para ver dados: npx prisma studio
+R: ```bash
+   npm run dev
+   # Abrir http://localhost:7331
+   # Usar Prisma Studio para ver dados: npx prisma studio
+   ```
 
 P: Backups automáticos?
 R: Ver MANUTENCAO.md secção 1.1
@@ -514,7 +542,7 @@ Esta documentação é viva. Actualizar quando:
 COMO ACTUALIZAR:
 1. Editar ficheiro Markdown relevante
 2. Actualizar CHANGELOG.md
-3. Commit: docs: descrição mudança
+3. Commit: `docs: descrição mudança`
 4. Se mudança major, notificar equipa
 
 ÚLTIMA ACTUALIZAÇÃO: 18 Dezembro 2025
