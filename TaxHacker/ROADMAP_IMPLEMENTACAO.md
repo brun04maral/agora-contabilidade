@@ -78,7 +78,7 @@ SPRINT 1.1: Extensão do Schema Prisma [4h]
 -------------------------------------------------
 
 □ 1.1.1 Adicionar Modelos ao schema.prisma [2h]
-  Ficheiro: prisma/schema.prisma
+  Ficheiro: `prisma/schema.prisma`
   
   Adicionar:
   - model Equipment { ... }
@@ -93,7 +93,7 @@ SPRINT 1.1: Extensão do Schema Prisma [4h]
   - Transaction ← Budget (convertedFromBudget)
 
 □ 1.1.2 Criar Migration [1h]
-  ```
+  ```bash
   npx prisma migrate dev --name add_agora_models
   npx prisma generate
   ```
@@ -104,10 +104,10 @@ SPRINT 1.1: Extensão do Schema Prisma [4h]
   - npm run build funciona
 
 □ 1.1.3 Seed Categories e Projects [1h]
-  Ficheiro: prisma/seed.ts (criar se não existe)
+  Ficheiro: `prisma/seed.ts` (criar se não existe)
   
   Código:
-  ```
+  ```typescript
   const categories = [
     { code: 'RECEBIDO', name: 'Recebido', color: '#22c55e' },
     { code: 'FATURADO', name: 'Faturado', color: '#f59e0b' },
@@ -131,7 +131,7 @@ SPRINT 1.2: Scripts de Migração [8h]
 -------------------------------------------------
 
 □ 1.2.1 Script Migrar Users [1h]
-  Ficheiro: lib/migrations/migrate-users.ts
+  Ficheiro: `lib/migrations/migrate-users.ts`
   
   Input: Python SQLite (agora_media.db)
   Output: TaxHacker PostgreSQL
@@ -143,7 +143,7 @@ SPRINT 1.2: Scripts de Migração [8h]
   - Gerar passwords temporários
 
 □ 1.2.2 Script Migrar Projetos [3h]
-  Ficheiro: lib/migrations/migrate-projects.ts
+  Ficheiro: `lib/migrations/migrate-projects.ts`
   
   Mapeamento:
   - Projeto Python → Transaction (type: 'income')
@@ -159,7 +159,7 @@ SPRINT 1.2: Scripts de Migração [8h]
   - Relações preservadas
 
 □ 1.2.3 Script Migrar Despesas [2h]
-  Ficheiro: lib/migrations/migrate-despesas.ts
+  Ficheiro: `lib/migrations/migrate-despesas.ts`
   
   Mapeamento:
   - Despesa Python → Transaction (type: 'expense')
@@ -173,7 +173,7 @@ SPRINT 1.2: Scripts de Migração [8h]
   - Multiplicar por 100 (cêntimos)
 
 □ 1.2.4 Script Migrar Boletins [1h]
-  Ficheiro: lib/migrations/migrate-boletins.ts
+  Ficheiro: `lib/migrations/migrate-boletins.ts`
   
   Mapeamento:
   - Boletim Python → Transaction (type: 'expense')
@@ -182,9 +182,9 @@ SPRINT 1.2: Scripts de Migração [8h]
   - estado → categoryCode (BOLETIM_PENDENTE/PAGO)
 
 □ 1.2.5 Run All Migrations [1h]
-  Script master: lib/migrations/run-all.ts
+  Script master: `lib/migrations/run-all.ts`
   
-  ```
+  ```typescript
   import { migrateUsers } from './migrate-users'
   import { migrateProjects } from './migrate-projects'
   import { migrateDespesas } from './migrate-despesas'
@@ -213,7 +213,7 @@ SPRINT 1.3: Validação de Saldos [4h]
 -------------------------------------------------
 
 □ 1.3.1 Implementar Cálculo Saldos TypeScript [2h]
-  Ficheiro: lib/agora/saldos.ts
+  Ficheiro: `lib/agora/saldos.ts`
   
   Funções:
   - calculateSaldoBruno(userId, filters?)
@@ -226,7 +226,7 @@ SPRINT 1.3: Validação de Saldos [4h]
   - Aplicar regras negócio (despesas fixas ÷ 2)
 
 □ 1.3.2 Script de Validação [1h]
-  Ficheiro: lib/migrations/validate-saldos.ts
+  Ficheiro: `lib/migrations/validate-saldos.ts`
   
   Comparar:
   - Saldos calculados em Python (app original)
@@ -272,9 +272,9 @@ SPRINT 2.1: Dashboard Saldos [6h]
 -------------------------------------------------
 
 □ 2.1.1 API Endpoint Saldos [1h]
-  Ficheiro: app/api/agora/saldos/route.ts
+  Ficheiro: `app/api/agora/saldos/route.ts`
   
-  ```
+  ```typescript
   export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
@@ -290,7 +290,7 @@ SPRINT 2.1: Dashboard Saldos [6h]
   ```
 
 □ 2.1.2 Componente SaldoCard [2h]
-  Ficheiro: components/agora/saldo-card.tsx
+  Ficheiro: `components/agora/saldo-card.tsx`
   
   Props:
   - socio: 'BRUNO' | 'RAFAEL'
@@ -306,10 +306,10 @@ SPRINT 2.1: Dashboard Saldos [6h]
   - Destaque sugestão boletim (azul)
 
 □ 2.1.3 Página Saldos [2h]
-  Ficheiro: app/(app)/saldos/page.tsx
+  Ficheiro: `app/(app)/saldos/page.tsx`
   
   Layout:
-  ```
+  ```typescript
   <div className="grid grid-cols-2 gap-6">
     <SaldoCard socio="BRUNO" {...saldoBruno} />
     <SaldoCard socio="RAFAEL" {...saldoRafael} />
@@ -321,10 +321,10 @@ SPRINT 2.1: Dashboard Saldos [6h]
   ```
 
 □ 2.1.4 Adicionar ao Menu [1h]
-  Ficheiro: app/(app)/layout.tsx
+  Ficheiro: `app/(app)/layout.tsx`
   
   Adicionar item:
-  ```
+  ```typescript
   {
     href: '/saldos',
     label: 'Saldos Pessoais',
@@ -336,7 +336,7 @@ SPRINT 2.2: Gestão Fiscal (Impostos) [8h]
 -------------------------------------------------
 
 □ 2.2.1 Lógica Cálculo Impostos [3h]
-  Ficheiro: lib/agora/impostos.ts
+  Ficheiro: `lib/agora/impostos.ts`
   
   Funções:
   - calculateIVAPeriodo(trimestre, ano)
@@ -351,9 +351,9 @@ SPRINT 2.2: Gestão Fiscal (Impostos) [8h]
 
 □ 2.2.2 Componentes Fiscais [3h]
   Ficheiros:
-  - components/agora/iva-summary.tsx
-  - components/agora/retencoes-table.tsx
-  - components/agora/irc-estimado.tsx
+  - `components/agora/iva-summary.tsx`
+  - `components/agora/retencoes-table.tsx`
+  - `components/agora/irc-estimado.tsx`
   
   Features:
   - Selector trimestre
@@ -362,7 +362,7 @@ SPRINT 2.2: Gestão Fiscal (Impostos) [8h]
   - Estimativa IRC com explicação
 
 □ 2.2.3 Página Impostos [1h]
-  Ficheiro: app/(app)/impostos/page.tsx
+  Ficheiro: `app/(app)/impostos/page.tsx`
   
   Layout 3 colunas:
   - IVA a pagar
@@ -370,7 +370,7 @@ SPRINT 2.2: Gestão Fiscal (Impostos) [8h]
   - IRC estimado
 
 □ 2.2.4 API Endpoint [1h]
-  Ficheiro: app/api/agora/impostos/route.ts
+  Ficheiro: `app/api/agora/impostos/route.ts`
   
   Query params:
   - periodo (trimestre ou mês)
@@ -380,7 +380,7 @@ SPRINT 2.3: Custom Fields UI [4h]
 -------------------------------------------------
 
 □ 2.3.1 Criar Custom Fields via UI [2h]
-  Navegar: /fields (já existe no TaxHacker)
+  Navegar: `/fields` (já existe no TaxHacker)
   
   Criar manualmente:
   - premio_bruno (number)
@@ -398,7 +398,7 @@ SPRINT 2.3: Custom Fields UI [4h]
 
 □ 2.3.3 Script Seed Custom Fields [1h]
   Alternativa: automatizar criação via seed
-  Ficheiro: prisma/seed-custom-fields.ts
+  Ficheiro: `prisma/seed-custom-fields.ts`
 
 ENTREGÁVEL FASE 2:
 ✅ Dashboard saldos funcional
@@ -421,10 +421,10 @@ SPRINT 3.1: Catálogo Equipamento [8h]
 
 □ 3.1.1 CRUD Equipamento [3h]
   Ficheiros:
-  - app/(app)/equipamento/page.tsx (lista)
-  - app/(app)/equipamento/novo/page.tsx (criar)
-  - app/(app)/equipamento/[id]/page.tsx (editar)
-  - app/api/agora/equipamento/route.ts (API)
+  - `app/(app)/equipamento/page.tsx` (lista)
+  - `app/(app)/equipamento/novo/page.tsx` (criar)
+  - `app/(app)/equipamento/[id]/page.tsx` (editar)
+  - `app/api/agora/equipamento/route.ts` (API)
   
   Campos form:
   - Nome, categoria
@@ -433,10 +433,10 @@ SPRINT 3.1: Catálogo Equipamento [8h]
   - Taxa diária aluguer
 
 □ 3.1.2 Cálculo Amortização [2h]
-  Ficheiro: lib/agora/equipamento.ts
+  Ficheiro: `lib/agora/equipamento.ts`
   
   Função:
-  ```
+  ```typescript
   function calculateDepreciation(equipment: Equipment): number {
     const ageYears = (Date.now() - equipment.purchaseDate) / (1000*60*60*24*365)
     const depreciationRate = 1 / equipment.lifeYears
@@ -446,7 +446,7 @@ SPRINT 3.1: Catálogo Equipamento [8h]
   ```
 
 □ 3.1.3 UI Tabela Equipamento [2h]
-  Componente: components/agora/equipment-table.tsx
+  Componente: `components/agora/equipment-table.tsx`
   
   Colunas:
   - Nome | Categoria | Valor Actual | Taxa/dia | Acções
@@ -465,7 +465,7 @@ SPRINT 3.2: Sistema de Orçamentos [12h]
 -------------------------------------------------
 
 □ 3.2.1 CRUD Orçamentos Backend [3h]
-  Ficheiro: app/api/agora/orcamentos/route.ts
+  Ficheiro: `app/api/agora/orcamentos/route.ts`
   
   Endpoints:
   - POST /api/agora/orcamentos (criar)
@@ -475,7 +475,7 @@ SPRINT 3.2: Sistema de Orçamentos [12h]
   - DELETE /api/agora/orcamentos/[id]
 
 □ 3.2.2 Formulário Orçamento [4h]
-  Ficheiro: app/(app)/orcamentos/novo/page.tsx
+  Ficheiro: `app/(app)/orcamentos/novo/page.tsx`
   
   Secções:
   1. Info Cliente (nome, NIF, email)
@@ -493,7 +493,7 @@ SPRINT 3.2: Sistema de Orçamentos [12h]
   - Validação campos obrigatórios
 
 □ 3.2.3 Listagem Orçamentos [2h]
-  Ficheiro: app/(app)/orcamentos/page.tsx
+  Ficheiro: `app/(app)/orcamentos/page.tsx`
   
   Tabela:
   - Número | Cliente | Total | Estado | Acções
@@ -509,7 +509,7 @@ SPRINT 3.2: Sistema de Orçamentos [12h]
   - Converter em projeto
 
 □ 3.2.4 Conversão para Projeto [2h]
-  Ficheiro: app/api/agora/orcamentos/[id]/convert/route.ts
+  Ficheiro: `app/api/agora/orcamentos/[id]/convert/route.ts`
   
   Lógica:
   - Validar budget.status === 'APPROVED'
@@ -522,7 +522,7 @@ SPRINT 3.2: Sistema de Orçamentos [12h]
   Botão "Converter em Projeto" (só se APPROVED)
 
 □ 3.2.5 Gerar PDF Orçamento [1h]
-  Ficheiro: app/api/agora/orcamentos/[id]/pdf/route.ts
+  Ficheiro: `app/api/agora/orcamentos/[id]/pdf/route.ts`
   
   Usar: @react-pdf/renderer (já incluído!)
   
@@ -559,9 +559,9 @@ SPRINT 4.1: TOConline API Client [6h]
   - Documentar em .env.example
 
 □ 4.1.2 Client Base [2h]
-  Ficheiro: lib/agora/toconline/client.ts
+  Ficheiro: `lib/agora/toconline/client.ts`
   
-  ```
+  ```typescript
   export class TOConlineClient {
     constructor(private apiKey: string) {}
     
@@ -585,7 +585,7 @@ SPRINT 4.1: TOConline API Client [6h]
   ```
 
 □ 4.1.3 Módulo Customers [1h]
-  Ficheiro: lib/agora/toconline/customers.ts
+  Ficheiro: `lib/agora/toconline/customers.ts`
   
   Funções:
   - getCustomer(email): buscar cliente
@@ -593,7 +593,7 @@ SPRINT 4.1: TOConline API Client [6h]
   - updateCustomer(id, data)
 
 □ 4.1.4 Módulo Invoices [2h]
-  Ficheiro: lib/agora/toconline/invoices.ts
+  Ficheiro: `lib/agora/toconline/invoices.ts`
   
   Funções:
   - createInvoice(data): emitir factura
@@ -604,7 +604,7 @@ SPRINT 4.2: Integração com Projetos [6h]
 -------------------------------------------------
 
 □ 4.2.1 UI Botão "Emitir Factura" [2h]
-  Local: app/(app)/transactions/[id]/page.tsx
+  Local: `app/(app)/transactions/[id]/page.tsx`
   
   Condições para mostrar:
   - Transaction type = 'income'
@@ -616,7 +616,7 @@ SPRINT 4.2: Integração com Projetos [6h]
   - Chamar API
 
 □ 4.2.2 API Endpoint Emitir [3h]
-  Ficheiro: app/api/agora/toconline/invoices/route.ts
+  Ficheiro: `app/api/agora/toconline/invoices/route.ts`
   
   Fluxo:
   1. Buscar transaction
@@ -637,7 +637,7 @@ SPRINT 4.3: Settings TOConline [3h]
 -------------------------------------------------
 
 □ 4.3.1 Página Settings [2h]
-  Ficheiro: app/(app)/toconline/page.tsx
+  Ficheiro: `app/(app)/toconline/page.tsx`
   
   Form:
   - API Key (password field)
@@ -648,7 +648,7 @@ SPRINT 4.3: Settings TOConline [3h]
 □ 4.3.2 Salvar Settings [1h]
   Usar: model Setting (já existe TaxHacker)
   
-  ```
+  ```typescript
   await prisma.setting.upsert({
     where: { userId_code: { userId, code: 'TOCONLINE_API_KEY' } },
     create: { userId, code: 'TOCONLINE_API_KEY', value: apiKey },
@@ -702,7 +702,7 @@ SPRINT 5.2: Performance [4h]
 
 □ 5.2.1 Database Indexes [1h]
   Adicionar no schema.prisma:
-  ```
+  ```prisma
   @@index([userId, projectCode])
   @@index([userId, categoryCode])
   @@index([issuedAt])
@@ -730,11 +730,11 @@ SPRINT 5.3: Testes E2E [6h]
   3. Calcular saldos → valores correctos
   4. Criar orçamento → converter em projeto
   5. Emitir factura TOConline
-  
+
 □ 5.3.2 Testes Unitários Saldos [2h]
   Framework: Vitest
   
-  Ficheiro: lib/agora/__tests__/saldos.test.ts
+  Ficheiro: `lib/agora/__tests__/saldos.test.ts`
   
   Testes:
   - Projetos pessoais contam
@@ -747,8 +747,8 @@ SPRINT 5.4: Deploy [4h]
 
 □ 5.4.1 Docker Build [1h]
   - Testar Dockerfile existente
-  - Build image: docker build -t agora-contabilidade .
-  - Run local: docker-compose up
+  - Build image: `docker build -t agora-contabilidade .`
+  - Run local: `docker-compose up`
 
 □ 5.4.2 Deploy Production [2h]
   Opção A: Self-hosted (Raspberry Pi)
