@@ -105,6 +105,7 @@ PRÓS PRISMA:
 ✅ Performance adequada para escala Agora Media
 
 EXEMPLO:
+```typescript
 // Prisma (type-safe)
 const saldo = await prisma.transaction.aggregate({
   where: { userId, type: 'income' },
@@ -114,6 +115,7 @@ const saldo = await prisma.transaction.aggregate({
 // Raw SQL (error-prone)
 const result = await db.query('SELECT SUM(total) FROM transactions WHERE user_id = $1', [userId])
 // Sem validação tipos, fácil erros runtime
+```
 
 CONTRAS:
 ❌ Abstração (menos controlo fino queries)
@@ -156,7 +158,9 @@ DECISÃO: Manter Int (cêntimos), não Decimal
 JUSTIFICAÇÃO:
 
 EXEMPLO:
+```
 150.00 EUR → 15000 (guardado como Int)
+```
 
 PRÓS:
 ✅ Precisão perfeita (sem floating point errors)
@@ -187,6 +191,7 @@ Opção B: String (ex: "150.00")
 
 PADRÃO IMPLEMENTAÇÃO:
 
+```typescript
 // Helper conversão
 export function toCents(euros: number): number {
   return Math.round(euros * 100)
@@ -205,6 +210,7 @@ const transaction = await prisma.transaction.create({
 
 // Display
 const euros = toEuros(transaction.total) // 150.00
+```
 
 REGRA CRÍTICA:
 - Database: SEMPRE cêntimos (Int)
@@ -233,12 +239,15 @@ DECISÃO: Usar campo extra (JSON) + Custom Fields TaxHacker
 JUSTIFICAÇÃO:
 
 MODELO:
+```prisma
 model Transaction {
   // ... campos standard ...
   extra  Json?   // Dados específicos Agora Media
 }
+```
 
-// Exemplo extra JSON:
+Exemplo extra JSON:
+```json
 {
   "premio_bruno": 50000,      // cêntimos
   "premio_rafael": 0,
@@ -246,6 +255,7 @@ model Transaction {
   "cliente_nome": "RTP",
   "estado_pagamento": "PAGO"
 }
+```
 
 PRÓS:
 ✅ Flexibilidade (adicionar campos sem migrations)
@@ -261,11 +271,13 @@ CONTRAS:
 ALTERNATIVAS:
 
 Opção A: Colunas dedicadas
+```prisma
 model Transaction {
   premio_bruno  Int?
   premio_rafael Int?
   socio         String?
 }
+```
 
 PRÓS: Type-safe, queries rápidas, indexes simples
 CONTRAS: 
@@ -283,6 +295,7 @@ DECISÃO: Rejeitado - overkill para poucos campos
 
 PADRÃO IMPLEMENTAÇÃO:
 
+```typescript
 // Zod schema para validação
 const TransactionExtraSchema = z.object({
   premio_bruno: z.number().optional(),
@@ -312,6 +325,7 @@ const transactions = await prisma.transaction.findMany({
     }
   }
 })
+```
 
 CONSEQUÊNCIAS:
 - Extensibilidade máxima
@@ -334,6 +348,7 @@ DECISÃO: Criar modelos Prisma dedicados (não usar Transactions)
 JUSTIFICAÇÃO:
 
 MODELOS CRIADOS:
+```prisma
 model Equipment {
   id            String @id @default(uuid())
   name          String
@@ -349,6 +364,7 @@ model Budget {
   items  BudgetItem[]
   // ...
 }
+```
 
 PRÓS:
 ✅ Semântica clara (equipamento != transaction)
@@ -446,6 +462,7 @@ DECISÃO: API direta síncrona + webhook opcional
 
 PADRÃO:
 
+```typescript
 // 1. User clica "Emitir Factura"
 // 2. Chamar API TOConline directamente
 const invoice = await toconlineClient.createInvoice({
@@ -468,6 +485,7 @@ await prisma.transaction.update({
 // 4. (Opcional) Webhook para update status "PAGO"
 // POST /api/webhooks/toconline
 // Quando factura é paga na AT
+```
 
 PRÓS:
 ✅ Feedback imediato ao user
@@ -574,6 +592,7 @@ TaxHacker usa TypeScript. Qual nível strictness?
 DECISÃO: Strict mode habilitado
 
 CONFIGURAÇÃO (tsconfig.json):
+```json
 {
   "compilerOptions": {
     "strict": true,
@@ -583,6 +602,7 @@ CONFIGURAÇÃO (tsconfig.json):
     "noUnusedParameters": true
   }
 }
+```
 
 JUSTIFICAÇÃO:
 
@@ -597,6 +617,7 @@ CONTRAS:
 ❌ Curva aprendizagem TypeScript
 
 EXEMPLO BENEFÍCIO:
+```typescript
 // Sem strict
 function calcSaldo(user) {
   return user.transactions.reduce((sum, t) => sum + t.total, 0)
@@ -609,6 +630,7 @@ function calcSaldo(user: User | null): number {
   return user.transactions.reduce((sum, t) => sum + t.total, 0)
 }
 // Compile error se não tratar nulls!
+```
 
 CONSEQUÊNCIAS:
 - Menos bugs produção
@@ -638,6 +660,7 @@ ESTRATÉGIA:
    ✅ Lógica impostos (IVA, retenções)
    
    Exemplo:
+   ```typescript
    describe('calculateSaldoBruno', () => {
      it('soma projetos pessoais RECEBIDOS', async () => {
        // Mock transactions
@@ -645,6 +668,7 @@ ESTRATÉGIA:
        expect(saldo.ins.projetosPessoais).toBe(150000) // €1500
      })
    })
+   ```
 
 2. E2E TESTS (críticos)
    Framework: Playwright
@@ -753,6 +777,7 @@ Quando surgir nova decisão técnica importante:
 4. Actualizar este doc após implementação
 
 FORMATO:
+```
 ==================================================
 DT-XXX: TÍTULO DA DECISÃO
 ==================================================
@@ -774,5 +799,6 @@ ALTERNATIVAS:
 
 CONSEQUÊNCIAS:
 ...
+```
 
 ==================================================
