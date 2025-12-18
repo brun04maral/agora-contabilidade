@@ -7,210 +7,156 @@ Estrutura de ficheiros, extensões e organização do código
 ESTRUTURA BASE TAXHACKER (EXISTENTE)
 ==================================================
 
+```
 TaxHacker/
-  |
-  +-- app/
-  |     |
-  |     +-- (app)/                      # App routes (autenticado)
-  |     |     |
-  |     |     +-- transactions/         # Lista de transações
-  |     |     +-- projects/             # Gestão de projetos
-  |     |     +-- categories/           # Gestão de categorias
-  |     |     +-- fields/               # Custom fields
-  |     |     +-- settings/             # Configurações
-  |     |     +-- files/                # Upload de ficheiros
-  |     |
-  |     +-- (auth)/                     # Auth routes
-  |     |     |
-  |     |     +-- login/
-  |     |     +-- signup/
-  |     |
-  |     +-- api/                        # API routes
-  |     |     |
-  |     |     +-- auth/
-  |     |     +-- transactions/
-  |     |     +-- files/
-  |     |     +-- export/
-  |     |
-  |     +-- layout.tsx                  # Root layout
-  |     +-- globals.css                 # Global styles
-  |
-  +-- lib/                              # Business logic
-  |     |
-  |     +-- auth.ts                     # Better Auth config
-  |     +-- db.ts                       # Prisma client
-  |     +-- files.ts                    # File handling
-  |     +-- stats.ts                    # Statistics
-  |     +-- utils.ts                    # Utilities
-  |     +-- email.ts                    # Email (Resend)
-  |
-  +-- prisma/
-  |     |
-  |     +-- schema.prisma               # Database schema
-  |     +-- migrations/                 # DB migrations
-  |
-  +-- components/                       # React components
-  |     |
-  |     +-- ui/                         # Radix UI components
-  |     +-- [feature-components]/
-  |
-  +-- public/                           # Static assets
+├── app/
+│   ├── (app)/                      # App routes (autenticado)
+│   │   ├── transactions/           # Lista de transações
+│   │   ├── projects/               # Gestão de projetos
+│   │   ├── categories/             # Gestão de categorias
+│   │   ├── fields/                 # Custom fields
+│   │   ├── settings/               # Configurações
+│   │   └── files/                  # Upload de ficheiros
+│   │
+│   ├── (auth)/                     # Auth routes
+│   │   ├── login/
+│   │   └── signup/
+│   │
+│   ├── api/                        # API routes
+│   │   ├── auth/
+│   │   ├── transactions/
+│   │   ├── files/
+│   │   └── export/
+│   │
+│   ├── layout.tsx                  # Root layout
+│   └── globals.css                 # Global styles
+│
+├── lib/                            # Business logic
+│   ├── auth.ts                     # Better Auth config
+│   ├── db.ts                       # Prisma client
+│   ├── files.ts                    # File handling
+│   ├── stats.ts                    # Statistics
+│   ├── utils.ts                    # Utilities
+│   └── email.ts                    # Email (Resend)
+│
+├── prisma/
+│   ├── schema.prisma               # Database schema
+│   └── migrations/                 # DB migrations
+│
+├── components/                     # React components
+│   ├── ui/                         # Radix UI components
+│   └── [feature-components]/
+│
+└── public/                         # Static assets
+```
 
 ==================================================
 EXTENSÕES AGORA MEDIA (ADICIONAR)
 ==================================================
 
+```
 TaxHacker/
-  |
-  +-- lib/
-  |     |
-  |     +-- agora/                      # NOVA PASTA - Lógica Agora Media
-  |     |     |
-  |     |     +-- saldos.ts             # Cálculo saldos sócios
-  |     |     +-- impostos.ts           # IVA, retenções, IRC
-  |     |     +-- equipamento.ts        # Gestão equipamento
-  |     |     +-- orcamentos.ts         # Workflow orçamentos
-  |     |     +-- toconline/            # Integração TOConline
-  |     |           |
-  |     |           +-- client.ts       # API client
-  |     |           +-- invoices.ts     # Emissão facturas
-  |     |           +-- customers.ts    # Sync clientes
-  |     |           +-- types.ts        # TypeScript types
-  |     |
-  |     +-- migrations/                 # Scripts migração Python -> Prisma
-  |           |
-  |           +-- migrate-projects.ts
-  |           +-- migrate-despesas.ts
-  |           +-- migrate-boletins.ts
-  |           +-- validate-saldos.ts    # Comparar cálculos
-  |
-  +-- app/
-  |     |
-  |     +-- (app)/
-  |     |     |
-  |     |     +-- saldos/               # NOVA ROTA - Dashboard saldos
-  |     |     |     |
-  |     |     |     +-- page.tsx        # Vista principal
-  |     |     |     +-- components/
-  |     |     |     |     |
-  |     |     |     |     +-- saldo-card.tsx    # Card sócio
-  |     |     |     |     +-- breakdown.tsx     # Detalhe INs/OUTs
-  |     |     |     |     +-- historico.tsx     # Gráfico evolução
-  |     |     |     |
-  |     |     |     +-- actions.ts      # Server actions
-  |     |     |
-  |     |     +-- impostos/             # NOVA ROTA - Fiscal dashboard
-  |     |     |     |
-  |     |     |     +-- page.tsx
-  |     |     |     +-- components/
-  |     |     |     |     |
-  |     |     |     |     +-- iva-summary.tsx
-  |     |     |     |     +-- retencoes.tsx
-  |     |     |     |     +-- irc-estimado.tsx
-  |     |     |     |
-  |     |     |     +-- actions.ts
-  |     |     |
-  |     |     +-- equipamento/          # NOVA ROTA - Catálogo equipamento
-  |     |     |     |
-  |     |     |     +-- page.tsx
-  |     |     |     +-- [id]/
-  |     |     |     |     |
-  |     |     |     |     +-- page.tsx  # Detalhe equipamento
-  |     |     |     |
-  |     |     |     +-- components/
-  |     |     |     |     |
-  |     |     |     |     +-- equipment-table.tsx
-  |     |     |     |     +-- depreciation-calc.tsx
-  |     |     |     |     +-- equipment-form.tsx
-  |     |     |     |
-  |     |     |     +-- actions.ts
-  |     |     |
-  |     |     +-- orcamentos/           # NOVA ROTA - Gestão orçamentos
-  |     |     |     |
-  |     |     |     +-- page.tsx        # Lista orçamentos
-  |     |     |     +-- novo/
-  |     |     |     |     |
-  |     |     |     |     +-- page.tsx  # Criar orçamento
-  |     |     |     |
-  |     |     |     +-- [id]/
-  |     |     |     |     |
-  |     |     |     |     +-- page.tsx  # Detalhe/editar
-  |     |     |     |     +-- pdf/
-  |     |     |     |           |
-  |     |     |     |           +-- route.ts    # Gerar PDF
-  |     |     |     |
-  |     |     |     +-- components/
-  |     |     |     |     |
-  |     |     |     |     +-- budget-form.tsx
-  |     |     |     |     +-- budget-items.tsx
-  |     |     |     |     +-- equipment-picker.tsx
-  |     |     |     |     +-- convert-to-project.tsx
-  |     |     |     |
-  |     |     |     +-- actions.ts
-  |     |     |
-  |     |     +-- toconline/            # NOVA ROTA - Config integração
-  |     |           |
-  |     |           +-- page.tsx        # Settings TOConline
-  |     |           +-- actions.ts
-  |     |
-  |     +-- api/
-  |           |
-  |           +-- agora/                # NOVOS ENDPOINTS
-  |           |     |
-  |           |     +-- saldos/
-  |           |     |     |
-  |           |     |     +-- route.ts  # GET /api/agora/saldos
-  |           |     |
-  |           |     +-- impostos/
-  |           |     |     |
-  |           |     |     +-- route.ts  # GET /api/agora/impostos
-  |           |     |
-  |           |     +-- equipamento/
-  |           |     |     |
-  |           |     |     +-- route.ts  # CRUD equipamento
-  |           |     |
-  |           |     +-- orcamentos/
-  |           |     |     |
-  |           |     |     +-- route.ts  # CRUD orçamentos
-  |           |     |     +-- [id]/
-  |           |     |           |
-  |           |     |           +-- convert/
-  |           |     |           |     |
-  |           |     |           |     +-- route.ts    # POST converter em projeto
-  |           |     |           |
-  |           |     |           +-- pdf/
-  |           |     |                 |
-  |           |     |                 +-- route.ts    # GET PDF orçamento
-  |           |     |
-  |           |     +-- toconline/
-  |           |           |
-  |           |           +-- invoices/
-  |           |           |     |
-  |           |           |     +-- route.ts    # POST emitir factura
-  |           |           |
-  |           |           +-- sync/
-  |           |                 |
-  |           |                 +-- route.ts    # POST sync clientes
-  |           |
-  |           +-- webhooks/
-  |                 |
-  |                 +-- toconline/
-  |                       |
-  |                       +-- route.ts  # Webhook TOConline
-  |
-  +-- prisma/
-  |     |
-  |     +-- schema.prisma               # MODIFICADO - adicionar modelos
-  |
-  +-- components/
-        |
-        +-- agora/                      # NOVOS COMPONENTES
-              |
-              +-- saldo-card.tsx
-              +-- fiscal-dashboard.tsx
-              +-- equipment-table.tsx
-              +-- budget-form.tsx
-              +-- toconline-status.tsx
+├── lib/
+│   ├── agora/                      # NOVA PASTA - Lógica Agora Media
+│   │   ├── saldos.ts               # Cálculo saldos sócios
+│   │   ├── impostos.ts             # IVA, retenções, IRC
+│   │   ├── equipamento.ts          # Gestão equipamento
+│   │   ├── orcamentos.ts           # Workflow orçamentos
+│   │   └── toconline/              # Integração TOConline
+│   │       ├── client.ts           # API client
+│   │       ├── invoices.ts         # Emissão facturas
+│   │       ├── customers.ts        # Sync clientes
+│   │       └── types.ts            # TypeScript types
+│   │
+│   └── migrations/                 # Scripts migração Python -> Prisma
+│       ├── migrate-projects.ts
+│       ├── migrate-despesas.ts
+│       ├── migrate-boletins.ts
+│       └── validate-saldos.ts      # Comparar cálculos
+│
+├── app/
+│   ├── (app)/
+│   │   ├── saldos/                 # NOVA ROTA - Dashboard saldos
+│   │   │   ├── page.tsx            # Vista principal
+│   │   │   ├── components/
+│   │   │   │   ├── saldo-card.tsx  # Card sócio
+│   │   │   │   ├── breakdown.tsx   # Detalhe INs/OUTs
+│   │   │   │   └── historico.tsx   # Gráfico evolução
+│   │   │   └── actions.ts          # Server actions
+│   │   │
+│   │   ├── impostos/               # NOVA ROTA - Fiscal dashboard
+│   │   │   ├── page.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── iva-summary.tsx
+│   │   │   │   ├── retencoes.tsx
+│   │   │   │   └── irc-estimado.tsx
+│   │   │   └── actions.ts
+│   │   │
+│   │   ├── equipamento/            # NOVA ROTA - Catálogo equipamento
+│   │   │   ├── page.tsx
+│   │   │   ├── [id]/
+│   │   │   │   └── page.tsx        # Detalhe equipamento
+│   │   │   ├── components/
+│   │   │   │   ├── equipment-table.tsx
+│   │   │   │   ├── depreciation-calc.tsx
+│   │   │   │   └── equipment-form.tsx
+│   │   │   └── actions.ts
+│   │   │
+│   │   ├── orcamentos/             # NOVA ROTA - Gestão orçamentos
+│   │   │   ├── page.tsx            # Lista orçamentos
+│   │   │   ├── novo/
+│   │   │   │   └── page.tsx        # Criar orçamento
+│   │   │   ├── [id]/
+│   │   │   │   ├── page.tsx        # Detalhe/editar
+│   │   │   │   └── pdf/
+│   │   │   │       └── route.ts    # Gerar PDF
+│   │   │   ├── components/
+│   │   │   │   ├── budget-form.tsx
+│   │   │   │   ├── budget-items.tsx
+│   │   │   │   ├── equipment-picker.tsx
+│   │   │   │   └── convert-to-project.tsx
+│   │   │   └── actions.ts
+│   │   │
+│   │   └── toconline/              # NOVA ROTA - Config integração
+│   │       ├── page.tsx            # Settings TOConline
+│   │       └── actions.ts
+│   │
+│   └── api/
+│       ├── agora/                  # NOVOS ENDPOINTS
+│       │   ├── saldos/
+│       │   │   └── route.ts        # GET /api/agora/saldos
+│       │   ├── impostos/
+│       │   │   └── route.ts        # GET /api/agora/impostos
+│       │   ├── equipamento/
+│       │   │   └── route.ts        # CRUD equipamento
+│       │   ├── orcamentos/
+│       │   │   ├── route.ts        # CRUD orçamentos
+│       │   │   └── [id]/
+│       │   │       ├── convert/
+│       │   │       │   └── route.ts    # POST converter em projeto
+│       │   │       └── pdf/
+│       │   │           └── route.ts    # GET PDF orçamento
+│       │   └── toconline/
+│       │       ├── invoices/
+│       │       │   └── route.ts    # POST emitir factura
+│       │       └── sync/
+│       │           └── route.ts    # POST sync clientes
+│       │
+│       └── webhooks/
+│           └── toconline/
+│               └── route.ts        # Webhook TOConline
+│
+├── prisma/
+│   └── schema.prisma               # MODIFICADO - adicionar modelos
+│
+└── components/
+    └── agora/                      # NOVOS COMPONENTES
+        ├── saldo-card.tsx
+        ├── fiscal-dashboard.tsx
+        ├── equipment-table.tsx
+        ├── budget-form.tsx
+        └── toconline-status.tsx
+```
 
 ==================================================
 PRISMA SCHEMA - EXTENSÕES
@@ -218,7 +164,7 @@ PRISMA SCHEMA - EXTENSÕES
 
 prisma/schema.prisma - ADICIONAR ao schema existente:
 
----
+```prisma
 model Equipment {
   id            String   @id @default(uuid()) @db.Uuid
   userId        String   @map("user_id") @db.Uuid
@@ -321,7 +267,7 @@ model User {
   
   // ... resto dos campos ...
 }
----
+```
 
 ==================================================
 FLUXO DE DADOS: SALDOS
@@ -329,7 +275,7 @@ FLUXO DE DADOS: SALDOS
 
 CÁLCULO DE SALDOS (lib/agora/saldos.ts):
 
----
+```typescript
 import { prisma } from '@/lib/db'
 
 export async function calculateSaldoBruno(
@@ -443,7 +389,7 @@ export async function calculateSaldoBruno(
     sugestaBoletim: Math.max(0, saldoTotal)
   }
 }
----
+```
 
 ==================================================
 FLUXO DE DADOS: ORÇAMENTOS -> PROJETOS
@@ -451,7 +397,7 @@ FLUXO DE DADOS: ORÇAMENTOS -> PROJETOS
 
 WORKFLOW (lib/agora/orcamentos.ts):
 
----
+```typescript
 export async function convertBudgetToProject(budgetId: string) {
   const budget = await prisma.budget.findUnique({
     where: { id: budgetId },
@@ -492,7 +438,7 @@ export async function convertBudgetToProject(budgetId: string) {
   
   return transaction
 }
----
+```
 
 ==================================================
 INTEGRAÇÃO TOCONLINE
@@ -500,7 +446,7 @@ INTEGRAÇÃO TOCONLINE
 
 CLIENT (lib/agora/toconline/client.ts):
 
----
+```typescript
 import { TOConlineConfig } from './types'
 
 export class TOConlineClient {
@@ -552,7 +498,7 @@ export class TOConlineClient {
     // Implementar criação de cliente
   }
 }
----
+```
 
 ==================================================
 COMPONENTES UI - EXEMPLOS
@@ -560,7 +506,7 @@ COMPONENTES UI - EXEMPLOS
 
 SALDO CARD (components/agora/saldo-card.tsx):
 
----
+```typescript
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -629,7 +575,7 @@ function formatEuros(cents: number): string {
     currency: 'EUR'
   }).format(cents / 100)
 }
----
+```
 
 ==================================================
 NAVEGAÇÃO - MENU SIDEBAR
@@ -637,7 +583,7 @@ NAVEGAÇÃO - MENU SIDEBAR
 
 ADICIONAR ao menu existente (app/(app)/layout.tsx):
 
----
+```typescript
 const menuItems = [
   // Existentes do TaxHacker
   { href: '/transactions', label: 'Transactions', icon: FileText },
@@ -655,7 +601,7 @@ const menuItems = [
   { href: '/categories', label: 'Categories', icon: Tag },
   { href: '/settings', label: 'Settings', icon: Settings }
 ]
----
+```
 
 ==================================================
 RESUMO FICHEIROS A CRIAR
@@ -663,54 +609,54 @@ RESUMO FICHEIROS A CRIAR
 
 TOTAL: ~35 novos ficheiros
 
-lib/ (8 ficheiros):
-  - lib/agora/saldos.ts
-  - lib/agora/impostos.ts
-  - lib/agora/equipamento.ts
-  - lib/agora/orcamentos.ts
-  - lib/agora/toconline/client.ts
-  - lib/agora/toconline/invoices.ts
-  - lib/agora/toconline/customers.ts
-  - lib/agora/toconline/types.ts
+**lib/** (8 ficheiros):
+- lib/agora/saldos.ts
+- lib/agora/impostos.ts
+- lib/agora/equipamento.ts
+- lib/agora/orcamentos.ts
+- lib/agora/toconline/client.ts
+- lib/agora/toconline/invoices.ts
+- lib/agora/toconline/customers.ts
+- lib/agora/toconline/types.ts
 
-app/saldos/ (4 ficheiros):
-  - app/(app)/saldos/page.tsx
-  - app/(app)/saldos/actions.ts
-  - app/(app)/saldos/components/saldo-card.tsx
-  - app/(app)/saldos/components/breakdown.tsx
+**app/saldos/** (4 ficheiros):
+- app/(app)/saldos/page.tsx
+- app/(app)/saldos/actions.ts
+- app/(app)/saldos/components/saldo-card.tsx
+- app/(app)/saldos/components/breakdown.tsx
 
-app/impostos/ (5 ficheiros):
-  - app/(app)/impostos/page.tsx
-  - app/(app)/impostos/actions.ts
-  - app/(app)/impostos/components/iva-summary.tsx
-  - app/(app)/impostos/components/retencoes.tsx
-  - app/(app)/impostos/components/irc-estimado.tsx
+**app/impostos/** (5 ficheiros):
+- app/(app)/impostos/page.tsx
+- app/(app)/impostos/actions.ts
+- app/(app)/impostos/components/iva-summary.tsx
+- app/(app)/impostos/components/retencoes.tsx
+- app/(app)/impostos/components/irc-estimado.tsx
 
-app/equipamento/ (5 ficheiros):
-  - app/(app)/equipamento/page.tsx
-  - app/(app)/equipamento/[id]/page.tsx
-  - app/(app)/equipamento/actions.ts
-  - app/(app)/equipamento/components/equipment-table.tsx
-  - app/(app)/equipamento/components/equipment-form.tsx
+**app/equipamento/** (5 ficheiros):
+- app/(app)/equipamento/page.tsx
+- app/(app)/equipamento/[id]/page.tsx
+- app/(app)/equipamento/actions.ts
+- app/(app)/equipamento/components/equipment-table.tsx
+- app/(app)/equipamento/components/equipment-form.tsx
 
-app/orcamentos/ (7 ficheiros):
-  - app/(app)/orcamentos/page.tsx
-  - app/(app)/orcamentos/novo/page.tsx
-  - app/(app)/orcamentos/[id]/page.tsx
-  - app/(app)/orcamentos/[id]/pdf/route.ts
-  - app/(app)/orcamentos/actions.ts
-  - app/(app)/orcamentos/components/budget-form.tsx
-  - app/(app)/orcamentos/components/convert-to-project.tsx
+**app/orcamentos/** (7 ficheiros):
+- app/(app)/orcamentos/page.tsx
+- app/(app)/orcamentos/novo/page.tsx
+- app/(app)/orcamentos/[id]/page.tsx
+- app/(app)/orcamentos/[id]/pdf/route.ts
+- app/(app)/orcamentos/actions.ts
+- app/(app)/orcamentos/components/budget-form.tsx
+- app/(app)/orcamentos/components/convert-to-project.tsx
 
-API routes (6 ficheiros):
-  - app/api/agora/saldos/route.ts
-  - app/api/agora/impostos/route.ts
-  - app/api/agora/equipamento/route.ts
-  - app/api/agora/orcamentos/route.ts
-  - app/api/agora/orcamentos/[id]/convert/route.ts
-  - app/api/agora/toconline/invoices/route.ts
+**API routes** (6 ficheiros):
+- app/api/agora/saldos/route.ts
+- app/api/agora/impostos/route.ts
+- app/api/agora/equipamento/route.ts
+- app/api/agora/orcamentos/route.ts
+- app/api/agora/orcamentos/[id]/convert/route.ts
+- app/api/agora/toconline/invoices/route.ts
 
-prisma/ (1 ficheiro):
-  - Modificar prisma/schema.prisma
+**prisma/** (1 ficheiro):
+- Modificar prisma/schema.prisma
 
 ==================================================
