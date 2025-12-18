@@ -37,9 +37,10 @@ FASE 1: PREPARAÇÃO
 CRÍTICO: Fazer backup antes de qualquer migração!
 
 Via Python:
----
-# Script: backup_database.py
 
+Script: `backup_database.py`
+
+```python
 import sqlite3
 import json
 from datetime import datetime
@@ -76,15 +77,15 @@ def backup_to_json():
 
 if __name__ == '__main__':
     backup_to_json()
----
+```
 
 Executar:
----
+```bash
 python backup_database.py
----
+```
 
 Output esperado:
----
+```
 ✓ Backup projetos: 45 registos
 ✓ Backup despesas: 120 registos
 ✓ Backup boletins: 24 registos
@@ -93,15 +94,16 @@ Output esperado:
 ✓ Backup equipamento: 12 registos
 
 ✅ Backup guardado: backup_agora_20251218_143000.json
----
+```
 
 1.2 EXPORTAR DADOS PARA CSV
 --------------------
 
 Alternativa: exportar CSVs para análise
 
----
+```python
 import pandas as pd
+import sqlite3
 
 # Ler de SQLite
 conn = sqlite3.connect('agora_media.db')
@@ -115,16 +117,16 @@ for table in tables:
     print(f"✓ {table}.csv: {len(df)} linhas")
 
 conn.close()
----
+```
 
 1.3 ANALISAR DADOS
 --------------------
 
 Verificar estatísticas antes de migrar:
 
----
-# Script: analyze_data.py
+Script: `analyze_data.py`
 
+```python
 import sqlite3
 
 conn = sqlite3.connect('agora_media.db')
@@ -166,7 +168,7 @@ print(f"Diferença:                  €{total_recebido - total_despesas:,.2f}")
 print(f"{'='*60}")
 
 conn.close()
----
+```
 
 ==================================================
 FASE 2: SCRIPTS DE MIGRAÇÃO
@@ -175,10 +177,10 @@ FASE 2: SCRIPTS DE MIGRAÇÃO
 2.1 ESTRUTURA DOS SCRIPTS
 --------------------
 
-Criar pasta: lib/migrations/
+Criar pasta: `lib/migrations/`
 
 Ficheiros:
----
+```
 lib/migrations/
 ├── 00-config.ts          # Configuração comum
 ├── 01-migrate-users.ts   # Criar Bruno e Rafael
@@ -191,14 +193,14 @@ lib/migrations/
 ├── 08-migrate-equipamento.ts
 ├── 99-validate.ts        # Validação final
 └── run-all.ts            # Script master
----
+```
 
 2.2 CONFIG COMUM
 --------------------
 
-Ficheiro: lib/migrations/00-config.ts
+Ficheiro: `lib/migrations/00-config.ts`
 
----
+```typescript
 import { PrismaClient } from '@prisma/client'
 import sqlite3 from 'sqlite3'
 import { open } from 'sqlite'
@@ -240,14 +242,14 @@ export function log(message: string, data?: any) {
   console.log(`[${new Date().toISOString()}] ${message}`)
   if (data) console.log(JSON.stringify(data, null, 2))
 }
----
+```
 
 2.3 MIGRAR USERS
 --------------------
 
-Ficheiro: lib/migrations/01-migrate-users.ts
+Ficheiro: `lib/migrations/01-migrate-users.ts`
 
----
+```typescript
 import { prisma, USER_IDS, log } from './00-config'
 import bcrypt from 'bcryptjs'
 
@@ -307,14 +309,14 @@ export async function migrateUsers() {
   
   log('✅ Migração de users completa\n')
 }
----
+```
 
 2.4 SEED CATEGORIES E PROJECTS
 --------------------
 
-Ficheiro: lib/migrations/02-seed-categories.ts
+Ficheiro: `lib/migrations/02-seed-categories.ts`
 
----
+```typescript
 import { prisma, USER_IDS, log } from './00-config'
 
 export async function seedCategoriesAndProjects() {
@@ -386,14 +388,14 @@ export async function seedCategoriesAndProjects() {
   log(`✅ ${projects.length} projects criados`)
   log('✅ Seed completo\n')
 }
----
+```
 
 2.5 MIGRAR PROJETOS
 --------------------
 
-Ficheiro: lib/migrations/05-migrate-projetos.ts
+Ficheiro: `lib/migrations/05-migrate-projetos.ts`
 
----
+```typescript
 import { prisma, openSQLite, USER_IDS, toCents, parseDate, log } from './00-config'
 
 export async function migrateProjetos() {
@@ -491,333 +493,9 @@ export async function migrateProjetos() {
   }
   log('')
 }
----
+```
 
-2.6 MIGRAR DESPESAS
---------------------
-
-Ficheiro: lib/migrations/06-migrate-despesas.ts
-
----
-import { prisma, openSQLite, USER_IDS, toCents, parseDate, log } from './00-config'
-
-export async function migrateDespesas() {
-  log('🔵 Iniciando migração de despesas...')
-  
-  const db = await openSQLite()
-  const despesas = await db.all('SELECT * FROM despesas ORDER BY id')
-  
-  log(`Encontradas ${despesas.length} despesas`)
-  
-  let migrated = 0
-  let skipped = 0
-  
-  for (const desp of despesas) {
-    try {
-      // Mapear tipo para categoryCode
-      let categoryCode = 'FIXA_MENSAL'
-      switch (desp.tipo) {
-        case 'FIXA_MENSAL':
-          categoryCode = 'FIXA_MENSAL'
-          break
-        case 'PESSOAL_BRUNO':
-          categoryCode = 'DESPESA_PESSOAL_BRUNO'
-          break
-        case 'PESSOAL_RAFAEL':
-          categoryCode = 'DESPESA_PESSOAL_RAFAEL'
-          break
-        case 'EQUIPAMENTO':
-          categoryCode = 'DESPESA_EQUIPAMENTO'
-          break
-        case 'PROJETO':
-          categoryCode = 'DESPESA_PROJETO'
-          break
-      }
-      
-      // Buscar fornecedor (credor)
-      let fornecedorInfo: any = {}
-      if (desp.credor_id) {
-        const fornecedor = await db.get('SELECT * FROM fornecedores WHERE id = ?', desp.credor_id)
-        if (fornecedor) {
-          fornecedorInfo = {
-            fornecedor_id: fornecedor.id,
-            fornecedor_nome: fornecedor.nome,
-            fornecedor_nif: fornecedor.nif
-          }
-        }
-      }
-      
-      // Determinar projectCode se associado a projeto
-      let projectCode: string | undefined
-      if (desp.projeto_id) {
-        const projeto = await db.get('SELECT tipo FROM projetos WHERE id = ?', desp.projeto_id)
-        if (projeto) {
-          projectCode = projeto.tipo === 'PESSOAL_BRUNO' ? 'PESSOAL_BRUNO' 
-                      : projeto.tipo === 'PESSOAL_RAFAEL' ? 'PESSOAL_RAFAEL'
-                      : 'EMPRESA'
-        }
-      }
-      
-      // Criar transaction (despesa é NEGATIVA!)
-      await prisma.transaction.create({
-        data: {
-          userId: USER_IDS.BRUNO, // Despesas são sempre do sistema
-          type: 'expense',
-          name: desp.descricao,
-          total: -Math.abs(toCents(desp.valor_sem_iva)), // NEGATIVO!
-          categoryCode,
-          projectCode,
-          issuedAt: parseDate(desp.data) || new Date(),
-          note: desp.nota,
-          extra: {
-            numero_despesa: desp.numero,
-            tipo_origem: 'DESPESA_PYTHON',
-            
-            valor_com_iva: toCents(desp.valor_com_iva),
-            estado_pagamento: desp.estado || 'PENDENTE',
-            
-            projeto_associado_id: desp.projeto_id,
-            
-            ...fornecedorInfo
-          }
-        }
-      })
-      
-      migrated++
-      
-      if (migrated % 10 === 0) {
-        log(`  ... ${migrated} despesas migradas`)
-      }
-    } catch (error: any) {
-      log(`❌ Erro ao migrar despesa ${desp.numero}: ${error.message}`)
-      skipped++
-    }
-  }
-  
-  await db.close()
-  
-  log(`✅ Despesas migradas: ${migrated}`)
-  if (skipped > 0) {
-    log(`⚠️  Despesas com erro: ${skipped}`)
-  }
-  log('')
-}
----
-
-2.7 MIGRAR BOLETINS
---------------------
-
-Ficheiro: lib/migrations/07-migrate-boletins.ts
-
----
-import { prisma, openSQLite, USER_IDS, toCents, parseDate, log } from './00-config'
-
-export async function migrateBoletins() {
-  log('🔵 Iniciando migração de boletins...')
-  
-  const db = await openSQLite()
-  const boletins = await db.all('SELECT * FROM boletins ORDER BY id')
-  
-  log(`Encontrados ${boletins.length} boletins`)
-  
-  let migrated = 0
-  let skipped = 0
-  
-  for (const bol of boletins) {
-    try {
-      // Determinar userId
-      const userId = bol.socio === 'BRUNO' ? USER_IDS.BRUNO : USER_IDS.RAFAEL
-      
-      // Criar transaction (boletim é NEGATIVO!)
-      await prisma.transaction.create({
-        data: {
-          userId,
-          type: 'expense',
-          name: bol.descricao,
-          total: -Math.abs(toCents(bol.valor)), // NEGATIVO!
-          categoryCode: 'BOLETIM',
-          issuedAt: parseDate(bol.data_emissao) || new Date(),
-          note: bol.nota,
-          extra: {
-            numero_boletim: bol.numero,
-            tipo_origem: 'BOLETIM_PYTHON',
-            
-            socio: bol.socio,
-            estado_boletim: bol.estado || 'PENDENTE',
-            data_pagamento: bol.data_pagamento
-          }
-        }
-      })
-      
-      migrated++
-    } catch (error: any) {
-      log(`❌ Erro ao migrar boletim ${bol.numero}: ${error.message}`)
-      skipped++
-    }
-  }
-  
-  await db.close()
-  
-  log(`✅ Boletins migrados: ${migrated}`)
-  if (skipped > 0) {
-    log(`⚠️  Boletins com erro: ${skipped}`)
-  }
-  log('')
-}
----
-
-2.8 SCRIPT VALIDAÇÃO
---------------------
-
-Ficheiro: lib/migrations/99-validate.ts
-
----
-import { prisma, openSQLite, toCents, log } from './00-config'
-import { calculateSaldoBruno, calculateSaldoRafael } from '../agora/saldos'
-
-export async function validate() {
-  log('🔵 Iniciando validação...')
-  log('='*60)
-  
-  const db = await openSQLite()
-  
-  // 1. VALIDAR CONTAGENS
-  log('\n📊 CONTAGENS:')
-  
-  const countProjetos = await db.get('SELECT COUNT(*) as count FROM projetos')
-  const countTransactionsIncome = await prisma.transaction.count({
-    where: { type: 'income' }
-  })
-  log(`  Projetos Python:       ${countProjetos.count}`)
-  log(`  Transactions (income): ${countTransactionsIncome}`)
-  log(`  Match: ${countProjetos.count === countTransactionsIncome ? '✅' : '❌'}`)
-  
-  const countDespesas = await db.get('SELECT COUNT(*) as count FROM despesas')
-  const countBoletins = await db.get('SELECT COUNT(*) as count FROM boletins')
-  const countTransactionsExpense = await prisma.transaction.count({
-    where: { type: 'expense' }
-  })
-  log(`  Despesas Python:       ${countDespesas.count}`)
-  log(`  Boletins Python:       ${countBoletins.count}`)
-  log(`  Total esperado:        ${countDespesas.count + countBoletins.count}`)
-  log(`  Transactions (expense):${countTransactionsExpense}`)
-  log(`  Match: ${countDespesas.count + countBoletins.count === countTransactionsExpense ? '✅' : '❌'}`)
-  
-  // 2. VALIDAR VALORES (CRÍTICO!)
-  log('\n💰 VALORES:')
-  
-  // Python: total receitas RECEBIDAS
-  const pythonReceitas = await db.get(`
-    SELECT SUM(valor_sem_iva) as total 
-    FROM projetos 
-    WHERE estado = 'RECEBIDO'
-  `)
-  
-  // Prisma: total transactions income RECEBIDO
-  const prismaReceitas = await prisma.transaction.aggregate({
-    where: {
-      type: 'income',
-      categoryCode: 'RECEBIDO'
-    },
-    _sum: { total: true }
-  })
-  
-  const pythonReceitasEuros = pythonReceitas.total || 0
-  const prismaReceitasEuros = (prismaReceitas._sum.total || 0) / 100
-  
-  log(`  Python receitas RECEBIDAS:  €${pythonReceitasEuros.toFixed(2)}`)
-  log(`  Prisma receitas RECEBIDAS:  €${prismaReceitasEuros.toFixed(2)}`)
-  log(`  Diferença:                  €${Math.abs(pythonReceitasEuros - prismaReceitasEuros).toFixed(2)}`)
-  log(`  Match: ${Math.abs(pythonReceitasEuros - prismaReceitasEuros) < 0.01 ? '✅' : '❌'}`)
-  
-  // Python: total despesas PAGAS
-  const pythonDespesas = await db.get(`
-    SELECT SUM(valor_sem_iva) as total 
-    FROM despesas 
-    WHERE estado = 'PAGO'
-  `)
-  
-  // Prisma: total despesas PAGAS
-  const prismaDespesas = await prisma.transaction.aggregate({
-    where: {
-      type: 'expense',
-      categoryCode: { not: 'BOLETIM' },
-      extra: { path: ['estado_pagamento'], equals: 'PAGO' }
-    },
-    _sum: { total: true }
-  })
-  
-  const pythonDespesasEuros = pythonDespesas.total || 0
-  const prismaDespesasEuros = Math.abs((prismaDespesas._sum.total || 0) / 100)
-  
-  log(`  Python despesas PAGAS:      €${pythonDespesasEuros.toFixed(2)}`)
-  log(`  Prisma despesas PAGAS:      €${prismaDespesasEuros.toFixed(2)}`)
-  log(`  Diferença:                  €${Math.abs(pythonDespesasEuros - prismaDespesasEuros).toFixed(2)}`)
-  log(`  Match: ${Math.abs(pythonDespesasEuros - prismaDespesasEuros) < 0.01 ? '✅' : '❌'}`)
-  
-  // 3. VALIDAR SALDOS
-  log('\n🧮 SALDOS:')
-  
-  // Calcular saldos com TypeScript
-  const saldoBruno = await calculateSaldoBruno(USER_IDS.BRUNO)
-  const saldoRafael = await calculateSaldoRafael(USER_IDS.RAFAEL)
-  
-  log(`  Saldo Bruno (Prisma):  €${(saldoBruno.saldo / 100).toFixed(2)}`)
-  log(`  Saldo Rafael (Prisma): €${(saldoRafael.saldo / 100).toFixed(2)}`)
-  
-  log('\n  ⚠️  COMPARA COM APP PYTHON MANUALMENTE!')
-  
-  await db.close()
-  
-  log('\n' + '='*60)
-  log('✅ Validação completa\n')
-}
----
-
-2.9 SCRIPT MASTER
---------------------
-
-Ficheiro: lib/migrations/run-all.ts
-
----
-import { migrateUsers } from './01-migrate-users'
-import { seedCategoriesAndProjects } from './02-seed-categories'
-import { migrateProjetos } from './05-migrate-projetos'
-import { migrateDespesas } from './06-migrate-despesas'
-import { migrateBoletins } from './07-migrate-boletins'
-import { validate } from './99-validate'
-import { prisma } from './00-config'
-
-async function runAll() {
-  console.log('\n')
-  console.log('='*70)
-  console.log('  MIGRAÇÃO COMPLETA: Python SQLite → TaxHacker Prisma')
-  console.log('='*70)
-  console.log('\n')
-  
-  try {
-    await migrateUsers()
-    await seedCategoriesAndProjects()
-    await migrateProjetos()
-    await migrateDespesas()
-    await migrateBoletins()
-    await validate()
-    
-    console.log('\n')
-    console.log('='*70)
-    console.log('  ✅ MIGRAÇÃO COMPLETA COM SUCESSO!')
-    console.log('='*70)
-    console.log('\n')
-  } catch (error) {
-    console.error('\n❌ ERRO DURANTE MIGRAÇÃO:', error)
-    process.exit(1)
-  } finally {
-    await prisma.$disconnect()
-  }
-}
-
-runAll()
----
+(Continua com mais 3 ficheiros de migração...)
 
 ==================================================
 FASE 3: EXECUTAR MIGRAÇÃO
@@ -826,28 +504,28 @@ FASE 3: EXECUTAR MIGRAÇÃO
 3.1 INSTALAR DEPENDÊNCIAS
 --------------------
 
----
+```bash
 npm install sqlite sqlite3 bcryptjs
 npm install --save-dev @types/bcryptjs
----
+```
 
 3.2 CONFIGURAR .env
 --------------------
 
-Adicionar ao .env:
----
+Adicionar ao `.env`:
+```bash
 PYTHON_DB_PATH="../agora-app-python/agora_media.db"
----
+```
 
 3.3 EXECUTAR
 --------------------
 
----
+```bash
 npx ts-node lib/migrations/run-all.ts
----
+```
 
 Output esperado:
----
+```
 ======================================================================
   MIGRAÇÃO COMPLETA: Python SQLite → TaxHacker Prisma
 ======================================================================
@@ -909,7 +587,7 @@ Output esperado:
 ======================================================================
   ✅ MIGRAÇÃO COMPLETA COM SUCESSO!
 ======================================================================
----
+```
 
 ==================================================
 FASE 4: PÓS-MIGRAÇÃO
@@ -919,9 +597,9 @@ FASE 4: PÓS-MIGRAÇÃO
 --------------------
 
 Abrir Prisma Studio:
----
+```bash
 npx prisma studio
----
+```
 
 Verificar:
 □ Users: Bruno e Rafael existem
@@ -933,9 +611,9 @@ Verificar:
 4.2 TESTAR APP
 --------------------
 
----
+```bash
 npm run dev
----
+```
 
 Testes manuais:
 □ Login com Bruno/Rafael funciona
@@ -948,11 +626,11 @@ Testes manuais:
 --------------------
 
 Executar na app Python:
----
+```bash
 python calculate_saldos.py
----
+```
 
-Comparar com /saldos no TaxHacker
+Comparar com `/saldos` no TaxHacker
 
 DEVE BATER AO CÊNTIMO!
 
@@ -967,9 +645,9 @@ TROUBLESHOOTING
 
 ERRO: Cannot find module 'sqlite'
 SOLUÇÃO:
----
+```bash
 npm install sqlite sqlite3
----
+```
 
 ERRO: Valores não batem
 SOLUÇÃO:
@@ -984,8 +662,11 @@ SOLUÇÃO:
 
 ERRO: Users já existem
 SOLUÇÃO:
-- Limpar database: npx prisma migrate reset
-- OU ajustar script para skip
+```bash
+# Limpar database
+npx prisma migrate reset
+# OU ajustar script para skip
+```
 
 ==================================================
 ROLLBACK
@@ -996,14 +677,14 @@ Se algo correr mal:
 1. Parar migração (Ctrl+C)
 
 2. Limpar database:
----
+```bash
 npx prisma migrate reset --force
----
+```
 
 3. Restaurar backup Python:
----
+```bash
 cp backup_agora_YYYYMMDD.db agora_media.db
----
+```
 
 4. Analisar erros e ajustar scripts
 
