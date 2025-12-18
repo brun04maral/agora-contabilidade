@@ -124,38 +124,56 @@ REQUISITOS:
 INSTALAÇÃO LOCAL:
 
 1. Clone repo
-   git clone https://github.com/brun04maral/agora-contabilidade.git
-   cd agora-contabilidade
+```bash
+git clone https://github.com/brun04maral/agora-contabilidade.git
+cd agora-contabilidade
+```
 
 2. Instalar dependências
-   npm install
+```bash
+npm install
+```
 
 3. Configurar ambiente
-   cp .env.example .env
-   # Editar .env com credenciais PostgreSQL
+```bash
+cp .env.example .env
+# Editar .env com credenciais PostgreSQL
+```
 
 4. Setup database
-   npx prisma generate
-   npx prisma migrate dev
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
 
 5. Rodar aplicação
-   npm run dev
+```bash
+npm run dev
+```
 
 6. Abrir browser
-   http://localhost:7331
+```
+http://localhost:7331
+```
 
 INSTALAÇÃO DOCKER:
 
 1. Configurar .env
 
 2. Subir containers
-   docker-compose up -d
+```bash
+docker-compose up -d
+```
 
 3. Verificar logs
-   docker-compose logs -f app
+```bash
+docker-compose logs -f app
+```
 
 4. Abrir browser
-   http://localhost:7331
+```
+http://localhost:7331
+```
 
 ==================================================
 MIGRAÇÃO DA APP PYTHON
@@ -164,13 +182,17 @@ MIGRAÇÃO DA APP PYTHON
 Se vens da aplicação Python anterior:
 
 1. Fazer backup dos dados Python
-   python backup_database.py
+```bash
+python backup_database.py
+```
 
 2. Configurar TaxHacker
    (seguir SETUP_INICIAL.md)
 
 3. Executar migração
-   npx ts-node lib/migrations/run-all.ts
+```bash
+npx ts-node lib/migrations/run-all.ts
+```
 
 4. Validar saldos
    Comparar com app Python - devem bater ao cêntimo
@@ -182,7 +204,9 @@ Se vens da aplicação Python anterior:
    □ Export CSV
 
 6. Prod quando confiante
-   docker-compose up -d
+```bash
+docker-compose up -d
+```
 
 Ver: MIGRACAO_DADOS.md para detalhes completos
 
@@ -199,7 +223,7 @@ Documentos principais:
 - MANUTENCAO.md - Operações e troubleshooting
 
 Quick links:
-- Mapeamento dados: MAPEAMENTO_DADOS_REAL.md
+- Mapeamento dados: MAPEAMENTO_DADOS.md
 - Arquitetura: ARQUITETURA.md
 - Roadmap: ROADMAP_IMPLEMENTACAO.md
 - Migração: MIGRACAO_DADOS.md
@@ -208,6 +232,7 @@ Quick links:
 ESTRUTURA DO PROJETO
 ==================================================
 
+```
 agora-contabilidade/
 ├── app/                      # Next.js app
 │   ├── (app)/                # Rotas autenticadas
@@ -243,10 +268,10 @@ agora-contabilidade/
 │   ├── backup-db.sh
 │   └── health-check.sh
 │
-├── docs/                     # Documentação ⭐
+├── TaxHacker/                # Documentação ⭐
 │   ├── INDEX.md
 │   ├── README.md
-│   ├── MAPEAMENTO_DADOS_REAL.md
+│   ├── MAPEAMENTO_DADOS.md
 │   ├── ARQUITETURA.md
 │   ├── ROADMAP_IMPLEMENTACAO.md
 │   ├── SETUP_INICIAL.md
@@ -257,6 +282,7 @@ agora-contabilidade/
 └── docker-compose.yml        # Deploy Docker
 
 ⭐ = Extensões Agora Media (não existem no TaxHacker original)
+```
 
 ==================================================
 CONTRIBUIR
@@ -265,7 +291,9 @@ CONTRIBUIR
 WORKFLOW:
 
 1. Criar branch
-   git checkout -b feature/nome-feature
+```bash
+git checkout -b feature/nome-feature
+```
 
 2. Desenvolver
    - Seguir convenções em INDEX.md
@@ -273,11 +301,15 @@ WORKFLOW:
    - Actualizar documentação
 
 3. Commit
-   git commit -m "feat: descrição"
-   (usar: feat, fix, chore, docs, refactor)
+```bash
+git commit -m "feat: descrição"
+# (usar: feat, fix, chore, docs, refactor)
+```
 
 4. Push
-   git push origin feature/nome-feature
+```bash
+git push origin feature/nome-feature
+```
 
 5. Pull Request (se trabalho em equipa)
    Ou merge directo na main (se sozinho)
@@ -307,7 +339,7 @@ Issues técnicos:
   GitHub Issues no repo
 
 Dúvidas:
-  Consultar documentação em docs/
+  Consultar documentação em TaxHacker/
 
 Emergências produção:
   Contactos em MANUTENCAO.md
@@ -318,7 +350,7 @@ LINKS ÚTEIS
 
 Repo: https://github.com/brun04maral/agora-contabilidade
 TaxHacker Original: https://github.com/vas3k/TaxHacker
-Documentação: ./docs/INDEX.md
+Documentação: ./TaxHacker/INDEX.md
 
 Next.js: https://nextjs.org/docs
 Prisma: https://www.prisma.io/docs
