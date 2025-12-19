@@ -66,7 +66,7 @@ class SaldosCalculator:
             Dict com breakdown completo do saldo
         """
         return self._calcular_saldo(
-            Socio.BRUNO,
+            Socio.BA,
             incluir_investimento,
             data_inicio,
             data_fim
@@ -90,7 +90,7 @@ class SaldosCalculator:
             Dict com breakdown completo do saldo
         """
         return self._calcular_saldo(
-            Socio.RAFAEL,
+            Socio.RR,
             incluir_investimento,
             data_inicio,
             data_fim
@@ -132,18 +132,19 @@ class SaldosCalculator:
                 'sugestao_boletim': 11766.55  # valor para zerar o saldo
             }
         """
-        # Determinar tipo de projeto pessoal
-        tipo_projeto = TipoProjeto.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoProjeto.PESSOAL_RAFAEL
-        tipo_despesa = TipoDespesa.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoDespesa.PESSOAL_RAFAEL
+        # Determinar owner e tipo de despesa pessoal
+        owner = 'BA' if socio == Socio.BA else 'RR'
+        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == Socio.BA else TipoDespesa.PESSOAL_RR
 
         # === CALCULAR INs (Entradas) ===
 
-        # 1. Projetos pessoais (apenas RECEBIDOS)
+        # 1. Projetos pessoais (apenas PAGOS)
         query_projetos_pessoais = self.db_session.query(
             func.sum(Projeto.valor_sem_iva)
         ).filter(
-            Projeto.tipo == tipo_projeto,
-            Projeto.estado == EstadoProjeto.RECEBIDO
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == owner,
+            Projeto.estado == EstadoProjeto.PAGO
         )
 
         if data_inicio:
@@ -157,22 +158,21 @@ class SaldosCalculator:
 
         projetos_pessoais = query_projetos_pessoais.scalar() or Decimal("0.00")
 
-        # 2. Prémios de projetos da empresa (apenas RECEBIDOS)
-        if socio == Socio.BRUNO:
+        # 2. Prémios de projetos da empresa (apenas PAGOS)
+        # ✅ CORREÇÃO: Prémios só contam no saldo quando projeto está pago
+        if socio == Socio.BA:
             query_premios = self.db_session.query(
                 func.sum(Projeto.premio_bruno)
             ).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
-                Projeto.premio_bruno > 0
+                Projeto.premio_bruno > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             )
         else:
             query_premios = self.db_session.query(
                 func.sum(Projeto.premio_rafael)
             ).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
-                Projeto.premio_rafael > 0
+                Projeto.premio_rafael > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             )
 
         if data_inicio:
@@ -190,7 +190,7 @@ class SaldosCalculator:
         investimento = Decimal("0.00")
         if incluir_investimento:
             investimento = (
-                self.INVESTIMENTO_INICIAL_BRUNO if socio == Socio.BRUNO
+                self.INVESTIMENTO_INICIAL_BRUNO if socio == Socio.BA
                 else self.INVESTIMENTO_INICIAL_RAFAEL
             )
 
@@ -199,6 +199,7 @@ class SaldosCalculator:
         # === CALCULAR OUTs (Saídas) ===
 
         # 1. Despesas fixas mensais (divididas por 2)
+        # ✅ CORREÇÃO: Usar valor_sem_iva (coluna P do Excel)
         query_despesas_fixas = self.db_session.query(
             func.sum(Despesa.valor_sem_iva)
         ).filter(
@@ -218,25 +219,47 @@ class SaldosCalculator:
         despesas_fixas_total = query_despesas_fixas.scalar() or Decimal("0.00")
         despesas_fixas = despesas_fixas_total / Decimal("2.00")  # Divide por 2
 
-        # 2. Boletins emitidos (conta independentemente do estado)
-        query_boletins = self.db_session.query(
+        # 2. Boletins PENDENTES (emitidos mas não pagos)
+        query_boletins_pendentes = self.db_session.query(
             func.sum(Boletim.valor)
         ).filter(
-            Boletim.socio == socio
+            Boletim.socio == socio,
+            Boletim.estado == EstadoBoletim.PENDENTE
         )
 
         if data_inicio:
-            query_boletins = query_boletins.filter(
+            query_boletins_pendentes = query_boletins_pendentes.filter(
                 Boletim.data_emissao >= data_inicio
             )
         if data_fim:
-            query_boletins = query_boletins.filter(
+            query_boletins_pendentes = query_boletins_pendentes.filter(
                 Boletim.data_emissao <= data_fim
             )
 
-        boletins = query_boletins.scalar() or Decimal("0.00")
+        boletins_pendentes = query_boletins_pendentes.scalar() or Decimal("0.00")
+
+        # 3. Boletins PAGOS
+        query_boletins_pagos = self.db_session.query(
+            func.sum(Boletim.valor)
+        ).filter(
+            Boletim.socio == socio,
+            Boletim.estado == EstadoBoletim.PAGO
+        )
+
+        if data_inicio:
+            query_boletins_pagos = query_boletins_pagos.filter(
+                Boletim.data_emissao >= data_inicio
+            )
+        if data_fim:
+            query_boletins_pagos = query_boletins_pagos.filter(
+                Boletim.data_emissao <= data_fim
+            )
+
+        boletins_pagos = query_boletins_pagos.scalar() or Decimal("0.00")
+        boletins_total = boletins_pendentes + boletins_pagos
 
         # 3. Despesas pessoais excecionais
+        # ✅ CORREÇÃO: Usar valor_sem_iva (coluna P do Excel)
         query_despesas_pessoais = self.db_session.query(
             func.sum(Despesa.valor_sem_iva)
         ).filter(
@@ -255,27 +278,118 @@ class SaldosCalculator:
 
         despesas_pessoais = query_despesas_pessoais.scalar() or Decimal("0.00")
 
-        total_outs = despesas_fixas + boletins + despesas_pessoais
+        # IMPORTANTE: Apenas boletins PAGOS entram no cálculo do saldo!
+        # Pendentes são apenas para visualização
+        total_outs = despesas_fixas + boletins_pagos + despesas_pessoais
 
         # === CALCULAR SALDO FINAL ===
         saldo_total = total_ins - total_outs
 
+        # === PRÉMIOS NÃO FATURADOS (Projetos FINALIZADOS) ===
+        # Não contam no saldo atual, mas permitem calcular saldo projetado
+        if socio == Socio.BA:
+            query_premios_nao_faturados = self.db_session.query(
+                func.sum(Projeto.premio_bruno)
+            ).filter(
+                Projeto.estado == EstadoProjeto.FINALIZADO,
+                Projeto.premio_bruno > 0
+            )
+        else:
+            query_premios_nao_faturados = self.db_session.query(
+                func.sum(Projeto.premio_rafael)
+            ).filter(
+                Projeto.estado == EstadoProjeto.FINALIZADO,
+                Projeto.premio_rafael > 0
+            )
+
+        if data_inicio:
+            query_premios_nao_faturados = query_premios_nao_faturados.filter(
+                Projeto.data_faturacao >= data_inicio
+            )
+        if data_fim:
+            query_premios_nao_faturados = query_premios_nao_faturados.filter(
+                Projeto.data_faturacao <= data_fim
+            )
+
+        premios_nao_faturados = query_premios_nao_faturados.scalar() or Decimal("0.00")
+
+        # === PROJETOS PESSOAIS NÃO FATURADOS (Projetos FINALIZADOS) ===
+        # Projetos pessoais concluídos aguardando pagamento
+        query_pessoais_nao_faturados = self.db_session.query(
+            func.sum(Projeto.valor_sem_iva)
+        ).filter(
+            Projeto.estado == EstadoProjeto.FINALIZADO,
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == owner
+        )
+
+        if data_inicio:
+            query_pessoais_nao_faturados = query_pessoais_nao_faturados.filter(
+                Projeto.data_faturacao >= data_inicio
+            )
+        if data_fim:
+            query_pessoais_nao_faturados = query_pessoais_nao_faturados.filter(
+                Projeto.data_faturacao <= data_fim
+            )
+
+        pessoais_nao_faturados = query_pessoais_nao_faturados.scalar() or Decimal("0.00")
+
+        # Saldo projetado (se houver prémios ou pessoais não faturados)
+        saldo_projetado = None
+        total_nao_faturados = premios_nao_faturados + pessoais_nao_faturados
+        if total_nao_faturados > 0:
+            saldo_projetado = float(saldo_total + total_nao_faturados)
+
+        # === CALCULAR SUGESTÃO DE BOLETIM ===
+        # Distribui o saldo projetado pelos meses restantes sem boletim emitido
+        hoje = date.today()
+        mes_atual = hoje.month
+        ano_atual = hoje.year
+
+        # Meses que já têm boletim emitido (qualquer estado)
+        meses_com_boletim = set(
+            b.mes for b in self.db_session.query(Boletim.mes).filter(
+                Boletim.socio == socio,
+                Boletim.ano == ano_atual
+            ).all()
+        )
+
+        # Meses restantes sem boletim (do mês atual até dezembro)
+        meses_restantes = [m for m in range(mes_atual, 13) if m not in meses_com_boletim]
+        num_meses_sem_boletim = len(meses_restantes)
+
+        # Calcular saldo projetado para sugestão
+        total_ins_projetado = total_ins + premios_nao_faturados + pessoais_nao_faturados
+        total_outs_projetado = total_outs + boletins_pendentes
+        saldo_projetado_calc = total_ins_projetado - total_outs_projetado
+
+        # Sugestão = saldo projetado / meses restantes
+        if num_meses_sem_boletim > 0:
+            sugestao_boletim = max(0, float(saldo_projetado_calc / num_meses_sem_boletim))
+        else:
+            sugestao_boletim = 0.0
+
         return {
             'socio': socio.value,
             'saldo_total': float(saldo_total),
+            'saldo_projetado': saldo_projetado,  # None se não houver prémios não faturados
             'ins': {
                 'projetos_pessoais': float(projetos_pessoais),
                 'premios': float(premios),
+                'premios_nao_faturados': float(premios_nao_faturados),
+                'pessoais_nao_faturados': float(pessoais_nao_faturados),
                 'investimento_inicial': float(investimento),
                 'total': float(total_ins)
             },
             'outs': {
                 'despesas_fixas': float(despesas_fixas),
-                'boletins': float(boletins),
+                'boletins_pendentes': float(boletins_pendentes),
+                'boletins_pagos': float(boletins_pagos),
+                'boletins_total': float(boletins_total),
                 'despesas_pessoais': float(despesas_pessoais),
                 'total': float(total_outs)
             },
-            'sugestao_boletim': max(0, float(saldo_total))  # Nunca negativo
+            'sugestao_boletim': sugestao_boletim
         }
 
     def obter_historico_mensal(
@@ -342,27 +456,27 @@ class SaldosCalculator:
         Returns:
             Dict com listas detalhadas de projetos, despesas e boletins
         """
-        tipo_projeto = TipoProjeto.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoProjeto.PESSOAL_RAFAEL
-        tipo_despesa = TipoDespesa.PESSOAL_BRUNO if socio == Socio.BRUNO else TipoDespesa.PESSOAL_RAFAEL
+        owner = 'BA' if socio == Socio.BA else 'RR'
+        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == Socio.BA else TipoDespesa.PESSOAL_RR
 
         # Projetos pessoais
         projetos_pessoais = self.db_session.query(Projeto).filter(
-            Projeto.tipo == tipo_projeto,
-            Projeto.estado == EstadoProjeto.RECEBIDO
+            Projeto.tipo == TipoProjeto.PESSOAL,
+            Projeto.owner == owner,
+            Projeto.estado == EstadoProjeto.PAGO
         ).all()
 
-        # Projetos com prémios
-        if socio == Socio.BRUNO:
+        # Projetos com prémios (apenas PAGOS)
+        # ✅ CORREÇÃO: Prémios só contam no saldo quando projeto está pago
+        if socio == Socio.BA:
             projetos_premios = self.db_session.query(Projeto).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
-                Projeto.premio_bruno > 0
+                Projeto.premio_bruno > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             ).all()
         else:
             projetos_premios = self.db_session.query(Projeto).filter(
-                Projeto.tipo == TipoProjeto.EMPRESA,
-                Projeto.estado == EstadoProjeto.RECEBIDO,
-                Projeto.premio_rafael > 0
+                Projeto.premio_rafael > 0,
+                Projeto.estado == EstadoProjeto.PAGO
             ).all()
 
         # Despesas fixas
@@ -377,9 +491,10 @@ class SaldosCalculator:
             Despesa.estado == EstadoDespesa.PAGO
         ).all()
 
-        # Boletins
+        # Boletins (apenas PAGOS)
         boletins = self.db_session.query(Boletim).filter(
-            Boletim.socio == socio
+            Boletim.socio == socio,
+            Boletim.estado == EstadoBoletim.PAGO
         ).all()
 
         return {

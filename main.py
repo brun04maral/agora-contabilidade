@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Agora Media - Sistema de Contabilidade
+Agora Media Production - Sistema de Contabilidade
 Ponto de entrada principal da aplicação
 """
 
@@ -25,7 +25,7 @@ class App(ctk.CTk):
         super().__init__()
 
         # Configurar janela
-        self.title(os.getenv("APP_NAME", "Agora Media Contabilidade"))
+        self.title(os.getenv("APP_NAME", "Agora - Contabilidade"))
         self.geometry("1200x800")
 
         # Inicializar gerenciadores
@@ -44,7 +44,7 @@ class App(ctk.CTk):
         database_url = os.getenv("DATABASE_URL")
 
         if not database_url:
-            print("WARNING: DATABASE_URL not set in .env file")
+            print("ℹ️  INFO: Usando SQLite (agora_media.db) - base de dados local")
             # Use SQLite as fallback for development
             database_url = "sqlite:///./agora_media.db"
 
@@ -68,12 +68,17 @@ class App(ctk.CTk):
 
             # Verify token is still valid
             if self.auth_manager:
-                valid, updated_user_data = self.auth_manager.verify_token(token)
+                try:
+                    valid, updated_user_data = self.auth_manager.verify_token(token)
 
-                if valid:
-                    # Session is valid, show main app
-                    self.show_main_app(updated_user_data or user_data)
-                    return
+                    if valid:
+                        # Session is valid, show main app
+                        self.show_main_app(updated_user_data or user_data)
+                        return
+                except Exception as e:
+                    print(f"Token verification error: {e}")
+                    # Clear invalid session
+                    self.session_manager.clear_session()
 
         # No valid session, show login screen
         self.show_login_screen()

@@ -4,9 +4,13 @@ Main window - Janela principal da aplicação
 """
 import customtkinter as ctk
 from sqlalchemy.orm import Session
+import logging
 
 from ui.components.sidebar import Sidebar
 from ui.screens.saldos import SaldosScreen
+from logic.projetos import ProjetosManager
+
+logger = logging.getLogger(__name__)
 
 
 class MainWindow(ctk.CTkFrame):
@@ -57,6 +61,9 @@ class MainWindow(ctk.CTkFrame):
         self.sidebar = Sidebar(self, on_menu_select=self.on_menu_select, width=260)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
 
+        # Atualizar estados de projetos automaticamente ao iniciar
+        self._atualizar_estados_projetos_auto()
+
     def on_menu_select(self, menu_id: str):
         """
         Handle menu selection
@@ -77,153 +84,409 @@ class MainWindow(ctk.CTkFrame):
             self.show_saldos()
         elif menu_id == "projetos":
             self.show_projetos()
+        elif menu_id == "orcamentos":
+            self.show_orcamentos()
         elif menu_id == "despesas":
             self.show_despesas()
         elif menu_id == "boletins":
             self.show_boletins()
+        elif menu_id == "relatorios":
+            self.show_relatorios()
         elif menu_id == "clientes":
             self.show_clientes()
         elif menu_id == "fornecedores":
             self.show_fornecedores()
-        elif menu_id == "settings":
-            self.show_settings()
+        elif menu_id == "equipamento":
+            self.show_equipamento()
+        elif menu_id == "info":
+            self.show_info()
         elif menu_id == "logout":
             self.handle_logout()
 
     def show_dashboard(self):
         """Show dashboard screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("dashboard")
+
+        from ui.screens.dashboard import DashboardScreen
+        screen = DashboardScreen(self.content_frame, self.db_session, self)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="📊 Dashboard\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_saldos(self):
         """Show saldos pessoais screen"""
-        screen = SaldosScreen(self.content_frame, self.db_session)
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("saldos")
+
+        screen = SaldosScreen(self.content_frame, self.db_session, main_window=self)
         screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
-    def show_projetos(self):
-        """Show projetos screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+    def show_projetos(self, filtro_estado=None, filtro_cliente_id=None, filtro_tipo=None, filtro_premio_socio=None, filtro_owner=None):
+        """
+        Show projetos screen
+
+        Args:
+            filtro_estado: Optional estado filter ("Todos", "Recebido", "Faturado", "Não Faturado")
+            filtro_cliente_id: Optional cliente ID to filter by
+            filtro_tipo: Optional tipo filter ("Pessoal BA", "Pessoal RR", "Empresa")
+            filtro_premio_socio: Optional filter for projects with prizes ("BA" or "RR")
+            filtro_owner: Optional owner filter ("BA" or "RR") for empresa projects
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("projetos")
+
+        from ui.screens.projetos import ProjetosScreen
+        screen = ProjetosScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_cliente_id=filtro_cliente_id, filtro_tipo=filtro_tipo, filtro_premio_socio=filtro_premio_socio, filtro_owner=filtro_owner)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="📁 Projetos\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
-    def show_despesas(self):
-        """Show despesas screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+    def show_despesas(self, filtro_estado=None, filtro_tipo=None):
+        """
+        Show despesas screen
+
+        Args:
+            filtro_estado: Optional estado filter ("Todos", "Pendente", "Vencido", "Pago")
+            filtro_tipo: Optional tipo filter ("Fixa Mensal", "Pessoal BA", "Pessoal RR", etc.)
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("despesas")
+
+        from ui.screens.despesas import DespesasScreen
+        screen = DespesasScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_tipo=filtro_tipo)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="💸 Despesas\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
-    def show_boletins(self):
-        """Show boletins screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+    def show_boletins(self, filtro_estado=None, filtro_socio=None):
+        """
+        Show boletins screen
+
+        Args:
+            filtro_estado: Optional estado filter ("Todos", "Pendente", "Pago")
+            filtro_socio: Optional socio filter ("BA", "RR")
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("boletins")
+
+        from ui.screens.boletins import BoletinsScreen
+        screen = BoletinsScreen(self.content_frame, self.db_session, filtro_estado=filtro_estado, filtro_socio=filtro_socio)
         screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
 
-        label = ctk.CTkLabel(
-            screen,
-            text="📄 Boletins\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
+    def show_relatorios(self, projeto_ids=None, despesa_ids=None, boletim_ids=None):
+        """
+        Show relatorios screen
 
+        Args:
+            projeto_ids: Optional list of project IDs to pre-filter report
+            despesa_ids: Optional list of despesa IDs to pre-filter report
+            boletim_ids: Optional list of boletim IDs to pre-filter report
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("relatorios")
+
+        from ui.screens.relatorios import RelatoriosScreen
+        screen = RelatoriosScreen(self.content_frame, self.db_session, projeto_ids=projeto_ids, despesa_ids=despesa_ids, boletim_ids=boletim_ids)
+        screen.grid(row=0, column=0, sticky="nsew")
         self.current_screen = screen
 
     def show_clientes(self):
         """Show clientes screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("clientes")
+
+        from ui.screens.clientes import ClientesScreen
+        screen = ClientesScreen(self.content_frame, self.db_session, self)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="👥 Clientes\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
     def show_fornecedores(self):
         """Show fornecedores screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("fornecedores")
+
+        from ui.screens.fornecedores import FornecedoresScreen
+        screen = FornecedoresScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        label = ctk.CTkLabel(
-            screen,
-            text="🏢 Fornecedores\n\n(Em desenvolvimento)",
-            font=ctk.CTkFont(size=24)
-        )
-        label.pack(expand=True)
-
         self.current_screen = screen
 
-    def show_settings(self):
-        """Show settings screen"""
-        screen = ctk.CTkFrame(self.content_frame)
+    def show_equipamento(self):
+        """Show equipamento screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("equipamento")
+
+        from ui.screens.equipamento import EquipamentoScreen
+        screen = EquipamentoScreen(self.content_frame, self.db_session)
         screen.grid(row=0, column=0, sticky="nsew")
-
-        # Header
-        header_frame = ctk.CTkFrame(screen, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(30, 20))
-
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="⚙️ Definições",
-            font=ctk.CTkFont(size=28, weight="bold")
-        )
-        title_label.pack(anchor="w")
-
-        # User info
-        info_frame = ctk.CTkFrame(screen)
-        info_frame.pack(fill="x", padx=30, pady=20)
-
-        user_label = ctk.CTkLabel(
-            info_frame,
-            text=f"Utilizador: {self.user_data.get('name', 'N/A')}",
-            font=ctk.CTkFont(size=16)
-        )
-        user_label.pack(anchor="w", padx=20, pady=(20, 5))
-
-        email_label = ctk.CTkLabel(
-            info_frame,
-            text=f"Email: {self.user_data.get('email', 'N/A')}",
-            font=ctk.CTkFont(size=14),
-            text_color="gray"
-        )
-        email_label.pack(anchor="w", padx=20, pady=(0, 5))
-
-        role_label = ctk.CTkLabel(
-            info_frame,
-            text=f"Função: {self.user_data.get('role', 'N/A')}",
-            font=ctk.CTkFont(size=14),
-            text_color="gray"
-        )
-        role_label.pack(anchor="w", padx=20, pady=(0, 20))
-
         self.current_screen = screen
+
+    def show_orcamentos(self, filtro_status=None, filtro_cliente_id=None):
+        """
+        Show orcamentos screen
+
+        Args:
+            filtro_status: Optional status filter ("rascunho", "enviado", "aprovado", "rejeitado")
+            filtro_cliente_id: Optional cliente ID to filter by
+        """
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("orcamentos")
+
+        from ui.screens.orcamentos import OrcamentosScreen
+        screen = OrcamentosScreen(
+            self.content_frame,
+            self.db_session,
+            filtro_status=filtro_status,
+            filtro_cliente_id=filtro_cliente_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_info(self):
+        """Show info screen"""
+        # Clear current screen if navigating programmatically
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Update sidebar selection (visual only, no callback)
+        if hasattr(self, 'sidebar'):
+            self.sidebar.update_selection("info")
+
+        from ui.screens.info import InfoScreen
+        screen = InfoScreen(self.content_frame)
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_screen(self, screen_name: str, **kwargs):
+        """
+        Generic method to show a screen by name with optional parameters
+
+        Args:
+            screen_name: Name of the screen to show
+            **kwargs: Optional parameters to pass to the screen
+        """
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        # Show requested screen
+        if screen_name == "orcamento_form":
+            self.show_orcamento_form(**kwargs)
+        elif screen_name == "orcamentos":
+            self.show_orcamentos()
+        elif screen_name == "projeto_form":
+            self.show_projeto_form(**kwargs)
+        elif screen_name == "projetos":
+            self.show_projetos()
+        elif screen_name == "despesa_form":
+            self.show_despesa_form(**kwargs)
+        elif screen_name == "despesas":
+            self.show_despesas()
+        elif screen_name == "boletim_form":
+            self.show_boletim_form(**kwargs)
+        elif screen_name == "boletins":
+            self.show_boletins()
+        elif screen_name == "cliente_form":
+            self.show_cliente_form(**kwargs)
+        elif screen_name == "clientes":
+            self.show_clientes()
+        elif screen_name == "fornecedor_form":
+            self.show_fornecedor_form(**kwargs)
+        elif screen_name == "fornecedores":
+            self.show_fornecedores()
+        elif screen_name == "equipamento_form":
+            self.show_equipamento_form(**kwargs)
+        elif screen_name == "equipamento":
+            self.show_equipamento()
+        # Add more screens as needed
+
+    def show_orcamento_form(self, orcamento_id=None):
+        """Show orcamento form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.orcamento_form import OrcamentoFormScreen
+        screen = OrcamentoFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            orcamento_id=orcamento_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_projeto_form(self, projeto_id=None):
+        """Show projeto form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.projeto_form import ProjetoFormScreen
+        screen = ProjetoFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            projeto_id=projeto_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_despesa_form(self, despesa_id=None):
+        """Show despesa form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.despesa_form import DespesaFormScreen
+        screen = DespesaFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            despesa_id=despesa_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_boletim_form(self, boletim_id=None):
+        """Show boletim form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.boletim_form import BoletimFormScreen
+        screen = BoletimFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            boletim_id=boletim_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_cliente_form(self, cliente_id=None):
+        """Show cliente form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.cliente_form import ClienteFormScreen
+        screen = ClienteFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            cliente_id=cliente_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_fornecedor_form(self, fornecedor_id=None):
+        """Show fornecedor form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.fornecedor_form import FornecedorFormScreen
+        screen = FornecedorFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            fornecedor_id=fornecedor_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def show_equipamento_form(self, equipamento_id=None):
+        """Show equipamento form screen (create/edit)"""
+        # Clear current screen
+        if self.current_screen:
+            self.current_screen.destroy()
+            self.current_screen = None
+
+        from ui.screens.equipamento_form import EquipamentoFormScreen
+        screen = EquipamentoFormScreen(
+            self.content_frame,
+            db_session=self.db_session,
+            equipamento_id=equipamento_id
+        )
+        screen.grid(row=0, column=0, sticky="nsew")
+        self.current_screen = screen
+
+    def _atualizar_estados_projetos_auto(self):
+        """
+        Atualiza automaticamente estados de projetos (ATIVO → FINALIZADO)
+
+        Chamado ao iniciar a aplicação.
+        """
+        try:
+            projetos_manager = ProjetosManager(self.db_session)
+            count = projetos_manager.atualizar_estados_projetos()
+
+            if count > 0:
+                logger.info(f"Estados atualizados: {count} projeto(s) ATIVO → FINALIZADO")
+        except Exception as e:
+            logger.error(f"Erro ao atualizar estados de projetos automaticamente: {e}")
 
     def handle_logout(self):
         """Handle logout"""

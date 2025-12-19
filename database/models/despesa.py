@@ -14,19 +14,19 @@ class TipoDespesa(enum.Enum):
     Enum para tipo de despesa - CRÍTICO para cálculo de saldos!
 
     FIXA_MENSAL: Dividida por 2, cada sócio desconta metade nos OUTs
-    PESSOAL_BRUNO/PESSOAL_RAFAEL: Desconta apenas do sócio específico
+    PESSOAL_BA/PESSOAL_RR: Desconta apenas do sócio específico
     EQUIPAMENTO: Pode descontar do saldo se for para uso pessoal
     """
     FIXA_MENSAL = "FIXA_MENSAL"
-    PESSOAL_BRUNO = "PESSOAL_BRUNO"
-    PESSOAL_RAFAEL = "PESSOAL_RAFAEL"
+    PESSOAL_BA = "PESSOAL_BA"
+    PESSOAL_RR = "PESSOAL_RR"
     EQUIPAMENTO = "EQUIPAMENTO"
     PROJETO = "PROJETO"  # Despesa associada a um projeto específico
 
 
 class EstadoDespesa(enum.Enum):
     """Enum para estado da despesa"""
-    ATIVO = "ATIVO"
+    PENDENTE = "PENDENTE"
     VENCIDO = "VENCIDO"
     PAGO = "PAGO"
 
@@ -37,7 +37,7 @@ class Despesa(Base):
 
     IMPORTANTE: O campo 'tipo' determina como impacta os saldos pessoais:
     - FIXA_MENSAL: Divide por 2, cada sócio desconta metade
-    - PESSOAL_BRUNO/PESSOAL_RAFAEL: Desconta apenas do sócio específico
+    - PESSOAL_BA/PESSOAL_RR: Desconta apenas do sócio específico
     - EQUIPAMENTO: Pode descontar do saldo se configurado
     - PROJETO: Associada a projeto, não impacta saldos diretamente
     """
@@ -66,11 +66,16 @@ class Despesa(Base):
     valor_com_iva = Column(Numeric(10, 2), nullable=False, default=0)
 
     # Estado
-    estado = Column(SQLEnum(EstadoDespesa), nullable=False, default=EstadoDespesa.ATIVO, index=True)
+    estado = Column(SQLEnum(EstadoDespesa), nullable=False, default=EstadoDespesa.PENDENTE, index=True)
     data_pagamento = Column(Date, nullable=True)
 
     # Metadata
     nota = Column(Text, nullable=True)
+
+    # Rastreamento de origem (se foi gerada de um template)
+    despesa_template_id = Column(Integer, ForeignKey('despesa_templates.id'), nullable=True)  # FK para o template que gerou esta despesa
+    despesa_template = relationship("DespesaTemplate", backref="despesas_geradas")
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -94,6 +99,8 @@ class Despesa(Base):
             'estado': self.estado.value if self.estado else None,
             'data_pagamento': self.data_pagamento.isoformat() if self.data_pagamento else None,
             'nota': self.nota,
+            'despesa_template_id': self.despesa_template_id,
+            'despesa_template_numero': self.despesa_template.numero if self.despesa_template else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

@@ -1,93 +1,114 @@
-# 💰 Agora Media - Sistema de Contabilidade
+# 🎬 Agora Contabilidade
 
-Sistema de gestão contabilística para a Agora Media Production, com foco especial no **cálculo de Saldos Pessoais** dos sócios.
+Sistema de gestão contabilística para Agora Media Production (BA + RR).
 
-## ✨ Funcionalidades Principais
+---
 
-### 🎯 Saldos Pessoais (CORE do Sistema)
-- **Cálculo automático** dos saldos de cada sócio
-- **INs (Entradas)**: Projetos pessoais + Prémios de projetos da empresa
-- **OUTs (Saídas)**: Despesas fixas ÷ 2 + Boletins emitidos + Despesas pessoais
-- **Sugestão automática** de valor de boletim para zerar saldo
-- **Visualização clara** em cards lado a lado
+## 🚨 NOVA SESSÃO CLAUDE CODE? → [Lê Isto Primeiro](./SESSION_IMPORT.md)
 
-### 📊 Outras Funcionalidades
-- ✅ Gestão de Projetos (Empresa / Pessoal Bruno / Pessoal Rafael)
-- ✅ Gestão de Despesas (Fixas / Pessoais / Equipamento)
-- ✅ Emissão e controlo de Boletins
-- ✅ Base de dados de Clientes
-- ✅ Base de dados de Fornecedores
-- 🔄 Dashboard (em desenvolvimento)
-- 🔄 Relatórios e análises (em desenvolvimento)
+**⚠️ CRÍTICO:** O Claude cria novo branch do `main` (desatualizado). Código novo está no branch anterior!
+
+**FRASE MÁGICA v2.0 - Copia e cola sempre:**
+```
+IMPORTANTE: Estás num branch novo criado do main (desatualizado). Antes de fazer QUALQUER coisa:
+
+1. Lista todos os branches remotos com 'git branch -r'
+2. Identifica o branch da sessão anterior (mais recente, excluindo main)
+3. Faz merge desse branch para o branch atual
+4. SÓ DEPOIS lê README.md e memory/CURRENT_STATE.md
+
+Não leias documentação antes do merge ou terás contexto desatualizado!
+```
+
+**O que faz:**
+1. ✅ Lista branches remotos (vê o que existe)
+2. ✅ Identifica o mais recente (código atualizado)
+3. ✅ Faz merge para o branch atual
+4. ✅ Lê README.md e memory/CURRENT_STATE.md (contexto completo)
+
+**Instruções detalhadas:** Ver [SESSION_IMPORT.md](./SESSION_IMPORT.md)
+
+💡 **Dica:** Outras frases úteis no [Cheat Sheet](#-cheat-sheet---frases-mágicas) abaixo.
+
+---
+
+## ⚙️ Requisitos do Sistema
+
+- **Python:** 3.12+ (recomendado)
+- **SO:** Windows, macOS, Linux
+- **Dependências:** Ver `requirements.txt`
+
+## ✨ Funcionalidades (Todas Completas ✅)
+
+### 💰 Saldos Pessoais (CORE)
+- Cálculo automático 50/50
+- Visualização em cards lado a lado
+- Breakdown detalhado (INs/OUTs)
+
+### 📊 Gestão Completa
+- ✅ **Dashboard** - Visão geral do sistema
+- ✅ **Projetos** - Gestão com prémios individuais
+- ✅ **Orçamentos** - Versões e aprovações
+- ✅ **Despesas** - Fixas e variáveis
+- ✅ **Boletins** - RVs com cálculos automáticos
+- ✅ **Clientes** - Base de dados completa
+- ✅ **Fornecedores** - Base de dados completa
+- ✅ **Equipamento** - Inventário
+- ✅ **Relatórios** - Exportação Excel
+
+### 🎨 Interface
+- Ícones PNG profissionais (Base64)
+- Logos de alta qualidade
+- CustomTkinter moderno
 
 ## 🚀 Setup Rápido
-
-### 1. Instalar Dependências
-
 ```bash
+# 1. Criar ambiente virtual (recomendado)
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# 2. Instalar dependências
 pip install -r requirements.txt
-```
 
-### 2. Configurar Base de Dados
+# 3. Configurar base de dados
+alembic upgrade head
 
-**Opção A: SQLite (Local - para desenvolvimento)**
-```bash
-# Já está configurado no .env por defeito
-python3 setup_database.py
-```
+# 4. (Opcional) Dados de teste
+python -c "from database.seed import seed_database; seed_database()"
 
-**Opção B: Supabase (Cloud - para produção)**
-```bash
-# Editar .env e descomentar a linha do PostgreSQL
-# DATABASE_URL=postgresql://...
-python3 setup_database.py
-```
-
-### 3. Executar Aplicação
-
-```bash
+# 5. Executar
 python main.py
 ```
 
-### 4. Login
-
-Use uma das contas criadas automaticamente:
-- **Bruno**: `bruno@agoramedia.pt` / `bruno123`
-- **Rafael**: `rafael@agoramedia.pt` / `rafael123`
+**Detalhes completos:** Consulta `memory/DEV_SETUP.md`
 
 ## 📂 Estrutura do Projeto
-
 ```
 agora-contabilidade/
-├── main.py                 # Ponto de entrada
-├── setup_database.py       # Script de setup da BD
-├── test_saldos.py         # Testes da lógica de saldos
+├── main.py              # Entry point
+├── agora_media.db       # SQLite (gitignored)
 │
-├── database/
-│   ├── models/            # Modelos SQLAlchemy
-│   │   ├── user.py
-│   │   ├── cliente.py
-│   │   ├── fornecedor.py
-│   │   ├── projeto.py     # ⭐ Com tipos: EMPRESA/PESSOAL_BRUNO/PESSOAL_RAFAEL
-│   │   ├── despesa.py     # ⭐ Com tipos: FIXA_MENSAL/PESSOAL_X/EQUIPAMENTO
-│   │   ├── boletim.py     # ⭐ Desconta ao ser emitido
-│   │   └── equipamento.py
-│   └── migrations/        # Scripts de migração
+├── database/            # Camada de dados
+│   ├── models/         # SQLAlchemy models
+│   └── migrations/     # Alembic migrations
 │
-├── logic/
-│   ├── auth.py           # Autenticação JWT
-│   └── saldos.py         # ⭐⭐⭐ LÓGICA CORE - Cálculo de saldos
+├── logic/              # Lógica de negócio
+│   ├── saldos.py      # ⭐ CORE - Cálculo 50/50
+│   └── ...            # Outros managers
 │
-├── ui/
-│   ├── main_window.py    # Janela principal com sidebar
-│   ├── components/
-│   │   └── sidebar.py    # Menu lateral
-│   └── screens/
-│       ├── login.py      # Tela de login
-│       └── saldos.py     # ⭐ Tela de Saldos Pessoais
+├── ui/                 # Interface gráfica
+│   ├── screens/       # 10 screens principais
+│   └── components/    # Componentes reutilizáveis
 │
-└── utils/
-    └── session.py        # Gestão de sessões
+├── assets/            # Ícones Base64
+├── media/             # Logos PNG
+│
+└── memory/            # 🧠 Documentação dev
+    ├── CURRENT_STATE.md  ⭐ COMEÇA AQUI!
+    ├── TODO.md
+    ├── ARCHITECTURE.md
+    └── ...
 ```
 
 ## 💡 Como Funciona o Cálculo de Saldos
@@ -140,51 +161,109 @@ Saldo = €2.000 - €775 = €1.225
 - Apenas despesas **PAGAS** contam para saldos
 
 ### Boletins
-- Quando **EMITIDOS** → Descontam **IMEDIATAMENTE** do saldo
-- Quando **PAGOS** → Apenas muda estado (já tinha descontado)
+- Quando **EMITIDOS** → NÃO descontam do saldo (ainda não pagos)
+- Quando **PAGOS** → Descontam do saldo nesse momento
 
 ## 🎨 Stack Tecnológica
 
-- **Interface**: CustomTkinter (moderna e responsiva)
-- **Base de Dados**: PostgreSQL (Supabase) ou SQLite
-- **ORM**: SQLAlchemy
-- **Autenticação**: JWT + bcrypt
-- **Python**: 3.11+
+- **Interface:** CustomTkinter
+- **Base de Dados:** SQLite
+- **ORM:** SQLAlchemy + Alembic
+- **Python:** 3.12+
+- **Exportação:** openpyxl (Excel)
 
 ## 📝 Próximos Passos
 
-- [ ] Tela de gestão de Projetos (CRUD completo)
-- [ ] Tela de gestão de Despesas (CRUD completo)
-- [ ] Tela de gestão de Boletins
-- [ ] Dashboard com indicadores
-- [ ] Relatórios e gráficos
-- [ ] Histórico mensal de saldos
-- [ ] Exportar para Excel
-- [ ] Integração TOConline API
-- [ ] Dark/Light theme toggle
+Ver `memory/TODO.md` para lista completa. Destaques:
+- [ ] Testes automatizados
+- [ ] Build para Windows (PyInstaller)
+- [ ] Backup automático da BD
+- [ ] Integração TOConline API (futuro)
 
-## 🆘 Resolução de Problemas
+## 🔧 Comandos Úteis
+
+### Base de Dados
+```bash
+# Ver estado migrations
+alembic current
+
+# Aplicar migrations
+alembic upgrade head
+
+# Criar nova migration
+alembic revision --autogenerate -m "descrição"
+
+# Reset completo (dev)
+rm agora_media.db
+alembic upgrade head
+```
+
+### Git
+```bash
+git status
+git add .
+git commit -m "mensagem"
+git push
+```
+
+## 🆘 Troubleshooting
 
 ### Erro: "No module named..."
 ```bash
 pip install -r requirements.txt
 ```
 
-### Erro: Base de dados não conecta
-Verifique o `.env` e as credenciais do Supabase.
+### DB locked
+Fecha todas as instâncias da app e remove `.db-journal`
 
-### Resetar base de dados
-```bash
-rm agora_media.db  # Se usando SQLite
-python3 setup_database.py
-```
+### Logos não aparecem
+Verifica `media/logos/*.png` - devem existir 4 ficheiros
 
-## 📞 Suporte
+**Mais ajuda:** Consulta `memory/DEV_SETUP.md`
 
-Para dúvidas ou problemas:
-- Bruno Amaral: bruno@agoramedia.pt
-- Rafael Reigota: rafael@agoramedia.pt
+---
+
+## 🎯 Cheat Sheet - Frases Mágicas
+
+Usa estas frases para comandos rápidos durante desenvolvimento com Claude Code:
+
+| Situação | Frase Mágica | O que faz |
+|----------|--------------|-----------|
+| 🆕 **Nova sessão** | `IMPORTANTE: Estás num branch novo criado do main...` [(ver acima)](#-nova-sessão-claude-code--lê-isto-primeiro) | Importa branch anterior + lê contexto completo |
+| ✅ **Trabalho concluído** | `Atualiza a documentação em memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG e outros relevantes).` | Atualiza docs principais + outros se aplicável |
+| 📋 **Só marcar tarefa** | `Marca esta tarefa como concluída no TODO.` | Move tarefa específica para ✅ Concluído |
+| 🎯 **Decisão técnica** | `Documenta esta decisão no DECISIONS.md: [explicação]` | Regista decisão técnica importante |
+| 🗄️ **Schema alterado** | `Atualiza DATABASE_SCHEMA.md com as mudanças na BD.` | Atualiza documentação do schema |
+| 📝 **Resumo sessão** | `Quick doc update - resume o que fizemos hoje.` | Atualização rápida e sumária |
+
+📖 **Mais detalhes:** Ver [memory/README.md](./memory/README.md) para explicação completa do sistema de documentação.
+
+---
+
+## 📚 Documentação Completa
+
+Toda a documentação técnica está em `/memory/`:
+- `CURRENT_STATE.md` ⭐ - Estado atual
+- `ARCHITECTURE.md` - Como funciona
+- `DECISIONS.md` - Porquê fizemos assim
+- `DATABASE_SCHEMA.md` - Estrutura da BD
+- `DEV_SETUP.md` - Setup detalhado
+
+---
+
+## 📚 Sistema Memory - Documentação
+
+Toda a documentação técnica está em `/memory/`.
+
+**Para novas sessões:** Lê `memory/CURRENT_STATE.md` primeiro.
+
+**Para atualizar docs:** Usa a chave mágica:
+
+"Atualiza memory/. Segue HOW_TO_UPDATE.md."
+
+Ver `memory/HOW_TO_UPDATE.md` para detalhes completos.
 
 ---
 
 **© 2025 Agora Media Production**
+**Status:** ✅ Produção Ready
