@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Modelo Projeto - Projetos da Agora Media e projetos pessoais dos sócios
+Modelo Projeto - Projetos da Agora Media Production e projetos pessoais dos sócios
 """
 from datetime import datetime, date
 from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, ForeignKey, Text, Enum as SQLEnum
@@ -12,30 +12,31 @@ import enum
 class TipoProjeto(enum.Enum):
     """Enum para tipo de projeto - CRÍTICO para cálculo de saldos!"""
     EMPRESA = "EMPRESA"  # Projeto da empresa (não entra nos INs pessoais, só prémios)
-    PESSOAL_BRUNO = "PESSOAL_BRUNO"  # Projeto freelance do Bruno faturado pela empresa
-    PESSOAL_RAFAEL = "PESSOAL_RAFAEL"  # Projeto freelance do Rafael faturado pela empresa
+    PESSOAL = "PESSOAL"  # Projeto freelance do sócio (owner) faturado pela empresa
 
 
 class EstadoProjeto(enum.Enum):
     """Enum para estado do projeto"""
-    NAO_FATURADO = "NAO_FATURADO"
-    FATURADO = "FATURADO"
-    RECEBIDO = "RECEBIDO"
+    ATIVO = "ATIVO"  # Projeto em curso
+    FINALIZADO = "FINALIZADO"  # Trabalho concluído, aguarda pagamento
+    PAGO = "PAGO"  # Cliente pagou
+    ANULADO = "ANULADO"  # Projeto cancelado
 
 
 class Projeto(Base):
     """
     Modelo para armazenar projetos da Agora Media
 
-    IMPORTANTE: O campo 'tipo' determina se o valor entra nos saldos pessoais:
-    - EMPRESA: Apenas prémios entram nos saldos
-    - PESSOAL_BRUNO/PESSOAL_RAFAEL: Valor total entra nos INs do sócio
+    IMPORTANTE: O campo 'tipo' + 'owner' determina se o valor entra nos saldos pessoais:
+    - EMPRESA: Apenas prémios entram nos saldos (owner indica quem angariou)
+    - PESSOAL: Valor total entra nos INs do owner (BA ou RR)
     """
     __tablename__ = 'projetos'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     numero = Column(String(20), unique=True, nullable=False, index=True)  # Ex: #P0001
     tipo = Column(SQLEnum(TipoProjeto), nullable=False, default=TipoProjeto.EMPRESA, index=True)
+    owner = Column(String(2), nullable=False, default='BA')  # 'BA' ou 'RR' - sócio responsável
 
     # Cliente
     cliente_id = Column(Integer, ForeignKey('clientes.id'), nullable=True)
@@ -54,7 +55,7 @@ class Projeto(Base):
     # Faturação
     data_faturacao = Column(Date, nullable=True)
     data_vencimento = Column(Date, nullable=True)
-    estado = Column(SQLEnum(EstadoProjeto), nullable=False, default=EstadoProjeto.NAO_FATURADO, index=True)
+    estado = Column(SQLEnum(EstadoProjeto), nullable=False, default=EstadoProjeto.ATIVO, index=True)
 
     # Prémios (cachets + comissões) - para projetos da EMPRESA
     premio_bruno = Column(Numeric(10, 2), nullable=True, default=0)
@@ -67,6 +68,7 @@ class Projeto(Base):
 
     # Relacionamentos
     despesas = relationship("Despesa", back_populates="projeto")
+    orcamentos = relationship("Orcamento", back_populates="projeto")
 
     def __repr__(self):
         return f"<Projeto(id={self.id}, numero='{self.numero}', tipo='{self.tipo.value}', valor={self.valor_sem_iva})>"
@@ -77,6 +79,7 @@ class Projeto(Base):
             'id': self.id,
             'numero': self.numero,
             'tipo': self.tipo.value if self.tipo else None,
+            'owner': self.owner,
             'cliente_id': self.cliente_id,
             'cliente_nome': self.cliente.nome if self.cliente else None,
             'data_inicio': self.data_inicio.isoformat() if self.data_inicio else None,

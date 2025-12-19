@@ -1,5 +1,5 @@
 """
-Modelos de base de dados da Agora Media Contabilidade
+Modelos de base de dados da Agora Contabilidade
 
 Importa todos os modelos para facilitar o uso
 """
@@ -9,8 +9,15 @@ from database.models.cliente import Cliente
 from database.models.fornecedor import Fornecedor, EstatutoFornecedor
 from database.models.projeto import Projeto, TipoProjeto, EstadoProjeto
 from database.models.despesa import Despesa, TipoDespesa, EstadoDespesa
+from database.models.despesa_template import DespesaTemplate
 from database.models.boletim import Boletim, Socio, EstadoBoletim
+from database.models.boletim_linha import BoletimLinha, TipoDeslocacao
+from database.models.valor_referencia_anual import ValorReferenciaAnual
 from database.models.equipamento import Equipamento
+from database.models.orcamento import Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
+from database.models.freelancer import Freelancer
+from database.models.freelancer_trabalho import FreelancerTrabalho, StatusTrabalho
+from database.models.fornecedor_compra import FornecedorCompra
 
 __all__ = [
     'Base',
@@ -24,8 +31,20 @@ __all__ = [
     'Despesa',
     'TipoDespesa',
     'EstadoDespesa',
+    'DespesaTemplate',
     'Boletim',
     'Socio',
     'EstadoBoletim',
+    'BoletimLinha',
+    'TipoDeslocacao',
+    'ValorReferenciaAnual',
     'Equipamento',
+    'Orcamento',
+    'OrcamentoSecao',
+    'OrcamentoItem',
+    'OrcamentoReparticao',
+    'Freelancer',
+    'FreelancerTrabalho',
+    'StatusTrabalho',
+    'FornecedorCompra',
 ]

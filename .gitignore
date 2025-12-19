@@ -179,3 +179,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+*.backup*
+.DS_Store
+
+# NOTA: agora_media.db ESTÁ NO GIT para facilitar sincronização
+# A base de dados é pequena e só tem 2 utilizadores
