@@ -870,9 +870,12 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         )
         btn_eliminar.pack(side="left", padx=2)
 
-        # Context menu (right-click)
-        item_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_cliente(e, item))
+        # Context menu (right-click) - suporte macOS e Windows/Linux
+        item_frame.bind("<Button-2>", lambda e: self.mostrar_context_menu_cliente(e, item))  # macOS
+        item_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_cliente(e, item))  # Windows/Linux
+        content_frame.bind("<Button-2>", lambda e: self.mostrar_context_menu_cliente(e, item))
         content_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_cliente(e, item))
+        desc_label.bind("<Button-2>", lambda e: self.mostrar_context_menu_cliente(e, item))
         desc_label.bind("<Button-3>", lambda e: self.mostrar_context_menu_cliente(e, item))
 
     def mostrar_context_menu_cliente(self, event, item: OrcamentoItem):
@@ -1480,9 +1483,12 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             )
             btn_eliminar.pack(side="left", padx=2)
 
-            # Context menu (right-click) - apenas para items não-espelhados
-            item_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_empresa(e, rep))
+            # Context menu (right-click) - apenas para items não-espelhados - suporte macOS e Windows/Linux
+            item_frame.bind("<Button-2>", lambda e: self.mostrar_context_menu_empresa(e, rep))  # macOS
+            item_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_empresa(e, rep))  # Windows/Linux
+            content_frame.bind("<Button-2>", lambda e: self.mostrar_context_menu_empresa(e, rep))
             content_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_empresa(e, rep))
+            desc_label.bind("<Button-2>", lambda e: self.mostrar_context_menu_empresa(e, rep))
             desc_label.bind("<Button-3>", lambda e: self.mostrar_context_menu_empresa(e, rep))
         else:
             # Readonly indicator
