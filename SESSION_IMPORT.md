@@ -1,182 +1,153 @@
-# 🔄 IMPORTAR SESSÃO ANTERIOR - Claude Code
+# 🔄 Workflow Claude Code - Guia Rápido
 
-## ⚠️ CRÍTICO - Ler PRIMEIRO em CADA Nova Sessão!
-
-O Claude Code cria um **novo branch** a cada sessão baseado no `main` (que está desatualizado).
-O branch da sessão anterior tem todo o código atualizado.
-
-**ORDEM CORRETA:**
-```
-1. Fazer merge do branch anterior
-2. Ler README.md
-3. Ler memory/CURRENT_STATE.md
-```
-
-**❌ NUNCA:** Ler docs → Merge (contexto errado!)
-**✅ SEMPRE:** Merge → Ler docs (contexto certo!)
+**Última atualização:** 2025-12-20 WET
 
 ---
 
-## ✅ FRASE MÁGICA v2.0 - Copia e Cola
-```
-IMPORTANTE: Estás num branch novo criado do main (desatualizado). Antes de fazer QUALQUER coisa:
+## 📌 Como Funciona
 
-1. Lista todos os branches remotos com 'git branch -r'
-2. Identifica o branch da sessão anterior (mais recente, excluindo main)
-3. Faz merge desse branch para o branch atual
-4. SÓ DEPOIS lê README.md e memory/CURRENT_STATE.md
-
-Não leias documentação antes do merge ou terás contexto desatualizado!
+**Claude Code trabalha com worktrees** - cria automaticamente um branch isolado a cada sessão em:
 ```
+~/.claude-worktrees/agora-contabilidade/<branch-name>/
+```
+
+Este worktree partilha o mesmo histórico Git que a pasta principal (`/Users/brunoamaral/Documents/github/agora-contabilidade/`) mas trabalha numa branch separada.
 
 ---
 
-## 🔄 O Que o Claude Vai Fazer (Ordem Garantida)
+## 🎯 Para Novas Sessões Claude
+
+### **Início Simples:**
 ```
-┌─────────────────────────────────────┐
-│ 1. Listar branches remotos          │
-│    git branch -r                    │
-└────────────┬────────────────────────┘
-             │
-┌────────────▼────────────────────────┐
-│ 2. Identificar branch mais recente  │
-│    (ex: claude/feature-xyz-123)     │
-└────────────┬────────────────────────┘
-             │
-┌────────────▼────────────────────────┐
-│ 3. Fazer merge                      │
-│    git merge origin/claude/...      │
-└────────────┬────────────────────────┘
-             │
-┌────────────▼────────────────────────┐
-│ 4. Ler documentação                 │
-│    - README.md                      │
-│    - memory/CURRENT_STATE.md        │
-└─────────────────────────────────────┘
+Lê README.md e memory/CURRENT_STATE.md para contexto completo do projeto.
 ```
+
+**Isto é suficiente!** O Claude começa sempre da `main` que está atualizada (após merges de PRs anteriores).
 
 ---
 
-## 📝 Exemplo Prático do Fluxo
+## 🔄 Workflow Completo
+
+### **Durante a Sessão:**
+
+1. **Claude trabalha no worktree**
+   - Edita ficheiros
+   - Faz commits
+   - Executa testes
+
+2. **Push para GitHub**
+   ```bash
+   git push origin <branch-name>
+   ```
+
+3. **Criar Pull Request**
+   ```bash
+   gh pr create --base main --head <branch-name>
+   ```
+
+### **Após a Sessão:**
+
+4. **Merge via GitHub**
+   - Abrir PR no browser: `gh pr view <numero> --web`
+   - Clicar "Merge pull request"
+   - Escolher "Create a merge commit"
+   - Confirmar merge
+
+5. **Sync pasta principal (tua)**
+   ```bash
+   cd /Users/brunoamaral/Documents/github/agora-contabilidade/
+   git checkout main
+   git pull origin main
+   ```
+
+6. **Limpeza (opcional)**
+   ```bash
+   # Apagar branch remota
+   git push origin --delete <branch-name>
+
+   # Apagar branch local (se existir)
+   git branch -d <branch-name>
+   ```
+
+---
+
+## 📚 Documentação Detalhada
+
+Para workflow completo, problemas comuns, comandos úteis e mais:
+
+👉 **Ver [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md)** (20KB+, guia completo)
+
+---
+
+## 🆘 Troubleshooting Rápido
+
+### Problema: "Conflitos de merge no PR"
+**Solução:**
 ```bash
-# Nova sessão inicia automaticamente
-# Claude Code cria: claude/nova-feature-20251113-abc123
-# Este branch vem do main (desatualizado!)
-
-# ❌ ERRADO (ordem antiga):
-# 1. Ler README.md (contexto desatualizado!)
-# 2. Fazer merge (tarde demais)
-
-# ✅ CORRETO (ordem nova):
-# 1. git branch -r  # Ver branches disponíveis
-origin/main
-origin/claude/implementar-xyz-20251112-xyz789  ← Mais recente!
-origin/claude/fix-bug-20251110-abc456
-origin/claude/old-feature-20251109-def123
-
-# 2. Identificar mais recente (excluir main)
-BRANCH_ANTERIOR="origin/claude/implementar-xyz-20251112-xyz789"
-
-# 3. Fazer merge
-git merge $BRANCH_ANTERIOR
-
-# 4. Agora sim, ler documentação
-cat README.md
-cat memory/CURRENT_STATE.md
+git fetch origin main
+git merge origin/main
+# Resolver conflitos
+git add .
+git commit -m "Merge main into <branch>"
+git push origin <branch-name>
 ```
 
----
-
-## 🚨 AVISOS IMPORTANTES
-
-### ❌ NÃO faças isto:
-- Ler documentação antes do merge
-- Assumir que tens código atualizado
-- Começar a trabalhar sem fazer merge
-
-### ✅ SEMPRE faz isto:
-1. **Merge primeiro** (git merge origin/...)
-2. **Docs depois** (README + CURRENT_STATE)
-3. **Trabalhar com contexto completo**
-
----
-
-## 🎯 Como Identificar o Branch Correto
-
-O branch da sessão anterior é:
-- ✅ Começa com `origin/claude/`
-- ✅ Tem data recente (ex: 20251112)
-- ✅ NÃO é `origin/main`
-- ✅ É o mais recente (data maior)
-
-**Exemplo:**
+### Problema: "Branch desatualizada após merge"
+**Solução:**
 ```bash
-origin/claude/implementar-xyz-20251112-xyz789  ← ESTE! (mais recente)
-origin/claude/fix-bug-20251110-abc456          ← Não (mais antigo)
-origin/main                                     ← NUNCA!
+cd /Users/brunoamaral/Documents/github/agora-contabilidade/
+git checkout main
+git pull origin main
 ```
 
----
-
-## 💡 Troubleshooting
-
-### "Não vejo branches remotos"
+### Problema: "Muitas branches antigas"
+**Solução:**
 ```bash
-git fetch origin  # Atualizar lista de branches
-git branch -r     # Listar novamente
+# Apagar todas branches claude/* locais
+git branch | grep 'claude/' | xargs -n 1 git branch -D
+
+# Apagar todas branches claude/* remotas
+git branch -r | grep 'origin/claude/' | sed 's|origin/||' | xargs -I {} git push origin --delete {}
 ```
 
-### "Não sei qual é o mais recente"
-Procura pela **data maior** no nome do branch:
-- `20251113` > `20251112` > `20251110`
+---
 
-### "Conflitos no merge"
+## 🎯 Cheat Sheet - Comandos Essenciais
+
 ```bash
-# Aceitar versão do branch anterior (geralmente correto)
-git checkout --theirs <ficheiro-conflito>
-git add <ficheiro-conflito>
-git commit
+# Ver branches
+git branch -a
+
+# Ver status
+git status
+
+# Commit
+git add .
+git commit -m "mensagem"
+
+# Push
+git push origin <branch-name>
+
+# Pull Request
+gh pr create --base main --head <branch-name>
+gh pr view <numero> --web
+
+# Sync main local
+cd /Users/brunoamaral/Documents/github/agora-contabilidade/
+git checkout main
+git pull origin main
 ```
 
 ---
 
-## 📚 Documentação Disponível (Após Merge)
+## 📖 Links Úteis
 
-- ✅ `README.md` - Overview e instruções
-- ✅ `memory/CURRENT_STATE.md` - Estado atual do projeto
-- ✅ `memory/TODO.md` - Tarefas pendentes
-- ✅ `memory/ARCHITECTURE.md` - Arquitetura técnica
-- ✅ `memory/DATABASE_SCHEMA.md` - Estrutura da BD
-- ✅ Todo o código atualizado!
+- 📚 **Workflow completo:** [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md)
+- 📊 **Estado do projeto:** [`memory/CURRENT_STATE.md`](./memory/CURRENT_STATE.md)
+- 📝 **Tarefas:** [`memory/TODO.md`](./memory/TODO.md)
+- 🏗️ **Arquitectura:** [`memory/ARCHITECTURE.md`](./memory/ARCHITECTURE.md)
 
 ---
 
-## ⚡ Frase-Chave para Atualizar Documentação
-
-Quando o utilizador disser:
-```
-Atualiza a documentação em memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG e outros relevantes).
-```
-
-**Deves avaliar e atualizar:**
-
-### Sempre atualizar:
-1. ✅ **CURRENT_STATE.md** - Features completas, problemas resolvidos
-2. ✅ **TODO.md** - Mover tarefas para ✅ Concluído Recentemente
-3. ✅ **CHANGELOG.md** - Adicionar entrada com data
-
-### Atualizar se aplicável ao trabalho feito:
-4. 📐 **ARCHITECTURE.md** - Se mudou estrutura/arquitetura
-5. 🎯 **DECISIONS.md** - Se houve decisão técnica importante
-6. 🗄️ **DATABASE_SCHEMA.md** - Se alterou models/migrations
-7. ⚙️ **DEV_SETUP.md** - Se mudou processo de setup
-
-**O utilizador decide quando esta atualização faz sentido!**
-
----
-
-**📍 Lembrete Final:**
-
-# MERGE PRIMEIRO, DOCS DEPOIS! 🔄📖
-
-Sem o merge, estás a trabalhar com código e contexto desatualizados.
+**© 2025 Agora Media Production**
+**Mantido por:** Bruno Amaral + Claude Code

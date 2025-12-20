@@ -4,31 +4,30 @@ Sistema de gestão contabilística para Agora Media Production (BA + RR).
 
 ---
 
-## 🚨 NOVA SESSÃO CLAUDE CODE? → [Lê Isto Primeiro](./SESSION_IMPORT.md)
+## 🔄 Workflow Git/Branches
 
-**⚠️ CRÍTICO:** O Claude cria novo branch do `main` (desatualizado). Código novo está no branch anterior!
+**Claude Code trabalha com worktrees** - cria automaticamente um novo branch isolado a cada sessão.
 
-**FRASE MÁGICA v2.0 - Copia e cola sempre:**
+**📚 Documentação Completa:** Ver [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md)
+
+### 🎯 Como Funciona
+
+1. **Claude Code cria worktree** em `~/.claude-worktrees/agora-contabilidade/<branch>/`
+2. **Trabalha no worktree** - commits, edições, testes
+3. **Push para GitHub** - `git push origin <branch>`
+4. **Pull Request** - Merge via GitHub web interface
+5. **Sync local** - `git pull origin main` na pasta principal
+
+### 📂 Dois Repositórios, Um Histórico
+
 ```
-IMPORTANTE: Estás num branch novo criado do main (desatualizado). Antes de fazer QUALQUER coisa:
-
-1. Lista todos os branches remotos com 'git branch -r'
-2. Identifica o branch da sessão anterior (mais recente, excluindo main)
-3. Faz merge desse branch para o branch atual
-4. SÓ DEPOIS lê README.md e memory/CURRENT_STATE.md
-
-Não leias documentação antes do merge ou terás contexto desatualizado!
+Pasta Principal (tua):     /Users/brunoamaral/Documents/github/agora-contabilidade/
+Worktree Claude:           ~/.claude-worktrees/agora-contabilidade/<branch>/
 ```
 
-**O que faz:**
-1. ✅ Lista branches remotos (vê o que existe)
-2. ✅ Identifica o mais recente (código atualizado)
-3. ✅ Faz merge para o branch atual
-4. ✅ Lê README.md e memory/CURRENT_STATE.md (contexto completo)
+Ambos partilham o mesmo histórico Git mas em pastas diferentes.
 
-**Instruções detalhadas:** Ver [SESSION_IMPORT.md](./SESSION_IMPORT.md)
-
-💡 **Dica:** Outras frases úteis no [Cheat Sheet](#-cheat-sheet---frases-mágicas) abaixo.
+💡 **Primeira vez?** Lê [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md) para workflow completo.
 
 ---
 
@@ -223,45 +222,44 @@ Verifica `media/logos/*.png` - devem existir 4 ficheiros
 
 ---
 
-## 🎯 Cheat Sheet - Frases Mágicas
+## 🎯 Comandos Rápidos - Claude Code
 
-Usa estas frases para comandos rápidos durante desenvolvimento com Claude Code:
+Usa estas frases para comandos rápidos durante desenvolvimento:
 
-| Situação | Frase Mágica | O que faz |
-|----------|--------------|-----------|
-| 🆕 **Nova sessão** | `IMPORTANTE: Estás num branch novo criado do main...` [(ver acima)](#-nova-sessão-claude-code--lê-isto-primeiro) | Importa branch anterior + lê contexto completo |
-| ✅ **Trabalho concluído** | `Atualiza a documentação em memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG e outros relevantes).` | Atualiza docs principais + outros se aplicável |
-| 📋 **Só marcar tarefa** | `Marca esta tarefa como concluída no TODO.` | Move tarefa específica para ✅ Concluído |
-| 🎯 **Decisão técnica** | `Documenta esta decisão no DECISIONS.md: [explicação]` | Regista decisão técnica importante |
-| 🗄️ **Schema alterado** | `Atualiza DATABASE_SCHEMA.md com as mudanças na BD.` | Atualiza documentação do schema |
-| 📝 **Resumo sessão** | `Quick doc update - resume o que fizemos hoje.` | Atualização rápida e sumária |
+| Situação | Comando | O que faz |
+|----------|---------|-----------|
+| 📖 **Contexto** | `Lê README.md e memory/CURRENT_STATE.md para contexto` | Actualiza Claude com estado actual |
+| ✅ **Trabalho concluído** | `Atualiza memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG)` | Actualiza documentação |
+| 📋 **Marcar tarefa** | `Marca esta tarefa como concluída no TODO` | Move tarefa para ✅ Concluído |
+| 🔀 **Git workflow** | `Consulta memory/GIT_WORKFLOW.md para workflow completo` | Ajuda com Git/Branches/PRs |
+| 🎯 **Decisão técnica** | `Documenta esta decisão no DECISIONS.md` | Regista decisão importante |
+| 🗄️ **Schema alterado** | `Atualiza DATABASE_SCHEMA.md com mudanças na BD` | Actualiza docs da BD |
 
-📖 **Mais detalhes:** Ver [memory/README.md](./memory/README.md) para explicação completa do sistema de documentação.
+📖 **Mais detalhes:** Ver [`memory/README.md`](./memory/README.md) e [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md)
 
 ---
 
 ## 📚 Documentação Completa
 
-Toda a documentação técnica está em `/memory/`:
-- `CURRENT_STATE.md` ⭐ - Estado atual
-- `ARCHITECTURE.md` - Como funciona
-- `DECISIONS.md` - Porquê fizemos assim
-- `DATABASE_SCHEMA.md` - Estrutura da BD
-- `DEV_SETUP.md` - Setup detalhado
+Toda a documentação técnica está em [`/memory/`](./memory/):
 
----
+**Essenciais:**
+- [`CURRENT_STATE.md`](./memory/CURRENT_STATE.md) ⭐ - Estado actual do projeto
+- [`GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md) ⭐ - Workflow Git/Branches/Worktrees
+- [`TODO.md`](./memory/TODO.md) - Tarefas priorizadas
+- [`ARCHITECTURE.md`](./memory/ARCHITECTURE.md) - Como funciona o sistema
 
-## 📚 Sistema Memory - Documentação
+**Técnicas:**
+- [`DATABASE_SCHEMA.md`](./memory/DATABASE_SCHEMA.md) - Estrutura da BD
+- [`BUSINESS_LOGIC.md`](./memory/BUSINESS_LOGIC.md) - Regras de negócio
+- [`DECISIONS.md`](./memory/DECISIONS.md) - Decisões técnicas
+- [`CHANGELOG.md`](./memory/CHANGELOG.md) - Histórico de alterações
 
-Toda a documentação técnica está em `/memory/`.
+**Setup:**
+- [`DEV_SETUP.md`](./memory/DEV_SETUP.md) - Setup ambiente
+- [`GUIA_COMPLETO.md`](./memory/GUIA_COMPLETO.md) - Guia utilizador
 
-**Para novas sessões:** Lê `memory/CURRENT_STATE.md` primeiro.
-
-**Para atualizar docs:** Usa a chave mágica:
-
-"Atualiza memory/. Segue HOW_TO_UPDATE.md."
-
-Ver `memory/HOW_TO_UPDATE.md` para detalhes completos.
+📖 **Índice completo:** Ver [`memory/README.md`](./memory/README.md)
 
 ---
 
