@@ -6,13 +6,15 @@
 
 ---
 
-## 🚨 NOVA SESSÃO? Importa Contexto Primeiro!
+## 🚨 NOVA SESSÃO? Lê Primeiro!
 
-⚠️ Se este branch foi criado do `main`, está **desatualizado**. Usa a frase:
+📖 **Para começar uma nova sessão:**
 
-> Esta sessão é continuação de uma anterior. Faz merge do branch da última sessão para este branch atual para teres todo o código e contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md para contexto completo.
+Lê `README.md` e `memory/CURRENT_STATE.md` para contexto completo do projeto.
 
-**Instruções completas:** Ver `/SESSION_IMPORT.md` na raiz.
+**Claude Code sempre começa da `main`** (atualizada após merge de PRs anteriores).
+
+**Workflow completo:** Ver `/SESSION_IMPORT.md` e `memory/GIT_WORKFLOW.md`
 
 ---
 
@@ -32,9 +34,10 @@
 - 📋 Sistema Fiscal (validação TOC + implementação)
 - 📋 Migração ProjetosScreen para abstract methods (opcional - eliminar screen_config)
 
-**Dados Atuais (Última Importação 15/11/2025):**
-- 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins
-- 157 registos PAGO (93.5%) | 11 PENDENTE (6.5%)
+**Dados Atuais (Última Importação 18/12/2025):**
+- 20 clientes | 45 fornecedores | 75 projetos | 175 despesas | 34 boletins
+- Importação incremental: 1 cliente novo, 1 fornecedor novo, 7 despesas novas, 11 despesas atualizadas, 2 prémios projetos atualizados
+- Ficheiro fonte: `CONTABILIDADE_FINAL_20251218.xlsx`
 
 ---
 
