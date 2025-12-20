@@ -1,6 +1,6 @@
 # 📚 Sistema Memory - Documentação de Desenvolvimento
 
-Última atualização: 2025-11-22 10:44 WET
+Última atualização: 2025-12-20 WET
 
 Este diretório contém toda a documentação técnica e de contexto do projeto Agora Contabilidade.
 
@@ -165,16 +165,16 @@ Ver HOW_TO_UPDATE.md para:
 - Regras e validações
 
 ====================================================================
-IMPORTAÇÃO DE CONTEXTO ENTRE SESSÕES
+INICIAR NOVA SESSÃO
 ====================================================================
 
-Ficheiro raiz: /SESSION_IMPORT.md
+📖 **Para começar uma nova sessão Claude Code:**
 
-Frase mágica para novas sessões:
-"Esta sessão é continuação de uma anterior. Faz merge do branch da 
-última sessão para este branch atual para teres todo o código e 
-contexto atualizado. Depois lê o README.md e memory/CURRENT_STATE.md 
-para contexto completo."
+Lê `README.md` e `memory/CURRENT_STATE.md` para contexto completo.
+
+**Claude Code sempre começa da `main`** (atualizada após merge de PRs).
+
+**Workflow completo:** Ver `/SESSION_IMPORT.md` (raiz) e `GIT_WORKFLOW.md`
 
 ====================================================================
 NAVEGAÇÃO RÁPIDA
