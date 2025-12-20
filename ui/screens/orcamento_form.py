@@ -870,6 +870,24 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         )
         btn_eliminar.pack(side="left", padx=2)
 
+        # Context menu (right-click)
+        item_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_cliente(e, item))
+        content_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_cliente(e, item))
+        desc_label.bind("<Button-3>", lambda e: self.mostrar_context_menu_cliente(e, item))
+
+    def mostrar_context_menu_cliente(self, event, item: OrcamentoItem):
+        """Mostra context menu ao clicar com botão direito num item CLIENTE"""
+        menu = tk.Menu(self, tearoff=0)
+        menu.add_command(label="✏️  Editar", command=lambda: self.editar_item_cliente(item))
+        menu.add_command(label="📋 Duplicar", command=lambda: self.duplicar_item_cliente(item))
+        menu.add_separator()
+        menu.add_command(label="🗑️  Apagar", command=lambda: self.eliminar_item_cliente(item.id))
+
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
     def editar_item_cliente(self, item: OrcamentoItem):
         """Abre dialog para editar item CLIENTE"""
         # Determinar qual dialog abrir baseado no tipo
@@ -913,6 +931,82 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             self.carregar_items_empresa()
         else:
             messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
+
+    def duplicar_item_cliente(self, item: OrcamentoItem):
+        """Duplica um item CLIENTE"""
+        # Abrir dialog apropriado sem ID (modo criar) mas com dados preenchidos
+        if item.tipo == 'servico':
+            dialog = ServicoDialog(self, self.db_session, self.orcamento_id, item.secao_id, None)
+            # Preencher campos com dados do item original
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{item.descricao} (cópia)")
+            if hasattr(dialog, 'quantidade_entry'):
+                dialog.quantidade_entry.delete(0, "end")
+                dialog.quantidade_entry.insert(0, str(item.quantidade))
+            if hasattr(dialog, 'dias_entry'):
+                dialog.dias_entry.delete(0, "end")
+                dialog.dias_entry.insert(0, str(item.dias))
+            if hasattr(dialog, 'preco_entry'):
+                dialog.preco_entry.delete(0, "end")
+                dialog.preco_entry.insert(0, str(float(item.preco_unitario)))
+            if hasattr(dialog, 'desconto_entry') and item.desconto:
+                dialog.desconto_entry.delete(0, "end")
+                dialog.desconto_entry.insert(0, str(float(item.desconto * 100)))
+        elif item.tipo == 'equipamento':
+            dialog = EquipamentoDialog(self, self.db_session, self.orcamento_id, item.secao_id, None)
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{item.descricao} (cópia)")
+            if hasattr(dialog, 'quantidade_entry'):
+                dialog.quantidade_entry.delete(0, "end")
+                dialog.quantidade_entry.insert(0, str(item.quantidade))
+            if hasattr(dialog, 'dias_entry'):
+                dialog.dias_entry.delete(0, "end")
+                dialog.dias_entry.insert(0, str(item.dias))
+            if hasattr(dialog, 'preco_entry'):
+                dialog.preco_entry.delete(0, "end")
+                dialog.preco_entry.insert(0, str(float(item.preco_unitario)))
+            if hasattr(dialog, 'desconto_entry') and item.desconto:
+                dialog.desconto_entry.delete(0, "end")
+                dialog.desconto_entry.insert(0, str(float(item.desconto * 100)))
+        elif item.tipo == 'transporte':
+            dialog = TransporteDialog(self, self.db_session, self.orcamento_id, item.secao_id, None)
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{item.descricao} (cópia)")
+            if hasattr(dialog, 'kms_entry'):
+                dialog.kms_entry.delete(0, "end")
+                dialog.kms_entry.insert(0, str(float(item.kms)))
+            if hasattr(dialog, 'valor_km_entry'):
+                dialog.valor_km_entry.delete(0, "end")
+                dialog.valor_km_entry.insert(0, str(float(item.valor_por_km)))
+        elif item.tipo == 'refeicao':
+            dialog = RefeicaoDialog(self, self.db_session, self.orcamento_id, item.secao_id, None)
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{item.descricao} (cópia)")
+            if hasattr(dialog, 'num_refeicoes_entry'):
+                dialog.num_refeicoes_entry.delete(0, "end")
+                dialog.num_refeicoes_entry.insert(0, str(item.num_refeicoes))
+            if hasattr(dialog, 'valor_refeicao_entry'):
+                dialog.valor_refeicao_entry.delete(0, "end")
+                dialog.valor_refeicao_entry.insert(0, str(float(item.valor_por_refeicao)))
+        elif item.tipo == 'outro':
+            dialog = OutroDialog(self, self.db_session, self.orcamento_id, item.secao_id, None)
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{item.descricao} (cópia)")
+            if hasattr(dialog, 'valor_entry'):
+                dialog.valor_entry.delete(0, "end")
+                dialog.valor_entry.insert(0, str(float(item.total)))
+        else:
+            messagebox.showerror("Erro", f"Tipo de item desconhecido: {item.tipo}")
+            return
+
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_cliente()
 
     def sincronizar_despesa_cliente_empresa(self, item_cliente_id: int):
         """
@@ -1385,6 +1479,11 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 hover_color=("#d32f2f", "#b71c1c")
             )
             btn_eliminar.pack(side="left", padx=2)
+
+            # Context menu (right-click) - apenas para items não-espelhados
+            item_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_empresa(e, rep))
+            content_frame.bind("<Button-3>", lambda e: self.mostrar_context_menu_empresa(e, rep))
+            desc_label.bind("<Button-3>", lambda e: self.mostrar_context_menu_empresa(e, rep))
         else:
             # Readonly indicator
             ctk.CTkLabel(
@@ -1393,6 +1492,19 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 font=ctk.CTkFont(size=9),
                 text_color=("#999", "#666")
             ).pack()
+
+    def mostrar_context_menu_empresa(self, event, rep: OrcamentoReparticao):
+        """Mostra context menu ao clicar com botão direito num item EMPRESA"""
+        menu = tk.Menu(self, tearoff=0)
+        menu.add_command(label="✏️  Editar", command=lambda: self.editar_item_empresa(rep))
+        menu.add_command(label="📋 Duplicar", command=lambda: self.duplicar_item_empresa(rep))
+        menu.add_separator()
+        menu.add_command(label="🗑️  Apagar", command=lambda: self.eliminar_item_empresa(rep.id))
+
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
 
     def editar_item_empresa(self, rep: OrcamentoReparticao):
         """Abre dialog para editar item EMPRESA"""
@@ -1421,6 +1533,61 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             self.carregar_items_empresa()
         else:
             messagebox.showerror("Erro", f"Erro ao eliminar: {erro}")
+
+    def duplicar_item_empresa(self, rep: OrcamentoReparticao):
+        """Duplica um item EMPRESA"""
+        # Abrir dialog apropriado sem ID (modo criar) mas com dados preenchidos
+        if rep.tipo == 'servico':
+            dialog = ServicoEmpresaDialog(self, self.db_session, self.orcamento_id, None)
+            # Preencher campos com dados do item original
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{rep.descricao} (cópia)")
+            if hasattr(dialog, 'beneficiario_dropdown'):
+                dialog.beneficiario_dropdown.set(rep.beneficiario)
+            if hasattr(dialog, 'quantidade_entry'):
+                dialog.quantidade_entry.delete(0, "end")
+                dialog.quantidade_entry.insert(0, str(rep.quantidade))
+            if hasattr(dialog, 'dias_entry'):
+                dialog.dias_entry.delete(0, "end")
+                dialog.dias_entry.insert(0, str(rep.dias))
+            if hasattr(dialog, 'valor_unitario_entry'):
+                dialog.valor_unitario_entry.delete(0, "end")
+                dialog.valor_unitario_entry.insert(0, str(float(rep.valor_unitario)))
+        elif rep.tipo == 'equipamento':
+            dialog = EquipamentoEmpresaDialog(self, self.db_session, self.orcamento_id, None)
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{rep.descricao} (cópia)")
+            if hasattr(dialog, 'beneficiario_dropdown'):
+                dialog.beneficiario_dropdown.set(rep.beneficiario)
+            if hasattr(dialog, 'quantidade_entry'):
+                dialog.quantidade_entry.delete(0, "end")
+                dialog.quantidade_entry.insert(0, str(rep.quantidade))
+            if hasattr(dialog, 'dias_entry'):
+                dialog.dias_entry.delete(0, "end")
+                dialog.dias_entry.insert(0, str(rep.dias))
+            if hasattr(dialog, 'valor_unitario_entry'):
+                dialog.valor_unitario_entry.delete(0, "end")
+                dialog.valor_unitario_entry.insert(0, str(float(rep.valor_unitario)))
+        elif rep.tipo == 'comissao':
+            # Para comissão, usar base de cálculo atual
+            dialog = ComissaoDialog(self, self.db_session, self.orcamento_id, rep.base_calculo or Decimal('0'), None)
+            if hasattr(dialog, 'descricao_entry'):
+                dialog.descricao_entry.delete(0, "end")
+                dialog.descricao_entry.insert(0, f"{rep.descricao} (cópia)")
+            if hasattr(dialog, 'beneficiario_dropdown'):
+                dialog.beneficiario_dropdown.set(rep.beneficiario)
+            if hasattr(dialog, 'percentagem_entry'):
+                dialog.percentagem_entry.delete(0, "end")
+                dialog.percentagem_entry.insert(0, str(float(rep.percentagem * 100)))
+        else:
+            messagebox.showerror("Erro", f"Tipo de item EMPRESA desconhecido: {rep.tipo}")
+            return
+
+        self.wait_window(dialog)
+        if dialog.success:
+            self.carregar_items_empresa()
 
     # ===== SETAS REPEAT - Hold para incremento contínuo =====
 
