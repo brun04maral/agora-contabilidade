@@ -15,29 +15,7 @@ LEGENDA DE PRIORIDADES
 🔥 AGORA - Sprint Atual (20/12/2025)
 ====================================================================
 
-1. UX/UI Improvements - Orçamentos (2 melhorias pendentes)
-
-   **Concluído (21/11/2025):**
-   ├─ ✅ Menu right-click na lista de orçamentos
-   ├─ ✅ Botão "Duplicar Orçamento" na barra inferior
-   ├─ ✅ Input manual de percentagem nas comissões
-   ├─ ✅ Setas repeat nas comissões
-   └─ ✅ Campo código editável no formulário
-
-   **Pendentes (SPRINT ATUAL):**
-   ├─ 🆕 DateRangePicker para "data do evento" (substituir Entry atual)
-   │   - Usar componente DateRangePickerDropdown existente
-   │   - Formato inteligente (DD-DD/MM/YYYY)
-   │   - Update em orcamento_form.py campo data_evento
-   └─ 🆕 Context menus (right-click) em tabelas de items CLIENTE/EMPRESA
-       - Adicionar a tabelas de items (renderizar_item_cliente/empresa)
-       - Ações: Editar, Apagar, Duplicar item
-
-   Estimativa: 1 sessão
-   Status: 2/7 melhorias pendentes (5 concluídas)
-   Ver: memory/CHANGELOG.md (21/11/2025)
-
-2. Testar Sistema Boletim Itinerário
+1. Testar Sistema Boletim Itinerário
    ├─ Criar dados de teste (valores ref 2024-2026)
    ├─ Criar 2 templates recorrentes (BA + RR)
    ├─ Gerar boletins de teste com múltiplas linhas
@@ -64,7 +42,16 @@ LEGENDA DE PRIORIDADES
    Status: Pronto para testes (migração 100% completa - 7/7 screens)
    Ver: memory/CHANGELOG.md (25/11/2025 18:00 - Sistema BaseScreen 100% COMPLETO)
 
-4. UX/UI Improvements - Orçamentos (Melhorias Adicionais)
+4. UX/UI Improvements - Orçamentos (Melhorias Futuras)
+
+   **Concluído (20/12/2025):** ✅ 7/7 melhorias base
+   ├─ ✅ Menu right-click na lista de orçamentos (21/11)
+   ├─ ✅ Botão "Duplicar Orçamento" na barra inferior (21/11)
+   ├─ ✅ Input manual de percentagem nas comissões (21/11)
+   ├─ ✅ Setas repeat nas comissões (21/11)
+   ├─ ✅ Campo código editável no formulário (21/11)
+   ├─ ✅ DateRangePicker para "data do evento" (20/12) ← NOVO!
+   └─ ✅ Context menus em tabelas items CLIENTE/EMPRESA (20/12) ← NOVO!
 
    Críticas (futuro):
    ├─ Wizard multi-step (Dados Gerais → Items → Repartições → Preview)
@@ -263,11 +250,11 @@ Para contexto e decisões:
 Ver memory/CHANGELOG.md para histórico completo.
 
 Últimas 5 features (Novembro-Dezembro 2025):
+- ✅ 20/12: **🎉 UX/UI Improvements Orçamentos COMPLETO (7/7)** - DateRangePicker no campo data_evento + Context menus (right-click) em tabelas items CLIENTE/EMPRESA com Editar/Duplicar/Apagar - Duplicação inteligente preserva todos os campos - Ver CHANGELOG.md (20/12/2025) 🎯
 - ✅ 20/12: **🎉 SPRINT 9 COMPLETO - MIGRAÇÃO BaseForm/BaseScreen 100%!** - OrcamentoFormScreen migrado (último form pendente, 2.287 linhas) + Bugs sistémicos corrigidos (6 screens) + Backward compatibility BaseScreen - Progresso: **8/8 forms (100%)** + **7/7 screens (100%)** = **MIGRAÇÃO COMPLETA!** - Ver CHANGELOG.md (20/12/2025) 🎉🚀
 - ✅ 28/11: **✨ SPRINT 8 + UNIFORMIZAÇÃO BA/RR** - BoletimFormScreen migrado com tabs customizadas (905→887 linhas) + Uniformização sócios BRUNO→BA, RAFAEL→RR - Progresso: 7/8 forms (87.5%) - Ver CHANGELOG.md (28/11/2025) 🎉
 - ✅ 26/11: **✨ SPRINT 7** - ProjetoFormScreen migrado + Layout 2 colunas - Ver CHANGELOG.md (26/11/2025) 🎉
 - ✅ 26/11: **SPRINT 3-5 + Layout 2 Colunas** - 3 forms migrados (Fornecedor, Equipamento, Despesa) - Progresso: 5/8 forms (62.5%) - Ver CHANGELOG.md (26/11/2025) 🚀
-- ✅ 25/11: **SISTEMA BaseScreen 100% COMPLETO** - 7/7 screens migrados - ~11% redução código (-489 linhas) - Ver CHANGELOG.md (25/11/2025 18:00) 🎉
 
 Para histórico anterior: Ver memory/CHANGELOG.md
 
