@@ -93,6 +93,14 @@ TODO.md (34KB)
 GUIAS E SETUP
 ====================================================================
 
+GIT_WORKFLOW.md (20KB+) ⭐ NOVO
+├─ Workflow completo Git/Branches/Worktrees
+├─ Como funciona Claude Code com worktrees
+├─ Pull Requests, merge, resolução de conflitos
+├─ Limpeza de branches antigas
+├─ Comandos úteis (cheat sheet completo)
+└─ Exemplo prático (sessão 20/12/2025)
+
 DEV_SETUP.md
 ├─ Setup do ambiente de desenvolvimento
 ├─ Dependências (Python, SQLAlchemy, CustomTkinter)
@@ -188,6 +196,7 @@ DECISÕES:
 → INTEGRACOES.md - Integrações externas (TOConline, BizDocs, BPI)
 
 AJUDA:
+→ GIT_WORKFLOW.md - Workflow Git/Branches? ⭐ NOVO
 → DEV_SETUP.md - Como configurar?
 → GUIA_COMPLETO.md - Como usar?
 
