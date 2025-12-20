@@ -300,6 +300,10 @@ class EquipamentoScreen(BaseScreen):
 
     # ===== HELPER METHODS (MANTER) =====
 
+    def on_new_item(self):
+        """Ação do botão 'Novo' - abre formulário para criar novo equipamento"""
+        self.adicionar_equipamento()
+
     def adicionar_equipamento(self):
         """Navigate to equipamento_form screen for create"""
         main_window = self.master.master

@@ -241,6 +241,10 @@ class OrcamentosScreen(BaseScreen):
 
         return items
 
+    def on_new_item(self):
+        """Ação do botão 'Novo' - abre formulário para criar novo orçamento"""
+        self.on_add_click()
+
     def on_add_click(self):
         """Handle add button click"""
         # Hierarchy: self (OrcamentosScreen) -> master (content_frame) -> master (MainWindow)

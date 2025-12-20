@@ -475,6 +475,10 @@ class DespesasScreen(BaseScreen):
         }
         return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
 
+    def on_new_item(self):
+        """Ação do botão 'Novo' - abre formulário para criar nova despesa"""
+        self.abrir_formulario(None)
+
     def abrir_formulario(self, despesa=None):
         """Navigate to despesa_form screen for create/edit"""
         main_window = self.master.master

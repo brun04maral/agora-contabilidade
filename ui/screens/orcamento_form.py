@@ -15,6 +15,7 @@ from logic.freelancers import FreelancersManager
 from logic.fornecedores import FornecedoresManager
 from ui.components.autocomplete_entry import AutocompleteEntry
 from ui.components.date_picker_dropdown import DatePickerDropdown
+from ui.components.date_range_picker_dropdown import DateRangePickerDropdown
 from ui.dialogs.transporte_dialog import TransporteDialog
 from ui.dialogs.refeicao_dialog import RefeicaoDialog
 from ui.dialogs.outro_dialog import OutroDialog
@@ -262,12 +263,11 @@ class OrcamentoFormScreen(ctk.CTkFrame):
         ctk.CTkLabel(fields_frame, text="Data Evento:", font=ctk.CTkFont(size=13, weight="bold")).grid(
             row=2, column=0, padx=(20, 10), pady=(0, 10), sticky="w"
         )
-        self.data_evento_entry = ctk.CTkEntry(
+        self.data_evento_picker = DateRangePickerDropdown(
             fields_frame,
-            placeholder_text="Ex: 15-20/11/2025",
-            height=35
+            placeholder="Ex: 15-20/11/2025"
         )
-        self.data_evento_entry.grid(row=2, column=1, padx=(0, 20), pady=(0, 10), sticky="ew")
+        self.data_evento_picker.grid(row=2, column=1, padx=(0, 20), pady=(0, 10), sticky="ew")
 
         ctk.CTkLabel(fields_frame, text="Local Evento:", font=ctk.CTkFont(size=13, weight="bold")).grid(
             row=2, column=2, padx=(20, 10), pady=(0, 20), sticky="w"
@@ -1910,7 +1910,7 @@ class OrcamentoFormScreen(ctk.CTkFrame):
                 "owner": owner,
                 "cliente_id": cliente_id,
                 "data_criacao": self.data_criacao_picker.get_date(),
-                "data_evento": self.data_evento_entry.get() or None,
+                "data_evento": self.data_evento_picker.get() or None,
                 "local_evento": self.local_evento_entry.get() or None,
                 "status": "rascunho"
             }
@@ -2089,8 +2089,10 @@ class OrcamentoFormScreen(ctk.CTkFrame):
             self.data_criacao_picker.set_date(self.orcamento.data_criacao)
 
         if self.orcamento.data_evento:
-            self.data_evento_entry.delete(0, "end")
-            self.data_evento_entry.insert(0, self.orcamento.data_evento)
+            # Parse data_evento if it's a range (e.g., "15-20/11/2025")
+            # For now, just set the text directly since it's already formatted
+            self.data_evento_picker.entry.delete(0, "end")
+            self.data_evento_picker.entry.insert(0, self.orcamento.data_evento)
 
         if self.orcamento.local_evento:
             self.local_evento_entry.delete(0, "end")
