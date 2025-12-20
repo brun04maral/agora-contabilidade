@@ -1,7 +1,7 @@
 # 📊 Estado Atual do Projeto - Agora Contabilidade
 
-**Última atualização:** 2025-11-28 WET
-**Branch:** claude/sync-remote-branches-01Frm5T8R4fYXJjn3jEEHnX8
+**Última atualização:** 2025-12-20 WET
+**Branch:** nervous-mendeleev
 **Status Geral:** ✅ PRODUÇÃO READY
 
 ---
@@ -18,19 +18,19 @@
 
 ## 📌 Resumo Executivo
 
-**Sprint Atual (28/11/2025):**
-- 🚀 **Sistema BaseForm - 7/8 FORMS (87.5%)** - SPRINT 8 finalizado com BoletimFormScreen usando abordagem inovadora de tabs customizadas (905→887 linhas) 🎉
-- ✅ **Uniformização BA/RR Completa** - Sócios BRUNO→BA, RAFAEL→RR uniformizados em toda a aplicação + 36 boletins e 3 despesas migrados na base de dados
-- 🎉 **Sistema BaseScreen - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** (Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores, Equipamento) 🎉
+**Sprint Atual (20/12/2025):**
+- 🎉 **Sistema BaseForm - 8/8 FORMS (100% COMPLETO!)** - OrcamentoFormScreen migrado para BaseForm usando abordagem de slots customizados (fields_slot, header_slot, footer_slot) 🎉
+- 🎉 **Sistema BaseScreen - 100% COMPLETO** - BaseScreen com **7/7 screens migrados** + backward compatibility (suporta abstract methods e screen_config dict) 🎉
+- ✅ **Bugs Sistémicos Corrigidos** - Todos os screens BaseForm agora funcionais (títulos corretos, botão "Novo" funcional, search bars visíveis)
 
 **Última Feature Concluída:**
-- ✅ **SPRINT 8 + Uniformização BA/RR** (28/11/2025) - BoletimFormScreen migrado para BaseForm usando abordagem inovadora de "tabs customizadas" (herda infraestrutura mas implementa layout próprio com CTkTabview - 2 tabs: Dados Gerais + Deslocações). Prova flexibilidade do BaseForm para forms complexos. Uniformização completa BRUNO→BA, RAFAEL→RR em 35+ ficheiros Python + migrations BD (36 boletins, 3 despesas). Scripts criados: migrate_socio_names_simple.py, check_database.py. Bug fix lambda closure DataTableV2. Progresso: 7/8 forms (87.5%), apenas OrcamentoFormScreen pendente. **Ver:** memory/CHANGELOG.md (28/11/2025 - SPRINT 8 + UNIFORMIZAÇÃO BA/RR)
+- ✅ **SPRINT 9 - Migração OrcamentoFormScreen + Fixes Sistémicos** (20/12/2025) - OrcamentoFormScreen (último form pendente) migrado para BaseForm com sucesso. Descobertos e corrigidos bugs sistémicos que afetavam TODOS os screens BaseForm: (1) Missing on_new_item() - botão "Novo" não funcionava em 6 screens, (2) BaseScreen usava config dict em vez de abstract methods - títulos mostravam "Screen", (3) Search bars desapareciam. Implementada backward compatibility em BaseScreen para suportar ProjetosScreen (usa screen_config dict) e novos screens (usam abstract methods). Progresso: **8/8 forms (100%)** + **7/7 screens (100%)** = **MIGRAÇÃO COMPLETA!** 🎉 **Ver:** memory/CHANGELOG.md (20/12/2025 - SPRINT 9)
 
 **Próximo Milestone:**
-- 📋 Testar e validar sistema BaseScreen completo (7/7 screens)
 - 📋 UX/UI Improvements - Orçamentos (DateRangePicker + Context Menus)
 - 📋 IRS Retido em Despesas (requisito futuro documentado)
 - 📋 Sistema Fiscal (validação TOC + implementação)
+- 📋 Migração ProjetosScreen para abstract methods (opcional - eliminar screen_config)
 
 **Dados Atuais (Última Importação 15/11/2025):**
 - 19 clientes | 44 fornecedores | 75 projetos | 168 despesas | 34 boletins

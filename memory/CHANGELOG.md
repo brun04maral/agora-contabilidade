@@ -4,6 +4,208 @@ Registo de mudanças significativas no projeto.
 
 ---
 
+## [2025-12-20] ✅ SISTEMA BaseForm - SPRINT 9 COMPLETO (100%)
+
+### 🎉 SPRINT 9 COMPLETO - MIGRAÇÃO BaseForm/BaseScreen 100%!
+
+**Status:** SPRINT 9 COMPLETO - OrcamentoFormScreen migrado + Bugs sistémicos corrigidos (20/12/2025)
+**Impacto:** Sistema BaseForm **8/8 forms (100%)** + BaseScreen **7/7 screens (100%)** = **MIGRAÇÃO COMPLETA!**
+**Branch:** nervous-mendeleev
+**Commits:** [pendente - sessão em curso]
+
+### 🎉 VISÃO GERAL
+
+**SPRINT 9** completa a migração do sistema BaseForm/BaseScreen com:
+1. **OrcamentoFormScreen migrado** (último form pendente - 2,287 linhas)
+2. **Bugs sistémicos corrigidos** que afetavam TODOS os screens BaseForm
+3. **Backward compatibility** implementada em BaseScreen
+
+**Progresso Sistema BaseForm:**
+- ✅ SPRINT 1: BaseForm framework
+- ✅ SPRINT 2: ClienteFormScreen
+- ✅ SPRINT 3: FornecedorFormScreen
+- ✅ SPRINT 4: EquipamentoFormScreen
+- ✅ SPRINT 5: DespesaFormScreen
+- ✅ SPRINT 7: ProjetoFormScreen (layout 2 colunas)
+- ✅ SPRINT 8: BoletimFormScreen (tabs customizadas)
+- ✅ **SPRINT 9: OrcamentoFormScreen (slots customizados)** ← NOVO!
+
+**Progresso:** **8/8 forms migrados (100%)** 🎉
+
+**Progresso Sistema BaseScreen:**
+- ✅ ProjetosScreen (screen_config dict - sistema original)
+- ✅ OrcamentosScreen (abstract methods)
+- ✅ DespesasScreen (abstract methods)
+- ✅ BoletinsScreen (abstract methods)
+- ✅ ClientesScreen (abstract methods)
+- ✅ FornecedoresScreen (abstract methods)
+- ✅ EquipamentoScreen (abstract methods)
+
+**Progresso:** **7/7 screens migrados (100%)** 🎉
+
+---
+
+### 🏗️ SPRINT 9: OrcamentoFormScreen → BaseForm (SLOTS CUSTOMIZADOS)
+
+**Data:** 20/12/2025
+**Ficheiro:** `ui/screens/orcamento_form.py` (2,287 linhas)
+**Layout:** **SLOTS CUSTOMIZADOS** (fields_slot, header_slot, footer_slot)
+
+**Abordagem - Slots Customizados:**
+Este form foi o último pendente devido à complexidade (8 dialogs multi-entidade, validação CLIENTE=EMPRESA, tabs personalizadas). Migrado com sucesso usando abordagem de **slots customizados**:
+
+**Métodos BaseForm Implementados:**
+- `get_form_title()`: Retorna "Novo Orçamento" ou "Editar Orçamento [código]"
+- `get_form_icon()`: Retorna ícone ORCAMENTOS
+- `get_fields_config()`: Retorna lista vazia (campos criados manualmente)
+- `on_save()`: Retorna True (custom buttons handle saving)
+
+**Slots Customizados:**
+- `fields_slot(parent)`: Cria layout customizado com campos + tabs
+- `header_slot(parent)`: Header customizado com ícone + título + badge de estado
+- `footer_slot(parent)`: Footer customizado com 3 botões (Gravar Rascunho, Aprovar, Converter)
+
+**Estrutura do Form:**
+- **Campos básicos**: cliente_id, codigo, owner, data_criacao, data_evento, local_evento
+- **Tabs customizadas**: 2 tabs (Lado CLIENTE com 5 dialogs + Lado EMPRESA com 3 dialogs)
+- **Validação**: TOTAL_CLIENTE = TOTAL_EMPRESA obrigatória antes de aprovar
+- **8 Dialogs**: Honorários, Transportes, Alimentação, Alojamento, Outro (CLIENTE) + Equipamento, Consumíveis, Outro (EMPRESA)
+
+---
+
+### 🐛 BUGS SISTÉMICOS CORRIGIDOS
+
+**Descoberta:** Durante testes do OrcamentoFormScreen, descobrimos que TODOS os screens BaseForm tinham 3 bugs críticos.
+
+#### Bug #1: Botão "Novo" Não Funcionava
+**Ficheiros afetados:** 6 screens (despesas.py, boletins.py, clientes.py, fornecedores.py, equipamento.py, orcamentos.py)
+**Causa:** BaseScreen.on_new_item() estava vazio (`pass`)
+**Sintoma:** Clicar no botão "Novo" não fazia nada
+**Fix:** Implementado `on_new_item()` em todos os 6 screens
+
+**Exemplo da correção:**
+```python
+def on_new_item(self):
+    """Ação do botão 'Novo' - abre formulário para criar nova despesa"""
+    self.abrir_formulario(None)
+```
+
+#### Bug #2: Títulos Mostravam "Screen"
+**Ficheiro afetado:** ui/components/base_screen.py
+**Causa:** BaseScreen._create_header() usava `self.config.get('title', 'Screen')` em vez de chamar abstract method
+**Sintoma:** Todos os screens mostravam título "Screen" em vez do nome real (ex: "Despesas")
+**Fix:** Alterado para `title = self.get_screen_title()`
+
+**Código corrigido (base_screen.py:178):**
+```python
+try:
+    title = self.get_screen_title()
+except (NotImplementedError, AttributeError):
+    # Fallback to old screen_config system
+    title = self.config.get('title', 'Screen')
+```
+
+#### Bug #3: Search Bars Desapareciam
+**Ficheiro afetado:** ui/components/base_screen.py
+**Causa:** BaseScreen verificava `self.config.get('show_search', True)` que não estava definido
+**Sintoma:** Barra de pesquisa e filtros não apareciam nos screens
+**Fix:** Removida dependência de config, toolbar sempre mostrada
+
+---
+
+### 🔄 BACKWARD COMPATIBILITY - BaseScreen
+
+**Ficheiro:** ui/components/base_screen.py:171-193
+**Motivação:** ProjetosScreen usa sistema original (screen_config dict), outros screens usam abstract methods
+
+**Implementação:**
+```python
+# Try new system (abstract methods) first
+try:
+    title = self.get_screen_title()
+except (NotImplementedError, AttributeError):
+    # Fallback to old screen_config system
+    title = self.config.get('title', 'Screen')
+
+# Same for icon
+try:
+    icon_pil = self.get_screen_icon()
+except (NotImplementedError, AttributeError):
+    icon_key = self.config.get('icon_key')
+    if icon_key:
+        from assets.resources import get_icon
+        icon_pil = get_icon(icon_key, size=(28, 28))
+```
+
+**Resultado:**
+- ✅ ProjetosScreen continua a funcionar (usa screen_config dict)
+- ✅ Outros 6 screens funcionam (usam abstract methods)
+- ✅ Sem breaking changes
+
+---
+
+### 📋 FICHEIROS ALTERADOS
+
+**Migração OrcamentoFormScreen:**
+- `ui/screens/orcamento_form.py` (refatorado para BaseForm)
+
+**Correção Bugs Sistémicos:**
+- `ui/screens/despesas.py` (adicionado on_new_item)
+- `ui/screens/boletins.py` (adicionado on_new_item)
+- `ui/screens/clientes.py` (adicionado on_new_item)
+- `ui/screens/fornecedores.py` (adicionado on_new_item)
+- `ui/screens/equipamento.py` (adicionado on_new_item)
+- `ui/screens/orcamentos.py` (adicionado on_new_item)
+- `ui/components/base_screen.py` (backward compatibility + fixes)
+
+**Documentação:**
+- `memory/CURRENT_STATE.md` (atualizado para 100%)
+- `memory/CHANGELOG.md` (este ficheiro)
+
+---
+
+### ✅ TESTES REALIZADOS
+
+**Teste 1: ProjetosScreen (screen_config dict)**
+- ✅ Título "Projetos" aparece corretamente
+- ✅ Botão "Novo" funciona
+- ✅ Search bar visível
+
+**Teste 2: DespesasScreen (abstract methods)**
+- ✅ Título "Despesas" aparece corretamente
+- ✅ Botão "Novo" funciona
+- ✅ Search bar visível
+
+**Teste 3: OrcamentosScreen (migrado)**
+- ✅ Título "Orçamentos" aparece corretamente
+- ✅ Botão "Novo" funciona
+- ✅ Formulário abre corretamente
+
+**Teste 4: OrcamentoFormScreen**
+- ✅ Criar novo orçamento funciona
+- ✅ Editar orçamento existente funciona
+- ✅ 8 dialogs funcionam (5 CLIENTE + 3 EMPRESA)
+- ✅ Validação TOTAL_CLIENTE = TOTAL_EMPRESA funciona
+- ✅ Gravar rascunho funciona
+
+---
+
+### 🎯 IMPACTO
+
+**Migração Completa:**
+- ✅ **8/8 forms (100%)** migrados para BaseForm
+- ✅ **7/7 screens (100%)** usando BaseScreen
+- ✅ Sistema uniformizado e funcional
+- ✅ Backward compatibility mantida
+
+**Próximos Passos:**
+- 📋 UX/UI Improvements - Orçamentos (DateRangePicker + Context Menus)
+- 📋 IRS Retido em Despesas
+- 📋 Sistema Fiscal
+- 📋 [Opcional] Migrar ProjetosScreen para abstract methods
+
+---
+
 ## [2025-11-28] ✅ SISTEMA BaseForm - SPRINT 8 + UNIFORMIZAÇÃO BA/RR
 
 ### ✅ SPRINT 8 COMPLETO + UNIFORMIZAÇÃO SÓCIOS

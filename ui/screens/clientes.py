@@ -335,6 +335,10 @@ class ClientesScreen(BaseScreen):
 
     # ===== HELPER METHODS (MANTER) =====
 
+    def on_new_item(self):
+        """Ação do botão 'Novo' - abre formulário para criar novo cliente"""
+        self.adicionar_cliente()
+
     def adicionar_cliente(self):
         """Navigate to cliente_form screen for create"""
         main_window = self.master.master

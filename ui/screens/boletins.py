@@ -400,6 +400,10 @@ class BoletinsScreen(BaseScreen):
         }
         return color_map.get(estado, ("#E0E0E0", "#4A4A4A"))
 
+    def on_new_item(self):
+        """Ação do botão 'Novo' - abre formulário para criar novo boletim"""
+        self.abrir_formulario(None)
+
     def abrir_formulario(self, boletim=None):
         """Navigate to boletim_form screen for create/edit"""
         main_window = self.master.master

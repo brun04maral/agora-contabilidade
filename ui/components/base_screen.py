@@ -154,8 +154,9 @@ class BaseScreen(ctk.CTkFrame):
         # Header (apenas título)
         self._create_header()
 
-        # Search + Filters toolbar (compacto)
-        if self.config.get('show_search', True) or self.get_filters_config():
+        # Search + Filters toolbar (sempre mostrar se tiver pesquisa ou filtros)
+        filters = self.get_filters_config()
+        if True or filters:  # Sempre mostrar toolbar (tem sempre pesquisa)
             self._create_toolbar()
 
         # Barra topo tabela: chips (esquerda) + botões (direita)
@@ -173,34 +174,42 @@ class BaseScreen(ctk.CTkFrame):
         header_frame.pack(fill="x", padx=30, pady=(20, 20))
 
         # Título com ícone
-        title = self.config.get('title', 'Screen')
-        icon_key = self.config.get('icon_key')
-        icon_fallback = self.config.get('icon_fallback', '')
+        # Try new system (abstract methods) first, fallback to old system (screen_config)
+        try:
+            title = self.get_screen_title()
+        except (NotImplementedError, AttributeError):
+            # Fallback to old screen_config system
+            title = self.config.get('title', 'Screen')
 
-        if icon_key:
-            icon_pil = get_icon(icon_key, size=(28, 28))
-            if icon_pil:
-                icon_ctk = ctk.CTkImage(
-                    light_image=icon_pil,
-                    dark_image=icon_pil,
-                    size=(28, 28)
-                )
-                title_label = ctk.CTkLabel(
-                    header_frame,
-                    image=icon_ctk,
-                    text=f" {title}",
-                    compound="left",
-                    font=ctk.CTkFont(size=28, weight="bold")
-                )
-                # Keep reference to prevent garbage collection
-                title_label._icon_image = icon_ctk
-            else:
-                title_label = ctk.CTkLabel(
-                    header_frame,
-                    text=f"{icon_fallback} {title}",
-                    font=ctk.CTkFont(size=28, weight="bold")
-                )
+        # Try new system for icon first, fallback to old system
+        icon_pil = None
+        try:
+            icon_pil = self.get_screen_icon()
+        except (NotImplementedError, AttributeError):
+            # Fallback to old screen_config system
+            icon_key = self.config.get('icon_key')
+            if icon_key:
+                from assets.resources import get_icon
+                icon_pil = get_icon(icon_key, size=(28, 28))
+
+        if icon_pil:
+            # Create CTkImage from PIL icon
+            icon_ctk = ctk.CTkImage(
+                light_image=icon_pil,
+                dark_image=icon_pil,
+                size=(28, 28)
+            )
+            title_label = ctk.CTkLabel(
+                header_frame,
+                image=icon_ctk,
+                text=f" {title}",
+                compound="left",
+                font=ctk.CTkFont(size=28, weight="bold")
+            )
+            # Keep reference to prevent garbage collection
+            title_label._icon_image = icon_ctk
         else:
+            # No icon, just title
             title_label = ctk.CTkLabel(
                 header_frame,
                 text=title,
@@ -214,44 +223,42 @@ class BaseScreen(ctk.CTkFrame):
         toolbar.pack(fill="x", padx=30, pady=(0, 10))  # ZERO top, 10px bottom (como DespesasScreen)
         toolbar.pack_propagate(False)  # NÃO expande automaticamente
 
-        # Search (compacta, só ícone lupa)
-        if self.config.get('show_search', True):
-            # Ícone lupa
-            search_icon = ctk.CTkLabel(
-                toolbar,
-                text="🔍",
-                font=ctk.CTkFont(size=16)
-            )
-            search_icon.pack(side="left", padx=(0, 8))
+        # Search (compacta, só ícone lupa) - sempre mostrar
+        # Ícone lupa
+        search_icon = ctk.CTkLabel(
+            toolbar,
+            text="🔍",
+            font=ctk.CTkFont(size=16)
+        )
+        search_icon.pack(side="left", padx=(0, 8))
 
-            # Search entry (compacto)
-            self.search_var = ctk.StringVar()
-            self.search_var.trace_add("write", self._on_search_change)
+        # Search entry (compacto)
+        self.search_var = ctk.StringVar()
+        self.search_var.trace_add("write", self._on_search_change)
 
-            placeholder = self.config.get('search_placeholder', 'Digite para pesquisar...')
-            self.search_entry = ctk.CTkEntry(
-                toolbar,
-                textvariable=self.search_var,
-                placeholder_text=placeholder,
-                width=320,
-                height=32,
-                font=ctk.CTkFont(size=12)
-            )
-            self.search_entry.pack(side="left", padx=(0, 5))
+        self.search_entry = ctk.CTkEntry(
+            toolbar,
+            textvariable=self.search_var,
+            placeholder_text='Digite para pesquisar...',
+            width=320,
+            height=32,
+            font=ctk.CTkFont(size=12)
+        )
+        self.search_entry.pack(side="left", padx=(0, 5))
 
-            # Botão limpar (só ícone)
-            clear_btn = ctk.CTkButton(
-                toolbar,
-                text="✖",
-                command=self._clear_search,
-                width=32,
-                height=32,
-                font=ctk.CTkFont(size=12),
-                fg_color="transparent",
-                hover_color=("#E0E0E0", "#404040"),
-                border_width=0
-            )
-            clear_btn.pack(side="left", padx=(0, 20))
+        # Botão limpar (só ícone)
+        clear_btn = ctk.CTkButton(
+            toolbar,
+            text="✖",
+            command=self._clear_search,
+            width=32,
+            height=32,
+            font=ctk.CTkFont(size=12),
+            fg_color="transparent",
+            hover_color=("#E0E0E0", "#404040"),
+            border_width=0
+        )
+        clear_btn.pack(side="left", padx=(0, 20))
 
         # Filtros (horizontais, à direita)
         filters_config = self.get_filters_config()

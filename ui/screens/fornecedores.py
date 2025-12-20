@@ -360,6 +360,10 @@ class FornecedoresScreen(BaseScreen):
         }
         return color_map.get(estatuto, ("#E0E0E0", "#4A4A4A"))
 
+    def on_new_item(self):
+        """Ação do botão 'Novo' - abre formulário para criar novo fornecedor"""
+        self.adicionar_fornecedor()
+
     def adicionar_fornecedor(self):
         """Navigate to fornecedor_form screen for create"""
         main_window = self.master.master
