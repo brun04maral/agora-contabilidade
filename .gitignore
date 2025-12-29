@@ -194,3 +194,5 @@ projetos_export.json
 import_projetos_script.py
 fornecedores_export.json
 despesas_export.json
+boletins_export.json
+boletim_linhas_export.json
