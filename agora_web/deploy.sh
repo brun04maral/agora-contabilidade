@@ -22,11 +22,11 @@ echo -e "${YELLOW}📁 Creating deployment directory...${NC}"
 mkdir -p "$DEPLOY_DIR"
 cd "$DEPLOY_DIR"
 
-# Step 2: Check if .env.production exists
-if [ ! -f ".env.production" ]; then
-    echo -e "${RED}❌ .env.production not found!${NC}"
-    echo "Please create .env.production with your configuration"
-    echo "Template available in agora_web/.env.production"
+# Step 2: Check if .env exists
+if [ ! -f ".env" ]; then
+    echo -e "${RED}❌ .env not found!${NC}"
+    echo "Please create .env with your configuration"
+    echo "Template available in .env.production"
     exit 1
 fi
 
