@@ -72,14 +72,47 @@ agora_web/
 └── docker-compose.yml
 ```
 
-## Próximos Passos
+## ✅ Implemented Features
 
-- [ ] Migrar models (Cliente, Fornecedor, Projeto, Despesa, Boletim)
-- [ ] Adaptar SaldosCalculator
-- [ ] Django Admin customizado
-- [ ] Dashboard com saldos
-- [ ] Relatórios/exports
+- ✅ **Models completos:** Cliente, Fornecedor, Projeto, Despesa, Boletim, Equipamento, Orcamento, Socio
+- ✅ **SaldosCalculator:** Cálculo em tempo real de saldos pessoais (BA/RR)
+- ✅ **Django Admin:** Customizado com Unfold theme
+- ✅ **Dashboard Saldos Pessoais:** `/admin/core/saldo/` - visualização em tempo real
+- ✅ **Modelo Socio:** Integração de sócios (BA/RR) com ForeignKeys
+- ✅ **Docker Deployment:** Production-ready com Cloudflare Tunnel
 
-## Docs
+## 📚 Documentation
 
-Ver `../DJANGO_IMPLEMENTATION_PLAN.md` para roadmap completo.
+**Comprehensive docs available:**
+
+### For AI Assistants & Quick Context
+- **[`.claude/claude.md`](../.claude/claude.md)** - Complete project context, architecture, common tasks
+
+### For Developers
+- **[`docs/README.md`](../docs/README.md)** - Documentation index
+- **[`docs/SOCIOS_MIGRATION.md`](../docs/SOCIOS_MIGRATION.md)** - Socio model implementation guide
+- **[`docs/SALDOS_DASHBOARD.md`](../docs/SALDOS_DASHBOARD.md)** - Saldos dashboard deep dive
+- **[`docs/DATABASE_MANUAL_CHANGES.md`](../docs/DATABASE_MANUAL_CHANGES.md)** - Manual SQL changes history
+
+### Quick Reference
+```bash
+# Common commands
+docker compose -f docker-compose.cloudflare.yml exec web python manage.py shell
+docker compose -f docker-compose.cloudflare.yml logs -f web
+docker compose -f docker-compose.cloudflare.yml up -d --build web
+
+# Load initial Socio data
+docker compose -f docker-compose.cloudflare.yml exec web python manage.py loaddata socios
+
+# Migrate Socio FKs
+docker compose -f docker-compose.cloudflare.yml exec web python manage.py migrate_socios
+```
+
+## 🎯 Current Status
+
+**Production Ready** ✅ - Deployed with Docker + PostgreSQL + Cloudflare Tunnel
+
+**Last Major Updates (Dec 2025):**
+- Socio model with ForeignKey relationships
+- Saldos Pessoais dashboard with real-time calculations
+- Manual database changes documented
