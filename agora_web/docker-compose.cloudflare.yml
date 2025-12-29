@@ -49,21 +49,18 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
 
-      # HTTP Router (aceita HTTP do Cloudflare)
+      # HTTP Router (Cloudflare Full mode envia HTTPS também)
+      - "traefik.http.routers.agora-app-http.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.agora-app-http.entrypoints=http"
+      - "traefik.http.routers.agora-app-http.service=agora-app"
+
+      # HTTPS Router
       - "traefik.http.routers.agora-app.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.agora-app.entrypoints=http,https"
+      - "traefik.http.routers.agora-app.entrypoints=https"
+      - "traefik.http.routers.agora-app.service=agora-app"
 
       # Service
       - "traefik.http.services.agora-app.loadbalancer.server.port=8000"
-
-      # Security Headers
-      - "traefik.http.middlewares.agora-app-headers.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
-      - "traefik.http.middlewares.agora-app-headers.headers.customResponseHeaders.X-Content-Type-Options=nosniff"
-
-      # Trust Cloudflare forwarded headers
-      - "traefik.http.middlewares.agora-app-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
-
-      - "traefik.http.routers.agora-app.middlewares=agora-app-headers"
 
 networks:
   agora_internal:
