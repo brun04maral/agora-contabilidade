@@ -772,3 +772,20 @@ class OrcamentoReparticao(models.Model):
     def __str__(self):
         return f"{self.orcamento.codigo} - {self.entidade or self.beneficiario}"
 
+
+
+
+
+class Saldo(models.Model):
+    """
+    Proxy model para mostrar Saldos Pessoais no admin
+    Não tem tabela na BD - usa SaldosCalculator para calcular dados
+    """
+    id = models.IntegerField(primary_key=True)  # Dummy field
+    
+    class Meta:
+        managed = False  # Django não cria tabela
+        verbose_name = _('Saldo Pessoal')
+        verbose_name_plural = _('Saldos Pessoais')
+        db_table = 'saldos_view'  # Tabela fictícia
+        default_permissions = ()  # Sem permissões de add/change/delete

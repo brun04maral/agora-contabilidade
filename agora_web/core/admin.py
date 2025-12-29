@@ -7,7 +7,7 @@ from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
-    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
+    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo
 )
 
 
@@ -448,3 +448,56 @@ class OrcamentoReparticaoAdmin(ModelAdmin):
     search_fields = ['entidade', 'beneficiario', 'descricao', 'orcamento__codigo']
     autocomplete_fields = ['orcamento', 'fornecedor', 'equipamento']
     ordering = ['orcamento', 'ordem']
+
+
+@admin.register(Saldo)
+class SaldoAdmin(ModelAdmin):
+    """Admin para Saldos Pessoais - Dashboard personalizado"""
+    
+    # Desabilitar ações padrão já que não há tabela
+    def has_add_permission(self, request):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return False
+    
+    def changelist_view(self, request, extra_context=None):
+        """Vista personalizada para mostrar dashboard de saldos"""
+        from core.utils.saldos import SaldosCalculator
+        from datetime import date
+        
+        calculator = SaldosCalculator()
+        
+        # Calcular saldos atuais
+        saldo_ba = calculator.calcular_saldo_bruno(incluir_investimento=True)
+        saldo_rr = calculator.calcular_saldo_rafael(incluir_investimento=True)
+        
+        # Obter histórico mensal do ano atual
+        ano_atual = date.today().year
+        historico_ba = calculator.obter_historico_mensal('BA', ano_atual, incluir_investimento=True)
+        historico_rr = calculator.obter_historico_mensal('RR', ano_atual, incluir_investimento=True)
+        
+        # Preparar dados para os gráficos
+        meses_labels = [h['mes_nome'] for h in historico_ba]
+        saldos_ba_data = [h['saldo'] for h in historico_ba]
+        saldos_rr_data = [h['saldo'] for h in historico_rr]
+        
+        extra_context = extra_context or {}
+        extra_context.update({
+            'title': 'Saldos Pessoais',
+            'saldo_ba': saldo_ba,
+            'saldo_rr': saldo_rr,
+            'meses_labels': meses_labels,
+            'saldos_ba_data': saldos_ba_data,
+            'saldos_rr_data': saldos_rr_data,
+            'ano_atual': ano_atual,
+            'total_empresa': saldo_ba['saldo_total'] + saldo_rr['saldo_total'],
+        })
+        
+        # Usar template personalizado
+        self.change_list_template = 'admin/core/saldo/changelist.html'
+        
+        return super().changelist_view(request, extra_context=extra_context)
