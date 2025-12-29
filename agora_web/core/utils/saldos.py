@@ -56,7 +56,7 @@ class SaldosCalculator:
             Dict com breakdown completo do saldo
         """
         return self._calcular_saldo(
-            Socio.BA,
+            'BA',
             incluir_investimento,
             data_inicio,
             data_fim
@@ -80,7 +80,7 @@ class SaldosCalculator:
             Dict com breakdown completo do saldo
         """
         return self._calcular_saldo(
-            Socio.RR,
+            'RR',
             incluir_investimento,
             data_inicio,
             data_fim
@@ -107,7 +107,7 @@ class SaldosCalculator:
         """
         # Determinar owner e tipo de despesa pessoal
         owner = socio
-        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == Socio.BA else TipoDespesa.PESSOAL_RR
+        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == 'BA' else TipoDespesa.PESSOAL_RR
 
         # === CALCULAR INs (Entradas) ===
 
@@ -132,7 +132,7 @@ class SaldosCalculator:
         )['total'] or Decimal("0.00")
 
         # 2. Prémios de projetos da empresa (apenas PAGOS)
-        if socio == Socio.BA:
+        if socio == 'BA':
             query_premios = Projeto.objects.filter(
                 premio_bruno__gt=0,
                 estado=EstadoProjeto.PAGO
@@ -162,7 +162,7 @@ class SaldosCalculator:
         investimento = Decimal("0.00")
         if incluir_investimento:
             investimento = (
-                self.INVESTIMENTO_INICIAL_BRUNO if socio == Socio.BA
+                self.INVESTIMENTO_INICIAL_BRUNO if socio == 'BA'
                 else self.INVESTIMENTO_INICIAL_RAFAEL
             )
 
@@ -257,7 +257,7 @@ class SaldosCalculator:
         saldo_total = total_ins - total_outs
 
         # === PRÉMIOS NÃO FATURADOS (Projetos FINALIZADOS) ===
-        if socio == Socio.BA:
+        if socio == 'BA':
             query_premios_nao_faturados = Projeto.objects.filter(
                 estado=EstadoProjeto.FINALIZADO,
                 premio_bruno__gt=0
@@ -415,7 +415,7 @@ class SaldosCalculator:
             Dict com listas detalhadas de projetos, despesas e boletins
         """
         owner = socio
-        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == Socio.BA else TipoDespesa.PESSOAL_RR
+        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == 'BA' else TipoDespesa.PESSOAL_RR
 
         # Projetos pessoais
         projetos_pessoais = Projeto.objects.filter(
@@ -425,7 +425,7 @@ class SaldosCalculator:
         )
 
         # Projetos com prémios (apenas PAGOS)
-        if socio == Socio.BA:
+        if socio == 'BA':
             projetos_premios = Projeto.objects.filter(
                 premio_bruno__gt=0,
                 estado=EstadoProjeto.PAGO
