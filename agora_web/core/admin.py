@@ -5,7 +5,7 @@ Core admin customizations for Agora Contabilidade with Unfold theme
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
-from .models import Cliente, Fornecedor, Projeto
+from .models import Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate
 
 
 @admin.register(Cliente)
@@ -108,3 +108,90 @@ class ProjetoAdmin(ModelAdmin):
     def descricao_short(self, obj):
         """Mostra descrição truncada"""
         return obj.descricao[:50] + '...' if len(obj.descricao) > 50 else obj.descricao
+
+
+@admin.register(DespesaTemplate)
+class DespesaTemplateAdmin(ModelAdmin):
+    """Admin para DespesaTemplate com Unfold customization"""
+    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'dia_mes', 'created_at']
+    list_filter = ['tipo', 'dia_mes', 'created_at']
+    search_fields = ['numero', 'descricao', 'credor__nome']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['dia_mes', '-created_at']
+    autocomplete_fields = ['credor', 'projeto']
+
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('numero', 'tipo')
+        }),
+        ('Fornecedor/Projeto', {
+            'fields': ('credor', 'projeto')
+        }),
+        ('Descrição', {
+            'fields': ('descricao',)
+        }),
+        ('Valores', {
+            'fields': ('valor_sem_iva', 'valor_com_iva')
+        }),
+        ('Recorrência', {
+            'fields': ('dia_mes',)
+        }),
+        ('Informações Adicionais', {
+            'fields': ('nota',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
+
+    @display(description='Descrição', ordering='descricao')
+    def descricao_short(self, obj):
+        """Mostra descrição truncada"""
+        return obj.descricao[:30] + '...' if len(obj.descricao) > 30 else obj.descricao
+
+
+@admin.register(Despesa)
+class DespesaAdmin(ModelAdmin):
+    """Admin para Despesa com Unfold customization"""
+    list_display = ['numero', 'tipo', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'estado', 'data_pagamento', 'created_at']
+    list_filter = ['tipo', 'estado', 'data', 'data_pagamento', 'created_at']
+    search_fields = ['numero', 'descricao', 'credor__nome', 'projeto__numero']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-data', '-created_at']
+    autocomplete_fields = ['credor', 'projeto', 'despesa_template']
+    date_hierarchy = 'data'
+
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('numero', 'tipo', 'data')
+        }),
+        ('Fornecedor/Projeto', {
+            'fields': ('credor', 'projeto')
+        }),
+        ('Descrição', {
+            'fields': ('descricao',)
+        }),
+        ('Valores', {
+            'fields': ('valor_sem_iva', 'valor_com_iva')
+        }),
+        ('Estado', {
+            'fields': ('estado', 'data_pagamento')
+        }),
+        ('Origem', {
+            'fields': ('despesa_template',),
+            'classes': ['collapse']
+        }),
+        ('Informações Adicionais', {
+            'fields': ('nota',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
+
+    @display(description='Descrição', ordering='descricao')
+    def descricao_short(self, obj):
+        """Mostra descrição truncada"""
+        return obj.descricao[:30] + '...' if len(obj.descricao) > 30 else obj.descricao

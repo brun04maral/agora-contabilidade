@@ -170,3 +170,177 @@ class Projeto(models.Model):
 
     def __repr__(self):
         return f"<Projeto(id={self.id}, numero='{self.numero}', tipo='{self.tipo}', valor={self.valor_sem_iva})>"
+
+
+class TipoDespesa(models.TextChoices):
+    """
+    Enum para tipo de despesa - CRÍTICO para cálculo de saldos!
+
+    FIXA_MENSAL: Dividida por 2, cada sócio desconta metade nos OUTs
+    PESSOAL_BA/PESSOAL_RR: Desconta apenas do sócio específico
+    EQUIPAMENTO: Pode descontar do saldo se for para uso pessoal
+    """
+    FIXA_MENSAL = 'FIXA_MENSAL', _('Fixa Mensal')
+    PESSOAL_BA = 'PESSOAL_BA', _('Pessoal BA')
+    PESSOAL_RR = 'PESSOAL_RR', _('Pessoal RR')
+    EQUIPAMENTO = 'EQUIPAMENTO', _('Equipamento')
+    PROJETO = 'PROJETO', _('Projeto')  # Despesa associada a um projeto específico
+
+
+class EstadoDespesa(models.TextChoices):
+    """Enum para estado da despesa"""
+    PENDENTE = 'PENDENTE', _('Pendente')
+    VENCIDO = 'VENCIDO', _('Vencido')
+    PAGO = 'PAGO', _('Pago')
+
+
+class DespesaTemplate(models.Model):
+    """
+    Template de despesa recorrente mensal
+
+    Não representa uma despesa real, apenas um template para gerar despesas automáticas.
+    Não entra em cálculos financeiros.
+
+    Exemplo: Salário pago dia 27 de cada mês
+    """
+    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #TD000001
+    tipo = models.CharField(
+        _('Tipo'),
+        max_length=20,
+        choices=TipoDespesa.choices,
+        default=TipoDespesa.FIXA_MENSAL,
+        db_index=True
+    )
+
+    # Credor/Fornecedor
+    credor = models.ForeignKey(
+        Fornecedor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Credor')
+    )
+
+    # Projeto associado (opcional)
+    projeto = models.ForeignKey(
+        Projeto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Projeto')
+    )
+
+    # Descrição
+    descricao = models.TextField(_('Descrição'))
+
+    # Valores
+    valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
+    valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
+
+    # Dia do mês para gerar (1-31)
+    dia_mes = models.IntegerField(_('Dia do Mês'))  # Dia do mês em que a despesa deve ser gerada
+
+    # Metadata
+    nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Template de Despesa')
+        verbose_name_plural = _('Templates de Despesa')
+        ordering = ['dia_mes', '-created_at']
+        db_table = 'despesa_templates'
+
+    def __str__(self):
+        return f"{self.numero} - {self.descricao[:30]} (dia {self.dia_mes})"
+
+    def __repr__(self):
+        return f"<DespesaTemplate(id={self.id}, numero='{self.numero}', descricao='{self.descricao[:30]}', dia={self.dia_mes})>"
+
+
+class Despesa(models.Model):
+    """
+    Modelo para armazenar despesas da empresa
+
+    IMPORTANTE: O campo 'tipo' determina como impacta os saldos pessoais:
+    - FIXA_MENSAL: Divide por 2, cada sócio desconta metade
+    - PESSOAL_BA/PESSOAL_RR: Desconta apenas do sócio específico
+    - EQUIPAMENTO: Pode descontar do saldo se configurado
+    - PROJETO: Associada a projeto, não impacta saldos diretamente
+    """
+    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #D000001
+    tipo = models.CharField(
+        _('Tipo'),
+        max_length=20,
+        choices=TipoDespesa.choices,
+        default=TipoDespesa.FIXA_MENSAL,
+        db_index=True
+    )
+
+    # Data
+    data = models.DateField(_('Data'), db_index=True)
+
+    # Credor/Fornecedor
+    credor = models.ForeignKey(
+        Fornecedor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='despesas',
+        verbose_name=_('Credor')
+    )
+
+    # Projeto associado (opcional)
+    projeto = models.ForeignKey(
+        Projeto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='despesas',
+        verbose_name=_('Projeto')
+    )
+
+    # Descrição
+    descricao = models.TextField(_('Descrição'))
+
+    # Valores
+    valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
+    valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
+
+    # Estado
+    estado = models.CharField(
+        _('Estado'),
+        max_length=20,
+        choices=EstadoDespesa.choices,
+        default=EstadoDespesa.PENDENTE,
+        db_index=True
+    )
+    data_pagamento = models.DateField(_('Data Pagamento'), blank=True, null=True)
+
+    # Metadata
+    nota = models.TextField(_('Nota'), blank=True, null=True)
+
+    # Rastreamento de origem (se foi gerada de um template)
+    despesa_template = models.ForeignKey(
+        DespesaTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='despesas_geradas',
+        verbose_name=_('Template de Origem')
+    )
+
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Despesa')
+        verbose_name_plural = _('Despesas')
+        ordering = ['-data', '-created_at']
+        db_table = 'despesas'
+
+    def __str__(self):
+        return f"{self.numero} - {self.descricao[:30]}"
+
+    def __repr__(self):
+        return f"<Despesa(id={self.id}, numero='{self.numero}', tipo='{self.tipo}', valor={self.valor_sem_iva})>"
