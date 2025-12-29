@@ -344,3 +344,170 @@ class Despesa(models.Model):
 
     def __repr__(self):
         return f"<Despesa(id={self.id}, numero='{self.numero}', tipo='{self.tipo}', valor={self.valor_sem_iva})>"
+
+
+class Socio(models.TextChoices):
+    """Enum para identificar o sócio"""
+    BA = 'BA', _('Bruno')
+    RR = 'RR', _('Rafael')
+
+
+class EstadoBoletim(models.TextChoices):
+    """Enum para estado do boletim"""
+    PENDENTE = 'PENDENTE', _('Pendente')
+    PAGO = 'PAGO', _('Pago')
+
+
+class TipoDeslocacao(models.TextChoices):
+    """Enum para tipo de deslocação"""
+    NACIONAL = 'NACIONAL', _('Nacional')
+    ESTRANGEIRO = 'ESTRANGEIRO', _('Estrangeiro')
+
+
+class Boletim(models.Model):
+    """
+    Modelo para boletins de ajudas de custo (Boletim Itinerário)
+
+    Sistema expandido com suporte para múltiplas linhas de deslocação.
+    Cada boletim contém:
+    - Cabeçalho: mês/ano, valores de referência do ano, totais calculados
+    - Linhas: deslocações individuais (BoletimLinha)
+
+    Totais calculados automaticamente:
+    - total_ajudas_nacionais = sum(linha.dias where tipo==NACIONAL) × val_dia_nacional
+    - total_ajudas_estrangeiro = sum(linha.dias where tipo==ESTRANGEIRO) × val_dia_estrangeiro
+    - total_kms = sum(linha.kms) × val_km
+    - valor_total = soma dos 3 totais
+
+    IMPORTANTE: Boletins descontam do saldo quando PAGOS (não quando emitidos).
+    """
+    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #B0001
+    socio = models.CharField(
+        _('Sócio'),
+        max_length=2,
+        choices=Socio.choices,
+        db_index=True
+    )
+
+    # Período
+    mes = models.IntegerField(_('Mês'), blank=True, null=True, db_index=True)  # 1-12
+    ano = models.IntegerField(_('Ano'), blank=True, null=True, db_index=True)  # Ex: 2025
+
+    # Datas
+    data_emissao = models.DateField(_('Data Emissão'), db_index=True)
+    data_pagamento = models.DateField(_('Data Pagamento'), blank=True, null=True)
+
+    # Valores de Referência (copiados do ano vigente)
+    val_dia_nacional = models.DecimalField(_('Valor Dia Nacional'), max_digits=10, decimal_places=2, blank=True, null=True)
+    val_dia_estrangeiro = models.DecimalField(_('Valor Dia Estrangeiro'), max_digits=10, decimal_places=2, blank=True, null=True)
+    val_km = models.DecimalField(_('Valor KM'), max_digits=10, decimal_places=2, blank=True, null=True)
+
+    # Totais Calculados Automaticamente
+    total_ajudas_nacionais = models.DecimalField(_('Total Ajudas Nacionais'), max_digits=10, decimal_places=2, default=0)
+    total_ajudas_estrangeiro = models.DecimalField(_('Total Ajudas Estrangeiro'), max_digits=10, decimal_places=2, default=0)
+    total_kms = models.DecimalField(_('Total KMs'), max_digits=10, decimal_places=2, default=0)
+    valor_total = models.DecimalField(_('Valor Total'), max_digits=10, decimal_places=2, default=0)
+
+    # Valor antigo (manter para compatibilidade temporária)
+    valor = models.DecimalField(_('Valor (antigo)'), max_digits=10, decimal_places=2, default=0, blank=True, null=True)
+
+    # Descrição (manter para compatibilidade temporária)
+    descricao = models.TextField(_('Descrição (antigo)'), blank=True, null=True)
+
+    # Estado
+    estado = models.CharField(
+        _('Estado'),
+        max_length=20,
+        choices=EstadoBoletim.choices,
+        default=EstadoBoletim.PENDENTE,
+        db_index=True
+    )
+
+    # Metadata
+    nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Boletim')
+        verbose_name_plural = _('Boletins')
+        ordering = ['-data_emissao', '-created_at']
+        db_table = 'boletins'
+
+    def __str__(self):
+        return f"{self.numero} - {self.socio} - {self.mes}/{self.ano}"
+
+    def __repr__(self):
+        return f"<Boletim(id={self.id}, numero='{self.numero}', socio='{self.socio}', valor={self.valor_total}, estado='{self.estado}')>"
+
+
+class BoletimLinha(models.Model):
+    """
+    Modelo para linhas de deslocação de um boletim itinerário
+
+    Cada linha representa uma deslocação (viagem/trabalho) realizada,
+    com informações sobre local, projeto associado (opcional), datas,
+    tipo de ajuda de custo (nacional/estrangeiro) e quilómetros percorridos.
+
+    Campos calculados:
+    - Dias: Inserido manualmente pelo usuário (cálculo complexo)
+    - Horas: Informativas apenas (não usadas em cálculos)
+
+    Relação com projetos:
+    - Opcional: Deslocação pode ou não estar associada a projeto
+    - Se projeto apagado: projeto_id = NULL (mantém texto em 'servico')
+    """
+    boletim = models.ForeignKey(
+        Boletim,
+        on_delete=models.CASCADE,
+        related_name='linhas',
+        verbose_name=_('Boletim'),
+        db_index=True
+    )
+    ordem = models.IntegerField(_('Ordem'))  # Ordenação (1, 2, 3...)
+
+    # Relação opcional com projeto
+    projeto = models.ForeignKey(
+        Projeto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Projeto'),
+        db_index=True
+    )
+
+    # Informação da deslocação
+    servico = models.TextField(_('Serviço'))  # Ex: "vMix Novobanco", "reunião com cliente"
+    localidade = models.CharField(_('Localidade'), max_length=100, blank=True, null=True)  # Ex: "Aguieira", "Lisboa"
+
+    # Datas e horas (horas são informativas)
+    data_inicio = models.DateField(_('Data Início'), blank=True, null=True)
+    hora_inicio = models.TimeField(_('Hora Início'), blank=True, null=True)  # Informativa
+    data_fim = models.DateField(_('Data Fim'), blank=True, null=True)
+    hora_fim = models.TimeField(_('Hora Fim'), blank=True, null=True)  # Informativa
+
+    # Tipo e valores
+    tipo = models.CharField(
+        _('Tipo'),
+        max_length=20,
+        choices=TipoDeslocacao.choices,
+        default=TipoDeslocacao.NACIONAL
+    )
+    dias = models.DecimalField(_('Dias'), max_digits=10, decimal_places=2, default=0)  # Inserido manualmente
+    kms = models.IntegerField(_('KMs'), default=0)
+
+    # Metadata
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Linha de Boletim')
+        verbose_name_plural = _('Linhas de Boletim')
+        ordering = ['boletim', 'ordem']
+        db_table = 'boletim_linhas'
+
+    def __str__(self):
+        return f"Linha {self.ordem} - {self.servico[:30]}"
+
+    def __repr__(self):
+        return f"<BoletimLinha(id={self.id}, boletim_id={self.boletim_id}, servico='{self.servico[:30]}', tipo={self.tipo}, dias={self.dias}, kms={self.kms})>"

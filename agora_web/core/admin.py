@@ -3,9 +3,9 @@
 Core admin customizations for Agora Contabilidade with Unfold theme
 """
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
-from .models import Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate
+from .models import Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha
 
 
 @admin.register(Cliente)
@@ -195,3 +195,88 @@ class DespesaAdmin(ModelAdmin):
     def descricao_short(self, obj):
         """Mostra descrição truncada"""
         return obj.descricao[:30] + '...' if len(obj.descricao) > 30 else obj.descricao
+
+
+class BoletimLinhaInline(TabularInline):
+    """Inline para linhas de boletim"""
+    model = BoletimLinha
+    extra = 1
+    fields = ['ordem', 'projeto', 'servico', 'localidade', 'data_inicio', 'hora_inicio', 'data_fim', 'hora_fim', 'tipo', 'dias', 'kms']
+    autocomplete_fields = ['projeto']
+
+
+@admin.register(Boletim)
+class BoletimAdmin(ModelAdmin):
+    """Admin para Boletim com Unfold customization"""
+    list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento', 'created_at']
+    list_filter = ['socio', 'estado', 'mes', 'ano', 'data_emissao', 'created_at']
+    search_fields = ['numero', 'nota']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-data_emissao', '-created_at']
+    date_hierarchy = 'data_emissao'
+    inlines = [BoletimLinhaInline]
+
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('numero', 'socio', 'mes', 'ano')
+        }),
+        ('Datas', {
+            'fields': ('data_emissao', 'data_pagamento')
+        }),
+        ('Valores de Referência', {
+            'fields': ('val_dia_nacional', 'val_dia_estrangeiro', 'val_km'),
+            'classes': ['collapse']
+        }),
+        ('Totais', {
+            'fields': ('total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'valor_total')
+        }),
+        ('Estado', {
+            'fields': ('estado',)
+        }),
+        ('Compatibilidade (antigo)', {
+            'fields': ('valor', 'descricao'),
+            'classes': ['collapse']
+        }),
+        ('Informações Adicionais', {
+            'fields': ('nota',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(BoletimLinha)
+class BoletimLinhaAdmin(ModelAdmin):
+    """Admin para BoletimLinha com Unfold customization"""
+    list_display = ['boletim', 'ordem', 'servico_short', 'localidade', 'projeto', 'data_inicio', 'data_fim', 'tipo', 'dias', 'kms', 'created_at']
+    list_filter = ['tipo', 'data_inicio', 'created_at']
+    search_fields = ['servico', 'localidade', 'boletim__numero']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['boletim', 'ordem']
+    autocomplete_fields = ['boletim', 'projeto']
+
+    fieldsets = (
+        ('Boletim', {
+            'fields': ('boletim', 'ordem')
+        }),
+        ('Serviço', {
+            'fields': ('projeto', 'servico', 'localidade')
+        }),
+        ('Datas e Horas', {
+            'fields': ('data_inicio', 'hora_inicio', 'data_fim', 'hora_fim')
+        }),
+        ('Tipo e Valores', {
+            'fields': ('tipo', 'dias', 'kms')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
+
+    @display(description='Serviço', ordering='servico')
+    def servico_short(self, obj):
+        """Mostra serviço truncado"""
+        return obj.servico[:30] + '...' if len(obj.servico) > 30 else obj.servico
