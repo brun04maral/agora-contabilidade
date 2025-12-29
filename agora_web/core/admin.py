@@ -468,36 +468,37 @@ class SaldoAdmin(ModelAdmin):
         """Vista personalizada para mostrar dashboard de saldos"""
         from core.utils.saldos import SaldosCalculator
         from datetime import date
-        
+        import json
+
         calculator = SaldosCalculator()
-        
+
         # Calcular saldos atuais
         saldo_ba = calculator.calcular_saldo_bruno(incluir_investimento=True)
         saldo_rr = calculator.calcular_saldo_rafael(incluir_investimento=True)
-        
+
         # Obter histórico mensal do ano atual
         ano_atual = date.today().year
         historico_ba = calculator.obter_historico_mensal('BA', ano_atual, incluir_investimento=True)
         historico_rr = calculator.obter_historico_mensal('RR', ano_atual, incluir_investimento=True)
-        
-        # Preparar dados para os gráficos
+
+        # Preparar dados para os gráficos (JSON-encoded para JavaScript)
         meses_labels = [h['mes_nome'] for h in historico_ba]
         saldos_ba_data = [h['saldo'] for h in historico_ba]
         saldos_rr_data = [h['saldo'] for h in historico_rr]
-        
+
         extra_context = extra_context or {}
         extra_context.update({
             'title': 'Saldos Pessoais',
             'saldo_ba': saldo_ba,
             'saldo_rr': saldo_rr,
-            'meses_labels': meses_labels,
-            'saldos_ba_data': saldos_ba_data,
-            'saldos_rr_data': saldos_rr_data,
+            'meses_labels_json': json.dumps(meses_labels),
+            'saldos_ba_data_json': json.dumps(saldos_ba_data),
+            'saldos_rr_data_json': json.dumps(saldos_rr_data),
             'ano_atual': ano_atual,
             'total_empresa': saldo_ba['saldo_total'] + saldo_rr['saldo_total'],
         })
-        
+
         # Usar template personalizado
         self.change_list_template = 'admin/core/saldo/changelist.html'
-        
+
         return super().changelist_view(request, extra_context=extra_context)

@@ -182,17 +182,17 @@
     new Chart(ctxEvolucao, {
         type: 'line',
         data: {
-            labels: {{ meses_labels|safe }},
+            labels: {{ meses_labels_json|safe }},
             datasets: [{
                 label: 'BA',
-                data: {{ saldos_ba_data|safe }},
+                data: {{ saldos_ba_data_json|safe }},
                 borderColor: '#1976d2',
                 backgroundColor: 'rgba(25, 118, 210, 0.1)',
                 tension: 0.4,
                 fill: true
             }, {
                 label: 'RR',
-                data: {{ saldos_rr_data|safe }},
+                data: {{ saldos_rr_data_json|safe }},
                 borderColor: '#f57c00',
                 backgroundColor: 'rgba(245, 124, 0, 0.1)',
                 tension: 0.4,
