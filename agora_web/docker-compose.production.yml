@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: agora_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agora_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agora_web
+    restart: unless-stopped
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+    volumes:
+      - ./static:/app/static
+      - ./media:/app/media
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings
+      DEBUG: ${DEBUG}
+      SECRET_KEY: ${SECRET_KEY}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - agora_internal
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+
+      # HTTP Router
+      - "traefik.http.routers.agora.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.agora.entrypoints=websecure"
+      - "traefik.http.routers.agora.tls=true"
+      - "traefik.http.routers.agora.tls.certresolver=letsencrypt"
+
+      # Service
+      - "traefik.http.services.agora.loadbalancer.server.port=8000"
+
+      # Middleware (optional security headers)
+      - "traefik.http.middlewares.agora-headers.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
+      - "traefik.http.middlewares.agora-headers.headers.customResponseHeaders.X-Content-Type-Options=nosniff"
+      - "traefik.http.routers.agora.middlewares=agora-headers"
+
+networks:
+  agora_internal:
+    driver: bridge
+  traefik_proxy:
+    external: true
+
+volumes:
+  postgres_data:
+    driver: local
