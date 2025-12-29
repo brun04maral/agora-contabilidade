@@ -466,6 +466,7 @@ class SaldoAdmin(ModelAdmin):
     
     def changelist_view(self, request, extra_context=None):
         """Vista personalizada para mostrar dashboard de saldos"""
+        from django.shortcuts import render
         from core.utils.saldos import SaldosCalculator
         from datetime import date
         import json
@@ -486,8 +487,8 @@ class SaldoAdmin(ModelAdmin):
         saldos_ba_data = [h['saldo'] for h in historico_ba]
         saldos_rr_data = [h['saldo'] for h in historico_rr]
 
-        extra_context = extra_context or {}
-        extra_context.update({
+        context = {
+            **self.admin_site.each_context(request),
             'title': 'Saldos Pessoais',
             'saldo_ba': saldo_ba,
             'saldo_rr': saldo_rr,
@@ -496,9 +497,7 @@ class SaldoAdmin(ModelAdmin):
             'saldos_rr_data_json': json.dumps(saldos_rr_data),
             'ano_atual': ano_atual,
             'total_empresa': saldo_ba['saldo_total'] + saldo_rr['saldo_total'],
-        })
+        }
 
-        # Usar template personalizado
-        self.change_list_template = 'admin/core/saldo/changelist.html'
-
-        return super().changelist_view(request, extra_context=extra_context)
+        # Render template directly (não chamar super() para evitar query na tabela inexistente)
+        return render(request, 'admin/core/saldo/changelist.html', context)
