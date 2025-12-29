@@ -53,7 +53,7 @@ services:
       - "traefik.http.routers.agora.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.agora.entrypoints=websecure"
       - "traefik.http.routers.agora.tls=true"
-      - "traefik.http.routers.agora.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.agora.tls.certresolver=httpchallenge"
 
       # Service
       - "traefik.http.services.agora.loadbalancer.server.port=8000"
