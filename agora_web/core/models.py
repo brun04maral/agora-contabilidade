@@ -511,3 +511,13 @@ class BoletimLinha(models.Model):
 
     def __repr__(self):
         return f"<BoletimLinha(id={self.id}, boletim_id={self.boletim_id}, servico='{self.servico[:30]}', tipo={self.tipo}, dias={self.dias}, kms={self.kms})>"
+
+# Import Equipamento e Orçamento models
+from .models_equipamento import Equipamento, EstadoEquipamento, UsoEquipamento
+from .models_orcamento import (
+    Orcamento, StatusOrcamento,
+    OrcamentoSecao, TipoSecao,
+    OrcamentoItem, TipoItem,
+    OrcamentoReparticao, TipoReparticao
+)
+
