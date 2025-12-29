@@ -105,8 +105,8 @@ class FornecedorAdmin(ModelAdmin):
 @admin.register(Projeto)
 class ProjetoAdmin(ModelAdmin):
     """Admin para Projeto com Unfold customization"""
-    list_display = ['numero', 'tipo', 'owner', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'created_at']
-    list_filter = ['tipo', 'owner', 'estado', 'data_faturacao', 'created_at']
+    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'created_at']
+    list_filter = ['tipo', 'socio', 'estado', 'data_faturacao', 'created_at']
     search_fields = ['numero', 'descricao', 'cliente__nome']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
@@ -114,7 +114,7 @@ class ProjetoAdmin(ModelAdmin):
 
     fieldsets = (
         ('Identificação', {
-            'fields': ('numero', 'tipo', 'owner', 'cliente')
+            'fields': ('numero', 'tipo', 'socio', 'cliente')
         }),
         ('Descrição', {
             'fields': ('descricao',)
@@ -379,8 +379,8 @@ class OrcamentoReparticaoInline(TabularInline):
 @admin.register(Orcamento)
 class OrcamentoAdmin(ModelAdmin):
     """Admin para Orcamento com Unfold customization"""
-    list_display = ['codigo', 'cliente', 'projeto', 'owner', 'data_criacao', 'valor_total', 'status', 'created_at']
-    list_filter = ['status', 'owner', 'data_criacao', 'created_at']
+    list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao', 'valor_total', 'status', 'created_at']
+    list_filter = ['status', 'socio', 'data_criacao', 'created_at']
     search_fields = ['codigo', 'titulo_cliente', 'cliente__nome', 'projeto__numero', 'descricao_proposta']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-data_criacao', '-created_at']
@@ -390,7 +390,7 @@ class OrcamentoAdmin(ModelAdmin):
 
     fieldsets = (
         ('Identificação', {
-            'fields': ('codigo', 'cliente', 'projeto', 'owner')
+            'fields': ('codigo', 'cliente', 'projeto', 'socio')
         }),
         ('Datas e Local', {
             'fields': ('data_criacao', 'data_evento', 'local_evento')

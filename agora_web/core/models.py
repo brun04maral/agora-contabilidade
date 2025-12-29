@@ -28,7 +28,7 @@ class Socio(models.Model):
         db_table = 'socios'
 
     def __str__(self):
-        return f"{self.codigo} - {self.nome_curto}"
+        return self.codigo
 
     def __repr__(self):
         return f"<Socio(codigo='{self.codigo}', nome='{self.nome_curto}')>"

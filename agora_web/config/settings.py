@@ -206,6 +206,11 @@ UNFOLD = {
                         "icon": "inventory",
                         "link": "/admin/core/equipamento/",
                     },
+                    {
+                        "title": "Sócios",
+                        "icon": "group",
+                        "link": "/admin/core/socio/",
+                    },
                 ],
             },
         ],
