@@ -280,3 +280,6 @@ class BoletimLinhaAdmin(ModelAdmin):
     def servico_short(self, obj):
         """Mostra serviço truncado"""
         return obj.servico[:30] + '...' if len(obj.servico) > 30 else obj.servico
+
+# Import Saldos admin (visualização calculada dinamicamente)
+from . import admin_saldos  # noqa: F401, E402
