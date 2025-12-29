@@ -288,24 +288,28 @@ class BoletimLinhaAdmin(ModelAdmin):
 @admin.register(Equipamento)
 class EquipamentoAdmin(ModelAdmin):
     """Admin para Equipamento com Unfold customization"""
-    list_display = ['numero', 'produto', 'categoria', 'estado', 'uso_pessoal', 'preco_aluguer', 'rendimento_acumulado', 'created_at']
-    list_filter = ['estado', 'uso_pessoal', 'categoria', 'created_at']
-    search_fields = ['numero', 'produto', 'categoria', 'marca', 'modelo']
+    list_display = ['numero', 'produto', 'tipo', 'estado', 'uso_pessoal', 'preco_aluguer', 'rendimento_acumulado', 'created_at']
+    list_filter = ['estado', 'uso_pessoal', 'tipo', 'created_at']
+    search_fields = ['numero', 'produto', 'tipo', 'label', 'referencia', 'numero_serie']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
 
     fieldsets = (
         ('Identificação', {
-            'fields': ('numero', 'produto', 'categoria')
+            'fields': ('numero', 'produto', 'tipo', 'label')
         }),
         ('Detalhes', {
-            'fields': ('marca', 'modelo', 'serial', 'estado', 'uso_pessoal')
+            'fields': ('descricao', 'referencia', 'numero_serie', 'mac_address', 'quantidade', 'tamanho', 'estado', 'uso_pessoal', 'localizacao')
         }),
         ('Valores', {
-            'fields': ('preco_compra', 'preco_aluguer', 'amortizacao_vezes', 'rendimento_acumulado')
+            'fields': ('valor_compra', 'preco_aluguer', 'amortizacao_vezes', 'rendimento_acumulado')
         }),
         ('Aquisição', {
-            'fields': ('data_compra', 'fornecedor_compra'),
+            'fields': ('data_compra', 'fornecedor', 'fatura_url'),
+            'classes': ['collapse']
+        }),
+        ('Mídia', {
+            'fields': ('foto_url',),
             'classes': ['collapse']
         }),
         ('Informações Adicionais', {
@@ -345,9 +349,9 @@ class OrcamentoReparticaoInline(TabularInline):
 @admin.register(Orcamento)
 class OrcamentoAdmin(ModelAdmin):
     """Admin para Orcamento com Unfold customization"""
-    list_display = ['codigo', 'cliente', 'projeto', 'data_criacao', 'data_validade', 'subtotal', 'iva', 'total', 'status', 'created_at']
-    list_filter = ['status', 'data_criacao', 'data_validade', 'created_at']
-    search_fields = ['codigo', 'titulo', 'cliente__nome', 'projeto__numero']
+    list_display = ['codigo', 'cliente', 'projeto', 'owner', 'data_criacao', 'valor_total', 'status', 'created_at']
+    list_filter = ['status', 'owner', 'data_criacao', 'created_at']
+    search_fields = ['codigo', 'titulo_cliente', 'cliente__nome', 'projeto__numero', 'descricao_proposta']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-data_criacao', '-created_at']
     autocomplete_fields = ['cliente', 'projeto']
@@ -356,19 +360,22 @@ class OrcamentoAdmin(ModelAdmin):
 
     fieldsets = (
         ('Identificação', {
-            'fields': ('codigo', 'titulo', 'cliente', 'projeto')
+            'fields': ('codigo', 'cliente', 'projeto', 'owner')
         }),
-        ('Datas', {
-            'fields': ('data_criacao', 'data_validade')
+        ('Datas e Local', {
+            'fields': ('data_criacao', 'data_evento', 'local_evento')
         }),
         ('Valores', {
-            'fields': ('subtotal', 'iva', 'total', 'lucro')
+            'fields': ('valor_total',)
         }),
         ('Estado', {
             'fields': ('status',)
         }),
-        ('Notas', {
-            'fields': ('nota_cabecalho', 'nota_rodape', 'nota_interna'),
+        ('Proposta', {
+            'fields': ('descricao_proposta', 'notas_contratuais')
+        }),
+        ('Versão Cliente', {
+            'fields': ('tem_versao_cliente', 'titulo_cliente', 'descricao_cliente'),
             'classes': ['collapse']
         }),
         ('Metadata', {
@@ -382,7 +389,7 @@ class OrcamentoAdmin(ModelAdmin):
 class OrcamentoSecaoAdmin(ModelAdmin):
     """Admin para OrcamentoSecao com Unfold customization"""
     list_display = ['orcamento', 'nome', 'tipo', 'ordem', 'parent', 'subtotal']
-    list_filter = ['tipo', 'created_at']
+    list_filter = ['tipo']
     search_fields = ['nome', 'orcamento__codigo']
     autocomplete_fields = ['orcamento', 'parent']
     ordering = ['orcamento', 'ordem']
@@ -392,7 +399,7 @@ class OrcamentoSecaoAdmin(ModelAdmin):
 class OrcamentoItemAdmin(ModelAdmin):
     """Admin para OrcamentoItem com Unfold customization"""
     list_display = ['orcamento', 'secao', 'descricao_short', 'tipo', 'quantidade', 'dias', 'preco_unitario', 'total']
-    list_filter = ['tipo', 'created_at']
+    list_filter = ['tipo']
     search_fields = ['descricao', 'orcamento__codigo']
     autocomplete_fields = ['orcamento', 'secao', 'equipamento']
     ordering = ['orcamento', 'secao', 'ordem']
@@ -407,7 +414,7 @@ class OrcamentoItemAdmin(ModelAdmin):
 class OrcamentoReparticaoAdmin(ModelAdmin):
     """Admin para OrcamentoReparticao com Unfold customization"""
     list_display = ['orcamento', 'tipo', 'entidade', 'beneficiario', 'valor', 'percentagem', 'total']
-    list_filter = ['tipo', 'created_at']
+    list_filter = ['tipo']
     search_fields = ['entidade', 'beneficiario', 'descricao', 'orcamento__codigo']
     autocomplete_fields = ['orcamento', 'fornecedor', 'equipamento']
     ordering = ['orcamento', 'ordem']
