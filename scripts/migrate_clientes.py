@@ -69,7 +69,9 @@ def export_clientes():
                 "email": cliente["email"] or "",
                 "angariacao": cliente["angariacao"] or "",
                 "nota": cliente["nota"] or "",
-                # Django vai autogenerar created_at/updated_at
+                # Preserva timestamps originais ou usa data atual
+                "created_at": cliente["created_at"] or datetime.now().isoformat(),
+                "updated_at": cliente["updated_at"] or datetime.now().isoformat(),
             }
         }
         fixtures.append(fixture)
