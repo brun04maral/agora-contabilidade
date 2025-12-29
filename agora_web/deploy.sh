@@ -1,6 +1,6 @@
 #!/bin/bash
 # Deploy script for Agora Contabilidade Django app
-# Target: ~/zumine/amp/docker/app
+# Run this script from: ~/zumine/amp/docker/app/agora_web/
 
 set -e  # Exit on error
 
@@ -13,14 +13,15 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Configuration
-DEPLOY_DIR="$HOME/zumine/amp/docker/app"
-APP_NAME="agora-contabilidade"
+# Step 1: Verify we're in the right directory
+if [ ! -f "manage.py" ]; then
+    echo -e "${RED}❌ Error: manage.py not found!${NC}"
+    echo "Please run this script from the agora_web directory"
+    echo "cd ~/zumine/amp/docker/app/agora_web && ./deploy.sh"
+    exit 1
+fi
 
-# Step 1: Create deployment directory
-echo -e "${YELLOW}📁 Creating deployment directory...${NC}"
-mkdir -p "$DEPLOY_DIR"
-cd "$DEPLOY_DIR"
+echo -e "${GREEN}✅ Working directory: $(pwd)${NC}"
 
 # Step 2: Check if .env exists
 if [ ! -f ".env" ]; then
@@ -29,6 +30,8 @@ if [ ! -f ".env" ]; then
     echo "Template available in .env.production"
     exit 1
 fi
+
+echo -e "${GREEN}✅ .env file found${NC}"
 
 # Step 3: Stop existing containers (if any)
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
