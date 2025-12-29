@@ -2,7 +2,8 @@
 SQLAlchemy Models
 REUTILIZA a lógica existente do projeto
 """
-from sqlalchemy import Column, Integer, String, Decimal, Date, DateTime, Boolean, ForeignKey, Enum, Text
+from decimal import Decimal
+from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, ForeignKey, Enum, Text, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
