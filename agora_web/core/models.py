@@ -512,12 +512,211 @@ class BoletimLinha(models.Model):
     def __repr__(self):
         return f"<BoletimLinha(id={self.id}, boletim_id={self.boletim_id}, servico='{self.servico[:30]}', tipo={self.tipo}, dias={self.dias}, kms={self.kms})>"
 
-# Import Equipamento e Orçamento models
-from .models_equipamento import Equipamento, EstadoEquipamento, UsoEquipamento
-from .models_orcamento import (
-    Orcamento, StatusOrcamento,
-    OrcamentoSecao, TipoSecao,
-    OrcamentoItem, TipoItem,
-    OrcamentoReparticao, TipoReparticao
-)
+
+# ===================================================================
+# EQUIPAMENTO
+# ===================================================================
+
+class EstadoEquipamento(models.TextChoices):
+    """Enum para estado do equipamento"""
+    ATIVO = 'ATIVO', _('Ativo')
+    AVARIADO = 'AVARIADO', _('Avariado')
+    VENDIDO = 'VENDIDO', _('Vendido')
+    DESCARTADO = 'DESCARTADO', _('Descartado')
+
+
+class UsoEquipamento(models.TextChoices):
+    """Enum para uso pessoal do equipamento"""
+    EMPRESA = 'EMPRESA', _('Empresa')
+    BRUNO = 'BRUNO', _('Bruno')
+    RAFAEL = 'RAFAEL', _('Rafael')
+    PARTILHADO = 'PARTILHADO', _('Partilhado')
+
+
+class Equipamento(models.Model):
+    """Modelo para gestão de equipamento da empresa"""
+    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)
+    produto = models.CharField(_('Produto'), max_length=255)
+    tipo = models.CharField(_('Tipo'), max_length=100, blank=True, null=True)
+    label = models.CharField(_('Label'), max_length=100, blank=True, null=True)
+    descricao = models.TextField(_('Descrição'), blank=True, null=True)
+    numero_serie = models.CharField(_('Número de Série'), max_length=100, blank=True, null=True)
+    mac_address = models.CharField(_('MAC Address'), max_length=50, blank=True, null=True)
+    referencia = models.CharField(_('Referência'), max_length=100, blank=True, null=True)
+    quantidade = models.IntegerField(_('Quantidade'), default=1)
+    tamanho = models.CharField(_('Tamanho'), max_length=100, blank=True, null=True)
+    data_compra = models.DateField(_('Data de Compra'), blank=True, null=True)
+    valor_compra = models.DecimalField(_('Valor de Compra'), max_digits=10, decimal_places=2, default=0)
+    fornecedor = models.CharField(_('Fornecedor'), max_length=255, blank=True, null=True)
+    fatura_url = models.TextField(_('URL da Fatura'), blank=True, null=True)
+    preco_aluguer = models.DecimalField(_('Preço Aluguer/Dia'), max_digits=10, decimal_places=2, default=0)
+    amortizacao_vezes = models.IntegerField(_('Amortização (nº alugueres)'), default=0)
+    rendimento_acumulado = models.DecimalField(_('Rendimento Acumulado'), max_digits=10, decimal_places=2, default=0)
+    estado = models.CharField(_('Estado'), max_length=50, choices=EstadoEquipamento.choices, default=EstadoEquipamento.ATIVO)
+    localizacao = models.CharField(_('Localização'), max_length=255, blank=True, null=True)
+    foto_url = models.TextField(_('URL da Foto'), blank=True, null=True)
+    uso_pessoal = models.CharField(_('Uso Pessoal'), max_length=50, choices=UsoEquipamento.choices, default=UsoEquipamento.EMPRESA)
+    nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Equipamento')
+        verbose_name_plural = _('Equipamento')
+        ordering = ['-created_at']
+        db_table = 'equipamento'
+
+    def __str__(self):
+        return f"{self.numero} - {self.produto}"
+
+
+# ===================================================================
+# ORÇAMENTOS
+# ===================================================================
+
+class StatusOrcamento(models.TextChoices):
+    """Enum para status do orçamento"""
+    RASCUNHO = 'RASCUNHO', _('Rascunho')
+    ENVIADO = 'ENVIADO', _('Enviado')
+    APROVADO = 'APROVADO', _('Aprovado')
+    RECUSADO = 'RECUSADO', _('Recusado')
+    CANCELADO = 'CANCELADO', _('Cancelado')
+
+
+class Orcamento(models.Model):
+    """Orçamento/Proposta para cliente"""
+    codigo = models.CharField(_('Código'), max_length=100, unique=True, db_index=True)
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamentos', verbose_name=_('Cliente'))
+    projeto = models.ForeignKey(Projeto, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamentos', verbose_name=_('Projeto'))
+    owner = models.CharField(_('Owner'), max_length=2, default='BA')
+    data_criacao = models.DateField(_('Data de Criação'))
+    data_evento = models.CharField(_('Data do Evento'), max_length=200, blank=True, null=True)
+    local_evento = models.CharField(_('Local do Evento'), max_length=200, blank=True, null=True)
+    descricao_proposta = models.TextField(_('Descrição da Proposta'), blank=True, null=True)
+    valor_total = models.DecimalField(_('Valor Total'), max_digits=10, decimal_places=2, default=0)
+    total_parcial_1 = models.DecimalField(_('Total Parcial 1'), max_digits=10, decimal_places=2, default=0, blank=True, null=True)
+    total_parcial_2 = models.DecimalField(_('Total Parcial 2'), max_digits=10, decimal_places=2, default=0, blank=True, null=True)
+    notas_contratuais = models.TextField(_('Notas Contratuais'), blank=True, null=True)
+    status = models.CharField(_('Status'), max_length=20, choices=StatusOrcamento.choices, default=StatusOrcamento.RASCUNHO)
+    tem_versao_cliente = models.BooleanField(_('Tem Versão Cliente'), default=False)
+    titulo_cliente = models.CharField(_('Título para Cliente'), max_length=255, blank=True, null=True)
+    descricao_cliente = models.TextField(_('Descrição para Cliente'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Orçamento')
+        verbose_name_plural = _('Orçamentos')
+        ordering = ['-data_criacao', '-created_at']
+        db_table = 'orcamentos'
+
+    def __str__(self):
+        return f"{self.codigo} - {self.cliente or 'Sem cliente'}"
+
+
+class TipoSecao(models.TextChoices):
+    """Tipo de secção do orçamento"""
+    SERVICO = 'SERVICO', _('Serviço')
+    EQUIPAMENTO = 'EQUIPAMENTO', _('Equipamento')
+    DESLOCACAO = 'DESLOCACAO', _('Deslocação')
+    OUTRO = 'OUTRO', _('Outro')
+
+
+class OrcamentoSecao(models.Model):
+    """Secção do orçamento (pode ser hierárquica)"""
+    orcamento = models.ForeignKey(Orcamento, on_delete=models.CASCADE, related_name='secoes', verbose_name=_('Orçamento'))
+    tipo = models.CharField(_('Tipo'), max_length=50, choices=TipoSecao.choices, default=TipoSecao.SERVICO)
+    nome = models.CharField(_('Nome'), max_length=100)
+    ordem = models.IntegerField(_('Ordem'))
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subsecoes', verbose_name=_('Secção Pai'))
+    subtotal = models.DecimalField(_('Subtotal'), max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = _('Secção de Orçamento')
+        verbose_name_plural = _('Secções de Orçamento')
+        ordering = ['orcamento', 'ordem']
+        db_table = 'orcamento_secoes'
+
+    def __str__(self):
+        return f"{self.orcamento.codigo} - {self.nome}"
+
+
+class TipoItem(models.TextChoices):
+    """Tipo de item do orçamento"""
+    SERVICO = 'SERVICO', _('Serviço')
+    EQUIPAMENTO = 'EQUIPAMENTO', _('Equipamento')
+    DESLOCACAO = 'DESLOCACAO', _('Deslocação')
+    REFEICAO = 'REFEICAO', _('Refeição')
+    FIXO = 'FIXO', _('Valor Fixo')
+
+
+class OrcamentoItem(models.Model):
+    """Item individual de uma secção do orçamento"""
+    orcamento = models.ForeignKey(Orcamento, on_delete=models.CASCADE, related_name='itens', verbose_name=_('Orçamento'))
+    secao = models.ForeignKey(OrcamentoSecao, on_delete=models.CASCADE, related_name='itens', verbose_name=_('Secção'))
+    tipo = models.CharField(_('Tipo'), max_length=20, choices=TipoItem.choices, default=TipoItem.SERVICO)
+    descricao = models.TextField(_('Descrição'))
+    ordem = models.IntegerField(_('Ordem'))
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamento_itens', verbose_name=_('Equipamento'))
+    quantidade = models.IntegerField(_('Quantidade'), default=1)
+    dias = models.IntegerField(_('Dias'), default=1)
+    preco_unitario = models.DecimalField(_('Preço Unitário'), max_digits=10, decimal_places=2, default=0)
+    desconto = models.DecimalField(_('Desconto'), max_digits=5, decimal_places=4, default=0)
+    kms = models.DecimalField(_('KMs'), max_digits=10, decimal_places=2, default=0)
+    valor_por_km = models.DecimalField(_('Valor por KM'), max_digits=10, decimal_places=2, default=0)
+    num_refeicoes = models.IntegerField(_('Número de Refeições'), default=0)
+    valor_por_refeicao = models.DecimalField(_('Valor por Refeição'), max_digits=10, decimal_places=2, default=0)
+    valor_fixo = models.DecimalField(_('Valor Fixo'), max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = _('Item de Orçamento')
+        verbose_name_plural = _('Itens de Orçamento')
+        ordering = ['orcamento', 'secao', 'ordem']
+        db_table = 'orcamento_itens'
+
+    def __str__(self):
+        return f"{self.descricao[:50]}"
+
+
+class TipoReparticao(models.TextChoices):
+    """Tipo de repartição interna"""
+    FORNECEDOR = 'FORNECEDOR', _('Fornecedor')
+    EQUIPAMENTO = 'EQUIPAMENTO', _('Equipamento')
+    FREELANCER = 'FREELANCER', _('Freelancer')
+    OUTRO = 'OUTRO', _('Outro')
+
+
+class OrcamentoReparticao(models.Model):
+    """Repartição interna de custos do orçamento"""
+    orcamento = models.ForeignKey(Orcamento, on_delete=models.CASCADE, related_name='reparticoes', verbose_name=_('Orçamento'))
+    tipo = models.CharField(_('Tipo'), max_length=20, choices=TipoReparticao.choices, blank=True, null=True)
+    entidade = models.CharField(_('Entidade'), max_length=50, blank=True, null=True)
+    fornecedor = models.ForeignKey(Fornecedor, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamento_reparticoes', verbose_name=_('Fornecedor'))
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamento_reparticoes', verbose_name=_('Equipamento'))
+    beneficiario = models.CharField(_('Beneficiário'), max_length=50, blank=True, null=True)
+    valor = models.DecimalField(_('Valor'), max_digits=10, decimal_places=2, default=0)
+    percentagem = models.DecimalField(_('Percentagem'), max_digits=5, decimal_places=2, default=0)
+    ordem = models.IntegerField(_('Ordem'))
+    descricao = models.TextField(_('Descrição'), blank=True, null=True)
+    quantidade = models.IntegerField(_('Quantidade'), default=0)
+    dias = models.IntegerField(_('Dias'), default=0)
+    valor_unitario = models.DecimalField(_('Valor Unitário'), max_digits=10, decimal_places=2, default=0)
+    base_calculo = models.DecimalField(_('Base de Cálculo'), max_digits=10, decimal_places=2, default=0)
+    kms = models.DecimalField(_('KMs'), max_digits=10, decimal_places=2, default=0)
+    valor_por_km = models.DecimalField(_('Valor por KM'), max_digits=10, decimal_places=2, default=0)
+    num_refeicoes = models.IntegerField(_('Número de Refeições'), default=0)
+    valor_por_refeicao = models.DecimalField(_('Valor por Refeição'), max_digits=10, decimal_places=2, default=0)
+    valor_fixo = models.DecimalField(_('Valor Fixo'), max_digits=10, decimal_places=2, default=0)
+    item_cliente_id = models.IntegerField(_('ID Item Cliente'), blank=True, null=True)
+    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = _('Repartição de Orçamento')
+        verbose_name_plural = _('Repartições de Orçamento')
+        ordering = ['orcamento', 'ordem']
+        db_table = 'orcamento_reparticoes'
+
+    def __str__(self):
+        return f"{self.orcamento.codigo} - {self.entidade or self.beneficiario}"
 
