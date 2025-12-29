@@ -2,7 +2,10 @@
 
 ## 📋 Overview
 
-Sistema de contabilidade Django para **Agora Media Production** (sócios: Bruno Amaral - BA, Rafael Reigota - RR).
+Sistema de contabilidade Django para **Amaral & Reigota - Produção Audiovisual, Lda**
+- **NIPC:** 518 351 190
+- **Marca:** Agora Media Production
+- **Sócios:** Bruno Amaral (BA) e Rafael Reigota (RR)
 
 **Tech Stack:**
 - Django 5.0 + PostgreSQL 16
@@ -64,12 +67,14 @@ Saldo = INs - OUTs
 INs (empresa DEVE ao sócio):
   • Projetos pessoais (Projeto.tipo = PESSOAL_BRUNO/RAFAEL, estado = RECEBIDO)
   • Prémios em projetos da empresa (premio_bruno/premio_rafael)
-  • Investimento inicial (constante de €5000)
 
 OUTs (empresa PAGOU ao sócio):
   • Despesas fixas mensais ÷ 2 (Despesa.tipo = FIXA_MENSAL, estado = PAGO)
   • Boletins pagos (Boletim.estado = PAGO)
   • Despesas pessoais (Despesa com FK ao projeto pessoal do sócio)
+
+Nota: Investimento inicial (€5.200) está documentado no código mas NÃO conta
+      no cálculo - é apenas referência histórica.
 ```
 
 **Implementação:**

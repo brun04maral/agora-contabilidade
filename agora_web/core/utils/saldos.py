@@ -2,13 +2,15 @@
 """
 Lógica de cálculo de Saldos Pessoais - MÓDULO CORE DO SISTEMA (Django ORM)
 
+Empresa: Amaral & Reigota - Produção Audiovisual, Lda (NIPC: 518 351 190)
+Marca: Agora Media Production
+
 Este é o módulo mais importante da aplicação!
 Calcula os saldos pessoais de cada sócio com base em:
 
 INs (Entradas - empresa DEVE ao sócio):
   - Projetos pessoais faturados pela empresa
   - Prémios recebidos de projetos da empresa (cachets + comissões)
-  - Investimento inicial (histórico)
 
 OUTs (Saídas - empresa PAGA ao sócio):
   - Despesas fixas mensais ÷ 2 (cada sócio paga metade)
@@ -16,6 +18,9 @@ OUTs (Saídas - empresa PAGA ao sócio):
   - Despesas pessoais excecionais
 
 Saldo = INs - OUTs
+
+Nota: Investimento inicial está documentado mas NÃO conta no cálculo do saldo.
+      É apenas informação de referência histórica.
 """
 from decimal import Decimal
 from typing import Dict, List, Optional

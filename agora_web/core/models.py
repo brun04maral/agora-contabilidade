@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Core models for Agora Contabilidade - Migrated from SQLAlchemy to Django ORM
+
+Empresa: Amaral & Reigota - Produção Audiovisual, Lda (NIPC: 518 351 190)
+Marca: Agora Media Production
 """
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -8,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 
 class Socio(models.Model):
     """
-    Sócio da empresa Agora Media Production
+    Sócio da Amaral & Reigota - Produção Audiovisual, Lda
     """
     codigo = models.CharField(_('Código'), max_length=2, unique=True, primary_key=True)  # BA, RR
     nome_completo = models.CharField(_('Nome Completo'), max_length=100)

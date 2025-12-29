@@ -472,9 +472,9 @@ class SaldoAdmin(ModelAdmin):
 
         calculator = SaldosCalculator()
 
-        # Calcular saldos atuais
-        saldo_ba = calculator.calcular_saldo_bruno(incluir_investimento=True)
-        saldo_rr = calculator.calcular_saldo_rafael(incluir_investimento=True)
+        # Calcular saldos atuais (investimento inicial não conta, é apenas referência)
+        saldo_ba = calculator.calcular_saldo_bruno(incluir_investimento=False)
+        saldo_rr = calculator.calcular_saldo_rafael(incluir_investimento=False)
 
         context = {
             **self.admin_site.each_context(request),

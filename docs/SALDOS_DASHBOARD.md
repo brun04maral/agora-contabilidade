@@ -11,6 +11,9 @@
 
 Dashboard personalizado no Django Admin para visualizar saldos pessoais dos sócios (BA e RR) em tempo real, sem necessidade de tabela na database.
 
+**Empresa:** Amaral & Reigota - Produção Audiovisual, Lda (NIPC: 518 351 190)
+**Marca:** Agora Media Production
+
 ### Features
 - ✅ Cálculo em tempo real (não cached)
 - ✅ Cards visuais com cores condicionais (verde/vermelho)
@@ -123,8 +126,8 @@ The `SaldosCalculator` class handles all balance calculations.
     'ins': {
         'projetos_pessoais': Decimal('15000.00'),
         'premios': Decimal('2500.00'),
-        'investimento_inicial': Decimal('5000.00'),
-        'total': Decimal('22500.00')
+        'investimento_inicial': Decimal('0.00'),  # Não conta (incluir_investimento=False)
+        'total': Decimal('17500.00')
     },
     'outs': {
         'despesas_fixas': Decimal('4200.00'),  # Divided by 2
@@ -170,10 +173,10 @@ The `SaldosCalculator` class handles all balance calculations.
    premios = sum(p.premio_bruno for p in projetos if p.premio_bruno)
    ```
 
-3. **Initial Investment:** Fixed €5000 per partner (configurable)
-   ```python
-   INVESTIMENTO_INICIAL_BA = Decimal('5000.00')
-   ```
+**❌ NOT Included:** Initial Investment (€5.200 per partner)
+- Documented in code as `INVESTIMENTO_INICIAL_BRUNO/RAFAEL`
+- Available via parameter `incluir_investimento=True` (optional)
+- **But NOT used in production dashboard** - reference only
 
 **OUTs (Company PAID to partner):**
 1. **Fixed Expenses ÷ 2:** Monthly fixed costs split equally

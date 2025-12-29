@@ -10,6 +10,10 @@
 
 Implementação do modelo `Socio` para substituir valores hardcoded 'BA' e 'RR' por entidades de database com ForeignKey relationships.
 
+**Empresa:** Amaral & Reigota - Produção Audiovisual, Lda (NIPC: 518 351 190)
+**Marca:** Agora Media Production
+**Sócios:** Bruno Amaral (BA) e Rafael Reigota (RR)
+
 ### Goals
 1. ✅ Criar modelo Socio com dados completos (nome, email, participação, etc.)
 2. ✅ Adicionar FK relationships a Projeto, Boletim, Orcamento
@@ -25,7 +29,7 @@ Implementação do modelo `Socio` para substituir valores hardcoded 'BA' e 'RR' 
 #### Socio Model
 ```python
 class Socio(models.Model):
-    """Sócio da empresa Agora Media Production"""
+    """Sócio da Amaral & Reigota - Produção Audiovisual, Lda"""
     codigo = models.CharField(_('Código'), max_length=2, unique=True, primary_key=True)  # BA, RR
     nome_completo = models.CharField(_('Nome Completo'), max_length=100)
     nome_curto = models.CharField(_('Nome Curto'), max_length=50)
