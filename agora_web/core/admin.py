@@ -6,9 +6,39 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 from .models import (
-    Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
+    Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
     Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
 )
+
+
+@admin.register(Socio)
+class SocioAdmin(ModelAdmin):
+    """Admin para Sócio com Unfold customization"""
+    list_display = ['codigo', 'nome_completo', 'nome_curto', 'email', 'percentagem_participacao', 'ativo', 'created_at']
+    list_filter = ['ativo']
+    search_fields = ['codigo', 'nome_completo', 'nome_curto', 'email']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['codigo']
+
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('codigo', 'nome_completo', 'nome_curto')
+        }),
+        ('Contactos', {
+            'fields': ('email', 'telefone')
+        }),
+        ('Participação', {
+            'fields': ('percentagem_participacao', 'ativo')
+        }),
+        ('UI', {
+            'fields': ('cor_tema',),
+            'classes': ['collapse']
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
 
 
 @admin.register(Cliente)

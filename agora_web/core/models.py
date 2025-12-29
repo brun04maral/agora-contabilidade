@@ -6,6 +6,34 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+class Socio(models.Model):
+    """
+    Sócio da empresa Agora Media Production
+    """
+    codigo = models.CharField(_('Código'), max_length=2, unique=True, primary_key=True)  # BA, RR
+    nome_completo = models.CharField(_('Nome Completo'), max_length=100)
+    nome_curto = models.CharField(_('Nome Curto'), max_length=50)  # Bruno, Rafael
+    email = models.EmailField(_('Email'))
+    telefone = models.CharField(_('Telefone'), max_length=50, blank=True, null=True)
+    percentagem_participacao = models.DecimalField(_('% Participação'), max_digits=5, decimal_places=2, default=50.00)
+    ativo = models.BooleanField(_('Ativo'), default=True)
+    cor_tema = models.CharField(_('Cor Tema'), max_length=7, default='#1976d2', blank=True, null=True)  # Para UI
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Sócio')
+        verbose_name_plural = _('Sócios')
+        ordering = ['codigo']
+        db_table = 'socios'
+
+    def __str__(self):
+        return f"{self.codigo} - {self.nome_curto}"
+
+    def __repr__(self):
+        return f"<Socio(codigo='{self.codigo}', nome='{self.nome_curto}')>"
+
+
 class Cliente(models.Model):
     """
     Modelo para armazenar informações de clientes
@@ -117,7 +145,15 @@ class Projeto(models.Model):
         default=TipoProjeto.EMPRESA,
         db_index=True
     )
-    owner = models.CharField(_('Owner'), max_length=2, default='BA')  # 'BA' ou 'RR' - sócio responsável
+    owner = models.CharField(_('Owner'), max_length=2, default='BA')  # 'BA' ou 'RR' - sócio responsável (DEPRECATED)
+    socio = models.ForeignKey(
+        Socio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='projetos',
+        verbose_name=_('Sócio Responsável')
+    )
 
     # Cliente
     cliente = models.ForeignKey(
@@ -346,8 +382,8 @@ class Despesa(models.Model):
         return f"<Despesa(id={self.id}, numero='{self.numero}', tipo='{self.tipo}', valor={self.valor_sem_iva})>"
 
 
-class Socio(models.TextChoices):
-    """Enum para identificar o sócio"""
+class CodigoSocio(models.TextChoices):
+    """Enum para código do sócio (deprecated - usar modelo Socio)"""
     BA = 'BA', _('Bruno')
     RR = 'RR', _('Rafael')
 
@@ -382,11 +418,19 @@ class Boletim(models.Model):
     IMPORTANTE: Boletins descontam do saldo quando PAGOS (não quando emitidos).
     """
     numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #B0001
-    socio = models.CharField(
-        _('Sócio'),
+    socio_codigo = models.CharField(
+        _('Sócio (código)'),
         max_length=2,
-        choices=Socio.choices,
+        choices=CodigoSocio.choices,
         db_index=True
+    )  # DEPRECATED
+    socio = models.ForeignKey(
+        Socio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='boletins',
+        verbose_name=_('Sócio')
     )
 
     # Período
@@ -588,7 +632,15 @@ class Orcamento(models.Model):
     codigo = models.CharField(_('Código'), max_length=100, unique=True, db_index=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamentos', verbose_name=_('Cliente'))
     projeto = models.ForeignKey(Projeto, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamentos', verbose_name=_('Projeto'))
-    owner = models.CharField(_('Owner'), max_length=2, default='BA')
+    owner = models.CharField(_('Owner'), max_length=2, default='BA')  # DEPRECATED
+    socio = models.ForeignKey(
+        Socio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='orcamentos',
+        verbose_name=_('Sócio Responsável')
+    )
     data_criacao = models.DateField(_('Data de Criação'))
     data_evento = models.CharField(_('Data do Evento'), max_length=200, blank=True, null=True)
     local_evento = models.CharField(_('Local do Evento'), max_length=200, blank=True, null=True)
