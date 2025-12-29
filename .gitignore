@@ -192,3 +192,5 @@ cython_debug/
 clientes_export.json
 projetos_export.json
 import_projetos_script.py
+fornecedores_export.json
+despesas_export.json
