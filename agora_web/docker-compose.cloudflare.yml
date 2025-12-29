@@ -57,6 +57,8 @@ services:
       # HTTPS Router
       - "traefik.http.routers.agora-app.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.agora-app.entrypoints=https"
+      - "traefik.http.routers.agora-app.tls=true"
+      - "traefik.http.routers.agora-app.tls.certresolver=http"
       - "traefik.http.routers.agora-app.service=agora-app"
 
       # Service
