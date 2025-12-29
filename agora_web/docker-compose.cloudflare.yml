@@ -29,6 +29,7 @@ services:
     volumes:
       - ./static:/app/static
       - ./media:/app/media
+      - staticfiles:/app/staticfiles
     environment:
       DJANGO_SETTINGS_MODULE: config.settings
       DEBUG: ${DEBUG}
@@ -72,4 +73,6 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+  staticfiles:
     driver: local
