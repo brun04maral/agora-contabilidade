@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 DESKTOP_DB = Path(__file__).parent.parent / 'agora_media.db'
-FIXTURE_FILE = Path(__file__).parent.parent / 'agora_web' / 'fixtures' / 'equipamentos.json'
+FIXTURE_FILE = Path(__file__).parent.parent / 'agora_web' / 'core' / 'fixtures' / 'equipamentos.json'
 
 
 def export_equipamentos():

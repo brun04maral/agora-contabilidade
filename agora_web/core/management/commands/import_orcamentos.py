@@ -15,10 +15,12 @@ class Command(BaseCommand):
     help = 'Importa orçamentos do arquivo JSON com lookups de FK'
 
     def handle(self, *args, **options):
-        fixture_file = Path(__file__).parent.parent.parent.parent.parent / 'fixtures' / 'orcamentos_raw.json'
+        # Path is from agora_web/core/management/commands/ up to agora_web/core/fixtures/
+        fixture_file = Path(__file__).parent.parent.parent / 'fixtures' / 'orcamentos_raw.json'
 
         if not fixture_file.exists():
             self.stdout.write(self.style.ERROR(f'❌ Arquivo não encontrado: {fixture_file}'))
+            self.stdout.write(f'   Procurado em: {fixture_file.absolute()}')
             return
 
         with open(fixture_file, 'r', encoding='utf-8') as f:
