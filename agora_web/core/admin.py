@@ -5,7 +5,10 @@ Core admin customizations for Agora Contabilidade with Unfold theme
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
-from .models import Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha
+from .models import (
+    Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
+    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao
+)
 
 
 @admin.register(Cliente)
@@ -280,3 +283,131 @@ class BoletimLinhaAdmin(ModelAdmin):
     def servico_short(self, obj):
         """Mostra serviço truncado"""
         return obj.servico[:30] + '...' if len(obj.servico) > 30 else obj.servico
+
+
+@admin.register(Equipamento)
+class EquipamentoAdmin(ModelAdmin):
+    """Admin para Equipamento com Unfold customization"""
+    list_display = ['numero', 'produto', 'categoria', 'estado', 'uso_pessoal', 'preco_aluguer', 'rendimento_acumulado', 'created_at']
+    list_filter = ['estado', 'uso_pessoal', 'categoria', 'created_at']
+    search_fields = ['numero', 'produto', 'categoria', 'marca', 'modelo']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('numero', 'produto', 'categoria')
+        }),
+        ('Detalhes', {
+            'fields': ('marca', 'modelo', 'serial', 'estado', 'uso_pessoal')
+        }),
+        ('Valores', {
+            'fields': ('preco_compra', 'preco_aluguer', 'amortizacao_vezes', 'rendimento_acumulado')
+        }),
+        ('Aquisição', {
+            'fields': ('data_compra', 'fornecedor_compra'),
+            'classes': ['collapse']
+        }),
+        ('Informações Adicionais', {
+            'fields': ('nota',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
+
+
+class OrcamentoSecaoInline(TabularInline):
+    """Inline para secções do orçamento"""
+    model = OrcamentoSecao
+    extra = 1
+    fields = ['ordem', 'tipo', 'nome', 'parent', 'subtotal']
+    autocomplete_fields = ['parent']
+
+
+class OrcamentoItemInline(TabularInline):
+    """Inline para itens do orçamento"""
+    model = OrcamentoItem
+    extra = 1
+    fields = ['ordem', 'secao', 'tipo', 'descricao', 'quantidade', 'dias', 'preco_unitario', 'total']
+    autocomplete_fields = ['secao', 'equipamento']
+
+
+class OrcamentoReparticaoInline(TabularInline):
+    """Inline para repartições do orçamento"""
+    model = OrcamentoReparticao
+    extra = 1
+    fields = ['ordem', 'tipo', 'entidade', 'beneficiario', 'valor', 'percentagem']
+    autocomplete_fields = ['fornecedor', 'equipamento']
+
+
+@admin.register(Orcamento)
+class OrcamentoAdmin(ModelAdmin):
+    """Admin para Orcamento com Unfold customization"""
+    list_display = ['codigo', 'cliente', 'projeto', 'data_criacao', 'data_validade', 'subtotal', 'iva', 'total', 'status', 'created_at']
+    list_filter = ['status', 'data_criacao', 'data_validade', 'created_at']
+    search_fields = ['codigo', 'titulo', 'cliente__nome', 'projeto__numero']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-data_criacao', '-created_at']
+    autocomplete_fields = ['cliente', 'projeto']
+    date_hierarchy = 'data_criacao'
+    inlines = [OrcamentoSecaoInline, OrcamentoItemInline, OrcamentoReparticaoInline]
+
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('codigo', 'titulo', 'cliente', 'projeto')
+        }),
+        ('Datas', {
+            'fields': ('data_criacao', 'data_validade')
+        }),
+        ('Valores', {
+            'fields': ('subtotal', 'iva', 'total', 'lucro')
+        }),
+        ('Estado', {
+            'fields': ('status',)
+        }),
+        ('Notas', {
+            'fields': ('nota_cabecalho', 'nota_rodape', 'nota_interna'),
+            'classes': ['collapse']
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(OrcamentoSecao)
+class OrcamentoSecaoAdmin(ModelAdmin):
+    """Admin para OrcamentoSecao com Unfold customization"""
+    list_display = ['orcamento', 'nome', 'tipo', 'ordem', 'parent', 'subtotal']
+    list_filter = ['tipo', 'created_at']
+    search_fields = ['nome', 'orcamento__codigo']
+    autocomplete_fields = ['orcamento', 'parent']
+    ordering = ['orcamento', 'ordem']
+
+
+@admin.register(OrcamentoItem)
+class OrcamentoItemAdmin(ModelAdmin):
+    """Admin para OrcamentoItem com Unfold customization"""
+    list_display = ['orcamento', 'secao', 'descricao_short', 'tipo', 'quantidade', 'dias', 'preco_unitario', 'total']
+    list_filter = ['tipo', 'created_at']
+    search_fields = ['descricao', 'orcamento__codigo']
+    autocomplete_fields = ['orcamento', 'secao', 'equipamento']
+    ordering = ['orcamento', 'secao', 'ordem']
+
+    @display(description='Descrição', ordering='descricao')
+    def descricao_short(self, obj):
+        """Mostra descrição truncada"""
+        return obj.descricao[:50] + '...' if len(obj.descricao) > 50 else obj.descricao
+
+
+@admin.register(OrcamentoReparticao)
+class OrcamentoReparticaoAdmin(ModelAdmin):
+    """Admin para OrcamentoReparticao com Unfold customization"""
+    list_display = ['orcamento', 'tipo', 'entidade', 'beneficiario', 'valor', 'percentagem', 'total']
+    list_filter = ['tipo', 'created_at']
+    search_fields = ['entidade', 'beneficiario', 'descricao', 'orcamento__codigo']
+    autocomplete_fields = ['orcamento', 'fornecedor', 'equipamento']
+    ordering = ['orcamento', 'ordem']
