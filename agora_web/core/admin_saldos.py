@@ -3,8 +3,6 @@
 Admin customizado para visualização de Saldos calculados dinamicamente
 """
 from django.contrib import admin
-from django.urls import path
-from django.shortcuts import render
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from .models_saldo import Saldo
@@ -19,6 +17,14 @@ class SaldoAdmin(ModelAdmin):
 
     list_display = ['socio', 'nome', 'total_ins_display', 'total_outs_display', 'saldo_final_display']
 
+    # Campos read-only
+    readonly_fields = [
+        'socio', 'nome',
+        'projetos_pessoais', 'premios', 'investimento_inicial', 'total_ins',
+        'despesas_fixas', 'despesas_pessoais', 'boletins', 'total_outs',
+        'saldo_final'
+    ]
+
     # Desabilita ações de edição/criação/exclusão
     def has_add_permission(self, request):
         return False
@@ -29,8 +35,8 @@ class SaldoAdmin(ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
-    def changelist_view(self, request, extra_context=None):
-        """Override para mostrar saldos calculados"""
+    def get_queryset(self, request):
+        """Retorna queryset fake com saldos calculados"""
         calculator = SaldosCalculator()
 
         # Calcula saldos de Bruno
@@ -65,24 +71,8 @@ class SaldoAdmin(ModelAdmin):
             saldo_final=saldo_rafael['saldo_final'],
         )
 
-        # Mock queryset com os 2 saldos
-        class MockQuerySet:
-            def __iter__(self):
-                return iter([bruno, rafael])
-
-            def __len__(self):
-                return 2
-
-            def count(self):
-                return 2
-
-        extra_context = extra_context or {}
-        extra_context['cl'] = type('obj', (object,), {
-            'result_list': MockQuerySet(),
-            'result_count': 2,
-        })()
-
-        return super().changelist_view(request, extra_context=extra_context)
+        # Retorna lista fake como queryset
+        return [bruno, rafael]
 
     @admin.display(description='Total INs')
     def total_ins_display(self, obj):
