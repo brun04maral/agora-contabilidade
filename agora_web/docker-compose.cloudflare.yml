@@ -51,8 +51,7 @@ services:
 
       # HTTP Router (aceita HTTP do Cloudflare)
       - "traefik.http.routers.agora-app.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.agora-app.entrypoints=web,websecure"
-      - "traefik.http.routers.agora-app.tls=false"
+      - "traefik.http.routers.agora-app.entrypoints=http,https"
 
       # Service
       - "traefik.http.services.agora-app.loadbalancer.server.port=8000"
