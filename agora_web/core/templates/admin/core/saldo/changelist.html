@@ -1,86 +1,126 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 
+{% block extrahead %}
+<style>
+    @media (prefers-color-scheme: dark) {
+        .saldo-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
+        .saldo-header { color: rgb(243, 244, 246); }
+        .saldo-subtext { color: rgb(156, 163, 175); }
+        .saldo-border { border-color: rgb(75, 85, 99); }
+        .saldo-bg-secondary { background-color: rgba(17, 24, 39, 0.5); }
+        .saldo-badge-bg { background-color: rgb(55, 65, 81); color: rgb(209, 213, 219); }
+        .green-bg { background-color: rgba(6, 78, 59, 0.2); }
+        .green-text { color: rgb(74, 222, 128); }
+        .green-border { border-left: 4px solid rgb(34, 197, 94); }
+        .red-bg { background-color: rgba(127, 29, 29, 0.2); }
+        .red-text { color: rgb(248, 113, 113); }
+        .red-border { border-left: 4px solid rgb(239, 68, 68); }
+        .yellow-text { color: rgb(253, 224, 71); }
+        .yellow-border { border-left: 4px solid rgb(234, 179, 8); }
+        .border-l-3-green { border-left: 3px solid rgb(34, 197, 94); }
+        .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
+    }
+
+    .saldo-card { background-color: white; border: 1px solid rgb(229, 231, 235); }
+    .saldo-header { color: rgb(17, 24, 39); }
+    .saldo-subtext { color: rgb(107, 114, 128); }
+    .saldo-border { border-color: rgb(229, 231, 235); }
+    .saldo-bg-secondary { background-color: rgb(249, 250, 251); }
+    .saldo-badge-bg { background-color: rgb(243, 244, 246); color: rgb(55, 65, 81); }
+    .green-bg { background-color: rgb(240, 253, 244); }
+    .green-text { color: rgb(22, 163, 74); }
+    .green-border { border-left: 4px solid rgb(22, 163, 74); }
+    .red-bg { background-color: rgb(254, 242, 242); }
+    .red-text { color: rgb(220, 38, 38); }
+    .red-border { border-left: 4px solid rgb(220, 38, 38); }
+    .yellow-text { color: rgb(133, 77, 14); }
+    .yellow-border { border-left: 4px solid rgb(202, 138, 4); }
+    .border-l-3-green { border-left: 3px solid rgb(22, 163, 74); }
+    .border-l-3-red { border-left: 3px solid rgb(220, 38, 38); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="saldos-dashboard p-6 max-w-7xl mx-auto">
 
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Saldos Pessoais {{ ano_atual }}</h1>
-        <p class="text-sm text-gray-600 dark:text-gray-400">Cálculo em tempo real dos saldos de cada sócio</p>
+        <h1 class="text-3xl font-semibold mb-2 saldo-header">Saldos Pessoais {{ ano_atual }}</h1>
+        <p class="text-sm saldo-subtext">Cálculo em tempo real dos saldos de cada sócio</p>
     </div>
 
     <!-- Cards de Resumo -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
         <!-- Card Bruno -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm {% if saldo_ba.saldo_total >= 0 %}border-l-4 border-l-green-500{% else %}border-l-4 border-l-red-500{% endif %}">
+        <div class="saldo-card p-6 rounded-lg shadow-sm {% if saldo_ba.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}">
             <div class="mb-4">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Bruno Amaral</span>
-                    <span class="bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded text-xs font-semibold text-gray-700 dark:text-gray-300">BA</span>
+                    <span class="text-xs saldo-subtext">Bruno Amaral</span>
+                    <span class="saldo-badge-bg px-2.5 py-1 rounded text-xs font-semibold">BA</span>
                 </div>
-                <div class="text-4xl font-bold {% if saldo_ba.saldo_total >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                <div class="text-4xl font-bold {% if saldo_ba.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}">
                     €{{ saldo_ba.saldo_total|floatformat:2 }}
                 </div>
             </div>
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-4 text-sm space-y-2">
+            <div class="border-t saldo-border pt-4 text-sm space-y-2">
                 <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Total INs</span>
-                    <span class="font-semibold text-green-600 dark:text-green-400">€{{ saldo_ba.ins.total|floatformat:2 }}</span>
+                    <span class="saldo-subtext">Total INs</span>
+                    <span class="font-semibold green-text">€{{ saldo_ba.ins.total|floatformat:2 }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Total OUTs</span>
-                    <span class="font-semibold text-red-600 dark:text-red-400">€{{ saldo_ba.outs.total|floatformat:2 }}</span>
+                    <span class="saldo-subtext">Total OUTs</span>
+                    <span class="font-semibold red-text">€{{ saldo_ba.outs.total|floatformat:2 }}</span>
                 </div>
-                <div class="pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-500">
-                    Sugestão boletim: <span class="font-semibold text-gray-700 dark:text-gray-300">€{{ saldo_ba.sugestao_boletim|floatformat:2 }}</span>
+                <div class="pt-3 border-t saldo-border text-xs saldo-subtext">
+                    Sugestão boletim: <span class="font-semibold saldo-header">€{{ saldo_ba.sugestao_boletim|floatformat:2 }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Card Rafael -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm {% if saldo_rr.saldo_total >= 0 %}border-l-4 border-l-green-500{% else %}border-l-4 border-l-red-500{% endif %}">
+        <div class="saldo-card p-6 rounded-lg shadow-sm {% if saldo_rr.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}">
             <div class="mb-4">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Rafael Reigota</span>
-                    <span class="bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded text-xs font-semibold text-gray-700 dark:text-gray-300">RR</span>
+                    <span class="text-xs saldo-subtext">Rafael Reigota</span>
+                    <span class="saldo-badge-bg px-2.5 py-1 rounded text-xs font-semibold">RR</span>
                 </div>
-                <div class="text-4xl font-bold {% if saldo_rr.saldo_total >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                <div class="text-4xl font-bold {% if saldo_rr.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}">
                     €{{ saldo_rr.saldo_total|floatformat:2 }}
                 </div>
             </div>
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-4 text-sm space-y-2">
+            <div class="border-t saldo-border pt-4 text-sm space-y-2">
                 <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Total INs</span>
-                    <span class="font-semibold text-green-600 dark:text-green-400">€{{ saldo_rr.ins.total|floatformat:2 }}</span>
+                    <span class="saldo-subtext">Total INs</span>
+                    <span class="font-semibold green-text">€{{ saldo_rr.ins.total|floatformat:2 }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Total OUTs</span>
-                    <span class="font-semibold text-red-600 dark:text-red-400">€{{ saldo_rr.outs.total|floatformat:2 }}</span>
+                    <span class="saldo-subtext">Total OUTs</span>
+                    <span class="font-semibold red-text">€{{ saldo_rr.outs.total|floatformat:2 }}</span>
                 </div>
-                <div class="pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-500">
-                    Sugestão boletim: <span class="font-semibold text-gray-700 dark:text-gray-300">€{{ saldo_rr.sugestao_boletim|floatformat:2 }}</span>
+                <div class="pt-3 border-t saldo-border text-xs saldo-subtext">
+                    Sugestão boletim: <span class="font-semibold saldo-header">€{{ saldo_rr.sugestao_boletim|floatformat:2 }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Card Total Empresa -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm border-l-4 border-l-yellow-500">
+        <div class="saldo-card p-6 rounded-lg shadow-sm yellow-border">
             <div class="mb-4">
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Devido pela Empresa</div>
-                <div class="text-4xl font-bold text-yellow-600 dark:text-yellow-400">
+                <div class="text-xs saldo-subtext mb-1">Total Devido pela Empresa</div>
+                <div class="text-4xl font-bold yellow-text">
                     €{{ total_empresa|floatformat:2 }}
                 </div>
             </div>
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-4 text-sm space-y-2">
+            <div class="border-t saldo-border pt-4 text-sm space-y-2">
                 <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Bruno (BA)</span>
-                    <span class="font-semibold text-gray-900 dark:text-gray-100">€{{ saldo_ba.saldo_total|floatformat:2 }}</span>
+                    <span class="saldo-subtext">Bruno (BA)</span>
+                    <span class="font-semibold saldo-header">€{{ saldo_ba.saldo_total|floatformat:2 }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Rafael (RR)</span>
-                    <span class="font-semibold text-gray-900 dark:text-gray-100">€{{ saldo_rr.saldo_total|floatformat:2 }}</span>
+                    <span class="saldo-subtext">Rafael (RR)</span>
+                    <span class="font-semibold saldo-header">€{{ saldo_rr.saldo_total|floatformat:2 }}</span>
                 </div>
             </div>
         </div>
@@ -90,74 +130,74 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <!-- Breakdown BA -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-            <h3 class="text-base font-semibold mb-5 text-gray-900 dark:text-gray-100">Breakdown Bruno</h3>
+        <div class="saldo-card p-6 rounded-lg shadow-sm">
+            <h3 class="text-base font-semibold mb-5 saldo-header">Breakdown Bruno</h3>
             <div class="space-y-2.5">
-                <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-md border-l-3 border-green-500">
+                <div class="p-3 green-bg rounded-md border-l-3-green">
                     <div class="flex justify-between text-sm">
-                        <span class="text-green-700 dark:text-green-400">Projetos Pessoais</span>
-                        <span class="font-semibold text-green-700 dark:text-green-400">€{{ saldo_ba.ins.projetos_pessoais|floatformat:2 }}</span>
+                        <span class="green-text">Projetos Pessoais</span>
+                        <span class="font-semibold green-text">€{{ saldo_ba.ins.projetos_pessoais|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-md border-l-3 border-green-500">
+                <div class="p-3 green-bg rounded-md border-l-3-green">
                     <div class="flex justify-between text-sm">
-                        <span class="text-green-700 dark:text-green-400">Prémios</span>
-                        <span class="font-semibold text-green-700 dark:text-green-400">€{{ saldo_ba.ins.premios|floatformat:2 }}</span>
+                        <span class="green-text">Prémios</span>
+                        <span class="font-semibold green-text">€{{ saldo_ba.ins.premios|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-md border-l-3 border-red-500">
+                <div class="p-3 red-bg rounded-md border-l-3-red">
                     <div class="flex justify-between text-sm">
-                        <span class="text-red-700 dark:text-red-400">Despesas Fixas ÷2</span>
-                        <span class="font-semibold text-red-700 dark:text-red-400">€{{ saldo_ba.outs.despesas_fixas|floatformat:2 }}</span>
+                        <span class="red-text">Despesas Fixas ÷2</span>
+                        <span class="font-semibold red-text">€{{ saldo_ba.outs.despesas_fixas|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-md border-l-3 border-red-500">
+                <div class="p-3 red-bg rounded-md border-l-3-red">
                     <div class="flex justify-between text-sm">
-                        <span class="text-red-700 dark:text-red-400">Boletins Pagos</span>
-                        <span class="font-semibold text-red-700 dark:text-red-400">€{{ saldo_ba.outs.boletins_pagos|floatformat:2 }}</span>
+                        <span class="red-text">Boletins Pagos</span>
+                        <span class="font-semibold red-text">€{{ saldo_ba.outs.boletins_pagos|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-md border-l-3 border-red-500">
+                <div class="p-3 red-bg rounded-md border-l-3-red">
                     <div class="flex justify-between text-sm">
-                        <span class="text-red-700 dark:text-red-400">Despesas Pessoais</span>
-                        <span class="font-semibold text-red-700 dark:text-red-400">€{{ saldo_ba.outs.despesas_pessoais|floatformat:2 }}</span>
+                        <span class="red-text">Despesas Pessoais</span>
+                        <span class="font-semibold red-text">€{{ saldo_ba.outs.despesas_pessoais|floatformat:2 }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Breakdown RR -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-            <h3 class="text-base font-semibold mb-5 text-gray-900 dark:text-gray-100">Breakdown Rafael</h3>
+        <div class="saldo-card p-6 rounded-lg shadow-sm">
+            <h3 class="text-base font-semibold mb-5 saldo-header">Breakdown Rafael</h3>
             <div class="space-y-2.5">
-                <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-md border-l-3 border-green-500">
+                <div class="p-3 green-bg rounded-md border-l-3-green">
                     <div class="flex justify-between text-sm">
-                        <span class="text-green-700 dark:text-green-400">Projetos Pessoais</span>
-                        <span class="font-semibold text-green-700 dark:text-green-400">€{{ saldo_rr.ins.projetos_pessoais|floatformat:2 }}</span>
+                        <span class="green-text">Projetos Pessoais</span>
+                        <span class="font-semibold green-text">€{{ saldo_rr.ins.projetos_pessoais|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-md border-l-3 border-green-500">
+                <div class="p-3 green-bg rounded-md border-l-3-green">
                     <div class="flex justify-between text-sm">
-                        <span class="text-green-700 dark:text-green-400">Prémios</span>
-                        <span class="font-semibold text-green-700 dark:text-green-400">€{{ saldo_rr.ins.premios|floatformat:2 }}</span>
+                        <span class="green-text">Prémios</span>
+                        <span class="font-semibold green-text">€{{ saldo_rr.ins.premios|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-md border-l-3 border-red-500">
+                <div class="p-3 red-bg rounded-md border-l-3-red">
                     <div class="flex justify-between text-sm">
-                        <span class="text-red-700 dark:text-red-400">Despesas Fixas ÷2</span>
-                        <span class="font-semibold text-red-700 dark:text-red-400">€{{ saldo_rr.outs.despesas_fixas|floatformat:2 }}</span>
+                        <span class="red-text">Despesas Fixas ÷2</span>
+                        <span class="font-semibold red-text">€{{ saldo_rr.outs.despesas_fixas|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-md border-l-3 border-red-500">
+                <div class="p-3 red-bg rounded-md border-l-3-red">
                     <div class="flex justify-between text-sm">
-                        <span class="text-red-700 dark:text-red-400">Boletins Pagos</span>
-                        <span class="font-semibold text-red-700 dark:text-red-400">€{{ saldo_rr.outs.boletins_pagos|floatformat:2 }}</span>
+                        <span class="red-text">Boletins Pagos</span>
+                        <span class="font-semibold red-text">€{{ saldo_rr.outs.boletins_pagos|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-md border-l-3 border-red-500">
+                <div class="p-3 red-bg rounded-md border-l-3-red">
                     <div class="flex justify-between text-sm">
-                        <span class="text-red-700 dark:text-red-400">Despesas Pessoais</span>
-                        <span class="font-semibold text-red-700 dark:text-red-400">€{{ saldo_rr.outs.despesas_pessoais|floatformat:2 }}</span>
+                        <span class="red-text">Despesas Pessoais</span>
+                        <span class="font-semibold red-text">€{{ saldo_rr.outs.despesas_pessoais|floatformat:2 }}</span>
                     </div>
                 </div>
             </div>
