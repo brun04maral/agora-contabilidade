@@ -1,6 +1,7 @@
 # Generated manually - clean migration for fiscal fields
 
 from django.db import migrations, models
+import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -10,7 +11,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Alter socio_codigo in Boletim to allow null and add default
+        # Rename old 'socio' field to 'socio_codigo' in Boletim
+        migrations.RenameField(
+            model_name='boletim',
+            old_name='socio',
+            new_name='socio_codigo',
+        ),
+        # Alter socio_codigo to allow null and add default
         migrations.AlterField(
             model_name='boletim',
             name='socio_codigo',
@@ -22,6 +29,19 @@ class Migration(migrations.Migration):
                 max_length=2,
                 null=True,
                 verbose_name='Sócio (código)'
+            ),
+        ),
+        # Add new FK field 'socio' in Boletim
+        migrations.AddField(
+            model_name='boletim',
+            name='socio',
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name='boletins',
+                to='core.socio',
+                verbose_name='Sócio'
             ),
         ),
         # Add taxa_retencao_irs to Despesa
