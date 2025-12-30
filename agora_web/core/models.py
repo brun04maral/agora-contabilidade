@@ -275,6 +275,7 @@ class DespesaTemplate(models.Model):
     # Valores
     valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
     valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
+    irs_retido = models.DecimalField(_('IRS Retido'), max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text=_('Retenção na fonte (normalmente 25% para freelancers)'))
 
     # Dia do mês para gerar (1-31)
     dia_mes = models.IntegerField(_('Dia do Mês'))  # Dia do mês em que a despesa deve ser gerada
@@ -345,6 +346,7 @@ class Despesa(models.Model):
     # Valores
     valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
     valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
+    irs_retido = models.DecimalField(_('IRS Retido'), max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text=_('Retenção na fonte (normalmente 25% para freelancers)'))
 
     # Estado
     estado = models.CharField(

@@ -146,7 +146,7 @@ class ProjetoAdmin(ModelAdmin):
 @admin.register(DespesaTemplate)
 class DespesaTemplateAdmin(ModelAdmin):
     """Admin para DespesaTemplate com Unfold customization"""
-    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'dia_mes', 'created_at']
+    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'dia_mes', 'created_at']
     list_filter = ['tipo', 'dia_mes', 'created_at']
     search_fields = ['numero', 'descricao', 'credor__nome']
     readonly_fields = ['created_at', 'updated_at']
@@ -164,7 +164,7 @@ class DespesaTemplateAdmin(ModelAdmin):
             'fields': ('descricao',)
         }),
         ('Valores', {
-            'fields': ('valor_sem_iva', 'valor_com_iva')
+            'fields': ('valor_sem_iva', 'valor_com_iva', 'irs_retido')
         }),
         ('Recorrência', {
             'fields': ('dia_mes',)
@@ -187,7 +187,7 @@ class DespesaTemplateAdmin(ModelAdmin):
 @admin.register(Despesa)
 class DespesaAdmin(ModelAdmin):
     """Admin para Despesa com Unfold customization"""
-    list_display = ['numero', 'tipo', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'estado', 'data_pagamento', 'created_at']
+    list_display = ['numero', 'tipo', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
     list_filter = ['tipo', 'estado', 'data', 'data_pagamento', 'created_at']
     search_fields = ['numero', 'descricao', 'credor__nome', 'projeto__numero']
     readonly_fields = ['created_at', 'updated_at']
@@ -206,7 +206,7 @@ class DespesaAdmin(ModelAdmin):
             'fields': ('descricao',)
         }),
         ('Valores', {
-            'fields': ('valor_sem_iva', 'valor_com_iva')
+            'fields': ('valor_sem_iva', 'valor_com_iva', 'irs_retido')
         }),
         ('Estado', {
             'fields': ('estado', 'data_pagamento')
