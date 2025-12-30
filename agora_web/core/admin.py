@@ -471,18 +471,27 @@ class SaldoAdmin(ModelAdmin):
         from datetime import date
 
         calculator = SaldosCalculator()
+        ano_atual = date.today().year
 
-        # Calcular saldos atuais (investimento inicial não conta, é apenas referência)
-        saldo_ba = calculator.calcular_saldo_bruno(incluir_investimento=False)
-        saldo_rr = calculator.calcular_saldo_rafael(incluir_investimento=False)
+        # Calcular saldos TOTAIS (de sempre) - inclui tudo: pagos + finalizados + pendentes
+        saldo_total_ba = calculator.calcular_saldo_bruno(incluir_investimento=False)
+        saldo_total_rr = calculator.calcular_saldo_rafael(incluir_investimento=False)
+
+        # Calcular breakdown do ANO CORRENTE
+        breakdown_ba = calculator.calcular_saldo_ano('BA', ano_atual)
+        breakdown_rr = calculator.calcular_saldo_ano('RR', ano_atual)
 
         context = {
             **self.admin_site.each_context(request),
             'title': 'Saldos Pessoais',
-            'saldo_ba': saldo_ba,
-            'saldo_rr': saldo_rr,
-            'ano_atual': date.today().year,
-            'total_empresa': saldo_ba['saldo_total'] + saldo_rr['saldo_total'],
+            'ano_atual': ano_atual,
+            # Saldos totais (de sempre) - para cards de topo
+            'saldo_total_ba': saldo_total_ba,
+            'saldo_total_rr': saldo_total_rr,
+            'total_empresa': saldo_total_ba['saldo_projetado'] if saldo_total_ba['saldo_projetado'] else saldo_total_ba['saldo_total'],
+            # Breakdown do ano corrente - para secção de breakdown
+            'breakdown_ba': breakdown_ba,
+            'breakdown_rr': breakdown_rr,
         }
 
         # Render template directly (não chamar super() para evitar query na tabela inexistente)
