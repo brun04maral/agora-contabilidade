@@ -1,0 +1,238 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="fiscal-dashboard" style="padding: 20px;">
+
+    <!-- Header -->
+    <div style="margin-bottom: 30px;">
+        <h1 style="font-size: 24px; font-weight: 600; margin-bottom: 10px;">💰 Estado Fiscal {{ ano_atual }}</h1>
+        <p style="color: #666;">IVA, IRS Retido e IRC - Gestão de obrigações fiscais</p>
+    </div>
+
+    <!-- Próximas Obrigações -->
+    {% if obrigacoes %}
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">⚠️ Próximas Obrigações</h3>
+        <div style="font-size: 13px;">
+            {% for obr in obrigacoes %}
+            <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                <span><strong>{{ obr.tipo }}:</strong> {{ obr.descricao }}</span>
+                <span style="color: {% if obr.dias_restantes <= 7 %}#d32f2f{% elif obr.dias_restantes <= 15 %}#f57c00{% else %}#388e3c{% endif %};">
+                    {{ obr.prazo|date:"d/m/Y" }} ({{ obr.dias_restantes }} dias)
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cards de Resumo -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+
+        <!-- Card IVA -->
+        <div style="background: {% if iva.iva_a_pagar >= 0 %}#fff3e0{% else %}#e8f5e9{% endif %}; padding: 20px; border-radius: 8px; border-left: 4px solid {% if iva.iva_a_pagar >= 0 %}#ff9800{% else %}#4caf50{% endif %};">
+            <div style="margin-bottom: 15px;">
+                <h3 style="font-size: 14px; color: #666; margin: 0;">IVA Q{{ trimestre_atual }}/{{ ano_atual }}</h3>
+                <p style="font-size: 32px; font-weight: 700; margin: 5px 0; color: {% if iva.iva_a_pagar >= 0 %}#e65100{% else %}#2e7d32{% endif %};">
+                    €{{ iva.iva_a_pagar|floatformat:2 }}
+                </p>
+                <p style="font-size: 12px; color: #666;">{% if iva.iva_a_pagar >= 0 %}A Pagar{% else %}A Recuperar{% endif %}</p>
+            </div>
+            <div style="font-size: 13px; color: #555;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>💚 Liquidado:</span>
+                    <strong>€{{ iva.iva_liquidado.total|floatformat:2 }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>🔴 Dedutível:</span>
+                    <strong>€{{ iva.iva_dedutivel.total|floatformat:2 }}</strong>
+                </div>
+                <div style="font-size: 11px; color: #888; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    📅 Declaração: {{ iva.prazo_declaracao|date:"d/m/Y" }}<br>
+                    💳 Pagamento: {{ iva.prazo_pagamento|date:"d/m/Y" }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Card IRS Retido -->
+        <div style="background: {% if irs.total_retido > 0 %}#ffebee{% else %}#f5f5f5{% endif %}; padding: 20px; border-radius: 8px; border-left: 4px solid {% if irs.total_retido > 0 %}#f44336{% else %}#9e9e9e{% endif %};">
+            <div style="margin-bottom: 15px;">
+                <h3 style="font-size: 14px; color: #666; margin: 0;">IRS Retido - {{ irs.periodo.mes_nome }}</h3>
+                <p style="font-size: 32px; font-weight: 700; margin: 5px 0; color: {% if irs.total_retido > 0 %}#c62828{% else %}#666{% endif %};">
+                    €{{ irs.total_retido|floatformat:2 }}
+                </p>
+                <p style="font-size: 12px; color: #666;">A Entregar ao Estado</p>
+            </div>
+            <div style="font-size: 13px; color: #555;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>📋 Despesas:</span>
+                    <strong>{{ irs.despesas_count }}</strong>
+                </div>
+                {% if irs.total_retido > 0 %}
+                <div style="font-size: 11px; color: #888; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    📅 Declaração: {{ irs.prazo_declaracao|date:"d/m/Y" }}<br>
+                    💳 Pagamento: {{ irs.prazo_pagamento|date:"d/m/Y" }}
+                </div>
+                {% else %}
+                <div style="font-size: 11px; color: #888;">
+                    ✅ Sem retenções neste mês
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card IRC -->
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3;">
+            <div style="margin-bottom: 15px;">
+                <h3 style="font-size: 14px; color: #666; margin: 0;">IRC Estimado {{ ano_atual }}</h3>
+                <p style="font-size: 32px; font-weight: 700; margin: 5px 0; color: #1565c0;">
+                    €{{ irc.irc_total|floatformat:2 }}
+                </p>
+                <p style="font-size: 12px; color: #666;">Imposto Estimado</p>
+            </div>
+            <div style="font-size: 13px; color: #555;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>💼 Lucro:</span>
+                    <strong>€{{ irc.lucro_tributavel|floatformat:2 }}</strong>
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 8px;">
+                    16% (€50k): €{{ irc.irc_16|floatformat:2 }}<br>
+                    20% (>€50k): €{{ irc.irc_20|floatformat:2 }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalhes IVA Trimestral -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 15px;">📊 IVA Trimestre {{ trimestre_atual }}/{{ ano_atual }}</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- IVA Liquidado -->
+            <div>
+                <h4 style="font-size: 14px; color: #4caf50; margin-bottom: 10px;">💚 IVA Liquidado (Receitas)</h4>
+                <div style="background: #f5f5f5; padding: 12px; border-radius: 4px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                        <span>Total Receitas:</span>
+                        <strong>€{{ iva.iva_liquidado.total|floatformat:2 }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 4px;">
+                        <span>Projetos:</span>
+                        <span>{{ iva.iva_liquidado.projetos_count }}</span>
+                    </div>
+                </div>
+                {% if iva.iva_liquidado.projetos %}
+                <div style="max-height: 200px; overflow-y: auto; font-size: 12px;">
+                    {% for proj in iva.iva_liquidado.projetos|slice:":5" %}
+                    <div style="padding: 6px; border-bottom: 1px solid #eee;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span><strong>{{ proj.numero }}</strong> - {{ proj.descricao }}</span>
+                            <span style="color: #4caf50;">€{{ proj.iva|floatformat:2 }}</span>
+                        </div>
+                        <div style="color: #999; font-size: 11px;">{{ proj.data|date:"d/m/Y" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- IVA Dedutível -->
+            <div>
+                <h4 style="font-size: 14px; color: #f44336; margin-bottom: 10px;">🔴 IVA Dedutível (Despesas)</h4>
+                <div style="background: #f5f5f5; padding: 12px; border-radius: 4px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                        <span>Total Despesas:</span>
+                        <strong>€{{ iva.iva_dedutivel.total|floatformat:2 }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 4px;">
+                        <span>Despesas:</span>
+                        <span>{{ iva.iva_dedutivel.despesas_count }}</span>
+                    </div>
+                </div>
+                {% if iva.iva_dedutivel.despesas %}
+                <div style="max-height: 200px; overflow-y: auto; font-size: 12px;">
+                    {% for desp in iva.iva_dedutivel.despesas|slice:":5" %}
+                    <div style="padding: 6px; border-bottom: 1px solid #eee;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span><strong>{{ desp.numero }}</strong> - {{ desp.descricao }}</span>
+                            <span style="color: #f44336;">€{{ desp.iva|floatformat:2 }}</span>
+                        </div>
+                        <div style="color: #999; font-size: 11px;">{{ desp.data|date:"d/m/Y" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalhes IRS Mensal -->
+    {% if irs.despesas %}
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 15px;">📋 IRS Retido - {{ irs.periodo.mes_nome }}/{{ ano_atual }}</h3>
+
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5; text-align: left;">
+                    <th style="padding: 10px;">Fornecedor</th>
+                    <th style="padding: 10px;">Descrição</th>
+                    <th style="padding: 10px; text-align: right;">Valor Base</th>
+                    <th style="padding: 10px; text-align: center;">Taxa</th>
+                    <th style="padding: 10px; text-align: right;">IRS Retido</th>
+                    <th style="padding: 10px; text-align: center;">Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for desp in irs.despesas %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;"><strong>{{ desp.fornecedor }}</strong></td>
+                    <td style="padding: 10px;">{{ desp.descricao }}</td>
+                    <td style="padding: 10px; text-align: right;">€{{ desp.valor_base|floatformat:2 }}</td>
+                    <td style="padding: 10px; text-align: center;">{{ desp.taxa|floatformat:1 }}%</td>
+                    <td style="padding: 10px; text-align: right; color: #f44336; font-weight: 600;">€{{ desp.irs_retido|floatformat:2 }}</td>
+                    <td style="padding: 10px; text-align: center; color: #999;">{{ desp.data|date:"d/m/Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="background: #f5f5f5; font-weight: 600;">
+                    <td colspan="4" style="padding: 10px; text-align: right;">TOTAL A ENTREGAR:</td>
+                    <td style="padding: 10px; text-align: right; color: #f44336;">€{{ irs.total_retido|floatformat:2 }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Info IRC -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 15px;">💼 IRC Estimado {{ ano_atual }}</h3>
+
+        <div style="display: grid; gap: 10px; font-size: 14px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px; background: #e8f5e9; border-radius: 4px;">
+                <span>📈 Receitas Totais:</span>
+                <strong>€{{ irc.receitas_total|floatformat:2 }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px; background: #ffebee; border-radius: 4px;">
+                <span>📉 Despesas Totais:</span>
+                <strong>€{{ irc.despesas_total|floatformat:2 }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px; background: #e3f2fd; border-radius: 4px;">
+                <span>💰 Lucro Tributável:</span>
+                <strong>€{{ irc.lucro_tributavel|floatformat:2 }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px; background: #fff3e0; border-radius: 4px;">
+                <span>🏛️ IRC Total Estimado:</span>
+                <strong style="font-size: 16px;">€{{ irc.irc_total|floatformat:2 }}</strong>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; padding: 12px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;">
+            <strong>ℹ️ Nota:</strong> Cálculo simplificado. O TOC fará as correções fiscais necessárias (despesas não dedutíveis, benefícios fiscais, prejuízos anteriores, etc).
+        </div>
+    </div>
+
+</div>
+{% endblock %}
