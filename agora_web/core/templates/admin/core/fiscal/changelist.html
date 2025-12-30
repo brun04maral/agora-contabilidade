@@ -3,33 +3,7 @@
 
 {% block extrahead %}
 <style>
-    @media (prefers-color-scheme: dark) {
-        .fiscal-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
-        .fiscal-header { color: rgb(243, 244, 246); }
-        .fiscal-subtext { color: rgb(156, 163, 175); }
-        .fiscal-border { border-color: rgb(75, 85, 99); }
-        .fiscal-bg-secondary { background-color: rgba(17, 24, 39, 0.5); }
-        .fiscal-alert-bg { background-color: rgba(133, 77, 14, 0.2); border-color: rgb(161, 98, 7); }
-        .fiscal-alert-text { color: rgb(253, 224, 71); }
-        .fiscal-alert-border { border-color: rgb(133, 77, 14); }
-        .green-bg { background-color: rgba(6, 78, 59, 0.2); }
-        .green-text { color: rgb(74, 222, 128); }
-        .green-text-secondary { color: rgb(74, 222, 128); }
-        .red-bg { background-color: rgba(127, 29, 29, 0.2); }
-        .red-text { color: rgb(248, 113, 113); }
-        .red-text-secondary { color: rgb(248, 113, 113); }
-        .blue-text { color: rgb(96, 165, 250); }
-        .blue-bg { background-color: rgba(30, 58, 138, 0.2); }
-        .yellow-bg { background-color: rgba(133, 77, 14, 0.2); }
-        .yellow-text { color: rgb(253, 224, 71); }
-        .table-header-bg { background-color: rgba(17, 24, 39, 0.5); }
-        .table-row-border { border-color: rgb(75, 85, 99); }
-        .border-l-3-green { border-left: 3px solid rgb(34, 197, 94); }
-        .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
-        .border-l-3-blue { border-left: 3px solid rgb(59, 130, 246); }
-        .border-l-3-yellow { border-left: 3px solid rgb(234, 179, 8); }
-    }
-
+    /* Light mode (default) */
     .fiscal-card { background-color: white; border: 1px solid rgb(229, 231, 235); }
     .fiscal-header { color: rgb(17, 24, 39); }
     .fiscal-subtext { color: rgb(107, 114, 128); }
@@ -40,10 +14,8 @@
     .fiscal-alert-border { border-color: rgb(254, 240, 138); }
     .green-bg { background-color: rgb(240, 253, 244); }
     .green-text { color: rgb(22, 163, 74); }
-    .green-text-secondary { color: rgb(22, 163, 74); }
     .red-bg { background-color: rgb(254, 242, 242); }
     .red-text { color: rgb(220, 38, 38); }
-    .red-text-secondary { color: rgb(220, 38, 38); }
     .blue-text { color: rgb(37, 99, 235); }
     .blue-bg { background-color: rgb(239, 246, 255); }
     .yellow-bg { background-color: rgb(254, 252, 232); }
@@ -54,6 +26,30 @@
     .border-l-3-red { border-left: 3px solid rgb(220, 38, 38); }
     .border-l-3-blue { border-left: 3px solid rgb(37, 99, 235); }
     .border-l-3-yellow { border-left: 3px solid rgb(202, 138, 4); }
+
+    /* Dark mode (when .dark class is on html) */
+    .dark .fiscal-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
+    .dark .fiscal-header { color: rgb(243, 244, 246); }
+    .dark .fiscal-subtext { color: rgb(156, 163, 175); }
+    .dark .fiscal-border { border-color: rgb(75, 85, 99); }
+    .dark .fiscal-bg-secondary { background-color: rgba(17, 24, 39, 0.5); }
+    .dark .fiscal-alert-bg { background-color: rgba(133, 77, 14, 0.2); border-color: rgb(161, 98, 7); }
+    .dark .fiscal-alert-text { color: rgb(253, 224, 71); }
+    .dark .fiscal-alert-border { border-color: rgb(133, 77, 14); }
+    .dark .green-bg { background-color: rgba(6, 78, 59, 0.2); }
+    .dark .green-text { color: rgb(74, 222, 128); }
+    .dark .red-bg { background-color: rgba(127, 29, 29, 0.2); }
+    .dark .red-text { color: rgb(248, 113, 113); }
+    .dark .blue-text { color: rgb(96, 165, 250); }
+    .dark .blue-bg { background-color: rgba(30, 58, 138, 0.2); }
+    .dark .yellow-bg { background-color: rgba(133, 77, 14, 0.2); }
+    .dark .yellow-text { color: rgb(253, 224, 71); }
+    .dark .table-header-bg { background-color: rgba(17, 24, 39, 0.5); }
+    .dark .table-row-border { border-color: rgb(75, 85, 99); }
+    .dark .border-l-3-green { border-left: 3px solid rgb(34, 197, 94); }
+    .dark .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
+    .dark .border-l-3-blue { border-left: 3px solid rgb(59, 130, 246); }
+    .dark .border-l-3-yellow { border-left: 3px solid rgb(234, 179, 8); }
 </style>
 {% endblock %}
 

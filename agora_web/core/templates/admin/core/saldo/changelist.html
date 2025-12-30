@@ -3,25 +3,7 @@
 
 {% block extrahead %}
 <style>
-    @media (prefers-color-scheme: dark) {
-        .saldo-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
-        .saldo-header { color: rgb(243, 244, 246); }
-        .saldo-subtext { color: rgb(156, 163, 175); }
-        .saldo-border { border-color: rgb(75, 85, 99); }
-        .saldo-bg-secondary { background-color: rgba(17, 24, 39, 0.5); }
-        .saldo-badge-bg { background-color: rgb(55, 65, 81); color: rgb(209, 213, 219); }
-        .green-bg { background-color: rgba(6, 78, 59, 0.2); }
-        .green-text { color: rgb(74, 222, 128); }
-        .green-border { border-left: 4px solid rgb(34, 197, 94); }
-        .red-bg { background-color: rgba(127, 29, 29, 0.2); }
-        .red-text { color: rgb(248, 113, 113); }
-        .red-border { border-left: 4px solid rgb(239, 68, 68); }
-        .yellow-text { color: rgb(253, 224, 71); }
-        .yellow-border { border-left: 4px solid rgb(234, 179, 8); }
-        .border-l-3-green { border-left: 3px solid rgb(34, 197, 94); }
-        .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
-    }
-
+    /* Light mode (default) */
     .saldo-card { background-color: white; border: 1px solid rgb(229, 231, 235); }
     .saldo-header { color: rgb(17, 24, 39); }
     .saldo-subtext { color: rgb(107, 114, 128); }
@@ -38,6 +20,24 @@
     .yellow-border { border-left: 4px solid rgb(202, 138, 4); }
     .border-l-3-green { border-left: 3px solid rgb(22, 163, 74); }
     .border-l-3-red { border-left: 3px solid rgb(220, 38, 38); }
+
+    /* Dark mode (when .dark class is on html) */
+    .dark .saldo-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
+    .dark .saldo-header { color: rgb(243, 244, 246); }
+    .dark .saldo-subtext { color: rgb(156, 163, 175); }
+    .dark .saldo-border { border-color: rgb(75, 85, 99); }
+    .dark .saldo-bg-secondary { background-color: rgba(17, 24, 39, 0.5); }
+    .dark .saldo-badge-bg { background-color: rgb(55, 65, 81); color: rgb(209, 213, 219); }
+    .dark .green-bg { background-color: rgba(6, 78, 59, 0.2); }
+    .dark .green-text { color: rgb(74, 222, 128); }
+    .dark .green-border { border-left: 4px solid rgb(34, 197, 94); }
+    .dark .red-bg { background-color: rgba(127, 29, 29, 0.2); }
+    .dark .red-text { color: rgb(248, 113, 113); }
+    .dark .red-border { border-left: 4px solid rgb(239, 68, 68); }
+    .dark .yellow-text { color: rgb(253, 224, 71); }
+    .dark .yellow-border { border-left: 4px solid rgb(234, 179, 8); }
+    .dark .border-l-3-green { border-left: 3px solid rgb(34, 197, 94); }
+    .dark .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
 </style>
 {% endblock %}
 
