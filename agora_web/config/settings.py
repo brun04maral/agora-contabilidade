@@ -162,11 +162,6 @@ UNFOLD = {
                 "title": "Financeiro",
                 "items": [
                     {
-                        "title": "Saldos Pessoais",
-                        "icon": "account_balance",
-                        "link": "/admin/core/saldo/",
-                    },
-                    {
                         "title": "Projetos",
                         "icon": "work",
                         "link": "/admin/core/projeto/",
@@ -181,16 +176,16 @@ UNFOLD = {
                         "icon": "receipt_long",
                         "link": "/admin/core/boletim/",
                     },
-                ],
-            },
-            {
-                "title": "Gestão",
-                "items": [
                     {
                         "title": "Orçamentos",
                         "icon": "description",
                         "link": "/admin/core/orcamento/",
                     },
+                ],
+            },
+            {
+                "title": "Gestão",
+                "items": [
                     {
                         "title": "Clientes",
                         "icon": "people",
@@ -210,6 +205,21 @@ UNFOLD = {
                         "title": "Sócios",
                         "icon": "group",
                         "link": "/admin/core/socio/",
+                    },
+                ],
+            },
+            {
+                "title": "Consultas",
+                "items": [
+                    {
+                        "title": "Saldos Pessoais",
+                        "icon": "account_balance",
+                        "link": "/admin/core/saldo/",
+                    },
+                    {
+                        "title": "Fiscal",
+                        "icon": "assessment",
+                        "link": "/admin/core/fiscal/",
                     },
                 ],
             },

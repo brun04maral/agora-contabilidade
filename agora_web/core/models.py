@@ -102,6 +102,18 @@ class Fornecedor(models.Model):
     email = models.EmailField(_('Email'), max_length=255, blank=True, null=True)
     website = models.URLField(_('Website'), max_length=255, blank=True, null=True)
     nota = models.TextField(_('Nota'), blank=True, null=True)
+
+    # IRS Retenção na Fonte (para freelancers)
+    taxa_retencao_irs = models.DecimalField(
+        _('Taxa Retenção IRS'),
+        max_digits=5,
+        decimal_places=2,
+        default=23.00,
+        blank=True,
+        null=True,
+        help_text=_('Taxa de retenção aplicável (23%, 25%, 16.5%, etc). Apenas para FREELANCER')
+    )
+
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
@@ -276,6 +288,10 @@ class DespesaTemplate(models.Model):
     valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
     valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
 
+    # IRS Retenção na Fonte
+    irs_retido = models.DecimalField(_('IRS Retido'), max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text=_('Retenção na fonte (normalmente 23% para freelancers)'))
+    taxa_retencao_irs = models.DecimalField(_('Taxa Retenção IRS'), max_digits=5, decimal_places=2, default=0, blank=True, null=True, help_text=_('Taxa aplicada (23%, 25%, 16.5%, etc)'))
+
     # Dia do mês para gerar (1-31)
     dia_mes = models.IntegerField(_('Dia do Mês'))  # Dia do mês em que a despesa deve ser gerada
 
@@ -345,6 +361,10 @@ class Despesa(models.Model):
     # Valores
     valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
     valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
+
+    # IRS Retenção na Fonte
+    irs_retido = models.DecimalField(_('IRS Retido'), max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text=_('Retenção na fonte (normalmente 23% para freelancers)'))
+    taxa_retencao_irs = models.DecimalField(_('Taxa Retenção IRS'), max_digits=5, decimal_places=2, default=0, blank=True, null=True, help_text=_('Taxa aplicada (23%, 25%, 16.5%, etc)'))
 
     # Estado
     estado = models.CharField(
@@ -425,8 +445,11 @@ class Boletim(models.Model):
         _('Sócio (código)'),
         max_length=2,
         choices=CodigoSocio.choices,
-        db_index=True
-    )  # DEPRECATED
+        db_index=True,
+        null=True,
+        blank=True,
+        default='BA'
+    )  # DEPRECATED - usar campo 'socio' (FK)
     socio = models.ForeignKey(
         Socio,
         on_delete=models.PROTECT,
@@ -785,10 +808,25 @@ class Saldo(models.Model):
     Não tem tabela na BD - usa SaldosCalculator para calcular dados
     """
     id = models.IntegerField(primary_key=True)  # Dummy field
-    
+
     class Meta:
         managed = False  # Django não cria tabela
         verbose_name = _('Saldo Pessoal')
         verbose_name_plural = _('Saldos Pessoais')
         db_table = 'saldos_view'  # Tabela fictícia
+        default_permissions = ()  # Sem permissões de add/change/delete
+
+
+class Fiscal(models.Model):
+    """
+    Proxy model para mostrar Estado Fiscal no admin
+    Não tem tabela na BD - usa FiscalCalculator para calcular IVA, IRS, IRC
+    """
+    id = models.IntegerField(primary_key=True)  # Dummy field
+
+    class Meta:
+        managed = False  # Django não cria tabela
+        verbose_name = _('Fiscal')
+        verbose_name_plural = _('Fiscal')
+        db_table = 'fiscal_view'  # Tabela fictícia
         default_permissions = ()  # Sem permissões de add/change/delete

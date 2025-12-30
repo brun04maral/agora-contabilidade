@@ -7,7 +7,7 @@ from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
-    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo
+    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal
 )
 
 
@@ -146,7 +146,7 @@ class ProjetoAdmin(ModelAdmin):
 @admin.register(DespesaTemplate)
 class DespesaTemplateAdmin(ModelAdmin):
     """Admin para DespesaTemplate com Unfold customization"""
-    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'dia_mes', 'created_at']
+    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'dia_mes', 'created_at']
     list_filter = ['tipo', 'dia_mes', 'created_at']
     search_fields = ['numero', 'descricao', 'credor__nome']
     readonly_fields = ['created_at', 'updated_at']
@@ -164,7 +164,7 @@ class DespesaTemplateAdmin(ModelAdmin):
             'fields': ('descricao',)
         }),
         ('Valores', {
-            'fields': ('valor_sem_iva', 'valor_com_iva')
+            'fields': ('valor_sem_iva', 'valor_com_iva', 'irs_retido')
         }),
         ('Recorrência', {
             'fields': ('dia_mes',)
@@ -187,7 +187,7 @@ class DespesaTemplateAdmin(ModelAdmin):
 @admin.register(Despesa)
 class DespesaAdmin(ModelAdmin):
     """Admin para Despesa com Unfold customization"""
-    list_display = ['numero', 'tipo', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'estado', 'data_pagamento', 'created_at']
+    list_display = ['numero', 'tipo', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
     list_filter = ['tipo', 'estado', 'data', 'data_pagamento', 'created_at']
     search_fields = ['numero', 'descricao', 'credor__nome', 'projeto__numero']
     readonly_fields = ['created_at', 'updated_at']
@@ -206,7 +206,7 @@ class DespesaAdmin(ModelAdmin):
             'fields': ('descricao',)
         }),
         ('Valores', {
-            'fields': ('valor_sem_iva', 'valor_com_iva')
+            'fields': ('valor_sem_iva', 'valor_com_iva', 'irs_retido')
         }),
         ('Estado', {
             'fields': ('estado', 'data_pagamento')
@@ -496,3 +496,57 @@ class SaldoAdmin(ModelAdmin):
 
         # Render template directly (não chamar super() para evitar query na tabela inexistente)
         return render(request, 'admin/core/saldo/changelist.html', context)
+
+
+@admin.register(Fiscal)
+class FiscalAdmin(ModelAdmin):
+    """Admin para Estado Fiscal - Dashboard personalizado"""
+
+    # Desabilitar ações padrão já que não há tabela
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        """Vista personalizada para mostrar dashboard fiscal"""
+        from django.shortcuts import render
+        from core.utils.fiscal import FiscalCalculator
+        from datetime import date
+
+        calculator = FiscalCalculator()
+        hoje = date.today()
+        ano_atual = hoje.year
+        mes_atual = hoje.month
+        trimestre_atual = (mes_atual - 1) // 3 + 1
+
+        # Calcular IVA Trimestral (trimestre atual)
+        iva = calculator.calcular_iva_trimestral(ano_atual, trimestre_atual)
+
+        # Calcular IRS Mensal (mês atual)
+        irs = calculator.calcular_irs_mensal(ano_atual, mes_atual)
+
+        # Estimar IRC Anual (ano atual)
+        irc = calculator.estimar_irc_anual(ano_atual)
+
+        # Próximas obrigações
+        obrigacoes = calculator.proximas_obrigacoes()
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Estado Fiscal',
+            'ano_atual': ano_atual,
+            'mes_atual': mes_atual,
+            'trimestre_atual': trimestre_atual,
+            'iva': iva,
+            'irs': irs,
+            'irc': irc,
+            'obrigacoes': obrigacoes[:5],  # Próximas 5 obrigações
+        }
+
+        # Render template directly (não chamar super() para evitar query na tabela inexistente)
+        return render(request, 'admin/core/fiscal/changelist.html', context)
