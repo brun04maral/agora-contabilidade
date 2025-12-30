@@ -460,7 +460,7 @@ class SaldosCalculator:
         # 6. Boletins PAGOS do ano
         boletins_pagos = Decimal("0.00")
         for b in Boletim.objects.filter(
-            socio=socio,
+            socio_codigo=socio,
             estado=EstadoBoletim.PAGO,
             data_emissao__gte=data_inicio,
             data_emissao__lte=data_fim
@@ -482,7 +482,7 @@ class SaldosCalculator:
         # 8. Boletins PENDENTES do ano
         boletins_pendentes = Decimal("0.00")
         for b in Boletim.objects.filter(
-            socio=socio,
+            socio_codigo=socio,
             estado=EstadoBoletim.PENDENTE,
             data_emissao__gte=data_inicio,
             data_emissao__lte=data_fim
@@ -505,7 +505,7 @@ class SaldosCalculator:
             # Meses que já têm boletim emitido no ano
             meses_com_boletim = set(
                 Boletim.objects.filter(
-                    socio=socio,
+                    socio_codigo=socio,
                     ano=ano
                 ).values_list('mes', flat=True)
             )
