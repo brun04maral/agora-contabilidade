@@ -445,8 +445,11 @@ class Boletim(models.Model):
         _('Sócio (código)'),
         max_length=2,
         choices=CodigoSocio.choices,
-        db_index=True
-    )  # DEPRECATED
+        db_index=True,
+        null=True,
+        blank=True,
+        default='BA'
+    )  # DEPRECATED - usar campo 'socio' (FK)
     socio = models.ForeignKey(
         Socio,
         on_delete=models.PROTECT,
