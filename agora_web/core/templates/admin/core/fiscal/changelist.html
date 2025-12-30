@@ -50,23 +50,31 @@
     .dark .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
     .dark .border-l-3-blue { border-left: 3px solid rgb(59, 130, 246); }
     .dark .border-l-3-yellow { border-left: 3px solid rgb(234, 179, 8); }
+
+    /* Layout compacto */
+    .fiscal-card { border-radius: 0.5rem; }
+    .fiscal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .fiscal-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    @media (max-width: 768px) {
+        .fiscal-grid, .fiscal-detail-grid { grid-template-columns: 1fr; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="fiscal-dashboard p-6 max-w-7xl mx-auto">
+<div style="padding: 1.5rem; max-width: 80rem; margin: 0 auto;">
 
     <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-semibold mb-2 fiscal-header">Estado Fiscal {{ ano_atual }}</h1>
-        <p class="text-sm fiscal-subtext">Gestão de IVA, IRS e IRC</p>
+    <div style="margin-bottom: 1.5rem;">
+        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="fiscal-header">Estado Fiscal {{ ano_atual }}</h1>
+        <p style="font-size: 0.875rem;" class="fiscal-subtext">Gestão de IVA, IRS e IRC</p>
     </div>
 
     <!-- Próximas Obrigações -->
     {% if obrigacoes %}
-    <div class="fiscal-alert-bg border-l-4 fiscal-alert-border p-4 rounded-lg mb-6">
-        <h3 class="text-sm font-semibold mb-3 fiscal-alert-text">Próximas Obrigações</h3>
-        <div class="text-sm fiscal-alert-text space-y-2">
+    <div class="fiscal-alert-bg fiscal-alert-border" style="border-left: 4px solid; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;" class="fiscal-alert-text">Próximas Obrigações</h3>
+        <div style="font-size: 0.875rem;" class="fiscal-alert-text">
             {% for obr in obrigacoes %}
             <div class="flex justify-between py-1 {% if not forloop.last %}border-b fiscal-alert-border{% endif %}">
                 <span><strong>{{ obr.tipo }}:</strong> {{ obr.descricao }}</span>
@@ -80,27 +88,27 @@
     {% endif %}
 
     <!-- Cards de Resumo -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="fiscal-grid" style="margin-bottom: 1.5rem;">
 
         <!-- Card IVA -->
-        <div class="fiscal-card p-6 rounded-lg shadow-sm">
-            <div class="mb-4">
-                <div class="text-xs fiscal-subtext mb-1">IVA - Trimestre {{ trimestre_atual }}/{{ ano_atual }}</div>
-                <div class="text-4xl font-bold {% if iva.iva_a_pagar >= 0 %}red-text{% else %}green-text{% endif %}">
+        <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+            <div style="margin-bottom: 0.75rem;">
+                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="fiscal-subtext">IVA - Trimestre {{ trimestre_atual }}/{{ ano_atual }}</div>
+                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if iva.iva_a_pagar >= 0 %}red-text{% else %}green-text{% endif %}">
                     €{{ iva.iva_a_pagar|floatformat:2 }}
                 </div>
-                <div class="text-xs fiscal-subtext mt-1">{% if iva.iva_a_pagar >= 0 %}A Pagar ao Estado{% else %}A Recuperar{% endif %}</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">{% if iva.iva_a_pagar >= 0 %}A Pagar ao Estado{% else %}A Recuperar{% endif %}</div>
             </div>
-            <div class="border-t fiscal-border pt-4">
-                <div class="flex justify-between mb-2 text-sm">
+            <div style="border-top: 1px solid; padding-top: 0.75rem;" class="fiscal-border">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
                     <span class="fiscal-subtext">IVA Liquidado</span>
-                    <span class="font-semibold green-text">€{{ iva.iva_liquidado.total|floatformat:2 }}</span>
+                    <span style="font-weight: 600;" class="green-text">€{{ iva.iva_liquidado.total|floatformat:2 }}</span>
                 </div>
-                <div class="flex justify-between mb-3 text-sm">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
                     <span class="fiscal-subtext">IVA Dedutível</span>
-                    <span class="font-semibold red-text">€{{ iva.iva_dedutivel.total|floatformat:2 }}</span>
+                    <span style="font-weight: 600;" class="red-text">€{{ iva.iva_dedutivel.total|floatformat:2 }}</span>
                 </div>
-                <div class="text-xs fiscal-subtext pt-3 border-t fiscal-border space-y-1">
+                <div style="font-size: 0.75rem; padding-top: 0.5rem; border-top: 1px solid; margin-top: 0.5rem;" class="fiscal-subtext fiscal-border">
                     <div>Declaração: {{ iva.prazo_declaracao|date:"d/m/Y" }}</div>
                     <div>Pagamento: {{ iva.prazo_pagamento|date:"d/m/Y" }}</div>
                 </div>
@@ -108,26 +116,26 @@
         </div>
 
         <!-- Card IRS Retido -->
-        <div class="fiscal-card p-6 rounded-lg shadow-sm">
-            <div class="mb-4">
-                <div class="text-xs fiscal-subtext mb-1">IRS Retido - {{ irs.periodo.mes_nome }}</div>
-                <div class="text-4xl font-bold {% if irs.total_retido > 0 %}red-text{% else %}fiscal-subtext{% endif %}">
+        <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+            <div style="margin-bottom: 0.75rem;">
+                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="fiscal-subtext">IRS Retido - {{ irs.periodo.mes_nome }}</div>
+                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if irs.total_retido > 0 %}red-text{% else %}fiscal-subtext{% endif %}">
                     €{{ irs.total_retido|floatformat:2 }}
                 </div>
-                <div class="text-xs fiscal-subtext mt-1">A Entregar ao Estado</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">A Entregar ao Estado</div>
             </div>
-            <div class="border-t fiscal-border pt-4">
-                <div class="flex justify-between mb-3 text-sm">
+            <div style="border-top: 1px solid; padding-top: 0.75rem;" class="fiscal-border">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
                     <span class="fiscal-subtext">Retenções</span>
-                    <span class="font-semibold fiscal-header">{{ irs.despesas_count }}</span>
+                    <span style="font-weight: 600;" class="fiscal-header">{{ irs.despesas_count }}</span>
                 </div>
                 {% if irs.total_retido > 0 %}
-                <div class="text-xs fiscal-subtext pt-3 border-t fiscal-border space-y-1">
+                <div style="font-size: 0.75rem; padding-top: 0.5rem; border-top: 1px solid; margin-top: 0.5rem;" class="fiscal-subtext fiscal-border">
                     <div>Declaração: {{ irs.prazo_declaracao|date:"d/m/Y" }}</div>
                     <div>Pagamento: {{ irs.prazo_pagamento|date:"d/m/Y" }}</div>
                 </div>
                 {% else %}
-                <div class="text-xs fiscal-subtext pt-3 border-t fiscal-border">
+                <div style="font-size: 0.75rem; padding-top: 0.5rem; border-top: 1px solid; margin-top: 0.5rem;" class="fiscal-subtext fiscal-border">
                     Sem retenções neste mês
                 </div>
                 {% endif %}
@@ -135,20 +143,20 @@
         </div>
 
         <!-- Card IRC -->
-        <div class="fiscal-card p-6 rounded-lg shadow-sm">
-            <div class="mb-4">
-                <div class="text-xs fiscal-subtext mb-1">IRC Estimado {{ ano_atual }}</div>
-                <div class="text-4xl font-bold blue-text">
+        <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+            <div style="margin-bottom: 0.75rem;">
+                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="fiscal-subtext">IRC Estimado {{ ano_atual }}</div>
+                <div style="font-size: 1.875rem; font-weight: 700;" class="blue-text">
                     €{{ irc.irc_total|floatformat:2 }}
                 </div>
-                <div class="text-xs fiscal-subtext mt-1">Imposto Estimado</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">Imposto Estimado</div>
             </div>
-            <div class="border-t fiscal-border pt-4">
-                <div class="flex justify-between mb-2 text-sm">
+            <div style="border-top: 1px solid; padding-top: 0.75rem;" class="fiscal-border">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
                     <span class="fiscal-subtext">Lucro Tributável</span>
-                    <span class="font-semibold fiscal-header">€{{ irc.lucro_tributavel|floatformat:2 }}</span>
+                    <span style="font-weight: 600;" class="fiscal-header">€{{ irc.lucro_tributavel|floatformat:2 }}</span>
                 </div>
-                <div class="text-xs fiscal-subtext mt-2 space-y-1">
+                <div style="font-size: 0.75rem; margin-top: 0.5rem;" class="fiscal-subtext">
                     <div>16% (primeiros €50k): €{{ irc.irc_16|floatformat:2 }}</div>
                     <div>20% (excedente): €{{ irc.irc_20|floatformat:2 }}</div>
                 </div>
@@ -157,10 +165,10 @@
     </div>
 
     <!-- Detalhes IVA Trimestral -->
-    <div class="fiscal-card p-6 rounded-lg shadow-sm mb-6">
-        <h3 class="text-base font-semibold mb-5 fiscal-header">IVA Trimestre {{ trimestre_atual }}/{{ ano_atual }}</h3>
+    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">IVA Trimestre {{ trimestre_atual }}/{{ ano_atual }}</h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="fiscal-detail-grid">
             <!-- IVA Liquidado -->
             <div>
                 <h4 class="text-xs font-semibold green-text mb-3 uppercase tracking-wide">IVA Liquidado</h4>
@@ -221,8 +229,8 @@
 
     <!-- Detalhes IRS Mensal -->
     {% if irs.despesas %}
-    <div class="fiscal-card p-6 rounded-lg shadow-sm mb-6">
-        <h3 class="text-base font-semibold mb-5 fiscal-header">IRS Retido - {{ irs.periodo.mes_nome }}/{{ ano_atual }}</h3>
+    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">IRS Retido - {{ irs.periodo.mes_nome }}/{{ ano_atual }}</h3>
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -261,29 +269,29 @@
     {% endif %}
 
     <!-- Info IRC -->
-    <div class="fiscal-card p-6 rounded-lg shadow-sm">
-        <h3 class="text-base font-semibold mb-5 fiscal-header">IRC Estimado {{ ano_atual }}</h3>
+    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">IRC Estimado {{ ano_atual }}</h3>
 
-        <div class="space-y-3">
-            <div class="flex justify-between p-3 green-bg rounded-md border-l-3-green">
-                <span class="green-text text-sm">Receitas Totais</span>
-                <span class="font-semibold green-text">€{{ irc.receitas_total|floatformat:2 }}</span>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="green-bg border-l-3-green">
+                <span style="font-size: 0.875rem;" class="green-text">Receitas Totais</span>
+                <span style="font-weight: 600;" class="green-text">€{{ irc.receitas_total|floatformat:2 }}</span>
             </div>
-            <div class="flex justify-between p-3 red-bg rounded-md border-l-3-red">
-                <span class="red-text text-sm">Despesas Totais</span>
-                <span class="font-semibold red-text">€{{ irc.despesas_total|floatformat:2 }}</span>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="red-bg border-l-3-red">
+                <span style="font-size: 0.875rem;" class="red-text">Despesas Totais</span>
+                <span style="font-weight: 600;" class="red-text">€{{ irc.despesas_total|floatformat:2 }}</span>
             </div>
-            <div class="flex justify-between p-3 blue-bg rounded-md border-l-3-blue">
-                <span class="blue-text text-sm">Lucro Tributável</span>
-                <span class="font-semibold blue-text">€{{ irc.lucro_tributavel|floatformat:2 }}</span>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="blue-bg border-l-3-blue">
+                <span style="font-size: 0.875rem;" class="blue-text">Lucro Tributável</span>
+                <span style="font-weight: 600;" class="blue-text">€{{ irc.lucro_tributavel|floatformat:2 }}</span>
             </div>
-            <div class="flex justify-between p-3 yellow-bg rounded-md border-l-3-yellow">
-                <span class="yellow-text text-sm font-semibold">IRC Total Estimado</span>
-                <span class="font-bold yellow-text text-base">€{{ irc.irc_total|floatformat:2 }}</span>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="yellow-bg border-l-3-yellow">
+                <span style="font-size: 0.875rem; font-weight: 600;" class="yellow-text">IRC Total Estimado</span>
+                <span style="font-weight: 700; font-size: 1rem;" class="yellow-text">€{{ irc.irc_total|floatformat:2 }}</span>
             </div>
         </div>
 
-        <div class="mt-4 p-3 fiscal-bg-secondary rounded-md text-xs fiscal-subtext">
+        <div style="margin-top: 0.75rem; padding: 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;" class="fiscal-bg-secondary fiscal-subtext">
             <strong>Nota:</strong> Cálculo simplificado. O TOC fará as correções fiscais necessárias (despesas não dedutíveis, benefícios fiscais, prejuízos anteriores, etc).
         </div>
     </div>
