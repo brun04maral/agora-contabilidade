@@ -58,14 +58,14 @@
 
     <!-- Cards Totais -->
     <div class="saldo-grid" style="margin-bottom: 1.5rem;">
-        {% if saldo_total_ba.saldo_projetado %}{% with saldo=saldo_total_ba.saldo_projetado %}{% else %}{% with saldo=saldo_total_ba.saldo_total %}{% endif %}
-        <div class="saldo-card {% if saldo >= 0 %}green-border{% else %}red-border{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <!-- BA Card -->
+        <div class="saldo-card {% if saldo_total_ba.saldo_projetado %}{% if saldo_total_ba.saldo_projetado >= 0 %}green-border{% else %}red-border{% endif %}{% else %}{% if saldo_total_ba.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
             <div style="margin-bottom: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
                     <span style="font-size: 0.75rem;" class="saldo-subtext">Bruno Amaral</span>
                     <span class="saldo-badge-bg" style="padding: 0.25rem 0.625rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">BA</span>
                 </div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo >= 0 %}green-text{% else %}red-text{% endif %}">€{{ saldo|floatformat:2 }}</div>
+                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo_total_ba.saldo_projetado %}{% if saldo_total_ba.saldo_projetado >= 0 %}green-text{% else %}red-text{% endif %}{% else %}{% if saldo_total_ba.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}{% endif %}">€{% if saldo_total_ba.saldo_projetado %}{{ saldo_total_ba.saldo_projetado|floatformat:2 }}{% else %}{{ saldo_total_ba.saldo_total|floatformat:2 }}{% endif %}</div>
                 <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="saldo-subtext">Saldo Projetado Total</div>
             </div>
             <div style="border-top: 1px solid; padding-top: 0.75rem; font-size: 0.875rem;" class="saldo-border">
@@ -78,16 +78,16 @@
                     <span style="font-weight: 600;" class="red-text">€{{ saldo_total_ba.outs.total|floatformat:2 }}</span>
                 </div>
             </div>
-        </div>{% endwith %}
+        </div>
 
-        {% if saldo_total_rr.saldo_projetado %}{% with saldo=saldo_total_rr.saldo_projetado %}{% else %}{% with saldo=saldo_total_rr.saldo_total %}{% endif %}
-        <div class="saldo-card {% if saldo >= 0 %}green-border{% else %}red-border{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <!-- RR Card -->
+        <div class="saldo-card {% if saldo_total_rr.saldo_projetado %}{% if saldo_total_rr.saldo_projetado >= 0 %}green-border{% else %}red-border{% endif %}{% else %}{% if saldo_total_rr.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
             <div style="margin-bottom: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
                     <span style="font-size: 0.75rem;" class="saldo-subtext">Rafael Reigota</span>
                     <span class="saldo-badge-bg" style="padding: 0.25rem 0.625rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">RR</span>
                 </div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo >= 0 %}green-text{% else %}red-text{% endif %}">€{{ saldo|floatformat:2 }}</div>
+                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo_total_rr.saldo_projetado %}{% if saldo_total_rr.saldo_projetado >= 0 %}green-text{% else %}red-text{% endif %}{% else %}{% if saldo_total_rr.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}{% endif %}">€{% if saldo_total_rr.saldo_projetado %}{{ saldo_total_rr.saldo_projetado|floatformat:2 }}{% else %}{{ saldo_total_rr.saldo_total|floatformat:2 }}{% endif %}</div>
                 <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="saldo-subtext">Saldo Projetado Total</div>
             </div>
             <div style="border-top: 1px solid; padding-top: 0.75rem; font-size: 0.875rem;" class="saldo-border">
@@ -100,7 +100,7 @@
                     <span style="font-weight: 600;" class="red-text">€{{ saldo_total_rr.outs.total|floatformat:2 }}</span>
                 </div>
             </div>
-        </div>{% endwith %}
+        </div>
 
         <div class="saldo-card yellow-border" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
             <div style="margin-bottom: 0.75rem;">
