@@ -76,6 +76,8 @@ class EstatutoFornecedor(models.TextChoices):
     EMPRESA = 'EMPRESA', _('Empresa')
     FREELANCER = 'FREELANCER', _('Freelancer')
     ESTADO = 'ESTADO', _('Estado')
+    BANCO = 'BANCO', _('Banco')
+    SOCIO_GERENTE = 'SOCIO_GERENTE', _('Sócio Gerente')
 
 
 class Fornecedor(models.Model):
@@ -193,6 +195,46 @@ class Projeto(models.Model):
     premio_bruno = models.DecimalField(_('Prémio Bruno'), max_digits=10, decimal_places=2, default=0, blank=True, null=True)
     premio_rafael = models.DecimalField(_('Prémio Rafael'), max_digits=10, decimal_places=2, default=0, blank=True, null=True)
 
+    # Campos adicionais (importados da Google Sheet)
+    data_recibo = models.DateField(
+        _('Data Recibo'),
+        blank=True,
+        null=True,
+        help_text='Data em que o cliente pagou o projeto'
+    )
+    orcamento_url = models.URLField(
+        _('Link Orçamento'),
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text='Link para o orçamento relacionado'
+    )
+    equipa = models.IntegerField(
+        _('Tamanho Equipa'),
+        blank=True,
+        null=True,
+        help_text='Número de pessoas na equipa do projeto'
+    )
+    recursos_humanos = models.TextField(
+        _('Recursos Humanos'),
+        blank=True,
+        null=True,
+        help_text='Nomes das pessoas que trabalharam no projeto'
+    )
+    equipamento_usado = models.TextField(
+        _('Equipamento Usado'),
+        blank=True,
+        null=True,
+        help_text='Equipamento utilizado no projeto'
+    )
+    local = models.CharField(
+        _('Local'),
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text='Local onde o projeto foi realizado'
+    )
+
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
@@ -231,6 +273,60 @@ class EstadoDespesa(models.TextChoices):
     PENDENTE = 'PENDENTE', _('Pendente')
     VENCIDO = 'VENCIDO', _('Vencido')
     PAGO = 'PAGO', _('Pago')
+
+
+class TagDespesa(models.Model):
+    """
+    Tag para categorização de despesas (sistema de tags compostas)
+
+    As despesas na Google Sheet têm tipos compostos (ex: "Equipamento, Pessoal").
+    Este modelo permite associar múltiplas tags a uma despesa via ManyToMany.
+
+    Campos:
+    - codigo: Identificador único (PK) - ex: "EQUIPAMENTO", "PESSOAL"
+    - nome: Nome apresentável - ex: "Equipamento", "Pessoal"
+    - impacta_saldos: Se True, despesas com esta tag afetam saldos pessoais
+    - impacta_irc: Se True, despesas com esta tag são dedutíveis para IRC
+    """
+    codigo = models.CharField(
+        _('Código'),
+        max_length=50,
+        unique=True,
+        primary_key=True,
+        help_text='Código único da tag (ex: EQUIPAMENTO, PESSOAL)'
+    )
+    nome = models.CharField(
+        _('Nome'),
+        max_length=100,
+        help_text='Nome apresentável da tag'
+    )
+    impacta_saldos = models.BooleanField(
+        _('Impacta Saldos Pessoais'),
+        default=False,
+        help_text='Despesas com esta tag afetam os saldos pessoais dos sócios'
+    )
+    impacta_irc = models.BooleanField(
+        _('Impacta IRC'),
+        default=False,
+        help_text='Despesas com esta tag são dedutíveis para cálculo de IRC'
+    )
+    ordem = models.IntegerField(
+        _('Ordem'),
+        default=0,
+        help_text='Ordem de apresentação (menor = primeiro)'
+    )
+
+    class Meta:
+        verbose_name = _('Tag de Despesa')
+        verbose_name_plural = _('Tags de Despesa')
+        ordering = ['ordem', 'nome']
+        db_table = 'tags_despesa'
+
+    def __str__(self):
+        return self.nome
+
+    def __repr__(self):
+        return f"<TagDespesa(codigo='{self.codigo}', nome='{self.nome}')>"
 
 
 class DespesaTemplate(models.Model):
@@ -308,12 +404,33 @@ class Despesa(models.Model):
     - PROJETO: Associada a projeto, não impacta saldos diretamente
     """
     numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #D000001
+
+    # DEPRECATED: Campo antigo mantido por compatibilidade
     tipo = models.CharField(
-        _('Tipo'),
+        _('Tipo (deprecated)'),
         max_length=20,
         choices=TipoDespesa.choices,
         default=TipoDespesa.FIXA_MENSAL,
-        db_index=True
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text='Campo antigo - usar tags em vez disto'
+    )
+
+    # Sistema de tags (novo)
+    tags = models.ManyToManyField(
+        TagDespesa,
+        related_name='despesas',
+        verbose_name=_('Tags'),
+        blank=True,
+        help_text='Tags que categorizam esta despesa (ex: Equipamento, Pessoal)'
+    )
+    tipo_original = models.CharField(
+        _('Tipo Original'),
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text='Tipo original da Google Sheet (para auditoria)'
     )
 
     # Data
@@ -382,7 +499,40 @@ class Despesa(models.Model):
         return f"{self.numero} - {self.descricao[:30]}"
 
     def __repr__(self):
-        return f"<Despesa(id={self.id}, numero='{self.numero}', tipo='{self.tipo}', valor={self.valor_sem_iva})>"
+        tags_str = ', '.join([t.codigo for t in self.tags.all()]) if self.tags.exists() else 'sem tags'
+        return f"<Despesa(id={self.id}, numero='{self.numero}', tags=[{tags_str}], valor={self.valor_sem_iva})>"
+
+    # Helper methods para tags
+    def has_tag(self, codigo):
+        """Verifica se a despesa tem uma tag específica"""
+        return self.tags.filter(codigo=codigo).exists()
+
+    @property
+    def is_pessoal(self):
+        """Retorna True se a despesa tem tag PESSOAL"""
+        return self.has_tag('PESSOAL')
+
+    @property
+    def is_fixa_mensal(self):
+        """Retorna True se a despesa é fixa mensal (Administrativo, Ordenado, Sub.Alimentação)"""
+        return self.has_tag('ADMINISTRATIVO') or \
+               self.has_tag('ORDENADO') or \
+               self.has_tag('SUB_ALIMENTACAO')
+
+    @property
+    def is_premio(self):
+        """Retorna True se a despesa é prémio ou comissão"""
+        return self.has_tag('PREMIO') or self.has_tag('COMISSAO_VENDA')
+
+    @property
+    def impacta_saldos(self):
+        """Retorna True se alguma tag da despesa impacta saldos"""
+        return self.tags.filter(impacta_saldos=True).exists()
+
+    @property
+    def impacta_irc(self):
+        """Retorna True se alguma tag da despesa impacta IRC"""
+        return self.tags.filter(impacta_irc=True).exists()
 
 
 class CodigoSocio(models.TextChoices):
