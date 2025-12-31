@@ -43,7 +43,7 @@
     .dark .orange-bg { background-color: rgba(124, 45, 18, 0.2); }
     .dark .orange-border { border-left: 4px solid rgb(249, 115, 22); }
 
-    .saldo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .saldo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
     .saldo-breakdown-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
     @media (max-width: 768px) { .saldo-grid, .saldo-breakdown-grid { grid-template-columns: 1fr; } }
 </style>
@@ -98,23 +98,6 @@
                 <div style="display: flex; justify-content: space-between;">
                     <span class="saldo-subtext">Total OUTs</span>
                     <span style="font-weight: 600;" class="red-text">€{{ saldo_total_rr.outs.total|floatformat:2 }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="saldo-card yellow-border" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-            <div style="margin-bottom: 0.75rem;">
-                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="saldo-subtext">Total Devido pela Empresa</div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="yellow-text">€{{ total_empresa|floatformat:2 }}</div>
-            </div>
-            <div style="border-top: 1px solid; padding-top: 0.75rem; font-size: 0.875rem;" class="saldo-border">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span class="saldo-subtext">Bruno (BA)</span>
-                    <span style="font-weight: 600;" class="saldo-header">€{% if saldo_total_ba.saldo_projetado %}{{ saldo_total_ba.saldo_projetado|floatformat:2 }}{% else %}{{ saldo_total_ba.saldo_total|floatformat:2 }}{% endif %}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span class="saldo-subtext">Rafael (RR)</span>
-                    <span style="font-weight: 600;" class="saldo-header">€{% if saldo_total_rr.saldo_projetado %}{{ saldo_total_rr.saldo_projetado|floatformat:2 }}{% else %}{{ saldo_total_rr.saldo_total|floatformat:2 }}{% endif %}</span>
                 </div>
             </div>
         </div>
