@@ -467,40 +467,57 @@ class SaldoAdmin(ModelAdmin):
     def changelist_view(self, request, extra_context=None):
         """Vista personalizada para mostrar dashboard de saldos"""
         from django.shortcuts import render
+        from django.http import HttpResponse
         from core.utils.saldos import SaldosCalculator
         from datetime import date
+        import traceback
 
-        calculator = SaldosCalculator()
-        ano_atual = date.today().year
+        try:
+            calculator = SaldosCalculator()
+            ano_atual = date.today().year
 
-        # Calcular saldos TOTAIS (de sempre) - inclui tudo: pagos + finalizados + pendentes
-        saldo_total_ba = calculator.calcular_saldo_bruno(incluir_investimento=False)
-        saldo_total_rr = calculator.calcular_saldo_rafael(incluir_investimento=False)
+            # Calcular saldos TOTAIS (de sempre) - inclui tudo: pagos + finalizados + pendentes
+            saldo_total_ba = calculator.calcular_saldo_bruno(incluir_investimento=False)
+            saldo_total_rr = calculator.calcular_saldo_rafael(incluir_investimento=False)
 
-        # Calcular breakdown do ANO CORRENTE
-        breakdown_ba = calculator.calcular_saldo_ano('BA', ano_atual)
-        breakdown_rr = calculator.calcular_saldo_ano('RR', ano_atual)
+            # Calcular breakdown do ANO CORRENTE
+            breakdown_ba = calculator.calcular_saldo_ano('BA', ano_atual)
+            breakdown_rr = calculator.calcular_saldo_ano('RR', ano_atual)
 
-        # Calcular total empresa (soma de BA + RR)
-        saldo_ba_para_total = saldo_total_ba['saldo_projetado'] if saldo_total_ba['saldo_projetado'] is not None else saldo_total_ba['saldo_total']
-        saldo_rr_para_total = saldo_total_rr['saldo_projetado'] if saldo_total_rr['saldo_projetado'] is not None else saldo_total_rr['saldo_total']
-        total_empresa = saldo_ba_para_total + saldo_rr_para_total
+            # Calcular total empresa (soma de BA + RR)
+            saldo_ba_para_total = saldo_total_ba['saldo_projetado'] if saldo_total_ba['saldo_projetado'] is not None else saldo_total_ba['saldo_total']
+            saldo_rr_para_total = saldo_total_rr['saldo_projetado'] if saldo_total_rr['saldo_projetado'] is not None else saldo_total_rr['saldo_total']
+            total_empresa = saldo_ba_para_total + saldo_rr_para_total
 
-        context = {
-            **self.admin_site.each_context(request),
-            'title': 'Saldos Pessoais',
-            'ano_atual': ano_atual,
-            # Saldos totais (de sempre) - para cards de topo
-            'saldo_total_ba': saldo_total_ba,
-            'saldo_total_rr': saldo_total_rr,
-            'total_empresa': total_empresa,
-            # Breakdown do ano corrente - para secção de breakdown
-            'breakdown_ba': breakdown_ba,
-            'breakdown_rr': breakdown_rr,
-        }
+            context = {
+                **self.admin_site.each_context(request),
+                'title': 'Saldos Pessoais',
+                'ano_atual': ano_atual,
+                # Saldos totais (de sempre) - para cards de topo
+                'saldo_total_ba': saldo_total_ba,
+                'saldo_total_rr': saldo_total_rr,
+                'total_empresa': total_empresa,
+                # Breakdown do ano corrente - para secção de breakdown
+                'breakdown_ba': breakdown_ba,
+                'breakdown_rr': breakdown_rr,
+            }
 
-        # Render template directly (não chamar super() para evitar query na tabela inexistente)
-        return render(request, 'admin/core/saldo/changelist.html', context)
+            # Render template directly (não chamar super() para evitar query na tabela inexistente)
+            return render(request, 'admin/core/saldo/changelist.html', context)
+        except Exception as e:
+            # Debug: mostrar erro completo
+            error_html = f"""
+            <html><body>
+            <h1>Debug Error</h1>
+            <pre style="background: #f5f5f5; padding: 20px; border: 1px solid #ccc;">
+            Error: {str(e)}
+
+            Traceback:
+            {traceback.format_exc()}
+            </pre>
+            </body></html>
+            """
+            return HttpResponse(error_html)
 
 
 @admin.register(Fiscal)
