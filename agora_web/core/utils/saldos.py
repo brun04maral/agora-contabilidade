@@ -322,7 +322,7 @@ class SaldosCalculator:
         # Meses que já têm boletim emitido
         meses_com_boletim = set(
             Boletim.objects.filter(
-                socio=socio,
+                socio_codigo=socio,
                 ano=ano_atual
             ).values_list('mes', flat=True)
         )

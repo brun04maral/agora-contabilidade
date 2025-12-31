@@ -481,6 +481,11 @@ class SaldoAdmin(ModelAdmin):
         breakdown_ba = calculator.calcular_saldo_ano('BA', ano_atual)
         breakdown_rr = calculator.calcular_saldo_ano('RR', ano_atual)
 
+        # Calcular total empresa (soma de BA + RR)
+        saldo_ba_para_total = saldo_total_ba['saldo_projetado'] if saldo_total_ba['saldo_projetado'] is not None else saldo_total_ba['saldo_total']
+        saldo_rr_para_total = saldo_total_rr['saldo_projetado'] if saldo_total_rr['saldo_projetado'] is not None else saldo_total_rr['saldo_total']
+        total_empresa = saldo_ba_para_total + saldo_rr_para_total
+
         context = {
             **self.admin_site.each_context(request),
             'title': 'Saldos Pessoais',
@@ -488,7 +493,7 @@ class SaldoAdmin(ModelAdmin):
             # Saldos totais (de sempre) - para cards de topo
             'saldo_total_ba': saldo_total_ba,
             'saldo_total_rr': saldo_total_rr,
-            'total_empresa': saldo_total_ba['saldo_projetado'] if saldo_total_ba['saldo_projetado'] else saldo_total_ba['saldo_total'],
+            'total_empresa': total_empresa,
             # Breakdown do ano corrente - para secção de breakdown
             'breakdown_ba': breakdown_ba,
             'breakdown_rr': breakdown_rr,
