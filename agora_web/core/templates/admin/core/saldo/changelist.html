@@ -17,10 +17,13 @@
     .red-border { border-left: 4px solid rgb(220, 38, 38); }
     .yellow-text { color: rgb(133, 77, 14); }
     .yellow-border { border-left: 4px solid rgb(202, 138, 4); }
-    .border-l-3-green { border-left: 3px solid rgb(22, 163, 74); }
-    .border-l-3-red { border-left: 3px solid rgb(220, 38, 38); }
+    .blue-text { color: rgb(29, 78, 216); }
+    .blue-bg { background-color: rgb(239, 246, 255); }
+    .orange-text { color: rgb(194, 65, 12); }
+    .orange-bg { background-color: rgb(255, 247, 237); }
+    .orange-border { border-left: 4px solid rgb(234, 88, 12); }
 
-    /* Dark mode (when .dark class is on html) */
+    /* Dark mode */
     .dark .saldo-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
     .dark .saldo-header { color: rgb(243, 244, 246); }
     .dark .saldo-subtext { color: rgb(156, 163, 175); }
@@ -34,180 +37,268 @@
     .dark .red-border { border-left: 4px solid rgb(239, 68, 68); }
     .dark .yellow-text { color: rgb(253, 224, 71); }
     .dark .yellow-border { border-left: 4px solid rgb(234, 179, 8); }
-    .dark .border-l-3-green { border-left: 3px solid rgb(34, 197, 94); }
-    .dark .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
+    .dark .blue-text { color: rgb(147, 197, 253); }
+    .dark .blue-bg { background-color: rgba(30, 58, 138, 0.2); }
+    .dark .orange-text { color: rgb(253, 186, 116); }
+    .dark .orange-bg { background-color: rgba(124, 45, 18, 0.2); }
+    .dark .orange-border { border-left: 4px solid rgb(249, 115, 22); }
 
-    /* Layout compacto */
-    .saldo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .saldo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
     .saldo-breakdown-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-    @media (max-width: 768px) {
-        .saldo-grid, .saldo-breakdown-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 768px) { .saldo-grid, .saldo-breakdown-grid { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="padding: 1.5rem; max-width: 80rem; margin: 0 auto;">
-
-    <!-- Header -->
     <div style="margin-bottom: 1.5rem;">
-        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="saldo-header">Saldos Pessoais {{ ano_atual }}</h1>
-        <p style="font-size: 0.875rem;" class="saldo-subtext">Cálculo em tempo real dos saldos de cada sócio</p>
+        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="saldo-header">Saldos Pessoais</h1>
+        <p style="font-size: 0.875rem;" class="saldo-subtext">Saldo projetado total e breakdown do ano {{ ano_atual }}</p>
     </div>
 
-    <!-- Cards de Resumo -->
+    <!-- Cards Totais -->
     <div class="saldo-grid" style="margin-bottom: 1.5rem;">
-
-        <!-- Card Bruno -->
-        <div class="saldo-card {% if saldo_ba.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <!-- BA Card -->
+        <div class="saldo-card {% if saldo_total_ba.saldo_projetado %}{% if saldo_total_ba.saldo_projetado >= 0 %}green-border{% else %}red-border{% endif %}{% else %}{% if saldo_total_ba.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
             <div style="margin-bottom: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
                     <span style="font-size: 0.75rem;" class="saldo-subtext">Bruno Amaral</span>
                     <span class="saldo-badge-bg" style="padding: 0.25rem 0.625rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">BA</span>
                 </div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo_ba.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}">
-                    €{{ saldo_ba.saldo_total|floatformat:2 }}
-                </div>
+                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo_total_ba.saldo_projetado %}{% if saldo_total_ba.saldo_projetado >= 0 %}green-text{% else %}red-text{% endif %}{% else %}{% if saldo_total_ba.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}{% endif %}">€{% if saldo_total_ba.saldo_projetado %}{{ saldo_total_ba.saldo_projetado|floatformat:2 }}{% else %}{{ saldo_total_ba.saldo_total|floatformat:2 }}{% endif %}</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="saldo-subtext">Saldo Projetado Total</div>
             </div>
             <div style="border-top: 1px solid; padding-top: 0.75rem; font-size: 0.875rem;" class="saldo-border">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                     <span class="saldo-subtext">Total INs</span>
-                    <span style="font-weight: 600;" class="green-text">€{{ saldo_ba.ins.total|floatformat:2 }}</span>
+                    <span style="font-weight: 600;" class="green-text">€{{ saldo_total_ba.ins.total|floatformat:2 }}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between;">
                     <span class="saldo-subtext">Total OUTs</span>
-                    <span style="font-weight: 600;" class="red-text">€{{ saldo_ba.outs.total|floatformat:2 }}</span>
-                </div>
-                <div style="padding-top: 0.5rem; border-top: 1px solid; font-size: 0.75rem; margin-top: 0.5rem;" class="saldo-border saldo-subtext">
-                    Sugestão boletim: <span style="font-weight: 600;" class="saldo-header">€{{ saldo_ba.sugestao_boletim|floatformat:2 }}</span>
+                    <span style="font-weight: 600;" class="red-text">€{{ saldo_total_ba.outs.total|floatformat:2 }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Card Rafael -->
-        <div class="saldo-card {% if saldo_rr.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <!-- RR Card -->
+        <div class="saldo-card {% if saldo_total_rr.saldo_projetado %}{% if saldo_total_rr.saldo_projetado >= 0 %}green-border{% else %}red-border{% endif %}{% else %}{% if saldo_total_rr.saldo_total >= 0 %}green-border{% else %}red-border{% endif %}{% endif %}" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
             <div style="margin-bottom: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
                     <span style="font-size: 0.75rem;" class="saldo-subtext">Rafael Reigota</span>
                     <span class="saldo-badge-bg" style="padding: 0.25rem 0.625rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">RR</span>
                 </div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo_rr.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}">
-                    €{{ saldo_rr.saldo_total|floatformat:2 }}
-                </div>
+                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if saldo_total_rr.saldo_projetado %}{% if saldo_total_rr.saldo_projetado >= 0 %}green-text{% else %}red-text{% endif %}{% else %}{% if saldo_total_rr.saldo_total >= 0 %}green-text{% else %}red-text{% endif %}{% endif %}">€{% if saldo_total_rr.saldo_projetado %}{{ saldo_total_rr.saldo_projetado|floatformat:2 }}{% else %}{{ saldo_total_rr.saldo_total|floatformat:2 }}{% endif %}</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="saldo-subtext">Saldo Projetado Total</div>
             </div>
             <div style="border-top: 1px solid; padding-top: 0.75rem; font-size: 0.875rem;" class="saldo-border">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                     <span class="saldo-subtext">Total INs</span>
-                    <span style="font-weight: 600;" class="green-text">€{{ saldo_rr.ins.total|floatformat:2 }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span class="saldo-subtext">Total OUTs</span>
-                    <span style="font-weight: 600;" class="red-text">€{{ saldo_rr.outs.total|floatformat:2 }}</span>
-                </div>
-                <div style="padding-top: 0.5rem; border-top: 1px solid; font-size: 0.75rem; margin-top: 0.5rem;" class="saldo-border saldo-subtext">
-                    Sugestão boletim: <span style="font-weight: 600;" class="saldo-header">€{{ saldo_rr.sugestao_boletim|floatformat:2 }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card Total Empresa -->
-        <div class="saldo-card yellow-border" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-            <div style="margin-bottom: 0.75rem;">
-                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="saldo-subtext">Total Devido pela Empresa</div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="yellow-text">
-                    €{{ total_empresa|floatformat:2 }}
-                </div>
-            </div>
-            <div style="border-top: 1px solid; padding-top: 0.75rem; font-size: 0.875rem;" class="saldo-border">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span class="saldo-subtext">Bruno (BA)</span>
-                    <span style="font-weight: 600;" class="saldo-header">€{{ saldo_ba.saldo_total|floatformat:2 }}</span>
+                    <span style="font-weight: 600;" class="green-text">€{{ saldo_total_rr.ins.total|floatformat:2 }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                    <span class="saldo-subtext">Rafael (RR)</span>
-                    <span style="font-weight: 600;" class="saldo-header">€{{ saldo_rr.saldo_total|floatformat:2 }}</span>
+                    <span class="saldo-subtext">Total OUTs</span>
+                    <span style="font-weight: 600;" class="red-text">€{{ saldo_total_rr.outs.total|floatformat:2 }}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Breakdown Detalhado -->
+    <!-- Breakdown Anual -->
+    <div style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.25rem;" class="saldo-header">Breakdown {{ ano_atual }}</h2>
+        <p style="font-size: 0.875rem;" class="saldo-subtext">Detalhes de entradas e saídas do ano corrente</p>
+    </div>
+
     <div class="saldo-breakdown-grid">
-
-        <!-- Breakdown BA -->
+        <!-- BA -->
         <div class="saldo-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="saldo-header">Breakdown Bruno</h3>
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <div class="green-bg border-l-3-green" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="green-text">Projetos Pessoais</span>
-                        <span style="font-weight: 600;" class="green-text">€{{ saldo_ba.ins.projetos_pessoais|floatformat:2 }}</span>
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="saldo-header">Bruno Amaral (BA)</h3>
+            
+            <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;" class="green-text">Entradas (INs) {{ ano_atual }}</div>
+            <div style="margin-bottom: 0.75rem;">
+                <div class="green-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="green-text">Projetos Pessoais (pagos)</span>
+                        <span style="font-weight: 600;" class="green-text">€{{ breakdown_ba.ins_pagos.projetos_pessoais|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="green-bg border-l-3-green" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="green-text">Prémios</span>
-                        <span style="font-weight: 600;" class="green-text">€{{ saldo_ba.ins.premios|floatformat:2 }}</span>
+                <div class="green-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="green-text">Prémios (pagos)</span>
+                        <span style="font-weight: 600;" class="green-text">€{{ breakdown_ba.ins_pagos.premios|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="red-bg border-l-3-red" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="red-text">Despesas Fixas ÷2</span>
-                        <span style="font-weight: 600;" class="red-text">€{{ saldo_ba.outs.despesas_fixas|floatformat:2 }}</span>
+                {% if breakdown_ba.ins_a_receber.total > 0 %}
+                <div class="blue-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="blue-text">A Receber (finalizados)</span>
+                        <span style="font-weight: 600;" class="blue-text">€{{ breakdown_ba.ins_a_receber.total|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="red-bg border-l-3-red" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="red-text">Boletins Pagos</span>
-                        <span style="font-weight: 600;" class="red-text">€{{ saldo_ba.outs.boletins_pagos|floatformat:2 }}</span>
-                    </div>
-                </div>
-                <div class="red-bg border-l-3-red" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="red-text">Despesas Pessoais</span>
-                        <span style="font-weight: 600;" class="red-text">€{{ saldo_ba.outs.despesas_pessoais|floatformat:2 }}</span>
+                {% endif %}
+                <div class="green-bg green-border" style="padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 700;">
+                        <span class="green-text">Total INs {{ ano_atual }}</span>
+                        <span class="green-text">€{{ breakdown_ba.ins_total|floatformat:2 }}</span>
                     </div>
                 </div>
             </div>
+
+            <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;" class="red-text">Saídas (OUTs) {{ ano_atual }}</div>
+            <div style="margin-bottom: 0.75rem;">
+                <div class="red-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="red-text">Despesas Fixas ÷2</span>
+                        <span style="font-weight: 600;" class="red-text">€{{ breakdown_ba.outs_pagos.despesas_fixas|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="red-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="red-text">Boletins Pagos</span>
+                        <span style="font-weight: 600;" class="red-text">€{{ breakdown_ba.outs_pagos.boletins|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="red-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="red-text">Despesas Pessoais</span>
+                        <span style="font-weight: 600;" class="red-text">€{{ breakdown_ba.outs_pagos.despesas_pessoais|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% if breakdown_ba.outs_por_pagar.total > 0 %}
+                <div class="orange-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="orange-text">Por Pagar (pendentes)</span>
+                        <span style="font-weight: 600;" class="orange-text">€{{ breakdown_ba.outs_por_pagar.total|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="red-bg red-border" style="padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 700;">
+                        <span class="red-text">Total OUTs {{ ano_atual }}</span>
+                        <span class="red-text">€{{ breakdown_ba.outs_total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid; padding-top: 0.75rem; margin-bottom: 0.75rem;" class="saldo-border">
+                <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;" class="saldo-header">Resumo {{ ano_atual }}</div>
+                <div class="blue-bg" style="padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.375rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="saldo-header">Saldo Efetivo (só pagos)</span>
+                        <span style="font-weight: 600;" class="{% if breakdown_ba.saldo_efetivo >= 0 %}green-text{% else %}red-text{% endif %}">€{{ breakdown_ba.saldo_efetivo|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div style="background: rgb(30, 64, 175); padding: 0.5rem; border-radius: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 700; color: white;">
+                        <span>Saldo Projetado {{ ano_atual }}</span>
+                        <span>€{{ breakdown_ba.saldo_projetado|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if breakdown_ba.sugestao_boletim > 0 %}
+            <div class="orange-bg orange-border" style="padding: 0.75rem; border-radius: 0.25rem;">
+                <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;" class="orange-text">Sugestão de Boletim</div>
+                <div style="font-size: 1.25rem; font-weight: 700;" class="orange-text">€{{ breakdown_ba.sugestao_boletim|floatformat:2 }}</div>
+                <div style="font-size: 0.7rem; margin-top: 0.25rem;" class="saldo-subtext">Por mês restante em {{ ano_atual }}</div>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- Breakdown RR -->
+        <!-- RR (same structure) -->
         <div class="saldo-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="saldo-header">Breakdown Rafael</h3>
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <div class="green-bg border-l-3-green" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="green-text">Projetos Pessoais</span>
-                        <span style="font-weight: 600;" class="green-text">€{{ saldo_rr.ins.projetos_pessoais|floatformat:2 }}</span>
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="saldo-header">Rafael Reigota (RR)</h3>
+            
+            <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;" class="green-text">Entradas (INs) {{ ano_atual }}</div>
+            <div style="margin-bottom: 0.75rem;">
+                <div class="green-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="green-text">Projetos Pessoais (pagos)</span>
+                        <span style="font-weight: 600;" class="green-text">€{{ breakdown_rr.ins_pagos.projetos_pessoais|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="green-bg border-l-3-green" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="green-text">Prémios</span>
-                        <span style="font-weight: 600;" class="green-text">€{{ saldo_rr.ins.premios|floatformat:2 }}</span>
+                <div class="green-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="green-text">Prémios (pagos)</span>
+                        <span style="font-weight: 600;" class="green-text">€{{ breakdown_rr.ins_pagos.premios|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="red-bg border-l-3-red" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="red-text">Despesas Fixas ÷2</span>
-                        <span style="font-weight: 600;" class="red-text">€{{ saldo_rr.outs.despesas_fixas|floatformat:2 }}</span>
+                {% if breakdown_rr.ins_a_receber.total > 0 %}
+                <div class="blue-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="blue-text">A Receber (finalizados)</span>
+                        <span style="font-weight: 600;" class="blue-text">€{{ breakdown_rr.ins_a_receber.total|floatformat:2 }}</span>
                     </div>
                 </div>
-                <div class="red-bg border-l-3-red" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="red-text">Boletins Pagos</span>
-                        <span style="font-weight: 600;" class="red-text">€{{ saldo_rr.outs.boletins_pagos|floatformat:2 }}</span>
-                    </div>
-                </div>
-                <div class="red-bg border-l-3-red" style="padding: 0.5rem; border-radius: 0.25rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                        <span class="red-text">Despesas Pessoais</span>
-                        <span style="font-weight: 600;" class="red-text">€{{ saldo_rr.outs.despesas_pessoais|floatformat:2 }}</span>
+                {% endif %}
+                <div class="green-bg green-border" style="padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 700;">
+                        <span class="green-text">Total INs {{ ano_atual }}</span>
+                        <span class="green-text">€{{ breakdown_rr.ins_total|floatformat:2 }}</span>
                     </div>
                 </div>
             </div>
+
+            <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;" class="red-text">Saídas (OUTs) {{ ano_atual }}</div>
+            <div style="margin-bottom: 0.75rem;">
+                <div class="red-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="red-text">Despesas Fixas ÷2</span>
+                        <span style="font-weight: 600;" class="red-text">€{{ breakdown_rr.outs_pagos.despesas_fixas|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="red-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="red-text">Boletins Pagos</span>
+                        <span style="font-weight: 600;" class="red-text">€{{ breakdown_rr.outs_pagos.boletins|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="red-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="red-text">Despesas Pessoais</span>
+                        <span style="font-weight: 600;" class="red-text">€{{ breakdown_rr.outs_pagos.despesas_pessoais|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% if breakdown_rr.outs_por_pagar.total > 0 %}
+                <div class="orange-bg" style="padding: 0.375rem; border-radius: 0.25rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="orange-text">Por Pagar (pendentes)</span>
+                        <span style="font-weight: 600;" class="orange-text">€{{ breakdown_rr.outs_por_pagar.total|floatformat:2 }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="red-bg red-border" style="padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 700;">
+                        <span class="red-text">Total OUTs {{ ano_atual }}</span>
+                        <span class="red-text">€{{ breakdown_rr.outs_total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid; padding-top: 0.75rem; margin-bottom: 0.75rem;" class="saldo-border">
+                <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;" class="saldo-header">Resumo {{ ano_atual }}</div>
+                <div class="blue-bg" style="padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.375rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span class="saldo-header">Saldo Efetivo (só pagos)</span>
+                        <span style="font-weight: 600;" class="{% if breakdown_rr.saldo_efetivo >= 0 %}green-text{% else %}red-text{% endif %}">€{{ breakdown_rr.saldo_efetivo|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div style="background: rgb(30, 64, 175); padding: 0.5rem; border-radius: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 700; color: white;">
+                        <span>Saldo Projetado {{ ano_atual }}</span>
+                        <span>€{{ breakdown_rr.saldo_projetado|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if breakdown_rr.sugestao_boletim > 0 %}
+            <div class="orange-bg orange-border" style="padding: 0.75rem; border-radius: 0.25rem;">
+                <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 0.25rem;" class="orange-text">Sugestão de Boletim</div>
+                <div style="font-size: 1.25rem; font-weight: 700;" class="orange-text">€{{ breakdown_rr.sugestao_boletim|floatformat:2 }}</div>
+                <div style="font-size: 0.7rem; margin-top: 0.25rem;" class="saldo-subtext">Por mês restante em {{ ano_atual }}</div>
+            </div>
+            {% endif %}
         </div>
     </div>
-
 </div>
 {% endblock %}
