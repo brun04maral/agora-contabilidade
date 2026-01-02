@@ -644,18 +644,21 @@ class Command(BaseCommand):
         if self.stats['erros']:
             self.stdout.write(f'\n⚠️  {len(self.stats["erros"])} erros')
 
-            # Erros de projetos (primeiros 10)
-            erros_projetos = [e for e in self.stats['erros'] if 'Projeto' in e]
-            if erros_projetos:
-                self.stdout.write(f'\n   🔴 Erros de PROJETOS ({len(erros_projetos)} total, primeiros 10):')
-                for erro in erros_projetos[:10]:
-                    self.stdout.write(self.style.WARNING(f'      - {erro}'))
+            # Categorizar erros
+            categorias = {
+                'Fornecedor': [e for e in self.stats['erros'] if 'Fornecedor' in e],
+                'Cliente': [e for e in self.stats['erros'] if 'Cliente' in e],
+                'Projeto': [e for e in self.stats['erros'] if 'Projeto' in e],
+                'Despesa': [e for e in self.stats['erros'] if 'Despesa' in e],
+                'boletim': [e for e in self.stats['erros'] if 'boletim' in e],
+                'prémio': [e for e in self.stats['erros'] if 'prémio' in e],
+            }
 
-            # Outros erros (primeiros 10)
-            outros_erros = [e for e in self.stats['erros'] if 'Projeto' not in e]
-            if outros_erros:
-                self.stdout.write(f'\n   🟡 Outros erros ({len(outros_erros)} total, primeiros 10):')
-                for erro in outros_erros[:10]:
-                    self.stdout.write(self.style.WARNING(f'      - {erro}'))
+            # Mostrar erros por categoria
+            for categoria, erros in categorias.items():
+                if erros:
+                    self.stdout.write(f'\n   🔴 Erros de {categoria.upper()} ({len(erros)} total, primeiros 10):')
+                    for erro in erros[:10]:
+                        self.stdout.write(self.style.WARNING(f'      - {erro}'))
 
         self.stdout.write('\n' + '='*80 + '\n')
