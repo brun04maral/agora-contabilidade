@@ -9,9 +9,7 @@
       "telefone": "",
       "percentagem_participacao": "50.00",
       "ativo": true,
-      "cor_tema": "#1976d2",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "cor_tema": "#1976d2"
     }
   },
   {
@@ -24,9 +22,7 @@
       "telefone": "",
       "percentagem_participacao": "50.00",
       "ativo": true,
-      "cor_tema": "#388e3c",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "cor_tema": "#388e3c"
     }
   },
   {
@@ -36,9 +32,7 @@
       "nome": "Equipamento",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 1,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 1
     }
   },
   {
@@ -48,9 +42,7 @@
       "nome": "Pessoal",
       "impacta_saldos": true,
       "impacta_irc": true,
-      "ordem": 2,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 2
     }
   },
   {
@@ -60,9 +52,7 @@
       "nome": "Serviço",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 3,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 3
     }
   },
   {
@@ -72,9 +62,7 @@
       "nome": "Alojamento",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 4,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 4
     }
   },
   {
@@ -84,9 +72,7 @@
       "nome": "Transporte",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 5,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 5
     }
   },
   {
@@ -96,9 +82,7 @@
       "nome": "Alimentação",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 6,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 6
     }
   },
   {
@@ -108,9 +92,7 @@
       "nome": "Combustível",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 7,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 7
     }
   },
   {
@@ -120,9 +102,7 @@
       "nome": "Portagens",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 8,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 8
     }
   },
   {
@@ -132,9 +112,7 @@
       "nome": "Estacionamento",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 9,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 9
     }
   },
   {
@@ -144,9 +122,7 @@
       "nome": "Comunicação",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 10,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 10
     }
   },
   {
@@ -156,9 +132,7 @@
       "nome": "Software",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 11,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 11
     }
   },
   {
@@ -168,9 +142,7 @@
       "nome": "Formação",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 12,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 12
     }
   },
   {
@@ -180,9 +152,7 @@
       "nome": "Marketing",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 13,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 13
     }
   },
   {
@@ -192,9 +162,7 @@
       "nome": "Outros",
       "impacta_saldos": false,
       "impacta_irc": true,
-      "ordem": 14,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "ordem": 14
     }
   }
 ]
