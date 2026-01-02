@@ -5,6 +5,38 @@
 
 ---
 
+## ⚠️ **LEITURA OBRIGATÓRIA: Dois Ambientes Diferentes!**
+
+### 🤖 Claude AI trabalha em: `/home/user/agora-contabilidade` (LOCAL)
+- Ambiente de desenvolvimento
+- Claude faz mudanças, commits, e push aqui
+- **NÃO é o servidor de produção!**
+
+### 👨‍💻 TU (Bruno/Rafael) trabalhas em: `~/amp/docker/app/` (SERVIDOR)
+- Servidor de produção real
+- Onde a app está deployed
+- **Onde fazes testes e deployment!**
+
+### 🔄 **WORKFLOW CRÍTICO:**
+
+```
+1. Claude faz mudanças em /home/user/agora-contabilidade
+2. Claude faz push para origin/claude/nome-branch
+3. ⚠️  TU TENS DE FAZER PULL NO SERVIDOR! ⚠️
+
+   NO SERVIDOR (~/amp/docker/app/):
+   $ git pull origin claude/nome-branch
+   # OU se já merged para main:
+   $ git pull origin main
+
+4. Só depois de pull podes testar/deploy!
+```
+
+**REGRA DE OURO:**
+**SEMPRE faz `git pull` no servidor ANTES de testar mudanças do Claude!**
+
+---
+
 ## 🚀 Começar Nova Sessão de Desenvolvimento
 
 ### 1. **Prompt Inicial (Copiar & Colar para Claude)**
@@ -125,15 +157,21 @@ git push origin main
 
 ## 🎯 Deployment para Produção
 
-### **NO SERVIDOR** (~/amp/docker/app/)
+### ⚠️ **IMPORTANTE: Deployment é SEMPRE NO SERVIDOR!**
+
+**Path:** `~/amp/docker/app/` (servidor de produção)
+**Quem faz:** TU (Bruno/Rafael), NUNCA o Claude
 
 ```bash
-# Opção Automática (Recomendada)
+# 1. PRIMEIRO: Faz pull do código atualizado!
 cd ~/amp/docker/app
+git pull origin main  # ← NUNCA esqueças isto!
+
+# 2. DEPOIS: Deploy
+# Opção A - Automática (Recomendada)
 ./deploy.sh
 
-# Ou Manual
-git pull origin main
+# Opção B - Manual
 docker compose down
 docker compose build --no-cache web
 docker compose up -d

@@ -18,6 +18,39 @@ Sistema de contabilidade Django para **Amaral & Reigota - Produção Audiovisual
 
 ---
 
+## ⚠️ CRÍTICO: Ambientes de Trabalho
+
+**HÁ DOIS AMBIENTES DIFERENTES:**
+
+### 🤖 Ambiente LOCAL (Claude AI)
+- **Path:** `/home/user/agora-contabilidade`
+- **Onde:** Máquina de desenvolvimento (não é o servidor!)
+- **O que faz:** Claude trabalha aqui, faz mudanças, commits, push
+
+### 👨‍💻 Ambiente SERVIDOR (Bruno/Rafael)
+- **Path:** `~/amp/docker/app/` (servidor de produção)
+- **Onde:** Servidor real onde a app está deployed
+- **O que faz:** TU trabalhas aqui, testar mudanças, deployment
+
+### 🔄 Workflow OBRIGATÓRIO
+
+**Quando Claude faz mudanças:**
+1. Claude faz mudanças em `/home/user/agora-contabilidade`
+2. Claude faz commit e push para branch `claude/*`
+3. **⚠️ TU TENS DE FAZER PULL NO SERVIDOR antes de testar!**
+   ```bash
+   # NO SERVIDOR (~/amp/docker/app/)
+   git pull origin claude/nome-da-branch
+   # OU se já está em main:
+   git pull origin main
+   ```
+4. Só depois de pull é que podes testar/deploy
+
+**NUNCA assumes que o código no servidor está atualizado!**
+**SEMPRE faz `git pull` antes de qualquer teste ou deployment!**
+
+---
+
 ## 🏗️ Arquitetura
 
 ```
