@@ -60,27 +60,40 @@ agora-contabilidade/
 ### Saldos Pessoais (Personal Balances)
 **Conceito:** Sócios fazem trabalho freelance mas faturam pela empresa → empresa fica a dever dinheiro aos sócios.
 
-**Fórmula:**
+**Fórmula Base:**
 ```
 Saldo = INs - OUTs
 
 INs (empresa DEVE ao sócio):
-  • Projetos pessoais (Projeto.tipo = PESSOAL_BRUNO/RAFAEL, estado = RECEBIDO)
-  • Prémios em projetos da empresa (premio_bruno/premio_rafael)
+  • Projetos pessoais (Projeto.tipo = PESSOAL, owner = BA/RR, estado = PAGO)
+  • Prémios em projetos da empresa (premio_bruno/premio_rafael, estado = PAGO)
+  • A Receber: Projetos/prémios com estado = FINALIZADO (não faturados ainda)
 
 OUTs (empresa PAGOU ao sócio):
   • Despesas fixas mensais ÷ 2 (Despesa.tipo = FIXA_MENSAL, estado = PAGO)
   • Boletins pagos (Boletim.estado = PAGO)
-  • Despesas pessoais (Despesa com FK ao projeto pessoal do sócio)
+  • Boletins pendentes (Boletim.estado = PENDENTE)
+  • Despesas pessoais (Despesa.tipo = PESSOAL_BA/PESSOAL_RR, estado = PAGO)
 
-Nota: Investimento inicial (€5.200) está documentado no código mas NÃO conta
+Nota: Investimento inicial (€5.200/sócio) está documentado no código mas NÃO conta
       no cálculo - é apenas referência histórica.
 ```
 
+**Dashboard Structure:**
+- **Saldos Totais (All-Time):** Mostra saldo projetado acumulado desde sempre para BA e RR
+- **Breakdown Anual:** Detalhes do ano corrente com:
+  - INs Pagos vs A Receber (finalizados)
+  - OUTs Pagos vs Por Pagar (boletins pendentes)
+  - Saldo Efetivo (só valores pagos) vs Saldo Projetado (com pendentes)
+  - Sugestão de Boletim (baseada no saldo projetado ÷ meses restantes)
+
 **Implementação:**
-- Calculator: `core/utils/saldos.py` - `SaldosCalculator`
-- Dashboard: `/admin/core/saldo/` - proxy model sem tabela
+- Calculator: `core/utils/saldos.py` - classe `SaldosCalculator`
+  - `calcular_saldo_bruno()` / `calcular_saldo_rafael()` → saldo total all-time
+  - `calcular_saldo_ano(socio, ano)` → breakdown detalhado do ano
+- Dashboard: `/admin/core/saldo/` - proxy model `Saldo` (sem tabela)
 - Template: `core/templates/admin/core/saldo/changelist.html`
+- Admin View: `SaldoAdmin.changelist_view()` em `core/admin.py`
 
 ---
 

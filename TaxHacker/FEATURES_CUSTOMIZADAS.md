@@ -1068,3 +1068,4 @@ RESUMO FEATURES COMPLETAS
    - Download PDFs certificados
 
 ==================================================
+˜
