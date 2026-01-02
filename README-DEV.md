@@ -116,6 +116,7 @@ git push -u origin claude/nova-feature-abc12
 
 # Quando pronta, merge para main
 git checkout main
+git pull origin main  # ← IMPORTANTE: sincroniza com remote primeiro!
 git merge claude/nova-feature-abc12
 git push origin main
 ```
@@ -360,11 +361,12 @@ Cria um plano de implementação detalhado!
 3. git add . && git commit -m "feat: descrição"
 4. git push -u origin claude/feature-xxxxx
 5. [testar mais se necessário]
-6. git checkout main && git merge claude/feature-xxxxx
-7. git push origin main
-8. [NO SERVIDOR] ./deploy.sh
-9. ✅ Verificar produção
-10. 🎉 Done!
+6. git checkout main && git pull origin main
+7. git merge claude/feature-xxxxx
+8. git push origin main
+9. [NO SERVIDOR] ./deploy.sh
+10. ✅ Verificar produção
+11. 🎉 Done!
 ```
 
 ---
