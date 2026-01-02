@@ -602,10 +602,11 @@ class Command(BaseCommand):
         """Parse date from Excel"""
         if not value:
             return None
-        if isinstance(value, date):
-            return value
+        # Check datetime FIRST (datetime is subclass of date!)
         if isinstance(value, datetime):
             return value.date()
+        if isinstance(value, date):
+            return value
         return None
 
     def get_month_name(self, mes):
