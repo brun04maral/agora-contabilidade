@@ -454,12 +454,16 @@ class Command(BaseCommand):
                 estado = EstadoBoletim.PAGO if datas_venc else EstadoBoletim.PENDENTE
                 data_pag = max(datas_venc) if datas_venc else None
 
+                # Gerar número do boletim (formato: #B-BA-2025-01)
+                numero = f'#B-{socio_codigo}-{ano:04d}-{mes:02d}'
+
                 # Criar boletim
                 Boletim.objects.update_or_create(
                     socio=socio,
                     mes=mes,
                     ano=ano,
                     defaults={
+                        'numero': numero,
                         'descricao': self.get_month_name(mes),
                         'data_emissao': date(ano, mes, 27),  # Fixo dia 27
                         'data_pagamento': self.parse_date(data_pag) if data_pag else None,
