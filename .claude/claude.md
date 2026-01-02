@@ -178,8 +178,7 @@ DB_PASSWORD=Agora2025Prod!SecureDB
 - Development ativo
 - Merge para main quando estável
 
-**Branches Antigas:** (a limpar)
-- `claude/self-hosted-brainstorm-heo8m` - antigo, não usar
+**Naming Convention:** Feature branches devem seguir o padrão `claude/nome-da-feature-xxxxx`
 
 ---
 
