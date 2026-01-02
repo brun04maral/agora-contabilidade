@@ -1,53 +1,76 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: agora_db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: agora_web
-      POSTGRES_USER: agora
-      POSTGRES_PASSWORD: agora123
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"  # 5433 para não conflitar com prototype
+    networks:
+      - agora_internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agora"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
   web:
-    build: ./agora_web
-    command: python manage.py runserver 0.0.0.0:8000
+    build:
+      context: ./agora_web
+      dockerfile: Dockerfile
+    container_name: agora_web
+    restart: unless-stopped
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
     volumes:
-      - ./agora_web:/app
-      - ./excel:/app/excel
-    ports:
-      - "8001:8000"  # 8001 para não conflitar com prototypes
+      - ./agora_web/static:/app/static
+      - ./agora_web/media:/app/media
+      - staticfiles:/app/staticfiles
     environment:
-      DB_NAME: agora_web
-      DB_USER: agora
-      DB_PASSWORD: agora123
+      DJANGO_SETTINGS_MODULE: config.settings
+      DEBUG: ${DEBUG}
+      SECRET_KEY: ${SECRET_KEY}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: db
       DB_PORT: 5432
-      DJANGO_DEBUG: "True"
-      DJANGO_ALLOWED_HOSTS: "*"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - agora_internal
+      - traefik_proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.agora-web.rule=Host(`app.agoramediaproduction.pt`)"
-      - "traefik.http.routers.agora-web.entrypoints=websecure"
-      - "traefik.http.routers.agora-web.tls=true"
-      - "traefik.http.routers.agora-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.agora-web.loadbalancer.server.port=8000"
-    networks:
-      - traefik_proxy
-      - default
+      - "traefik.docker.network=traefik_proxy"
+
+      # HTTP Router (Cloudflare Full mode envia HTTPS também)
+      - "traefik.http.routers.agora-app-http.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.agora-app-http.entrypoints=http"
+      - "traefik.http.routers.agora-app-http.service=agora-app"
+
+      # HTTPS Router
+      - "traefik.http.routers.agora-app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.agora-app.entrypoints=https"
+      - "traefik.http.routers.agora-app.tls=true"
+      - "traefik.http.routers.agora-app.tls.certresolver=http"
+      - "traefik.http.routers.agora-app.service=agora-app"
+
+      # Service
+      - "traefik.http.services.agora-app.loadbalancer.server.port=8000"
 
 networks:
+  agora_internal:
+    driver: bridge
   traefik_proxy:
     external: true
 
 volumes:
   postgres_data:
+    driver: local
+  staticfiles:
+    driver: local
