@@ -235,6 +235,8 @@ class Command(BaseCommand):
         """Importa projetos da aba PROJETOS"""
         header_row = 3
 
+        self.stdout.write(f'   🔍 DEBUG: Aba PROJETOS tem {ws.max_row} linhas')
+
         for row_idx in range(header_row + 1, ws.max_row + 1):
             try:
                 numero = ws.cell(row_idx, 1).value
