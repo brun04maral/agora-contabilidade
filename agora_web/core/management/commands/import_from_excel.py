@@ -354,12 +354,18 @@ class Command(BaseCommand):
 
                 # Convert valores com better error handling
                 try:
-                    valor_sem_iva = Decimal(str(ws.cell(row_idx, 10).value or 0))
+                    val_sem_iva_raw = ws.cell(row_idx, 10).value or 0
+                    # Normalize comma to dot for European decimal format
+                    val_sem_iva_str = str(val_sem_iva_raw).replace(',', '.')
+                    valor_sem_iva = Decimal(val_sem_iva_str)
                 except Exception as e:
                     raise ValueError(f'Valor sem IVA inválido: {ws.cell(row_idx, 10).value}') from e
 
                 try:
-                    valor_com_iva = Decimal(str(ws.cell(row_idx, 13).value or 0))
+                    val_com_iva_raw = ws.cell(row_idx, 13).value or 0
+                    # Normalize comma to dot for European decimal format
+                    val_com_iva_str = str(val_com_iva_raw).replace(',', '.')
+                    valor_com_iva = Decimal(val_com_iva_str)
                 except Exception as e:
                     raise ValueError(f'Valor com IVA inválido: {ws.cell(row_idx, 13).value}') from e
 
