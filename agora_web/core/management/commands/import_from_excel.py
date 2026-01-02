@@ -629,8 +629,20 @@ class Command(BaseCommand):
         self.stdout.write(f'🏆 Prémios agregados: {self.stats["premios_agregados"]}')
 
         if self.stats['erros']:
-            self.stdout.write(f'\n⚠️  {len(self.stats["erros"])} erros (primeiros 10):')
-            for erro in self.stats['erros'][:10]:
-                self.stdout.write(self.style.WARNING(f'   - {erro}'))
+            self.stdout.write(f'\n⚠️  {len(self.stats["erros"])} erros')
+
+            # Erros de projetos (primeiros 10)
+            erros_projetos = [e for e in self.stats['erros'] if 'Projeto' in e]
+            if erros_projetos:
+                self.stdout.write(f'\n   🔴 Erros de PROJETOS ({len(erros_projetos)} total, primeiros 10):')
+                for erro in erros_projetos[:10]:
+                    self.stdout.write(self.style.WARNING(f'      - {erro}'))
+
+            # Outros erros (primeiros 10)
+            outros_erros = [e for e in self.stats['erros'] if 'Projeto' not in e]
+            if outros_erros:
+                self.stdout.write(f'\n   🟡 Outros erros ({len(outros_erros)} total, primeiros 10):')
+                for erro in outros_erros[:10]:
+                    self.stdout.write(self.style.WARNING(f'      - {erro}'))
 
         self.stdout.write('\n' + '='*80 + '\n')
