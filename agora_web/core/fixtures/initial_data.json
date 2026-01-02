@@ -1,0 +1,200 @@
+[
+  {
+    "model": "core.socio",
+    "pk": "BA",
+    "fields": {
+      "nome_completo": "Bruno Amaral",
+      "nome_curto": "Bruno",
+      "email": "bruno@agoramedia.pt",
+      "telefone": "",
+      "percentagem_participacao": "50.00",
+      "ativo": true,
+      "cor_tema": "#1976d2",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.socio",
+    "pk": "RR",
+    "fields": {
+      "nome_completo": "Rafael Reigota",
+      "nome_curto": "Rafael",
+      "email": "rafael@agoramedia.pt",
+      "telefone": "",
+      "percentagem_participacao": "50.00",
+      "ativo": true,
+      "cor_tema": "#388e3c",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "EQUIPAMENTO",
+    "fields": {
+      "nome": "Equipamento",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 1,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PESSOAL",
+    "fields": {
+      "nome": "Pessoal",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 2,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "SERVICO",
+    "fields": {
+      "nome": "Serviço",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 3,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ALOJAMENTO",
+    "fields": {
+      "nome": "Alojamento",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 4,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "TRANSPORTE",
+    "fields": {
+      "nome": "Transporte",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 5,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ALIMENTACAO",
+    "fields": {
+      "nome": "Alimentação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 6,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "COMBUSTIVEL",
+    "fields": {
+      "nome": "Combustível",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 7,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PORTAGENS",
+    "fields": {
+      "nome": "Portagens",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 8,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ESTACIONAMENTO",
+    "fields": {
+      "nome": "Estacionamento",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 9,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "COMUNICACAO",
+    "fields": {
+      "nome": "Comunicação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 10,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "SOFTWARE",
+    "fields": {
+      "nome": "Software",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 11,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "FORMACAO",
+    "fields": {
+      "nome": "Formação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 12,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "MARKETING",
+    "fields": {
+      "nome": "Marketing",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 13,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "OUTROS",
+    "fields": {
+      "nome": "Outros",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 14,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  }
+]
