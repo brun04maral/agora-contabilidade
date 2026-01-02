@@ -478,7 +478,7 @@ class Command(BaseCommand):
                 self.stats['despesas'] += 1
 
             except Exception as e:
-                self.stats['erros'].append(f'Despesa {desp.get("numero", "???")}}: {e}')
+                self.stats['erros'].append(f'Despesa {desp.get("numero", "???")}: {e}')
 
     # =========================================================================
     # HELPER METHODS
