@@ -239,8 +239,6 @@ class Command(BaseCommand):
         """Importa projetos da aba PROJETOS"""
         header_row = 3
 
-        self.stdout.write(f'   🔍 DEBUG: Aba PROJETOS tem {ws.max_row} linhas')
-
         for row_idx in range(header_row + 1, ws.max_row + 1):
             try:
                 numero = ws.cell(row_idx, 1).value
@@ -341,8 +339,6 @@ class Command(BaseCommand):
 
         header_row = 5
 
-        self.stdout.write(f'   🔍 DEBUG: Aba DESPESAS tem {ws.max_row} linhas, header na linha {header_row}')
-
         for row_idx in range(header_row + 1, ws.max_row + 1):
             try:
                 numero = ws.cell(row_idx, 1).value
@@ -396,8 +392,6 @@ class Command(BaseCommand):
 
             except Exception as e:
                 self.stats['erros'].append(f'Despesa linha {row_idx}: {e}')
-
-        self.stdout.write(f'   🔍 DEBUG: Categorizadas - Prémios: {len(premios)}, Boletins: {len(boletins_raw)}, Normais: {len(normais)}')
 
         return {
             'premios': premios,
