@@ -109,7 +109,11 @@ class Command(BaseCommand):
                     raise Exception("DRY RUN - rollback transaction")
 
         except Exception as e:
-            if not self.dry_run:
+            if self.dry_run and str(e) != "DRY RUN - rollback transaction":
+                self.stdout.write(self.style.ERROR(f'\n❌ Erro durante import: {e}'))
+                import traceback
+                traceback.print_exc()
+            elif not self.dry_run:
                 self.stdout.write(self.style.ERROR(f'\n❌ Erro durante import: {e}'))
                 raise
 
@@ -340,37 +344,41 @@ class Command(BaseCommand):
         self.stdout.write(f'   🔍 DEBUG: Aba DESPESAS tem {ws.max_row} linhas, header na linha {header_row}')
 
         for row_idx in range(header_row + 1, ws.max_row + 1):
-            numero = ws.cell(row_idx, 1).value
-            if not numero:
-                continue
+            try:
+                numero = ws.cell(row_idx, 1).value
+                if not numero:
+                    continue
 
-            tipo_str = ws.cell(row_idx, 7).value or ''
-            tags = self.parse_tags(tipo_str)
+                tipo_str = ws.cell(row_idx, 7).value or ''
+                tags = self.parse_tags(tipo_str)
 
-            despesa_raw = {
-                'numero': numero,
-                'ano': int(ws.cell(row_idx, 2).value or 0),
-                'mes': int(ws.cell(row_idx, 3).value or 0),
-                'dia': int(ws.cell(row_idx, 4).value or 0),
-                'credor_nome': ws.cell(row_idx, 5).value,
-                'projeto_numero': ws.cell(row_idx, 6).value,
-                'tipo_original': tipo_str,
-                'tags': tags,
-                'descricao': ws.cell(row_idx, 8).value or '',
-                'valor_sem_iva': Decimal(str(ws.cell(row_idx, 10).value or 0)),
-                'valor_com_iva': Decimal(str(ws.cell(row_idx, 13).value or 0)),
-                'data_vencimento': ws.cell(row_idx, 20).value,
-                'nota': ws.cell(row_idx, 23).value,
-            }
+                despesa_raw = {
+                    'numero': numero,
+                    'ano': int(ws.cell(row_idx, 2).value or 0),
+                    'mes': int(ws.cell(row_idx, 3).value or 0),
+                    'dia': int(ws.cell(row_idx, 4).value or 0),
+                    'credor_nome': ws.cell(row_idx, 5).value,
+                    'projeto_numero': ws.cell(row_idx, 6).value,
+                    'tipo_original': tipo_str,
+                    'tags': tags,
+                    'descricao': ws.cell(row_idx, 8).value or '',
+                    'valor_sem_iva': Decimal(str(ws.cell(row_idx, 10).value or 0)),
+                    'valor_com_iva': Decimal(str(ws.cell(row_idx, 13).value or 0)),
+                    'data_vencimento': ws.cell(row_idx, 20).value,
+                    'nota': ws.cell(row_idx, 23).value,
+                }
 
-            # Classificar
-            if 'PREMIO' in tags or 'COMISSAO_VENDA' in tags:
-                premios.append(despesa_raw)
-            elif any(t in tags for t in ['PER_DIEM_PT', 'PER_DIEM_FORA']) or \
-                 ('DESLOCACAO' in tags and 'PESSOAL' in tags):
-                boletins_raw.append(despesa_raw)
-            else:
-                normais.append(despesa_raw)
+                # Classificar
+                if 'PREMIO' in tags or 'COMISSAO_VENDA' in tags:
+                    premios.append(despesa_raw)
+                elif any(t in tags for t in ['PER_DIEM_PT', 'PER_DIEM_FORA']) or \
+                     ('DESLOCACAO' in tags and 'PESSOAL' in tags):
+                    boletins_raw.append(despesa_raw)
+                else:
+                    normais.append(despesa_raw)
+
+            except Exception as e:
+                self.stats['erros'].append(f'Despesa linha {row_idx}: {e}')
 
         self.stdout.write(f'   🔍 DEBUG: Categorizadas - Prémios: {len(premios)}, Boletins: {len(boletins_raw)}, Normais: {len(normais)}')
 
