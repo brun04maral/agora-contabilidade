@@ -21,7 +21,9 @@ RUN pip install --upgrade pip && \
     pip install gunicorn psycopg2-binary
 
 # Copy project
-COPY . .
+# DEVELOPMENT: Commented out to allow volume mounts to work
+# For production builds, uncomment this line or use a separate Dockerfile
+# COPY . .
 
 # Create static and media directories
 RUN mkdir -p /app/static /app/media
