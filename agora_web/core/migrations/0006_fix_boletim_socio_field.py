@@ -32,6 +32,21 @@ def fix_boletim_socio(apps, schema_editor):
         if 'socio_codigo' in existing_columns:
             cursor.execute('ALTER TABLE boletins DROP COLUMN IF EXISTS socio_codigo')
 
+        # Re-check columns after renames/drops
+        cursor.execute("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'boletins'
+            AND column_name IN ('socio', 'socio_id')
+        """)
+        final_columns = [row[0] for row in cursor.fetchall()]
+
+        # Ensure socio or socio_id allows NULL (model has null=True, blank=True)
+        if 'socio_id' in final_columns:
+            cursor.execute('ALTER TABLE boletins ALTER COLUMN socio_id DROP NOT NULL')
+        elif 'socio' in final_columns:
+            cursor.execute('ALTER TABLE boletins ALTER COLUMN socio DROP NOT NULL')
+
 
 class Migration(migrations.Migration):
 
