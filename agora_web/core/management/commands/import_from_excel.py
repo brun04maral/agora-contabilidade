@@ -337,6 +337,8 @@ class Command(BaseCommand):
 
         header_row = 5
 
+        self.stdout.write(f'   🔍 DEBUG: Aba DESPESAS tem {ws.max_row} linhas, header na linha {header_row}')
+
         for row_idx in range(header_row + 1, ws.max_row + 1):
             numero = ws.cell(row_idx, 1).value
             if not numero:
@@ -369,6 +371,8 @@ class Command(BaseCommand):
                 boletins_raw.append(despesa_raw)
             else:
                 normais.append(despesa_raw)
+
+        self.stdout.write(f'   🔍 DEBUG: Categorizadas - Prémios: {len(premios)}, Boletins: {len(boletins_raw)}, Normais: {len(normais)}')
 
         return {
             'premios': premios,
