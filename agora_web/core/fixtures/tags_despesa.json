@@ -1,0 +1,142 @@
+[
+  {
+    "model": "core.tagdespesa",
+    "pk": "EQUIPAMENTO",
+    "fields": {
+      "nome": "Equipamento",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 1
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PESSOAL",
+    "fields": {
+      "nome": "Pessoal",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 2
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "SERVICO",
+    "fields": {
+      "nome": "Serviço",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 3
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PREMIO",
+    "fields": {
+      "nome": "Prémio",
+      "impacta_saldos": true,
+      "impacta_irc": false,
+      "ordem": 4
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "COMISSAO_VENDA",
+    "fields": {
+      "nome": "Comissão de Venda",
+      "impacta_saldos": true,
+      "impacta_irc": false,
+      "ordem": 5
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ADMINISTRATIVO",
+    "fields": {
+      "nome": "Administrativo",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 6
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ORDENADO",
+    "fields": {
+      "nome": "Ordenado",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 7
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "SUB_ALIMENTACAO",
+    "fields": {
+      "nome": "Sub. Alimentação",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 8
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ALIMENTACAO",
+    "fields": {
+      "nome": "Alimentação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 9
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PRODUCAO",
+    "fields": {
+      "nome": "Produção",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 10
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "DESLOCACAO",
+    "fields": {
+      "nome": "Deslocação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 11
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PER_DIEM_PT",
+    "fields": {
+      "nome": "Per Diem Portugal",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 12
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PER_DIEM_FORA",
+    "fields": {
+      "nome": "Per Diem Estrangeiro",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 13
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "IRS_RETENCAO",
+    "fields": {
+      "nome": "IRS Retenção",
+      "impacta_saldos": false,
+      "impacta_irc": false,
+      "ordem": 14
+    }
+  }
+]
