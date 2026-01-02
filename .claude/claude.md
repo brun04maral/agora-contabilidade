@@ -10,10 +10,11 @@ Sistema de contabilidade Django para **Amaral & Reigota - Produção Audiovisual
 **Tech Stack:**
 - Django 5.0 + PostgreSQL 16
 - Unfold Admin Theme
-- Docker + Cloudflare Tunnel
+- Docker + Traefik (reverse proxy)
+- Cloudflare (DNS + Proxy + SSL)
 - Python 3.11
 
-**Deployment:** Production via Docker Compose com Cloudflare tunnel para acesso remoto.
+**Deployment:** Production via Docker Compose com Traefik como reverse proxy local. Cloudflare fornece DNS, proxy e SSL (não Cloudflare Tunnel).
 
 ---
 
@@ -44,7 +45,8 @@ agora-contabilidade/
 │   ├── SALDOS_DASHBOARD.md
 │   └── DATABASE_MANUAL_CHANGES.md
 │
-└── docker-compose.cloudflare.yml  # Production compose file
+├── docker-compose.yml      # Production compose file (na raiz)
+└── .env                    # Environment variables
 ```
 
 ---
@@ -97,6 +99,90 @@ Nota: Investimento inicial (€5.200/sócio) está documentado no código mas N�
 
 ---
 
+## 🌐 Infraestrutura & Deployment
+
+### Arquitetura de Rede
+```
+Internet
+  ↓
+Cloudflare (DNS + CDN + SSL Certificate)
+  ↓
+Server IP (porta 80/443)
+  ↓
+Traefik v3.3.1 (Reverse Proxy)
+  ↓
+Docker Network: traefik_proxy
+  ↓
+agora_web container (Django + Gunicorn :8000)
+  ↓
+Docker Network: agora_internal
+  ↓
+agora_db container (PostgreSQL 16 :5432)
+```
+
+### Componentes
+
+**Cloudflare:**
+- DNS: app.agoramediaproduction.pt → IP do servidor
+- Proxy Mode: ON (orange cloud)
+- SSL/TLS: Full (certificate on origin)
+- Não usa Cloudflare Tunnel!
+
+**Traefik:**
+- Container: `traefik:v3.3.1`
+- Portas expostas: 80 (HTTP), 443 (HTTPS), 8080 (Dashboard)
+- Entrypoints: `http`, `https`
+- Cert Resolver: `http` (para Cloudflare compatibility)
+- Network: `traefik_proxy` (external)
+
+**Django App:**
+- Container: `agora_web`
+- Comando: `gunicorn config.wsgi:application --bind 0.0.0.0:8000`
+- Networks: `agora_internal` + `traefik_proxy`
+- Volume: `agora_web_postgres_data` (IMPORTANTE: nome histórico, não mudar!)
+
+### Server Paths
+
+**Development:** `/home/user/agora-contabilidade/` (local machine)
+**Production:** `/home/zumine/amp/docker/app/` (server)
+
+**NOTA:** O repositório Git está em `/home/zumine/amp/docker/app/` no servidor.
+
+### Environment Variables
+
+**Ficheiro:** `.env` (na raiz do projeto no servidor)
+
+```bash
+# Django
+DEBUG=False
+SECRET_KEY=f#&l*&fzdxbrdttr1rjfn279x-aey=86p%a0a3yxgjj4-@vp12
+DJANGO_SETTINGS_MODULE=config.settings
+
+# Domain
+DOMAIN=app.agoramediaproduction.pt
+ALLOWED_HOSTS=app.agoramediaproduction.pt,localhost,127.0.0.1
+
+# Database (credenciais históricas - não mudar!)
+DB_NAME=agora_production
+DB_USER=agora
+DB_PASSWORD=Agora2025Prod!SecureDB
+```
+
+### Branch Strategy
+
+**Production Branch:** `main`
+- Sempre estável e deployável
+- Merges só após testing
+
+**Current Working Branch:** `claude/review-project-context-9jpda`
+- Development ativo
+- Merge para main quando estável
+
+**Branches Antigas:** (a limpar)
+- `claude/self-hosted-brainstorm-heo8m` - antigo, não usar
+
+---
+
 ## 🗄️ Database
 
 **PostgreSQL 16** rodando em Docker.
@@ -125,32 +211,39 @@ Nota: Investimento inicial (€5.200/sócio) está documentado no código mas N�
 
 ### Acessar Django Shell
 ```bash
-docker compose -f docker-compose.cloudflare.yml exec web python manage.py shell
+docker compose exec web python manage.py shell
 ```
 
 ### Ver Logs
 ```bash
-docker compose -f docker-compose.cloudflare.yml logs -f web
+docker compose logs -f web
 ```
 
 ### Aplicar Migrations
 ```bash
-docker compose -f docker-compose.cloudflare.yml exec web python manage.py migrate
+docker compose exec web python manage.py migrate
 ```
 
 ### Criar Superuser
 ```bash
-docker compose -f docker-compose.cloudflare.yml exec web python manage.py createsuperuser
+docker compose exec web python manage.py createsuperuser
 ```
 
 ### Rebuild após Mudanças de Código
 ```bash
-docker compose -f docker-compose.cloudflare.yml up -d --build web
+docker compose down
+docker compose build --no-cache web
+docker compose up -d
+```
+
+### Backup da Base de Dados
+```bash
+docker compose exec db pg_dump -U agora agora_production > "backup_$(date +%Y%m%d_%H%M%S).sql"
 ```
 
 ### Executar SQL Manualmente
 ```bash
-docker compose -f docker-compose.cloudflare.yml exec db psql -U agora_user -d agora_db -f /path/to/script.sql
+docker compose exec db psql -U agora -d agora_production
 ```
 
 ---
@@ -251,6 +344,7 @@ docker compose -f docker-compose.cloudflare.yml exec db psql -U agora_user -d ag
 
 ---
 
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-01-02
 **Project Status:** ✅ Production Ready
-**Current Branch:** `claude/self-hosted-brainstorm-heo8m`
+**Production Branch:** `main`
+**Active Development Branch:** `claude/review-project-context-9jpda`
