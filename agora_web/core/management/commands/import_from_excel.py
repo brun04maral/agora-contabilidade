@@ -109,7 +109,11 @@ class Command(BaseCommand):
                     raise Exception("DRY RUN - rollback transaction")
 
         except Exception as e:
-            if not self.dry_run:
+            if self.dry_run and str(e) != "DRY RUN - rollback transaction":
+                self.stdout.write(self.style.ERROR(f'\n❌ Erro durante import: {e}'))
+                import traceback
+                traceback.print_exc()
+            elif not self.dry_run:
                 self.stdout.write(self.style.ERROR(f'\n❌ Erro durante import: {e}'))
                 raise
 
@@ -336,37 +340,58 @@ class Command(BaseCommand):
         header_row = 5
 
         for row_idx in range(header_row + 1, ws.max_row + 1):
-            numero = ws.cell(row_idx, 1).value
-            if not numero:
-                continue
+            try:
+                numero = ws.cell(row_idx, 1).value
+                if not numero:
+                    continue
 
-            tipo_str = ws.cell(row_idx, 7).value or ''
-            tags = self.parse_tags(tipo_str)
+                tipo_str = ws.cell(row_idx, 7).value or ''
+                tags = self.parse_tags(tipo_str)
 
-            despesa_raw = {
-                'numero': numero,
-                'ano': int(ws.cell(row_idx, 2).value or 0),
-                'mes': int(ws.cell(row_idx, 3).value or 0),
-                'dia': int(ws.cell(row_idx, 4).value or 0),
-                'credor_nome': ws.cell(row_idx, 5).value,
-                'projeto_numero': ws.cell(row_idx, 6).value,
-                'tipo_original': tipo_str,
-                'tags': tags,
-                'descricao': ws.cell(row_idx, 8).value or '',
-                'valor_sem_iva': Decimal(str(ws.cell(row_idx, 10).value or 0)),
-                'valor_com_iva': Decimal(str(ws.cell(row_idx, 13).value or 0)),
-                'data_vencimento': ws.cell(row_idx, 20).value,
-                'nota': ws.cell(row_idx, 23).value,
-            }
+                # Convert valores com better error handling
+                try:
+                    val_sem_iva_raw = ws.cell(row_idx, 10).value or 0
+                    # Normalize comma to dot for European decimal format
+                    val_sem_iva_str = str(val_sem_iva_raw).replace(',', '.')
+                    valor_sem_iva = Decimal(val_sem_iva_str)
+                except Exception as e:
+                    raise ValueError(f'Valor sem IVA inválido: {ws.cell(row_idx, 10).value}') from e
 
-            # Classificar
-            if 'PREMIO' in tags or 'COMISSAO_VENDA' in tags:
-                premios.append(despesa_raw)
-            elif any(t in tags for t in ['PER_DIEM_PT', 'PER_DIEM_FORA']) or \
-                 ('DESLOCACAO' in tags and 'PESSOAL' in tags):
-                boletins_raw.append(despesa_raw)
-            else:
-                normais.append(despesa_raw)
+                try:
+                    val_com_iva_raw = ws.cell(row_idx, 13).value or 0
+                    # Normalize comma to dot for European decimal format
+                    val_com_iva_str = str(val_com_iva_raw).replace(',', '.')
+                    valor_com_iva = Decimal(val_com_iva_str)
+                except Exception as e:
+                    raise ValueError(f'Valor com IVA inválido: {ws.cell(row_idx, 13).value}') from e
+
+                despesa_raw = {
+                    'numero': numero,
+                    'ano': int(ws.cell(row_idx, 2).value or 0),
+                    'mes': int(ws.cell(row_idx, 3).value or 0),
+                    'dia': int(ws.cell(row_idx, 4).value or 0),
+                    'credor_nome': ws.cell(row_idx, 5).value,
+                    'projeto_numero': ws.cell(row_idx, 6).value,
+                    'tipo_original': tipo_str,
+                    'tags': tags,
+                    'descricao': ws.cell(row_idx, 8).value or '',
+                    'valor_sem_iva': valor_sem_iva,
+                    'valor_com_iva': valor_com_iva,
+                    'data_vencimento': ws.cell(row_idx, 20).value,
+                    'nota': ws.cell(row_idx, 23).value,
+                }
+
+                # Classificar
+                if 'PREMIO' in tags or 'COMISSAO_VENDA' in tags:
+                    premios.append(despesa_raw)
+                elif any(t in tags for t in ['PER_DIEM_PT', 'PER_DIEM_FORA']) or \
+                     ('DESLOCACAO' in tags and 'PESSOAL' in tags):
+                    boletins_raw.append(despesa_raw)
+                else:
+                    normais.append(despesa_raw)
+
+            except Exception as e:
+                self.stats['erros'].append(f'Despesa linha {row_idx}: {e}')
 
         return {
             'premios': premios,
@@ -423,12 +448,16 @@ class Command(BaseCommand):
                 estado = EstadoBoletim.PAGO if datas_venc else EstadoBoletim.PENDENTE
                 data_pag = max(datas_venc) if datas_venc else None
 
+                # Gerar número do boletim (formato: #B-BA-2025-01)
+                numero = f'#B-{socio_codigo}-{ano:04d}-{mes:02d}'
+
                 # Criar boletim
                 Boletim.objects.update_or_create(
                     socio=socio,
                     mes=mes,
                     ano=ano,
                     defaults={
+                        'numero': numero,
                         'descricao': self.get_month_name(mes),
                         'data_emissao': date(ano, mes, 27),  # Fixo dia 27
                         'data_pagamento': self.parse_date(data_pag) if data_pag else None,
@@ -452,22 +481,25 @@ class Command(BaseCommand):
                 # Criar data
                 data_desp = date(desp['ano'], desp['mes'], desp['dia']) if all([desp['ano'], desp['mes'], desp['dia']]) else date.today()
 
-                # Criar despesa
-                despesa = Despesa.objects.create(
+                # Criar ou atualizar despesa
+                despesa, created = Despesa.objects.update_or_create(
                     numero=desp['numero'],
-                    data=data_desp,
-                    credor=credor,
-                    projeto=projeto,
-                    descricao=desp['descricao'],
-                    valor_sem_iva=desp['valor_sem_iva'],
-                    valor_com_iva=desp['valor_com_iva'],
-                    tipo_original=desp['tipo_original'],
-                    estado='PAGO' if desp['data_vencimento'] else 'PENDENTE',
-                    data_pagamento=self.parse_date(desp['data_vencimento']) if desp['data_vencimento'] else None,
-                    nota=desp['nota'],
+                    defaults={
+                        'data': data_desp,
+                        'credor': credor,
+                        'projeto': projeto,
+                        'descricao': desp['descricao'],
+                        'valor_sem_iva': desp['valor_sem_iva'],
+                        'valor_com_iva': desp['valor_com_iva'],
+                        'tipo_original': desp['tipo_original'],
+                        'estado': 'PAGO' if desp['data_vencimento'] else 'PENDENTE',
+                        'data_pagamento': self.parse_date(desp['data_vencimento']) if desp['data_vencimento'] else None,
+                        'nota': desp['nota'],
+                    }
                 )
 
-                # Adicionar tags
+                # Limpar e adicionar tags
+                despesa.tags.clear()
                 for tag_codigo in desp['tags']:
                     try:
                         tag = TagDespesa.objects.get(codigo=tag_codigo)
@@ -478,7 +510,7 @@ class Command(BaseCommand):
                 self.stats['despesas'] += 1
 
             except Exception as e:
-                self.stats['erros'].append(f'Despesa {desp.get("numero", "???")}}: {e}')
+                self.stats['erros'].append(f'Despesa {desp.get("numero", "???")}: {e}')
 
     # =========================================================================
     # HELPER METHODS
@@ -600,10 +632,11 @@ class Command(BaseCommand):
         """Parse date from Excel"""
         if not value:
             return None
-        if isinstance(value, date):
-            return value
+        # Check datetime FIRST (datetime is subclass of date!)
         if isinstance(value, datetime):
             return value.date()
+        if isinstance(value, date):
+            return value
         return None
 
     def get_month_name(self, mes):
@@ -627,8 +660,23 @@ class Command(BaseCommand):
         self.stdout.write(f'🏆 Prémios agregados: {self.stats["premios_agregados"]}')
 
         if self.stats['erros']:
-            self.stdout.write(f'\n⚠️  {len(self.stats["erros"])} erros (primeiros 10):')
-            for erro in self.stats['erros'][:10]:
-                self.stdout.write(self.style.WARNING(f'   - {erro}'))
+            self.stdout.write(f'\n⚠️  {len(self.stats["erros"])} erros')
+
+            # Categorizar erros
+            categorias = {
+                'Fornecedor': [e for e in self.stats['erros'] if 'Fornecedor' in e],
+                'Cliente': [e for e in self.stats['erros'] if 'Cliente' in e],
+                'Projeto': [e for e in self.stats['erros'] if 'Projeto' in e],
+                'Despesa': [e for e in self.stats['erros'] if 'Despesa' in e],
+                'boletim': [e for e in self.stats['erros'] if 'boletim' in e],
+                'prémio': [e for e in self.stats['erros'] if 'prémio' in e],
+            }
+
+            # Mostrar erros por categoria
+            for categoria, erros in categorias.items():
+                if erros:
+                    self.stdout.write(f'\n   🔴 Erros de {categoria.upper()} ({len(erros)} total, primeiros 10):')
+                    for erro in erros[:10]:
+                        self.stdout.write(self.style.WARNING(f'      - {erro}'))
 
         self.stdout.write('\n' + '='*80 + '\n')

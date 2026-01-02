@@ -1,0 +1,168 @@
+[
+  {
+    "model": "core.socio",
+    "pk": "BA",
+    "fields": {
+      "nome_completo": "Bruno Amaral",
+      "nome_curto": "Bruno",
+      "email": "bruno@agoramedia.pt",
+      "telefone": "",
+      "percentagem_participacao": "50.00",
+      "ativo": true,
+      "cor_tema": "#1976d2"
+    }
+  },
+  {
+    "model": "core.socio",
+    "pk": "RR",
+    "fields": {
+      "nome_completo": "Rafael Reigota",
+      "nome_curto": "Rafael",
+      "email": "rafael@agoramedia.pt",
+      "telefone": "",
+      "percentagem_participacao": "50.00",
+      "ativo": true,
+      "cor_tema": "#388e3c"
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "EQUIPAMENTO",
+    "fields": {
+      "nome": "Equipamento",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 1
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PESSOAL",
+    "fields": {
+      "nome": "Pessoal",
+      "impacta_saldos": true,
+      "impacta_irc": true,
+      "ordem": 2
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "SERVICO",
+    "fields": {
+      "nome": "Serviço",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 3
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ALOJAMENTO",
+    "fields": {
+      "nome": "Alojamento",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 4
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "TRANSPORTE",
+    "fields": {
+      "nome": "Transporte",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 5
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ALIMENTACAO",
+    "fields": {
+      "nome": "Alimentação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 6
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "COMBUSTIVEL",
+    "fields": {
+      "nome": "Combustível",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 7
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "PORTAGENS",
+    "fields": {
+      "nome": "Portagens",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 8
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "ESTACIONAMENTO",
+    "fields": {
+      "nome": "Estacionamento",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 9
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "COMUNICACAO",
+    "fields": {
+      "nome": "Comunicação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 10
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "SOFTWARE",
+    "fields": {
+      "nome": "Software",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 11
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "FORMACAO",
+    "fields": {
+      "nome": "Formação",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 12
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "MARKETING",
+    "fields": {
+      "nome": "Marketing",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 13
+    }
+  },
+  {
+    "model": "core.tagdespesa",
+    "pk": "OUTROS",
+    "fields": {
+      "nome": "Outros",
+      "impacta_saldos": false,
+      "impacta_irc": true,
+      "ordem": 14
+    }
+  }
+]
