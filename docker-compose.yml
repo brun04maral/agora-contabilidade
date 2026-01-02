@@ -34,20 +34,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.agora-web.rule=Host(`app.agoramediaproduction.pt`)"
-      - "traefik.http.routers.agora-web.entrypoints=websecure"
-      - "traefik.http.routers.agora-web.tls=true"
-      - "traefik.http.routers.agora-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.agora-web.loadbalancer.server.port=8000"
-    networks:
-      - traefik-public
-      - default
-
-networks:
-  traefik-public:
-    external: true
 
 volumes:
   postgres_data:
