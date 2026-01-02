@@ -71,6 +71,7 @@ networks:
 
 volumes:
   postgres_data:
-    driver: local
+    external: true
+    name: agora_web_postgres_data
   staticfiles:
     driver: local
