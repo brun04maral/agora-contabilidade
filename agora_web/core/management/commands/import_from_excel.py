@@ -352,6 +352,17 @@ class Command(BaseCommand):
                 tipo_str = ws.cell(row_idx, 7).value or ''
                 tags = self.parse_tags(tipo_str)
 
+                # Convert valores com better error handling
+                try:
+                    valor_sem_iva = Decimal(str(ws.cell(row_idx, 10).value or 0))
+                except Exception as e:
+                    raise ValueError(f'Valor sem IVA inválido: {ws.cell(row_idx, 10).value}') from e
+
+                try:
+                    valor_com_iva = Decimal(str(ws.cell(row_idx, 13).value or 0))
+                except Exception as e:
+                    raise ValueError(f'Valor com IVA inválido: {ws.cell(row_idx, 13).value}') from e
+
                 despesa_raw = {
                     'numero': numero,
                     'ano': int(ws.cell(row_idx, 2).value or 0),
@@ -362,8 +373,8 @@ class Command(BaseCommand):
                     'tipo_original': tipo_str,
                     'tags': tags,
                     'descricao': ws.cell(row_idx, 8).value or '',
-                    'valor_sem_iva': Decimal(str(ws.cell(row_idx, 10).value or 0)),
-                    'valor_com_iva': Decimal(str(ws.cell(row_idx, 13).value or 0)),
+                    'valor_sem_iva': valor_sem_iva,
+                    'valor_com_iva': valor_com_iva,
                     'data_vencimento': ws.cell(row_idx, 20).value,
                     'nota': ws.cell(row_idx, 23).value,
                 }
@@ -466,22 +477,25 @@ class Command(BaseCommand):
                 # Criar data
                 data_desp = date(desp['ano'], desp['mes'], desp['dia']) if all([desp['ano'], desp['mes'], desp['dia']]) else date.today()
 
-                # Criar despesa
-                despesa = Despesa.objects.create(
+                # Criar ou atualizar despesa
+                despesa, created = Despesa.objects.update_or_create(
                     numero=desp['numero'],
-                    data=data_desp,
-                    credor=credor,
-                    projeto=projeto,
-                    descricao=desp['descricao'],
-                    valor_sem_iva=desp['valor_sem_iva'],
-                    valor_com_iva=desp['valor_com_iva'],
-                    tipo_original=desp['tipo_original'],
-                    estado='PAGO' if desp['data_vencimento'] else 'PENDENTE',
-                    data_pagamento=self.parse_date(desp['data_vencimento']) if desp['data_vencimento'] else None,
-                    nota=desp['nota'],
+                    defaults={
+                        'data': data_desp,
+                        'credor': credor,
+                        'projeto': projeto,
+                        'descricao': desp['descricao'],
+                        'valor_sem_iva': desp['valor_sem_iva'],
+                        'valor_com_iva': desp['valor_com_iva'],
+                        'tipo_original': desp['tipo_original'],
+                        'estado': 'PAGO' if desp['data_vencimento'] else 'PENDENTE',
+                        'data_pagamento': self.parse_date(desp['data_vencimento']) if desp['data_vencimento'] else None,
+                        'nota': desp['nota'],
+                    }
                 )
 
-                # Adicionar tags
+                # Limpar e adicionar tags
+                despesa.tags.clear()
                 for tag_codigo in desp['tags']:
                     try:
                         tag = TagDespesa.objects.get(codigo=tag_codigo)
