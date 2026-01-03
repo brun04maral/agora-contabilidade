@@ -52,12 +52,20 @@ docker compose logs -f web
 ## ✨ Features Principais
 
 ### 💰 Saldos Pessoais (CORE Feature)
-Dashboard que calcula automaticamente quanto a empresa deve a cada sócio:
-- **Cálculo 50/50** automático
-- **INs:** Projetos pessoais + prémios individuais
-- **OUTs:** Despesas fixas ÷ 2 + boletins + despesas pessoais
-- **Breakdown anual** com valores pagos vs projetados
-- **Sugestão de boletim** baseada em saldo e meses restantes
+Dashboard que calcula automaticamente quanto a empresa deve a cada sócio com **dois tipos de saldo**:
+
+**Saldo Atual** (decisões financeiras HOJE):
+- **INs:** Projetos pagos (data_recibo) + Prémios de trabalho FEITO (data_fim < hoje)
+- **OUTs:** Despesas fixas ÷ 2 + Boletins PAGOS + Despesas pessoais
+
+**Saldo Projetado** (planeamento médio prazo):
+- **INs:** Projetos pagos + Prémios de TODOS os projetos (incluindo futuros)
+- **OUTs:** Despesas fixas ÷ 2 + Boletins TODOS (PAGO + PENDENTE) + Despesas pessoais
+
+**Funcionalidades:**
+- Breakdown anual com filtros de data
+- Sugestão de boletim baseada em saldo projetado e meses restantes
+- Sistema de tags para categorização flexível de despesas
 
 Ver [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) para detalhes técnicos.
 
@@ -250,6 +258,13 @@ docker compose exec web python manage.py makemigrations
 
 # Static files
 docker compose exec web python manage.py collectstatic --noinput
+
+# Importação e limpeza de dados
+docker compose exec web python manage.py import_from_excel excel/CONTABILIDADE_FINAL_20251231.xlsx
+docker compose exec web python manage.py limpar_projetos_vazios --dry-run
+docker compose exec web python manage.py limpar_despesas_vazias --dry-run
+docker compose exec web python manage.py auditar_importacao excel/CONTABILIDADE_FINAL_20251231.xlsx
+docker compose exec web python manage.py analisar_caixa excel/CONTABILIDADE_FINAL_20251231.xlsx --output docs/CAIXA_ANALYSIS.md
 ```
 
 ### Docker
@@ -292,6 +307,8 @@ cat backup.sql | docker compose exec -T db psql -U agora -d agora_production
 | Ficheiro | Descrição |
 |----------|-----------|
 | [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) | Implementação do dashboard de saldos |
+| [docs/EXCEL_IMPORT_ANALYSIS.md](docs/EXCEL_IMPORT_ANALYSIS.md) | Análise e processo de importação Excel |
+| [docs/CAIXA_ANALYSIS.md](docs/CAIXA_ANALYSIS.md) | Análise das fórmulas da aba CAIXA |
 | [docs/SOCIOS_MIGRATION.md](docs/SOCIOS_MIGRATION.md) | Como modelo Socio foi criado |
 | [docs/DATABASE_MANUAL_CHANGES.md](docs/DATABASE_MANUAL_CHANGES.md) | Mudanças manuais na BD |
 | [docs/README.md](docs/README.md) | Índice completo de documentação |
@@ -359,7 +376,16 @@ Principais variáveis:
 
 ## 📝 Notas de Versão
 
-### v2.0 - Django App (Atual)
+### v2.1 - Importação e Limpeza de Dados (03 Jan 2026)
+- ✅ Sistema completo de importação Excel → PostgreSQL
+- ✅ Comandos de limpeza: `limpar_projetos_vazios`, `limpar_despesas_vazias`
+- ✅ Comando de auditoria: `auditar_importacao`
+- ✅ Análise de fórmulas Excel: `analisar_caixa`
+- ✅ SaldosCalculator refatorado com lógica dual (Atual vs Projetado)
+- ✅ Sistema de tags para despesas (substituindo enums)
+- ✅ Base de dados sincronizada com Excel (80 projetos, 236 despesas, 24 boletins)
+
+### v2.0 - Django App (Dez 2025)
 - ✅ Django 5.0 + PostgreSQL 16
 - ✅ Dashboard de Saldos Pessoais
 - ✅ Modelo Socio com migração de dados

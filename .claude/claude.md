@@ -106,37 +106,48 @@ archive-old-tkinter-app/    # 📦 Old Tkinter app (histórico)
 ### Saldos Pessoais (Personal Balances)
 **Conceito:** Sócios fazem trabalho freelance mas faturam pela empresa → empresa fica a dever dinheiro aos sócios.
 
-**Fórmula Base:**
-```
-Saldo = INs - OUTs
+**Lógica Dual (v2.1):**
 
+**SALDO ATUAL** (decisões financeiras HOJE):
+```
 INs (empresa DEVE ao sócio):
-  • Projetos pessoais (Projeto.tipo = PESSOAL, owner = BA/RR, estado = PAGO)
-  • Prémios em projetos da empresa (premio_bruno/premio_rafael, estado = PAGO)
-  • A Receber: Projetos/prémios com estado = FINALIZADO (não faturados ainda)
+  • Projetos pessoais PAGOS (data_recibo exists)
+  • Prémios de trabalho FEITO (data_fim < hoje)
 
 OUTs (empresa PAGOU ao sócio):
-  • Despesas fixas mensais ÷ 2 (Despesa.tipo = FIXA_MENSAL, estado = PAGO)
-  • Boletins pagos (Boletim.estado = PAGO)
-  • Boletins pendentes (Boletim.estado = PENDENTE)
-  • Despesas pessoais (Despesa.tipo = PESSOAL_BA/PESSOAL_RR, estado = PAGO)
+  • Despesas fixas mensais ÷ 2 (tags: ADMINISTRATIVO, ORDENADO, SUB_ALIMENTACAO)
+  • Boletins PAGOS (estado=PAGO)
+  • Despesas pessoais (tag: PESSOAL)
 
-Nota: Investimento inicial (€5.200/sócio) está documentado no código mas NÃO conta
-      no cálculo - é apenas referência histórica.
+Saldo Atual = INs (trabalho feito) - OUTs (pagos)
 ```
 
+**SALDO PROJETADO** (planeamento médio prazo):
+```
+INs (empresa DEVE ou VAI DEVER ao sócio):
+  • Projetos pessoais PAGOS (data_recibo exists)
+  • Prémios de TODOS os projetos (incluindo futuros agendados)
+
+OUTs (empresa PAGOU ou VAI PAGAR ao sócio):
+  • Despesas fixas mensais ÷ 2
+  • Boletins TODOS (PAGO + PENDENTE - já declarados às finanças)
+  • Despesas pessoais todas
+
+Saldo Projetado = INs (incluindo futuros) - OUTs (incluindo pendentes)
+```
+
+**Nota:** Investimento inicial (€5.200/sócio) está documentado mas NÃO conta no cálculo.
+
 **Dashboard Structure:**
-- **Saldos Totais (All-Time):** Mostra saldo projetado acumulado desde sempre para BA e RR
-- **Breakdown Anual:** Detalhes do ano corrente com:
-  - INs Pagos vs A Receber (finalizados)
-  - OUTs Pagos vs Por Pagar (boletins pendentes)
-  - Saldo Efetivo (só valores pagos) vs Saldo Projetado (com pendentes)
-  - Sugestão de Boletim (baseada no saldo projetado ÷ meses restantes)
+- **Saldos Totais:** Mostra saldo atual e projetado acumulado desde sempre
+- **Breakdown Anual:** Detalhes do ano corrente com filtros de data
+- **Sugestão de Boletim:** Baseada no saldo projetado ÷ meses restantes sem boletim
 
 **Implementação:**
 - Calculator: `core/utils/saldos.py` - classe `SaldosCalculator`
-  - `calcular_saldo_bruno()` / `calcular_saldo_rafael()` → saldo total all-time
-  - `calcular_saldo_ano(socio, ano)` → breakdown detalhado do ano
+  - `calcular_saldo_bruno(incluir_investimento, data_inicio, data_fim)` → dict com ambos os saldos
+  - `calcular_saldo_rafael(incluir_investimento, data_inicio, data_fim)` → dict com ambos os saldos
+  - Retorna sempre: `saldo_atual`, `saldo_projetado`, `ins`, `outs`, `sugestao_boletim`
 - Dashboard: `/admin/core/saldo/` - proxy model `Saldo` (sem tabela)
 - Template: `core/templates/admin/core/saldo/changelist.html`
 - Admin View: `SaldoAdmin.changelist_view()` em `core/admin.py`
@@ -252,6 +263,87 @@ DB_PASSWORD=Agora2025Prod!SecureDB
 **Consequência:** A tabela `socios` teve de ser criada **manualmente** via SQL.
 
 **Ver:** `docs/DATABASE_MANUAL_CHANGES.md` para detalhes completos.
+
+### Current State (03 Jan 2026)
+
+**Base de dados sincronizada com Excel CONTABILIDADE_FINAL_20251231.xlsx**:
+- **Fornecedores**: 45 (2 com nome NULL não importaram)
+- **Clientes**: 18 (2 com nome NULL não importaram)
+- **Projetos**: 80 válidos (1,619 vazios removidos após importação)
+- **Despesas**: 236 válidas (639 vazias removidas após importação)
+- **Boletins**: 24 (agregados por sócio/mês/ano)
+
+---
+
+## 📥 Importação de Dados Excel
+
+**Sistema completo de importação Excel → PostgreSQL (v2.1)**
+
+### Comandos Disponíveis
+
+```bash
+# 1. Importar dados do Excel
+docker compose exec web python manage.py import_from_excel excel/CONTABILIDADE_FINAL_20251231.xlsx
+
+# 2. Limpar projetos vazios (após importação)
+docker compose exec web python manage.py limpar_projetos_vazios --dry-run  # Preview
+docker compose exec web python manage.py limpar_projetos_vazios            # Real
+
+# 3. Limpar despesas vazias (após importação)
+docker compose exec web python manage.py limpar_despesas_vazias --dry-run  # Preview
+docker compose exec web python manage.py limpar_despesas_vazias            # Real
+
+# 4. Auditar importação (comparar Excel vs DB)
+docker compose exec web python manage.py auditar_importacao excel/CONTABILIDADE_FINAL_20251231.xlsx
+
+# 5. Analisar fórmulas da aba CAIXA
+docker compose exec web python manage.py analisar_caixa excel/CONTABILIDADE_FINAL_20251231.xlsx --output docs/CAIXA_ANALYSIS.md
+```
+
+### Como Funciona a Importação
+
+**`import_from_excel.py`** processa 5 abas do Excel:
+
+1. **FORNECEDORES** → modelo `Fornecedor`
+2. **CLIENTES** → modelo `Cliente` (exclui sócios #C0001 e #C0002)
+3. **PROJETOS** → modelo `Projeto`
+4. **DESPESAS** → 3 categorias:
+   - Despesas normais → modelo `Despesa`
+   - Boletins (ajudas de custo) → **agregados** por (sócio, mês, ano) → modelo `Boletim`
+   - Prémios → **agregados** por projeto → campos `premio_bruno`/`premio_rafael` em `Projeto`
+
+**Agregação de Prémios:**
+```python
+# Excel tem múltiplas linhas de prémio para o mesmo projeto
+# Importação soma e popula campos premio_bruno/premio_rafael
+
+Exemplo:
+  Excel linha 125: Prémio Bruno #P0032 = €225.00
+  Excel linha 184: Prémio Bruno #P0032 = €225.00
+  → DB: Projeto.premio_bruno = €450.00
+```
+
+**Agregação de Boletins:**
+```python
+# Excel tem linhas individuais de ajudas de custo
+# Importação agrupa por (sócio, mês, ano) em Boletim único
+
+Exemplo:
+  Excel: 56 linhas de "Deslocação, Pessoal" em 2025
+  → DB: 24 boletins (2 sócios × 12 meses)
+```
+
+**Sistema de Tags (Despesas):**
+```python
+# Substituiu enums TipoDespesa por sistema flexível de tags
+Tags disponíveis:
+  - EQUIPAMENTO, PROJETO, PESSOAL, FIXA_MENSAL
+  - ADMINISTRATIVO, ORDENADO, SUB_ALIMENTACAO
+  - DESLOCACAO, PER_DIEM_PT, PER_DIEM_FORA
+  - PREMIO, COMISSAO
+```
+
+**Ver:** `docs/EXCEL_IMPORT_ANALYSIS.md` para análise completa do Excel.
 
 ---
 
