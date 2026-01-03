@@ -1,77 +1,454 @@
 # 🛠️ Guia de Desenvolvimento - Agora Contabilidade
 
 **Para:** Bruno & Rafael
-**Objetivo:** Desenvolvimento limpo e organizado com ou sem AI assistants
+**Objetivo:** Desenvolvimento ágil e organizado com Claude Code (VS Code Extension)
+**Última Atualização:** 2026-01-03
 
 ---
 
-## ⚠️ **LEITURA OBRIGATÓRIA: Dois Ambientes Diferentes!**
+## 🎯 Ambiente de Desenvolvimento ATUAL
 
-### 🤖 Claude AI trabalha em: `/home/user/agora-contabilidade` (LOCAL)
-- Ambiente de desenvolvimento
-- Claude faz mudanças, commits, e push aqui
-- **NÃO é o servidor de produção!**
+**Trabalhamos DIRETAMENTE no servidor via VS Code Extension!**
 
-### 👨‍💻 TU (Bruno/Rafael) trabalhas em: `~/amp/docker/app/` (SERVIDOR)
-- Servidor de produção real
-- Onde a app está deployed
-- **Onde fazes testes e deployment!**
-
-### 🔄 **WORKFLOW CRÍTICO:**
+### ✅ Novo Workflow (VS Code Extension)
 
 ```
-1. Claude faz mudanças em /home/user/agora-contabilidade
-2. Claude faz push para origin/claude/nome-branch
-3. ⚠️  TU TENS DE FAZER PULL NO SERVIDOR! ⚠️
-
-   NO SERVIDOR (~/amp/docker/app/):
-   $ git pull origin claude/nome-branch
-   # OU se já merged para main:
-   $ git pull origin main
-
-4. Só depois de pull podes testar/deploy!
+┌─────────────────────────────────────────┐
+│  VS Code (local) + Claude Extension    │
+│           ↕ (SSH/Remote)                │
+│  Servidor: ~/amp/docker/app/            │
+│  - Código Django (agora_web/)           │
+│  - Docker containers (web + db)         │
+│  - Git repo                             │
+└─────────────────────────────────────────┘
 ```
 
-**REGRA DE OURO:**
-**SEMPRE faz `git pull` no servidor ANTES de testar mudanças do Claude!**
+**Vantagens:**
+- ✅ **Sem sincronização** - mudanças diretas no servidor
+- ✅ **Teste imediato** - rebuild e teste na mesma máquina
+- ✅ **Contexto completo** - tudo num só lugar
+- ✅ **Deploy simples** - já estamos em produção
+
+### ❌ Workflow ANTIGO (Descontinuado)
+
+~~Claude standalone app → worktrees → push → pull no servidor~~
+
+**Não usamos mais isto!** Documentação antiga em `archive-old-tkinter-app/`
 
 ---
 
-## 🚀 Começar Nova Sessão de Desenvolvimento
+## 🚀 Setup Inicial (Primeira Vez)
 
-### 1. **Prompt Inicial (Copiar & Colar para Claude)**
+### 1. VS Code + Claude Extension
+
+```bash
+# Instalar extensão Claude Code no VS Code
+# Abrir pasta remota via SSH: ~/amp/docker/app/
+
+# Verificar ambiente
+git status
+docker compose ps
+```
+
+### 2. Checklist Ambiente
+
+- [ ] VS Code conectado ao servidor via SSH
+- [ ] Claude Extension instalada e ativa
+- [ ] Git configurado (`git config user.name/email`)
+- [ ] Docker containers a correr (`agora_web`, `agora_db`)
+- [ ] `.env` configurado (já existe no servidor)
+
+---
+
+## 📂 Estrutura do Projeto (Limpa!)
 
 ```
-Olá! Vou trabalhar no projeto Agora Contabilidade.
+~/amp/docker/app/
+├── agora_web/              # 🎯 Django App (ATUAL)
+│   ├── core/               # Models, Admin, Views
+│   ├── config/             # Settings Django
+│   ├── templates/          # Templates customizados
+│   ├── static/             # CSS, JS, logos
+│   └── manage.py
+│
+├── docker-compose.yml      # Containers: web + db
+├── deploy.sh               # Script de deployment
+├── .env                    # Environment variables
+│
+├── docs/                   # 📚 Documentação técnica
+│   ├── SOCIOS_MIGRATION.md
+│   ├── SALDOS_DASHBOARD.md
+│   └── DATABASE_MANUAL_CHANGES.md
+│
+├── .claude/                # 🤖 Contexto para Claude
+│   └── claude.md           # ⭐ LEITURA OBRIGATÓRIA
+│
+├── scripts/                # SQL scripts manuais
+├── backups/                # Backups BD
+├── excel/                  # Ficheiros Excel import
+└── media/                  # Logos da empresa
 
-**Contexto do projeto:**
-- Lê `.claude/claude.md` para contexto completo
+archive-old-tkinter-app/    # 📦 App antiga (apenas histórico)
+```
+
+---
+
+## 🔄 Workflow de Desenvolvimento Diário
+
+### **Passo a Passo para Novas Features**
+
+#### 1️⃣ **Criar Feature Branch**
+
+```bash
+# Sempre partir de main atualizada
+git checkout main
+git pull origin main
+
+# Criar branch com nomenclatura clara
+git checkout -b claude/nome-da-feature-xxxxx
+```
+
+**Convenção de nomes:**
+- `claude/feat-dashboard-xxx` - Nova funcionalidade
+- `claude/fix-bug-saldos-xxx` - Correção de bug
+- `claude/refactor-models-xxx` - Refactoring
+- `claude/docs-update-xxx` - Atualização de docs
+
+#### 2️⃣ **Desenvolver + Testar Localmente**
+
+```bash
+# Fazer mudanças no código (via Claude ou manual)
+
+# Testar mudanças
+docker compose down
+docker compose up -d --build web
+
+# Ver logs
+docker compose logs -f web
+
+# Testar no browser
+# https://app.agoramediaproduction.pt
+```
+
+**Ciclo de desenvolvimento:**
+1. Fazer mudanças no código
+2. Rebuild container se necessário
+3. Testar funcionalidade
+4. Repetir até funcionar
+
+#### 3️⃣ **Commits Descritivos**
+
+```bash
+# Adicionar ficheiros
+git add agora_web/core/models.py
+git add agora_web/core/admin.py
+
+# Commit com mensagem clara
+git commit -m "feat: add dashboard fiscal com cálculos IVA
+
+- Criado modelo FiscalData para armazenar dados fiscais
+- Adicionado dashboard no admin com cards de IVA
+- Implementada lógica de cálculo trimestral
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+**Prefixos de commits:**
+| Prefixo | Uso | Exemplo |
+|---------|-----|---------|
+| `feat:` | Nova funcionalidade | `feat: add logout button to navbar` |
+| `fix:` | Correção de bug | `fix: resolve 404 error in Traefik routing` |
+| `docs:` | Documentação | `docs: update README-DEV with new workflow` |
+| `refactor:` | Refactoring (sem mudar comportamento) | `refactor: extract saldos calculation to utils` |
+| `test:` | Testes | `test: add unit tests for SaldosCalculator` |
+| `chore:` | Manutenção (deps, configs) | `chore: update Django to 5.1` |
+
+#### 4️⃣ **Push da Branch**
+
+```bash
+# Push da feature branch
+git push -u origin claude/nome-da-feature-xxxxx
+```
+
+#### 5️⃣ **Testar Mais (Se Necessário)**
+
+Se precisares fazer mais mudanças:
+
+```bash
+# Fazer mudanças
+# Testar
+git add .
+git commit -m "fix: corrigir validação no formulário"
+git push  # (já está com upstream configurado)
+```
+
+#### 6️⃣ **Merge para Main**
+
+Quando a feature estiver **pronta e testada**:
+
+```bash
+# Voltar para main
+git checkout main
+
+# ⚠️ IMPORTANTE: Sincronizar com remote primeiro!
+git pull origin main
+
+# Merge da feature branch
+git merge claude/nome-da-feature-xxxxx
+
+# Push para produção
+git push origin main
+```
+
+#### 7️⃣ **Deployment Final**
+
+```bash
+# Já estamos no servidor, basta fazer deploy
+./deploy.sh
+
+# OU manualmente:
+docker compose down
+docker compose build --no-cache web
+docker compose up -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+
+# Verificar logs
+docker compose logs -f web
+
+# Testar no browser
+# https://app.agoramediaproduction.pt
+```
+
+#### 8️⃣ **Limpeza (Opcional)**
+
+```bash
+# Apagar branch local (se já não for necessária)
+git branch -d claude/nome-da-feature-xxxxx
+
+# Apagar branch remote (se quiser limpar)
+git push origin --delete claude/nome-da-feature-xxxxx
+```
+
+---
+
+## 🎨 Boas Práticas
+
+### ✅ **FAZER**
+
+- ✅ Criar **feature branches** para cada tarefa
+- ✅ **Commitar frequentemente** com mensagens claras
+- ✅ **Testar localmente** antes de merge para main
+- ✅ **Rebuild Docker** após mudanças de código (`--build`)
+- ✅ Fazer **backup da BD** antes de mudanças grandes
+- ✅ Atualizar **documentação** quando arquitetura muda
+- ✅ Usar script `deploy.sh` para deployment
+- ✅ Fazer `git pull` antes de merge
+
+### ❌ **NÃO FAZER**
+
+- ❌ Commit direto em `main` (usar branches!)
+- ❌ Commit de ficheiros `.env` ou secrets
+- ❌ Mudanças sem testar
+- ❌ Esquecer `collectstatic` após mudanças CSS
+- ❌ Mudar nome do volume `agora_web_postgres_data`
+- ❌ Deployment sem backup
+- ❌ Assumir que código está atualizado (sempre `git pull`)
+
+---
+
+## 🐛 Troubleshooting Comum
+
+### **Problema: Docker não atualiza código**
+
+```bash
+# Código está na imagem Docker, não em volume
+# Solução: rebuild
+docker compose down
+docker compose build --no-cache web
+docker compose up -d
+```
+
+### **Problema: CSS não carrega**
+
+```bash
+# Solução: collectstatic
+docker compose exec web python manage.py collectstatic --noinput --clear
+```
+
+### **Problema: Migration conflicting**
+
+```bash
+# Ver histórico de migrations
+git log --oneline -- agora_web/core/migrations/
+
+# Solução: criar merge migration ou fake
+# Ver docs/DATABASE_MANUAL_CHANGES.md
+```
+
+### **Problema: Container não inicia**
+
+```bash
+# Ver logs completos
+docker compose logs web
+
+# Verificar BD
+docker compose exec db psql -U agora -d agora_production
+
+# Rebuild completo
+docker compose down -v  # ⚠️ CUIDADO: apaga volumes!
+docker compose up -d --build
+```
+
+### **Problema: Git conflicts ao fazer merge**
+
+```bash
+# Ver ficheiros em conflito
+git status
+
+# Resolver manualmente ou
+git mergetool
+
+# Após resolver
+git add .
+git commit -m "merge: resolve conflicts from claude/feature-xxx"
+```
+
+---
+
+## 🔧 Comandos Úteis
+
+### **Django**
+
+```bash
+# Shell Django
+docker compose exec web python manage.py shell
+
+# DB Shell
+docker compose exec web python manage.py dbshell
+
+# Check do sistema
+docker compose exec web python manage.py check
+
+# Criar superuser
+docker compose exec web python manage.py createsuperuser
+
+# Ver migrations
+docker compose exec web python manage.py showmigrations
+
+# Aplicar migrations
+docker compose exec web python manage.py migrate
+
+# Criar migration
+docker compose exec web python manage.py makemigrations
+```
+
+### **Git**
+
+```bash
+# Estado atual
+git status
+git branch
+
+# Histórico
+git log --oneline --graph --all
+git log --oneline -- agora_web/core/
+
+# Ver diferenças
+git diff
+git diff main..HEAD
+git show HEAD
+
+# Branches remotas
+git branch -r
+git fetch --all
+```
+
+### **Docker**
+
+```bash
+# Estado dos containers
+docker compose ps
+
+# Logs
+docker compose logs -f web
+docker compose logs -f db
+
+# Entrar no container
+docker compose exec web bash
+docker compose exec db bash
+
+# Rebuild
+docker compose up -d --build web
+
+# Restart
+docker compose restart web
+
+# Parar tudo
+docker compose down
+```
+
+### **PostgreSQL**
+
+```bash
+# Aceder à DB
+docker compose exec db psql -U agora -d agora_production
+
+# Backup
+docker compose exec db pg_dump -U agora agora_production > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restore (CUIDADO!)
+cat backup.sql | docker compose exec -T db psql -U agora -d agora_production
+```
+
+---
+
+## 📝 Documentação Importante
+
+### **Essenciais (Ler Sempre!)**
+
+| Ficheiro | Descrição |
+|----------|-----------|
+| [`.claude/claude.md`](.claude/claude.md) | ⭐ **Contexto completo do projeto** - arquitetura, deployment, issues conhecidos |
+| [`README-DEV.md`](README-DEV.md) | 📖 Este ficheiro - workflow de desenvolvimento |
+| [`docs/SALDOS_DASHBOARD.md`](docs/SALDOS_DASHBOARD.md) | Implementação do dashboard de saldos (feature principal) |
+| [`docs/SOCIOS_MIGRATION.md`](docs/SOCIOS_MIGRATION.md) | Como modelo Socio foi implementado |
+
+### **Técnicas**
+
+| Ficheiro | Descrição |
+|----------|-----------|
+| [`docs/DATABASE_MANUAL_CHANGES.md`](docs/DATABASE_MANUAL_CHANGES.md) | Mudanças manuais na BD (SQL scripts) |
+| [`docker-compose.yml`](docker-compose.yml) | Configuração Docker (web + db + traefik) |
+| [`.env.example`](.env.example) | Template de environment variables |
+
+---
+
+## 🎓 Prompts para Claude
+
+### **Iniciar Nova Sessão**
+
+```
+Vou trabalhar no projeto Agora Contabilidade.
+
+**Contexto:**
+- Lê .claude/claude.md para contexto completo
 - Branch atual: [nome-da-branch]
 - Tarefa: [descrever o que queres fazer]
 
 **Antes de começar:**
-1. Verifica o estado atual do projeto (git status, containers running)
+1. Verifica estado atual (git status, docker ps)
 2. Confirma que estamos na branch correta
-3. Cria um plano de trabalho usando TodoWrite
+3. Cria plano com TodoWrite
 
 Vamos começar!
 ```
 
-### 2. **Checklist Antes de Começar**
-
-- [ ] Branch correta (`git branch`)
-- [ ] Base de dados a correr (`docker compose ps`)
-- [ ] `.env` configurado corretamente
-- [ ] Última versão do código (`git pull`)
-
----
-
-## 🔄 Continuar Sessão Existente
-
-### **Prompt de Continuação**
+### **Continuar Sessão Existente**
 
 ```
-Vou continuar a trabalhar no projeto Agora Contabilidade.
+Continuar trabalho no Agora Contabilidade.
 
 **Última sessão:**
 - Branch: [nome]
@@ -81,338 +458,127 @@ Vou continuar a trabalhar no projeto Agora Contabilidade.
 **Próximo passo:**
 [descrever o que queres fazer agora]
 
-**Contexto adicional:**
-[qualquer info relevante - erros, mudanças, etc]
-
-Continua de onde parámos!
+Continua!
 ```
 
----
-
-## 📦 Workflow de Desenvolvimento Limpo
-
-### **Passo a Passo para Novas Features**
-
-#### 1. **Criar Feature Branch**
-```bash
-# Nomenclatura: claude/nome-da-feature-xxxxx
-git checkout main
-git pull origin main
-git checkout -b claude/nova-feature-abc12
-```
-
-#### 2. **Desenvolver**
-- Faz alterações incrementais
-- Testa cada mudança
-- Commita frequentemente com mensagens claras
-
-#### 3. **Commits Descritivos**
-```bash
-# ✅ BOM
-git commit -m "feat: add fiscal dashboard with IVA calculations"
-git commit -m "fix: resolve 404 error in Traefik routing"
-git commit -m "docs: update claude.md with deployment steps"
-
-# ❌ MAU
-git commit -m "fixes"
-git commit -m "stuff"
-git commit -m "asdf"
-```
-
-**Prefixos úteis:**
-- `feat:` - Nova funcionalidade
-- `fix:` - Correção de bug
-- `docs:` - Documentação
-- `refactor:` - Refactoring (sem mudar comportamento)
-- `test:` - Testes
-- `chore:` - Manutenção (deps, configs, etc)
-
-#### 4. **Testar Localmente**
-```bash
-# Rebuild após mudanças
-docker compose down
-docker compose up -d --build web
-
-# Ver logs
-docker compose logs -f web
-
-# Testar migrations
-docker compose exec web python manage.py migrate --check
-docker compose exec web python manage.py check
-```
-
-#### 5. **Push & Merge**
-```bash
-# Push da feature branch
-git push -u origin claude/nova-feature-abc12
-
-# Quando pronta, merge para main
-git checkout main
-git pull origin main  # ← IMPORTANTE: sincroniza com remote primeiro!
-git merge claude/nova-feature-abc12
-git push origin main
-```
-
----
-
-## 🎯 Deployment para Produção
-
-### ⚠️ **IMPORTANTE: Deployment é SEMPRE NO SERVIDOR!**
-
-**Path:** `~/amp/docker/app/` (servidor de produção)
-**Quem faz:** TU (Bruno/Rafael), NUNCA o Claude
-
-```bash
-# 1. PRIMEIRO: Faz pull do código atualizado!
-cd ~/amp/docker/app
-git pull origin main  # ← NUNCA esqueças isto!
-
-# 2. DEPOIS: Deploy
-# Opção A - Automática (Recomendada)
-./deploy.sh
-
-# Opção B - Manual
-docker compose down
-docker compose build --no-cache web
-docker compose up -d
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py collectstatic --noinput
-```
-
----
-
-## 📝 Arquivar Sessão de Desenvolvimento
-
-### **Prompt de Finalização (para Claude)**
+### **Debugging**
 
 ```
-Sessão de desenvolvimento terminada!
-
-**Resumo do trabalho:**
-- Features implementadas: [lista]
-- Bugs resolvidos: [lista]
-- Commits criados: [número]
-
-**Antes de terminar:**
-1. Atualiza `.claude/claude.md` se houver mudanças na arquitetura
-2. Cria/atualiza documentação em `docs/` se necessário
-3. Faz commit de todas as mudanças (incluindo docs)
-4. Verifica que está tudo em produção (se aplicável)
-5. Cria resumo desta sessão para próxima vez
-
-**Estado final:**
-- Branch: [nome]
-- Último commit: [hash + mensagem]
-- Produção atualizada: [sim/não]
-- Issues conhecidos: [lista ou "nenhum"]
-
-Cria um resumo conciso desta sessão que posso guardar!
-```
-
-### **Template de Resumo de Sessão**
-
-Guarda isto num ficheiro `.session-notes/YYYY-MM-DD.md`:
-
-```markdown
-# Sessão Dev - [Data]
-
-## 🎯 Objetivo
-[O que querias fazer]
-
-## ✅ Completado
-- [x] Feature X implementada
-- [x] Bug Y resolvido
-- [x] Docs atualizadas
-
-## 🔧 Mudanças Técnicas
-- Ficheiros alterados: [lista]
-- Migrations criadas: [sim/não]
-- Deployment: [sim/não]
-
-## 📝 Notas para Próxima Sessão
-- [Qualquer coisa importante]
-- [TODOs pendentes]
-
-## 🔗 Commits
-- `abc1234` - feat: descrição
-- `def5678` - fix: descrição
-```
-
----
-
-## 🆘 Troubleshooting Comum
-
-### **Problema: "Lost changes after deployment"**
-**Solução:**
-1. SEMPRE faz commit antes de deploy
-2. Verifica que código está em Git: `git status`
-3. Verifica que DB está no volume correto (ver `.claude/claude.md`)
-
-### **Problema: "Migrations conflicting"**
-**Solução:**
-1. Verifica qual branch tem qual migration: `git log --oneline -- agora_web/core/migrations/`
-2. Merge cuidadosamente ou cria nova migration vazia
-3. Se necessário, marca como fake: ver `docs/DATABASE_MANUAL_CHANGES.md`
-
-### **Problema: "Docker não atualiza código"**
-**Solução:**
-```bash
-docker compose down
-docker compose build --no-cache web
-docker compose up -d
-```
-
-### **Problema: "CSS não carrega"**
-**Solução:**
-```bash
-docker compose exec web python manage.py collectstatic --noinput --clear
-```
-
----
-
-## 🎨 Boas Práticas
-
-### ✅ **FAZER**
-- Criar feature branches para cada tarefa
-- Commitar frequentemente com mensagens claras
-- Testar localmente antes de fazer push
-- Atualizar documentação quando arquitetura muda
-- Fazer backup da DB antes de mudanças grandes
-- Usar o script `deploy.sh` para deployment
-
-### ❌ **NÃO FAZER**
-- Commit direto em `main` (pre-commit hook vai bloquear!)
-- Commit de ficheiros `.env` ou secrets
-- Mudanças sem testar
-- Esquecer de fazer `collectstatic` após mudanças de CSS
-- Mudar nome do volume `agora_web_postgres_data`
-- Fazer deployment sem backup
-
----
-
-## 🔐 Segurança
-
-### **Ficheiros NUNCA Commitados**
-- `.env`
-- `.env.production`
-- `secrets.json`
-- `credentials.json`
-- Backups SQL (*.sql, *.sql.gz)
-
-**O pre-commit hook vai bloquear isto automaticamente!**
-
-### **Secrets Management**
-- SEMPRE usa variáveis de ambiente
-- NUNCA hardcodes passwords/tokens no código
-- Guarda `.env` fora do Git
-- Em produção: `.env` está em `~/amp/docker/app/.env` no servidor
-
----
-
-## 📚 Recursos Úteis
-
-### **Documentação do Projeto**
-- **`.claude/claude.md`** - Contexto completo (LEITURA OBRIGATÓRIA!)
-- **`docs/SALDOS_DASHBOARD.md`** - Dashboard de saldos
-- **`docs/SOCIOS_MIGRATION.md`** - Modelo de sócios
-- **`docs/DATABASE_MANUAL_CHANGES.md`** - Mudanças manuais na DB
-
-### **Comandos Úteis**
-```bash
-# Django
-docker compose exec web python manage.py shell
-docker compose exec web python manage.py dbshell
-docker compose exec web python manage.py check
-
-# Git
-git log --oneline --graph --all
-git diff main..HEAD
-git show HEAD
-
-# Docker
-docker compose ps
-docker compose logs -f web
-docker compose exec web bash
-```
-
----
-
-## 🎓 Prompts Especializados
-
-### **Para Debugging**
-```
-Estou com um erro no Agora Contabilidade:
+Erro no Agora Contabilidade:
 
 **Erro:** [colar erro completo]
 
 **Contexto:**
 - O que estava a fazer: [descrição]
-- Quando aconteceu: [após deploy/após mudança/etc]
-- Tentativas de fix: [o que já tentaste]
+- Quando aconteceu: [após deploy/mudança/etc]
+- Tentativas: [o que já tentaste]
 
-**Logs relevantes:**
-[colar logs se tiveres]
+**Logs:**
+[colar logs relevantes]
 
-Ajuda-me a debugar isto!
+Ajuda a debugar!
 ```
 
-### **Para Refactoring**
+### **Nova Feature**
+
 ```
-Quero refatorar código no Agora Contabilidade:
-
-**Código atual:** [ficheiro/função]
-**Problema:** [o que está mal]
-**Objetivo:** [como deve ficar]
-
-**Restrições:**
-- Não quebrar compatibilidade com DB
-- Manter testes a passar
-- Manter mesmo comportamento
-
-Mostra-me um plano de refactoring!
-```
-
-### **Para Novas Features**
-```
-Quero adicionar uma nova feature ao Agora Contabilidade:
+Adicionar feature ao Agora Contabilidade:
 
 **Feature:** [descrição clara]
-**Porquê:** [razão/problema que resolve]
-**Contexto:** [onde encaixa na app]
-
+**Porquê:** [problema que resolve]
 **Requisitos:**
 - [lista de requisitos]
 
 **Questões:**
 - [dúvidas que tens]
 
-Cria um plano de implementação detalhado!
+Cria plano de implementação!
 ```
 
 ---
 
-## 🎯 Workflow Recomendado (Resumo)
+## 🔐 Segurança
 
+### **Ficheiros NUNCA Commitados**
+
+```bash
+.env                    # Environment variables
+.env.production         # Production env (symlink)
+secrets.json           # Secrets
+credentials.json       # Credentials
+*.sql                  # DB dumps
+*.sql.gz               # Compressed backups
 ```
-1. git checkout -b claude/feature-xxxxx
-2. [desenvolver + testar localmente]
-3. git add . && git commit -m "feat: descrição"
-4. git push -u origin claude/feature-xxxxx
-5. [testar mais se necessário]
-6. git checkout main && git pull origin main
-7. git merge claude/feature-xxxxx
-8. git push origin main
-9. [NO SERVIDOR] ./deploy.sh
-10. ✅ Verificar produção
-11. 🎉 Done!
+
+### **Secrets Management**
+
+- ✅ **SEMPRE** usa variáveis de ambiente (`.env`)
+- ❌ **NUNCA** hardcodes passwords/tokens no código
+- ✅ `.env` está em `~/amp/docker/app/.env` no servidor
+- ✅ `.gitignore` bloqueia commits de secrets
+
+---
+
+## 📊 Workflow Resumido (TL;DR)
+
+```bash
+# 1. Criar branch
+git checkout -b claude/feature-xxx
+
+# 2. Desenvolver + testar
+# [fazer mudanças]
+docker compose up -d --build web
+
+# 3. Commit
+git add .
+git commit -m "feat: descrição"
+
+# 4. Push
+git push -u origin claude/feature-xxx
+
+# 5. Quando pronto: merge
+git checkout main
+git pull origin main
+git merge claude/feature-xxx
+git push origin main
+
+# 6. Deploy
+./deploy.sh
+
+# 7. ✅ Verificar produção
+# https://app.agoramediaproduction.pt
 ```
 
 ---
 
-**Última atualização:** 2026-01-02
-**Mantido por:** Bruno & Rafael
-**Versão:** 1.0
+## 🎯 Tech Stack Atual
+
+| Camada | Tecnologia | Notas |
+|--------|------------|-------|
+| **Backend** | Django 5.0 | Framework web |
+| **Database** | PostgreSQL 16 | Relational DB |
+| **ORM** | Django ORM | Built-in |
+| **Admin** | Unfold Theme | Modern admin UI |
+| **Containers** | Docker Compose | web + db |
+| **Reverse Proxy** | Traefik v3.3 | HTTP routing |
+| **DNS/SSL** | Cloudflare | CDN + SSL |
+| **Python** | 3.11 | Runtime |
+| **WSGI** | Gunicorn | Production server |
 
 ---
 
-**💡 Tip:** Guarda este ficheiro aberto enquanto desenvolves. É o teu GPS! 🗺️
+## 💡 Tips Finais
+
+1. **Sempre rebuild** após mudanças de código Python
+2. **Consulta docs/** antes de implementar features existentes
+3. **Testa no shell primeiro** antes de deploy (especialmente saldos)
+4. **Faz backup** antes de mudanças grandes na BD
+5. **Commita frequentemente** - commits pequenos são melhores
+6. **Documenta decisões** importantes em `docs/`
+7. **Usa TodoWrite** para planear tarefas complexas (Claude)
+
+---
+
+**© 2025 Agora Media Production**
+**Última Atualização:** 2026-01-03
+**Versão:** 2.0 (VS Code Workflow)

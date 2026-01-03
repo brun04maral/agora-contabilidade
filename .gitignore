@@ -187,8 +187,10 @@ cython_debug/
 *.backup*
 .DS_Store
 
-# NOTA: agora_media.db ESTÁ NO GIT para facilitar sincronização
-# A base de dados é pequena e só tem 2 utilizadores
+# Old Tkinter App (archived)
+archive-old-tkinter-app/
+
+# Export files
 clientes_export.json
 projetos_export.json
 import_projetos_script.py
@@ -196,3 +198,7 @@ fornecedores_export.json
 despesas_export.json
 boletins_export.json
 boletim_linhas_export.json
+
+# Excel imports
+excel/*.xlsx
+excel/*.xls

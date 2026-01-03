@@ -18,44 +18,41 @@ Sistema de contabilidade Django para **Amaral & Reigota - Produção Audiovisual
 
 ---
 
-## ⚠️ CRÍTICO: Ambientes de Trabalho
+## ⚠️ CRÍTICO: Ambiente de Trabalho
 
-**HÁ DOIS AMBIENTES DIFERENTES:**
+**Workflow Atual:** VS Code Extension (Direto no Servidor)
 
-### 🤖 Ambiente LOCAL (Claude AI)
-- **Path:** `/home/user/agora-contabilidade`
-- **Onde:** Máquina de desenvolvimento (não é o servidor!)
-- **O que faz:** Claude trabalha aqui, faz mudanças, commits, push
+### 🎯 Ambiente ÚNICO (Servidor de Produção)
+- **Path:** `/home/zumine/amp/docker/app/`
+- **Onde:** Servidor de produção
+- **Acesso:** VS Code via SSH + Claude Extension
+- **Vantagem:** Mudanças diretas, sem sincronização entre ambientes
 
-### 👨‍💻 Ambiente SERVIDOR (Bruno/Rafael)
-- **Path:** `~/amp/docker/app/` (servidor de produção)
-- **Onde:** Servidor real onde a app está deployed
-- **O que faz:** TU trabalhas aqui, testar mudanças, deployment
+### 🔄 Workflow Simplificado
 
-### 🔄 Workflow OBRIGATÓRIO
+**Com VS Code Extension:**
+1. VS Code conecta ao servidor via SSH
+2. Claude (extension) trabalha DIRETAMENTE no código do servidor
+3. Testa localmente (rebuild Docker)
+4. Commit + push quando pronto
+5. Deploy final (já estamos no servidor!)
 
-**Quando Claude faz mudanças:**
-1. Claude faz mudanças em `/home/user/agora-contabilidade`
-2. Claude faz commit e push para branch `claude/*`
-3. **⚠️ TU TENS DE FAZER PULL NO SERVIDOR antes de testar!**
-   ```bash
-   # NO SERVIDOR (~/amp/docker/app/)
-   git pull origin claude/nome-da-branch
-   # OU se já está em main:
-   git pull origin main
-   ```
-4. Só depois de pull é que podes testar/deploy
+**Sem worktrees, sem pull entre ambientes!**
 
-**NUNCA assumes que o código no servidor está atualizado!**
-**SEMPRE faz `git pull` antes de qualquer teste ou deployment!**
+### ⚠️ Nota Histórica
+
+Workflow antigo (DESCONTINUADO):
+~~Claude standalone app → worktrees locais → push → pull no servidor~~
+
+Documentação antiga arquivada em `archive-old-tkinter-app/`
 
 ---
 
 ## 🏗️ Arquitetura
 
 ```
-agora-contabilidade/
-├── agora_web/              # Django application (trabalha aqui!)
+~/amp/docker/app/
+├── agora_web/              # 🎯 Django application (trabalha aqui!)
 │   ├── core/               # Main app
 │   │   ├── models.py       # Socio, Projeto, Despesa, Boletim, Saldo, etc.
 │   │   ├── admin.py        # Unfold admin customizations
@@ -67,19 +64,33 @@ agora-contabilidade/
 │   │   │   └── socios.json # BA e RR initial data
 │   │   └── migrations/
 │   ├── config/             # Django settings
+│   ├── static/             # CSS, JS, assets
 │   └── manage.py
+│
+├── .claude/                # 🤖 Contexto para AI assistants
+│   └── claude.md           # Este ficheiro!
+│
+├── docs/                   # 📚 Documentation (ver aqui para detalhes!)
+│   ├── SOCIOS_MIGRATION.md
+│   ├── SALDOS_DASHBOARD.md
+│   ├── DATABASE_MANUAL_CHANGES.md
+│   └── README.md           # Índice de documentação
 │
 ├── scripts/                # SQL scripts manuais
 │   ├── create_socios_table.sql
 │   └── add_socio_fk_columns.sql
 │
-├── docs/                   # 📚 Documentation (ver aqui para detalhes!)
-│   ├── SOCIOS_MIGRATION.md
-│   ├── SALDOS_DASHBOARD.md
-│   └── DATABASE_MANUAL_CHANGES.md
+├── backups/                # Database backups
+├── excel/                  # Ficheiros Excel para import
+├── media/                  # Logos e media files
 │
-├── docker-compose.yml      # Production compose file (na raiz)
-└── .env                    # Environment variables
+├── docker-compose.yml      # Production compose file
+├── deploy.sh               # Deployment script
+├── .env                    # Environment variables
+├── README.md               # Project overview
+└── README-DEV.md           # 📖 Development workflow guide
+
+archive-old-tkinter-app/    # 📦 Old Tkinter app (histórico)
 ```
 
 ---
@@ -176,10 +187,10 @@ agora_db container (PostgreSQL 16 :5432)
 
 ### Server Paths
 
-**Development:** `/home/user/agora-contabilidade/` (local machine)
-**Production:** `/home/zumine/amp/docker/app/` (server)
+**Production (e Development):** `/home/zumine/amp/docker/app/`
 
-**NOTA:** O repositório Git está em `/home/zumine/amp/docker/app/` no servidor.
+**NOTA:** Com VS Code Extension, trabalhamos DIRETAMENTE no servidor.
+Não há separação entre ambiente local e servidor.
 
 ### Environment Variables
 
@@ -207,11 +218,16 @@ DB_PASSWORD=Agora2025Prod!SecureDB
 - Sempre estável e deployável
 - Merges só após testing
 
-**Current Working Branch:** `claude/review-project-context-9jpda`
-- Development ativo
-- Merge para main quando estável
+**Feature Branches:** `claude/nome-da-feature-xxxxx`
+- Criar nova branch para cada feature/fix
+- Testar completamente antes de merge
+- Apagar após merge (opcional)
 
-**Naming Convention:** Feature branches devem seguir o padrão `claude/nome-da-feature-xxxxx`
+**Naming Convention:**
+- `claude/feat-*` - Novas funcionalidades
+- `claude/fix-*` - Correções de bugs
+- `claude/refactor-*` - Refactoring
+- `claude/docs-*` - Atualizações de documentação
 
 ---
 
@@ -345,38 +361,58 @@ docker compose exec db psql -U agora -d agora_production
 
 ## 🚀 Deployment Workflow
 
-1. **Development:** Code changes in local/Claude worktree
-2. **Commit:** `git commit -m "message"`
-3. **Push:** `git push -u origin <branch>`
-4. **Server:** `git pull origin <branch>`
-5. **Rebuild:** `docker compose -f docker-compose.cloudflare.yml up -d --build web`
-6. **Verify:** Check logs and test functionality
+**Com VS Code Extension (Workflow Atual):**
 
-**Note:** Server has Cloudflare tunnel configured - acessível remotamente.
+1. **Branch:** `git checkout -b claude/feature-xxx`
+2. **Develop:** Code changes DIRETAMENTE no servidor
+3. **Test:** `docker compose up -d --build web`
+4. **Commit:** `git commit -m "feat: descrição"`
+5. **Push:** `git push -u origin claude/feature-xxx`
+6. **Merge:** `git checkout main && git pull && git merge claude/feature-xxx && git push`
+7. **Deploy:** `./deploy.sh` (já estamos no servidor!)
+8. **Verify:** Testar em https://app.agoramediaproduction.pt
+
+**Vantagem:** Sem sincronização entre ambientes! Tudo numa máquina só.
 
 ---
 
 ## 💡 Tips for AI Assistants
 
-1. **Always rebuild Docker** after code changes - não há volume mount
-2. **Check docs/** antes de implementar features existentes
-3. **Saldos calculation** é sensível - testar sempre no shell primeiro
-4. **Migrations:** Se encontrares problemas, considera SQL manual (ver docs)
-5. **Template changes:** Também precisam de rebuild Docker
-6. **PostgreSQL syntax:** Usa RESTRICT não PROTECT
+### Workflow com VS Code Extension
+
+1. **Estamos NO SERVIDOR** - mudanças são diretas, sem worktrees
+2. **Always rebuild Docker** after code changes - código está na imagem
+3. **Testar antes de commit** - `docker compose up -d --build web`
+4. **Feature branches** - sempre criar branch para cada tarefa
+5. **Consulta README-DEV.md** para workflow detalhado
+
+### Desenvolvimento
+
+1. **Check docs/** antes de implementar features existentes
+2. **Saldos calculation** é sensível - testar no shell primeiro
+3. **Migrations:** Se problemas, considera SQL manual (ver docs)
+4. **Template changes:** Também precisam de rebuild Docker
+5. **PostgreSQL syntax:** Usa RESTRICT não PROTECT
+6. **Commit messages:** Usar prefixos (feat:, fix:, docs:, etc)
 
 ---
 
 ## 📚 Further Reading
 
-- `docs/SOCIOS_MIGRATION.md` - Como Socio model foi implementado
-- `docs/SALDOS_DASHBOARD.md` - Dashboard implementation details
-- `docs/DATABASE_MANUAL_CHANGES.md` - Manual SQL changes history
-- `agora_web/README.md` - Django app specific docs
+### Documentação Essencial
+- **`README-DEV.md`** - ⭐ Workflow de desenvolvimento (VS Code Extension)
+- **`docs/SOCIOS_MIGRATION.md`** - Como Socio model foi implementado
+- **`docs/SALDOS_DASHBOARD.md`** - Dashboard implementation details
+- **`docs/DATABASE_MANUAL_CHANGES.md`** - Manual SQL changes history
+- **`docs/README.md`** - Índice completo da documentação
+- **`agora_web/README.md`** - Django app specific docs
+
+### Histórico
+- **`archive-old-tkinter-app/`** - App antiga (Tkinter + SQLite) - apenas referência
 
 ---
 
-**Last Updated:** 2026-01-02
+**Last Updated:** 2026-01-03
 **Project Status:** ✅ Production Ready
 **Production Branch:** `main`
-**Active Development Branch:** `claude/review-project-context-9jpda`
+**Workflow:** VS Code Extension (direto no servidor)

@@ -1,267 +1,405 @@
 # 🎬 Agora Contabilidade
 
-Sistema de gestão contabilística para Agora Media Production (BA + RR).
+Sistema de gestão contabilística para **Amaral & Reigota - Produção Audiovisual, Lda**
+
+**Marca:** Agora Media Production
+**NIPC:** 518 351 190
+**Sócios:** Bruno Amaral (BA) e Rafael Reigota (RR)
 
 ---
 
-## 🔄 Workflow Git/Branches
+## 📖 Quick Start
 
-**Claude Code trabalha com worktrees** - cria automaticamente um novo branch isolado a cada sessão.
+### Para Developers
 
-**📚 Documentação Completa:** Ver [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md)
+```bash
+# Ver guia completo de desenvolvimento
+cat README-DEV.md
 
-### 🎯 Como Funciona
-
-1. **Claude Code cria worktree** em `~/.claude-worktrees/agora-contabilidade/<branch>/`
-2. **Trabalha no worktree** - commits, edições, testes
-3. **Push para GitHub** - `git push origin <branch>`
-4. **Pull Request** - Merge via GitHub web interface
-5. **Sync local** - `git pull origin main` na pasta principal
-
-### 📂 Dois Repositórios, Um Histórico
-
-```
-Pasta Principal (tua):     /Users/brunoamaral/Documents/github/agora-contabilidade/
-Worktree Claude:           ~/.claude-worktrees/agora-contabilidade/<branch>/
+# Para Claude AI: ler contexto completo
+cat .claude/claude.md
 ```
 
-Ambos partilham o mesmo histórico Git mas em pastas diferentes.
+### Para Deployment
 
-💡 **Primeira vez?** Lê [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md) para workflow completo.
+```bash
+# Deploy rápido (no servidor)
+./deploy.sh
+
+# Ver logs
+docker compose logs -f web
+
+# Acesso: https://app.agoramediaproduction.pt
+```
 
 ---
 
-## ⚙️ Requisitos do Sistema
+## 🎯 Tech Stack
 
-- **Python:** 3.12+ (recomendado)
-- **SO:** Windows, macOS, Linux
-- **Dependências:** Ver `requirements.txt`
+| Camada | Tecnologia | Versão |
+|--------|------------|--------|
+| Backend | Django | 5.0 |
+| Database | PostgreSQL | 16 |
+| Admin UI | Unfold Theme | Latest |
+| Containers | Docker Compose | - |
+| Reverse Proxy | Traefik | v3.3 |
+| DNS/SSL | Cloudflare | - |
+| Python | CPython | 3.11 |
+| WSGI Server | Gunicorn | Latest |
 
-## ✨ Funcionalidades (Todas Completas ✅)
+---
 
-### 💰 Saldos Pessoais (CORE)
-- Cálculo automático 50/50
-- Visualização em cards lado a lado
-- Breakdown detalhado (INs/OUTs)
+## ✨ Features Principais
+
+### 💰 Saldos Pessoais (CORE Feature)
+Dashboard que calcula automaticamente quanto a empresa deve a cada sócio:
+- **Cálculo 50/50** automático
+- **INs:** Projetos pessoais + prémios individuais
+- **OUTs:** Despesas fixas ÷ 2 + boletins + despesas pessoais
+- **Breakdown anual** com valores pagos vs projetados
+- **Sugestão de boletim** baseada em saldo e meses restantes
+
+Ver [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) para detalhes técnicos.
 
 ### 📊 Gestão Completa
-- ✅ **Dashboard** - Visão geral do sistema
-- ✅ **Projetos** - Gestão com prémios individuais
-- ✅ **Orçamentos** - Versões e aprovações
-- ✅ **Despesas** - Fixas e variáveis
-- ✅ **Boletins** - RVs com cálculos automáticos
-- ✅ **Clientes** - Base de dados completa
-- ✅ **Fornecedores** - Base de dados completa
-- ✅ **Equipamento** - Inventário
-- ✅ **Relatórios** - Exportação Excel
+
+| Módulo | Funcionalidade |
+|--------|----------------|
+| **Projetos** | Gestão com prémios individuais (BA/RR) |
+| **Orçamentos** | Versões e aprovações |
+| **Despesas** | Fixas mensais e variáveis |
+| **Boletins** | Recibos verdes com cálculos automáticos |
+| **Clientes** | Base de dados completa |
+| **Fornecedores** | Gestão de fornecedores |
+| **Equipamento** | Inventário de equipamento |
+| **Sócios** | BA e RR com participação 50/50 |
 
 ### 🎨 Interface
-- Ícones PNG profissionais (Base64)
-- Logos de alta qualidade
-- CustomTkinter moderno
 
-## 🚀 Setup Rápido
+- **Unfold Admin Theme** - Interface moderna e limpa
+- **Cards visuais** - Dashboard com breakdown claro
+- **Responsive** - Funciona em desktop e mobile
+- **Cores personalizadas** - Verde (#2ECC71) para BA, Azul (#3498DB) para RR
+
+---
+
+## 🏗️ Arquitetura
+
+### Infraestrutura
+
+```
+Internet
+  ↓
+Cloudflare (DNS + CDN + SSL)
+  ↓
+Servidor (porta 80/443)
+  ↓
+Traefik v3.3 (Reverse Proxy)
+  ↓
+Docker Network: traefik_proxy
+  ↓
+agora_web (Django + Gunicorn :8000)
+  ↓
+Docker Network: agora_internal
+  ↓
+agora_db (PostgreSQL 16 :5432)
+```
+
+### Estrutura de Código
+
+```
+agora_web/
+├── core/                   # Main Django app
+│   ├── models.py          # Socio, Projeto, Despesa, Boletim, etc
+│   ├── admin.py           # Admin customizations
+│   ├── utils/
+│   │   └── saldos.py      # SaldosCalculator (lógica core)
+│   ├── templates/         # Custom templates
+│   └── migrations/        # Database migrations
+├── config/                # Django settings
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── static/                # CSS, JS, logos
+```
+
+---
+
+## 🚀 Development Workflow
+
+### Setup Inicial
+
 ```bash
-# 1. Criar ambiente virtual (recomendado)
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
+# 1. Clonar repo (se necessário)
+git clone <repo-url>
+cd agora-contabilidade
 
-# 2. Instalar dependências
-pip install -r requirements.txt
+# 2. Configurar .env
+cp .env.example .env
+# Editar .env com credenciais
 
-# 3. Configurar base de dados
-alembic upgrade head
+# 3. Iniciar containers
+docker compose up -d
 
-# 4. (Opcional) Dados de teste
-python -c "from database.seed import seed_database; seed_database()"
+# 4. Aplicar migrations
+docker compose exec web python manage.py migrate
 
-# 5. Executar
-python main.py
+# 5. Criar superuser
+docker compose exec web python manage.py createsuperuser
+
+# 6. Acesso: https://app.agoramediaproduction.pt/admin
 ```
 
-**Detalhes completos:** Consulta `memory/DEV_SETUP.md`
+### Workflow Diário
 
-## 📂 Estrutura do Projeto
-```
-agora-contabilidade/
-├── main.py              # Entry point
-├── agora_media.db       # SQLite (gitignored)
-│
-├── database/            # Camada de dados
-│   ├── models/         # SQLAlchemy models
-│   └── migrations/     # Alembic migrations
-│
-├── logic/              # Lógica de negócio
-│   ├── saldos.py      # ⭐ CORE - Cálculo 50/50
-│   └── ...            # Outros managers
-│
-├── ui/                 # Interface gráfica
-│   ├── screens/       # 10 screens principais
-│   └── components/    # Componentes reutilizáveis
-│
-├── assets/            # Ícones Base64
-├── media/             # Logos PNG
-│
-└── memory/            # 🧠 Documentação dev
-    ├── CURRENT_STATE.md  ⭐ COMEÇA AQUI!
-    ├── TODO.md
-    ├── ARCHITECTURE.md
-    └── ...
+**Ver [README-DEV.md](README-DEV.md) para guia completo!**
+
+Resumo:
+```bash
+# 1. Criar branch
+git checkout -b claude/feature-xxx
+
+# 2. Desenvolver + testar
+docker compose up -d --build web
+
+# 3. Commit + push
+git commit -m "feat: descrição"
+git push -u origin claude/feature-xxx
+
+# 4. Merge quando pronto
+git checkout main && git pull
+git merge claude/feature-xxx
+git push origin main
+
+# 5. Deploy
+./deploy.sh
 ```
 
-## 💡 Como Funciona o Cálculo de Saldos
+---
 
-### Conceito
-Os sócios fazem trabalhos **pessoais** (como freelancers) mas **faturam pela empresa**. Isto cria "dívidas" da empresa para os sócios.
+## 💡 Core Concepts
 
-### Fórmula
+### Sócios (Partners)
+- **BA** (Bruno Amaral) - Código: `BA`
+- **RR** (Rafael Reigota) - Código: `RR`
+- Participação: **50% cada**
+- Campos: codigo (PK), nome_completo, email, percentagem_participacao, cor_tema
+
+### Saldos Pessoais
+**Conceito:** Sócios fazem trabalhos freelance mas faturam pela empresa → empresa fica a dever.
+
+**Fórmula:**
 ```
 Saldo = INs - OUTs
 
 INs (empresa DEVE ao sócio):
-  • Projetos pessoais faturados pela empresa
-  • Prémios recebidos de projetos da empresa
+  • Projetos pessoais (tipo=PESSOAL_BA/RR, estado=PAGO)
+  • Prémios individuais (premio_bruno/rafael, estado=PAGO)
+  • A Receber: projetos/prémios FINALIZADOS (não pagos ainda)
 
-OUTs (empresa PAGA ao sócio):
+OUTs (empresa PAGOU ao sócio):
   • Despesas fixas mensais ÷ 2
-  • Boletins emitidos
-  • Despesas pessoais excecionais
+  • Boletins emitidos (estado=PAGO ou PENDENTE)
+  • Despesas pessoais (tipo=PESSOAL_BA/RR)
 ```
 
-### Exemplo Real
+**Exemplo:**
 ```
-Bruno em Janeiro:
-
-INs:
-  • Projeto pessoal: €1.500
-  • Prémio de projeto empresa: €500
-  = €2.000 TOTAL
-
-OUTs:
-  • Despesas fixas: €350 ÷ 2 = €175
-  • Boletim emitido: €600
-  = €775 TOTAL
-
-Saldo = €2.000 - €775 = €1.225
+Bruno em 2025:
+INs:  €15.000 (projetos pessoais) + €3.000 (prémios) = €18.000
+OUTs: €2.100 (despesas fixas ÷2) + €8.000 (boletins) = €10.100
+Saldo: €18.000 - €10.100 = €7.900 (empresa deve a Bruno)
 ```
 
-## 🔑 Regras de Negócio Importantes
+---
 
-### Projetos
-- **EMPRESA**: Valor não entra nos saldos, apenas prémios
-- **PESSOAL_BRUNO/RAFAEL**: Valor total entra nos INs do sócio
-- Apenas projetos **RECEBIDOS** contam para saldos
+## 🗄️ Database
 
-### Despesas
-- **FIXA_MENSAL**: Divide por 2, cada sócio desconta metade
-- **PESSOAL_BRUNO/RAFAEL**: Desconta apenas do sócio específico
-- **EQUIPAMENTO**: Pode descontar se para uso pessoal
-- Apenas despesas **PAGAS** contam para saldos
+**PostgreSQL 16** com as seguintes tabelas principais:
 
-### Boletins
-- Quando **EMITIDOS** → NÃO descontam do saldo (ainda não pagos)
-- Quando **PAGOS** → Descontam do saldo nesse momento
+| Tabela | Modelo | Descrição |
+|--------|--------|-----------|
+| `socios` | Socio | BA e RR (criada manualmente via SQL) |
+| `projetos` | Projeto | Projetos com FK `socio_id` |
+| `despesas` | Despesa | Despesas da empresa |
+| `boletins` | Boletim | Recibos verdes com FK `socio_id` |
+| `orcamentos` | Orcamento | Orçamentos com FK `socio_id` |
 
-## 🎨 Stack Tecnológica
+**Nota:** Tabela `socios` foi criada manualmente. Ver [docs/DATABASE_MANUAL_CHANGES.md](docs/DATABASE_MANUAL_CHANGES.md)
 
-- **Interface:** CustomTkinter
-- **Base de Dados:** SQLite
-- **ORM:** SQLAlchemy + Alembic
-- **Python:** 3.12+
-- **Exportação:** openpyxl (Excel)
-
-## 📝 Próximos Passos
-
-Ver `memory/TODO.md` para lista completa. Destaques:
-- [ ] Testes automatizados
-- [ ] Build para Windows (PyInstaller)
-- [ ] Backup automático da BD
-- [ ] Integração TOConline API (futuro)
+---
 
 ## 🔧 Comandos Úteis
 
-### Base de Dados
+### Django Management
+
 ```bash
-# Ver estado migrations
-alembic current
+# Django shell
+docker compose exec web python manage.py shell
 
-# Aplicar migrations
-alembic upgrade head
+# Database shell
+docker compose exec web python manage.py dbshell
 
-# Criar nova migration
-alembic revision --autogenerate -m "descrição"
+# Check system
+docker compose exec web python manage.py check
 
-# Reset completo (dev)
-rm agora_media.db
-alembic upgrade head
+# Migrations
+docker compose exec web python manage.py showmigrations
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py makemigrations
+
+# Static files
+docker compose exec web python manage.py collectstatic --noinput
 ```
 
-### Git
+### Docker
+
 ```bash
-git status
-git add .
-git commit -m "mensagem"
-git push
+# Ver logs
+docker compose logs -f web
+docker compose logs -f db
+
+# Rebuild
+docker compose down
+docker compose up -d --build web
+
+# Entrar no container
+docker compose exec web bash
+docker compose exec db psql -U agora -d agora_production
 ```
 
-## 🆘 Troubleshooting
+### Database Backup
 
-### Erro: "No module named..."
 ```bash
-pip install -r requirements.txt
+# Backup
+docker compose exec db pg_dump -U agora agora_production > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restore (CUIDADO!)
+cat backup.sql | docker compose exec -T db psql -U agora -d agora_production
 ```
-
-### DB locked
-Fecha todas as instâncias da app e remove `.db-journal`
-
-### Logos não aparecem
-Verifica `media/logos/*.png` - devem existir 4 ficheiros
-
-**Mais ajuda:** Consulta `memory/DEV_SETUP.md`
 
 ---
 
-## 🎯 Comandos Rápidos - Claude Code
+## 📚 Documentação
 
-Usa estas frases para comandos rápidos durante desenvolvimento:
+### Para Developers
+| Ficheiro | Descrição |
+|----------|-----------|
+| [README-DEV.md](README-DEV.md) | ⭐ **Guia de desenvolvimento completo** |
+| [.claude/claude.md](.claude/claude.md) | Contexto completo para AI assistants |
 
-| Situação | Comando | O que faz |
-|----------|---------|-----------|
-| 📖 **Contexto** | `Lê README.md e memory/CURRENT_STATE.md para contexto` | Actualiza Claude com estado actual |
-| ✅ **Trabalho concluído** | `Atualiza memory/ com o trabalho feito (CURRENT_STATE, TODO, CHANGELOG)` | Actualiza documentação |
-| 📋 **Marcar tarefa** | `Marca esta tarefa como concluída no TODO` | Move tarefa para ✅ Concluído |
-| 🔀 **Git workflow** | `Consulta memory/GIT_WORKFLOW.md para workflow completo` | Ajuda com Git/Branches/PRs |
-| 🎯 **Decisão técnica** | `Documenta esta decisão no DECISIONS.md` | Regista decisão importante |
-| 🗄️ **Schema alterado** | `Atualiza DATABASE_SCHEMA.md com mudanças na BD` | Actualiza docs da BD |
+### Documentação Técnica
+| Ficheiro | Descrição |
+|----------|-----------|
+| [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) | Implementação do dashboard de saldos |
+| [docs/SOCIOS_MIGRATION.md](docs/SOCIOS_MIGRATION.md) | Como modelo Socio foi criado |
+| [docs/DATABASE_MANUAL_CHANGES.md](docs/DATABASE_MANUAL_CHANGES.md) | Mudanças manuais na BD |
+| [docs/README.md](docs/README.md) | Índice completo de documentação |
 
-📖 **Mais detalhes:** Ver [`memory/README.md`](./memory/README.md) e [`memory/GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md)
+### Histórico
+| Pasta | Descrição |
+|-------|-----------|
+| [archive-old-tkinter-app/](archive-old-tkinter-app/) | App antiga (Tkinter + SQLite) - apenas referência |
 
 ---
 
-## 📚 Documentação Completa
+## 🐛 Known Issues & Solutions
 
-Toda a documentação técnica está em [`/memory/`](./memory/):
+### Docker código não atualiza
+```bash
+# Código está na imagem, não em volume
+docker compose down
+docker compose build --no-cache web
+docker compose up -d
+```
 
-**Essenciais:**
-- [`CURRENT_STATE.md`](./memory/CURRENT_STATE.md) ⭐ - Estado actual do projeto
-- [`GIT_WORKFLOW.md`](./memory/GIT_WORKFLOW.md) ⭐ - Workflow Git/Branches/Worktrees
-- [`TODO.md`](./memory/TODO.md) - Tarefas priorizadas
-- [`ARCHITECTURE.md`](./memory/ARCHITECTURE.md) - Como funciona o sistema
+### CSS não carrega
+```bash
+docker compose exec web python manage.py collectstatic --noinput --clear
+```
 
-**Técnicas:**
-- [`DATABASE_SCHEMA.md`](./memory/DATABASE_SCHEMA.md) - Estrutura da BD
-- [`BUSINESS_LOGIC.md`](./memory/BUSINESS_LOGIC.md) - Regras de negócio
-- [`DECISIONS.md`](./memory/DECISIONS.md) - Decisões técnicas
-- [`CHANGELOG.md`](./memory/CHANGELOG.md) - Histórico de alterações
+### Migration conflicts
+```bash
+# Ver histórico
+git log --oneline -- agora_web/core/migrations/
 
-**Setup:**
-- [`DEV_SETUP.md`](./memory/DEV_SETUP.md) - Setup ambiente
-- [`GUIA_COMPLETO.md`](./memory/GUIA_COMPLETO.md) - Guia utilizador
+# Solução: criar merge migration
+# Ver docs/DATABASE_MANUAL_CHANGES.md
+```
 
-📖 **Índice completo:** Ver [`memory/README.md`](./memory/README.md)
+Mais troubleshooting em [README-DEV.md](README-DEV.md#-troubleshooting-comum)
+
+---
+
+## 🔐 Segurança
+
+### Secrets (NUNCA Commitar!)
+- `.env` - Environment variables
+- `*.sql` - Database dumps
+- `secrets.json`, `credentials.json`
+
+### Environment Variables
+Ver `.env.example` para template.
+
+Principais variáveis:
+- `DEBUG=False` (produção)
+- `SECRET_KEY` - Django secret
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD` - PostgreSQL
+- `ALLOWED_HOSTS` - Domain
+
+---
+
+## 🌐 Acesso
+
+- **Produção:** https://app.agoramediaproduction.pt
+- **Admin:** https://app.agoramediaproduction.pt/admin
+- **Credenciais:** Ver gestão de secrets
+
+---
+
+## 📝 Notas de Versão
+
+### v2.0 - Django App (Atual)
+- ✅ Django 5.0 + PostgreSQL 16
+- ✅ Dashboard de Saldos Pessoais
+- ✅ Modelo Socio com migração de dados
+- ✅ Docker + Traefik + Cloudflare
+- ✅ Unfold Admin Theme
+
+### v1.0 - Tkinter App (Descontinuada)
+- ❌ Aplicação desktop (Tkinter + SQLite)
+- ❌ Arquivada em `archive-old-tkinter-app/`
+
+---
+
+## 🆘 Suporte
+
+### Para Developers
+1. Consultar [README-DEV.md](README-DEV.md)
+2. Ver [docs/](docs/) para questões técnicas
+3. Procurar em `git log` para histórico
+
+### Para AI Assistants (Claude)
+1. Ler [.claude/claude.md](.claude/claude.md) para contexto completo
+2. Consultar [README-DEV.md](README-DEV.md) para workflow
+3. Verificar [docs/](docs/) antes de implementar features
+
+---
+
+## 📊 Project Status
+
+| Métrica | Status |
+|---------|--------|
+| **Ambiente** | ✅ Produção |
+| **Deployment** | ✅ Docker + Traefik |
+| **Database** | ✅ PostgreSQL 16 |
+| **Features Core** | ✅ Completas |
+| **Documentação** | ✅ Atualizada |
+| **Branch Produção** | `main` |
+| **Workflow** | VS Code Extension (servidor direto) |
 
 ---
 
 **© 2025 Agora Media Production**
-**Status:** ✅ Produção Ready
+**Última Atualização:** 2026-01-03
+**Versão:** 2.0 (Django App)
