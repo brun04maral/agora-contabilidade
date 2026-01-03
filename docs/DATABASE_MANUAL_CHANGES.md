@@ -1,6 +1,6 @@
 # Database Manual Changes - History & Scripts
 
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-01-03
 **Status:** ✅ Complete
 
 ---
@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_socios_email ON socios(email);
 docker cp scripts/create_socios_table.sql agora_db:/tmp/
 
 # Execute in PostgreSQL
-docker compose -f docker-compose.cloudflare.yml exec db \
+docker compose exec db \
   psql -U agora_user -d agora_db -f /tmp/create_socios_table.sql
 ```
 
@@ -164,7 +164,7 @@ ALTER TABLE projetos ADD COLUMN socio_id ... ON DELETE RESTRICT;
 docker cp scripts/add_socio_fk_columns.sql agora_db:/tmp/
 
 # Execute in PostgreSQL
-docker compose -f docker-compose.cloudflare.yml exec db \
+docker compose exec db \
   psql -U agora_user -d agora_db -f /tmp/add_socio_fk_columns.sql
 ```
 
@@ -206,7 +206,7 @@ After creating the table and columns, we migrated existing data using Django man
 
 **Execution:**
 ```bash
-docker compose -f docker-compose.cloudflare.yml exec web \
+docker compose exec web \
   python manage.py migrate_socios
 ```
 
@@ -427,4 +427,4 @@ Foreign-key constraints:
 ---
 
 **Documentation by:** Claude Code
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-01-03

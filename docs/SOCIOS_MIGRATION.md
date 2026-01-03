@@ -223,7 +223,7 @@ class Command(BaseCommand):
 
 **Execution:**
 ```bash
-docker compose -f docker-compose.cloudflare.yml exec web python manage.py migrate_socios
+docker compose exec web python manage.py migrate_socios
 ```
 
 **Results:**
@@ -385,4 +385,4 @@ If needed, rollback is simple:
 ---
 
 **Documentation by:** Claude Code
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-01-03

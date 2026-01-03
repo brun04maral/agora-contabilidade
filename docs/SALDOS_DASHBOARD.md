@@ -405,14 +405,14 @@ Boletim.objects.filter(socio_codigo='BA')  # ✅ CORRECT
 **Solution:** Manually copy template to container:
 ```bash
 docker cp core/templates/admin/core/saldo/changelist.html \
-    $(docker compose -f docker-compose.cloudflare.yml ps -q web):/app/core/templates/admin/core/saldo/changelist.html
+    $(docker compose ps -q web):/app/core/templates/admin/core/saldo/changelist.html
 
-docker compose -f docker-compose.cloudflare.yml restart web
+docker compose restart web
 ```
 
 **Alternative:** Full rebuild with `--force-recreate`:
 ```bash
-docker compose -f docker-compose.cloudflare.yml up -d --build --force-recreate web
+docker compose up -d --build --force-recreate web
 ```
 
 ---
@@ -481,4 +481,4 @@ print(f"  Sugestão Boletim: €{breakdown['sugestao_boletim']:,.2f}")
 ---
 
 **Documentation by:** Claude Code
-**Last Updated:** 2025-12-31
+**Last Updated:** 2026-01-03
