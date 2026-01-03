@@ -988,3 +988,18 @@ class Fiscal(models.Model):
         verbose_name_plural = _('Fiscal')
         db_table = 'fiscal_view'  # Tabela fictícia
         default_permissions = ()  # Sem permissões de add/change/delete
+
+
+class ImportacaoDados(models.Model):
+    """
+    Proxy model para sistema de importação de dados via Excel
+    Não tem tabela na BD - fornece interface de upload no admin
+    """
+    id = models.IntegerField(primary_key=True)  # Dummy field
+
+    class Meta:
+        managed = False  # Django não cria tabela
+        verbose_name = _('Importação de Dados')
+        verbose_name_plural = _('Importação de Dados')
+        db_table = 'importacao_view'  # Tabela fictícia
+        default_permissions = ()  # Sem permissões de add/change/delete

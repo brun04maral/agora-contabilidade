@@ -250,6 +250,10 @@ class Command(BaseCommand):
                 data_fim = ws.cell(row_idx, 4).value
                 descricao = ws.cell(row_idx, 5).value
                 valor_sem_iva = ws.cell(row_idx, 6).value or 0
+
+                # SKIP: Projetos vazios (só têm número)
+                if not descricao and not cliente_nome and valor_sem_iva == 0:
+                    continue
                 data_faturacao = ws.cell(row_idx, 7).value
                 data_vencimento = ws.cell(row_idx, 8).value
                 data_recibo = ws.cell(row_idx, 9).value
@@ -365,16 +369,33 @@ class Command(BaseCommand):
                 except Exception as e:
                     raise ValueError(f'Valor com IVA inválido: {ws.cell(row_idx, 13).value}') from e
 
+                credor_nome = ws.cell(row_idx, 5).value
+                descricao = ws.cell(row_idx, 8).value or ''
+                socio_nome = ws.cell(row_idx, 21).value  # Coluna U - identifica sócio para despesas PESSOAL
+
+                # SKIP: Despesas vazias (só têm número)
+                if not descricao and not credor_nome and valor_sem_iva == 0:
+                    continue
+
+                # Processar tag PESSOAL -> PESSOAL_BA ou PESSOAL_RR baseado na coluna U
+                if 'PESSOAL' in tags and socio_nome:
+                    tags.remove('PESSOAL')  # Remove tag genérica
+                    if 'Bruno' in socio_nome or 'BA' in socio_nome:
+                        tags.append('PESSOAL_BA')
+                    elif 'Rafael' in socio_nome or 'RR' in socio_nome:
+                        tags.append('PESSOAL_RR')
+                    # Se não identificar, mantém sem tag PESSOAL (skip)
+
                 despesa_raw = {
                     'numero': numero,
                     'ano': int(ws.cell(row_idx, 2).value or 0),
                     'mes': int(ws.cell(row_idx, 3).value or 0),
                     'dia': int(ws.cell(row_idx, 4).value or 0),
-                    'credor_nome': ws.cell(row_idx, 5).value,
+                    'credor_nome': credor_nome,
                     'projeto_numero': ws.cell(row_idx, 6).value,
                     'tipo_original': tipo_str,
                     'tags': tags,
-                    'descricao': ws.cell(row_idx, 8).value or '',
+                    'descricao': descricao,
                     'valor_sem_iva': valor_sem_iva,
                     'valor_com_iva': valor_com_iva,
                     'data_vencimento': ws.cell(row_idx, 20).value,

@@ -244,16 +244,11 @@ class SaldosCalculator:
             total=Sum('valor_total')
         )['total'] or Decimal("0.00")
 
-        # 7. Despesas pessoais - só as com tag PESSOAL do sócio
+        # 7. Despesas pessoais - tag PESSOAL_BA ou PESSOAL_RR
+        tag_pessoal = 'PESSOAL_BA' if socio_codigo == 'BA' else 'PESSOAL_RR'
         query_despesas_pessoais = Despesa.objects.filter(
-            tags__codigo='PESSOAL'
+            tags__codigo=tag_pessoal
         ).distinct()
-
-        # Filtrar por credor (nome do sócio)
-        socio_obj = Socio.objects.get(codigo=socio_codigo)
-        query_despesas_pessoais = query_despesas_pessoais.filter(
-            credor__nome__icontains=socio_obj.nome_completo.split()[0]  # "Bruno" ou "Rafael"
-        )
 
         if data_inicio:
             query_despesas_pessoais = query_despesas_pessoais.filter(

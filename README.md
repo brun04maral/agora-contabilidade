@@ -81,6 +81,7 @@ Ver [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) para detalhes técnicos
 | **Fornecedores** | Gestão de fornecedores |
 | **Equipamento** | Inventário de equipamento |
 | **Sócios** | BA e RR com participação 50/50 |
+| **Importação** | Upload web de ficheiros Excel |
 
 ### 🎨 Interface
 
@@ -307,6 +308,7 @@ cat backup.sql | docker compose exec -T db psql -U agora -d agora_production
 | Ficheiro | Descrição |
 |----------|-----------|
 | [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) | Implementação do dashboard de saldos |
+| [docs/IMPORT_SYSTEM.md](docs/IMPORT_SYSTEM.md) | Sistema de importação web (Excel upload) |
 | [docs/EXCEL_IMPORT_ANALYSIS.md](docs/EXCEL_IMPORT_ANALYSIS.md) | Análise e processo de importação Excel |
 | [docs/CAIXA_ANALYSIS.md](docs/CAIXA_ANALYSIS.md) | Análise das fórmulas da aba CAIXA |
 | [docs/SOCIOS_MIGRATION.md](docs/SOCIOS_MIGRATION.md) | Como modelo Socio foi criado |
@@ -377,13 +379,15 @@ Principais variáveis:
 ## 📝 Notas de Versão
 
 ### v2.1 - Importação e Limpeza de Dados (03 Jan 2026)
-- ✅ Sistema completo de importação Excel → PostgreSQL
+- ✅ Sistema completo de importação Excel → PostgreSQL (CLI)
+- ✅ **NOVO:** Interface web para upload de Excel (admin panel)
 - ✅ Comandos de limpeza: `limpar_projetos_vazios`, `limpar_despesas_vazias`
 - ✅ Comando de auditoria: `auditar_importacao`
 - ✅ Análise de fórmulas Excel: `analisar_caixa`
 - ✅ SaldosCalculator refatorado com lógica dual (Atual vs Projetado)
 - ✅ Sistema de tags para despesas (substituindo enums)
-- ✅ Base de dados sincronizada com Excel (80 projetos, 236 despesas, 24 boletins)
+- ✅ Base de dados sincronizada com Excel (81 projetos, 239 despesas, 24 boletins)
+- ✅ Proteção contra importação de linhas vazias (skip automático)
 
 ### v2.0 - Django App (Dez 2025)
 - ✅ Django 5.0 + PostgreSQL 16

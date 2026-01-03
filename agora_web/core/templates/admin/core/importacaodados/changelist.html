@@ -1,0 +1,164 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+<style>
+    /* Light mode (default) */
+    .import-card { background-color: white; border: 1px solid rgb(229, 231, 235); border-radius: 0.5rem; }
+    .import-header { color: rgb(17, 24, 39); }
+    .import-subtext { color: rgb(107, 114, 128); }
+    .import-border { border-color: rgb(229, 231, 235); }
+    .blue-bg { background-color: rgb(239, 246, 255); }
+    .blue-text { color: rgb(29, 78, 216); }
+    .blue-border { border-left: 4px solid rgb(59, 130, 246); }
+    .green-bg { background-color: rgb(240, 253, 244); }
+    .green-text { color: rgb(22, 163, 74); }
+
+    /* Dark mode */
+    .dark .import-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
+    .dark .import-header { color: rgb(243, 244, 246); }
+    .dark .import-subtext { color: rgb(156, 163, 175); }
+    .dark .import-border { border-color: rgb(75, 85, 99); }
+    .dark .blue-bg { background-color: rgba(30, 58, 138, 0.2); }
+    .dark .blue-text { color: rgb(147, 197, 253); }
+    .dark .blue-border { border-left: 4px solid rgb(59, 130, 246); }
+    .dark .green-bg { background-color: rgba(6, 78, 59, 0.2); }
+    .dark .green-text { color: rgb(74, 222, 128); }
+
+    .upload-area {
+        border: 2px dashed rgb(209, 213, 219);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    .upload-area:hover {
+        border-color: rgb(59, 130, 246);
+        background-color: rgb(249, 250, 251);
+    }
+    .dark .upload-area:hover {
+        background-color: rgb(55, 65, 81);
+    }
+    .upload-btn {
+        background-color: rgb(59, 130, 246);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.375rem;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .upload-btn:hover {
+        background-color: rgb(29, 78, 216);
+    }
+    .upload-btn:disabled {
+        background-color: rgb(156, 163, 175);
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 1.5rem; max-width: 60rem; margin: 0 auto;">
+    <!-- Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="import-header">Importação de Dados</h1>
+        <p style="font-size: 0.875rem;" class="import-subtext">Upload do ficheiro Excel com dados da contabilidade</p>
+    </div>
+
+    <!-- Info Card -->
+    <div class="import-card blue-border" style="padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem;" class="blue-text">ℹ️ Informação</h3>
+        <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.875rem;" class="import-subtext">
+            <li>Formato aceite: <strong>.xlsx</strong> (Excel)</li>
+            <li>O ficheiro deve conter as abas: <strong>FORNECEDORES, CLIENTES, PROJETOS, DESPESAS, BOLETINS</strong></li>
+            <li>Os dados existentes serão <strong>atualizados</strong> (não duplicados)</li>
+            <li>Prémios serão <strong>agregados por projeto</strong></li>
+            <li>Boletins serão <strong>agregados por (sócio, mês, ano)</strong></li>
+        </ul>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="import-card" style="padding: 1.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <form method="post" enctype="multipart/form-data" id="upload-form">
+            {% csrf_token %}
+
+            <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" name="excel_file" accept=".xlsx" style="display: none;" onchange="updateFileName(this)">
+
+                <svg style="width: 3rem; height: 3rem; margin: 0 auto 1rem; color: rgb(156, 163, 175);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+
+                <p style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;" class="import-header" id="file-label">
+                    Clique para selecionar ficheiro
+                </p>
+                <p style="font-size: 0.875rem;" class="import-subtext">
+                    ou arraste e solte aqui
+                </p>
+                <p style="font-size: 0.75rem; margin-top: 0.5rem;" class="import-subtext">
+                    Apenas ficheiros .xlsx
+                </p>
+            </div>
+
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button type="submit" class="upload-btn" id="submit-btn" disabled>
+                    📤 Importar Dados
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Warning Card -->
+    <div class="import-card" style="padding: 1rem; margin-top: 1.5rem; border-left: 4px solid rgb(234, 179, 8); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: rgb(161, 98, 7);">⚠️ Aviso</h3>
+        <p style="font-size: 0.875rem; margin: 0; color: rgb(161, 98, 7);">
+            A importação pode demorar alguns segundos. Por favor, aguarde até ver a mensagem de conclusão.
+        </p>
+    </div>
+</div>
+
+<script>
+    function updateFileName(input) {
+        const fileName = input.files[0]?.name || 'Clique para selecionar ficheiro';
+        document.getElementById('file-label').textContent = fileName;
+        document.getElementById('submit-btn').disabled = !input.files[0];
+    }
+
+    // Drag and drop
+    const uploadArea = document.querySelector('.upload-area');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, () => {
+            uploadArea.style.borderColor = 'rgb(59, 130, 246)';
+            uploadArea.style.backgroundColor = 'rgb(239, 246, 255)';
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, () => {
+            uploadArea.style.borderColor = 'rgb(209, 213, 219)';
+            uploadArea.style.backgroundColor = 'transparent';
+        });
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            document.getElementById('file-input').files = files;
+            updateFileName(document.getElementById('file-input'));
+        }
+    });
+</script>
+{% endblock %}

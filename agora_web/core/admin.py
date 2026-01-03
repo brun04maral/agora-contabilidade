@@ -7,7 +7,7 @@ from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
-    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal
+    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal, ImportacaoDados
 )
 
 
@@ -187,17 +187,21 @@ class DespesaTemplateAdmin(ModelAdmin):
 @admin.register(Despesa)
 class DespesaAdmin(ModelAdmin):
     """Admin para Despesa com Unfold customization"""
-    list_display = ['numero', 'tipo', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
-    list_filter = ['tipo', 'estado', 'data', 'data_pagamento', 'created_at']
-    search_fields = ['numero', 'descricao', 'credor__nome', 'projeto__numero']
+    list_display = ['numero', 'tags_display', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
+    list_filter = ['tags', 'estado', 'data', 'data_pagamento', 'created_at']
+    search_fields = ['numero', 'descricao', 'credor__nome', 'projeto__numero', 'tipo_original']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-data', '-created_at']
     autocomplete_fields = ['credor', 'projeto', 'despesa_template']
     date_hierarchy = 'data'
+    filter_horizontal = ['tags']  # Interface melhor para ManyToMany
 
     fieldsets = (
         ('Identificação', {
-            'fields': ('numero', 'tipo', 'data')
+            'fields': ('numero', 'data')
+        }),
+        ('Categorização', {
+            'fields': ('tags', 'tipo_original')
         }),
         ('Fornecedor/Projeto', {
             'fields': ('credor', 'projeto')
@@ -211,6 +215,11 @@ class DespesaAdmin(ModelAdmin):
         ('Estado', {
             'fields': ('estado', 'data_pagamento')
         }),
+        ('Deprecated', {
+            'fields': ('tipo',),
+            'classes': ['collapse'],
+            'description': 'Campo antigo mantido por compatibilidade - usar tags'
+        }),
         ('Origem', {
             'fields': ('despesa_template',),
             'classes': ['collapse']
@@ -223,6 +232,14 @@ class DespesaAdmin(ModelAdmin):
             'classes': ['collapse']
         }),
     )
+
+    @display(description='Tags', ordering='tags')
+    def tags_display(self, obj):
+        """Mostra tags da despesa"""
+        tags = obj.tags.all()
+        if not tags:
+            return '-'
+        return ', '.join([tag.codigo for tag in tags[:3]])  # Mostra até 3 tags
 
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
@@ -560,3 +577,77 @@ class FiscalAdmin(ModelAdmin):
 
         # Render template directly (não chamar super() para evitar query na tabela inexistente)
         return render(request, 'admin/core/fiscal/changelist.html', context)
+
+
+@admin.register(ImportacaoDados)
+class ImportacaoDadosAdmin(ModelAdmin):
+    """Admin para Importação de Dados via Excel"""
+
+    # Desabilitar ações padrão já que não há tabela
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        """Vista personalizada para upload de Excel"""
+        from django.shortcuts import render, redirect
+        from django.contrib import messages
+        from django.core.management import call_command
+        from django.conf import settings
+        import os
+        from io import StringIO
+
+        # Se POST com ficheiro
+        if request.method == 'POST' and request.FILES.get('excel_file'):
+            excel_file = request.FILES['excel_file']
+
+            # Validar extensão
+            if not excel_file.name.endswith('.xlsx'):
+                messages.error(request, '❌ Ficheiro inválido! Apenas ficheiros .xlsx são aceites.')
+                return redirect(request.path)
+
+            # Guardar ficheiro temporário
+            upload_dir = os.path.join(settings.BASE_DIR, 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, excel_file.name)
+
+            with open(file_path, 'wb+') as destination:
+                for chunk in excel_file.chunks():
+                    destination.write(chunk)
+
+            # Executar comando de importação
+            try:
+                # Capturar output do comando
+                out = StringIO()
+                call_command('import_from_excel', file_path, stdout=out)
+                output = out.getvalue()
+
+                # Processar resultado
+                if 'SUCESSO' in output or '✅' in output:
+                    messages.success(request, f'✅ Importação concluída com sucesso!\n\n{output}')
+                else:
+                    messages.warning(request, f'⚠️ Importação concluída com avisos:\n\n{output}')
+
+            except Exception as e:
+                messages.error(request, f'❌ Erro na importação: {str(e)}')
+
+            finally:
+                # Limpar ficheiro temporário
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+            return redirect(request.path)
+
+        # GET - mostrar formulário
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Importação de Dados',
+            'subtitle': 'Upload de ficheiro Excel com dados da contabilidade',
+        }
+
+        return render(request, 'admin/core/importacaodados/changelist.html', context)

@@ -1,172 +1,109 @@
 # Changelog - Agora Contabilidade
 
-Todas as mudanças importantes neste projeto serão documentadas neste ficheiro.
-
----
+All notable changes to this project will be documented in this file.
 
 ## [2.1.0] - 2026-01-03
 
-### 🎉 Sessão Épica: Importação e Sincronização de Dados
+### Added - Sistema de Importação Web
+- **Interface web para importação de Excel** no Django Admin
+  - Upload drag-and-drop de ficheiros .xlsx
+  - Validação de formato e feedback em tempo real
+  - Integração com comando `import_from_excel` existente
+  - Localização: Core → Importação de Dados
 
-**Objetivo**: Importar dados da folha Excel CONTABILIDADE_FINAL_20251231.xlsx para a base de dados PostgreSQL e garantir sincronização perfeita.
+- **Modelo proxy ImportacaoDados** (`models.py:993-1005`)
+  - Sem tabela na BD (managed=False)
+  - Fornece entry point no admin para upload
 
-### ✨ Added
+- **Template de upload** (`templates/admin/core/importacaodados/changelist.html`)
+  - Design consistente com tema Unfold
+  - Suporte a dark mode
+  - Drag-and-drop funcional
 
-#### Comandos de Management Django
+### Added - Sistema de Tags para Despesas Pessoais
+- **Tags PESSOAL_BA e PESSOAL_RR** para identificar despesas pessoais por sócio
+  - Substitui lógica anterior baseada em nome do credor
+  - Permite despesas pessoais com credores externos (Sara Fevereiro, PC Diga, etc.)
 
-1. **`import_from_excel.py`** - Importação completa do Excel
-   - Importa fornecedores, clientes, projetos, despesas e boletins
-   - Agrega prémios por projeto (premio_bruno, premio_rafael)
-   - Agrega boletins por (sócio, mês, ano)
-   - Sistema de tags para despesas
-   - Dry-run mode para preview
-   - Estatísticas detalhadas de importação
+- **Leitura de Column U do Excel** (`import_from_excel.py:374`)
+  - Column U identifica sócio responsável pela despesa PESSOAL
+  - Conversão automática: PESSOAL → PESSOAL_BA/PESSOAL_RR
+  - Testado com 62 despesas PESSOAL (29 BA + 33 RR)
 
-2. **`limpar_projetos_vazios.py`** - Limpeza de projetos inválidos
-   - Remove projetos com descrição vazia + cliente NULL + valor 0
-   - Preserva números dos projetos para coerência com Excel
-   - Dry-run mode + confirmação obrigatória
-   - Estatísticas antes/depois
+### Changed - Melhorias no Admin de Despesas
+- **Campo `tipo` movido para collapsed "Deprecated"** (`admin.py:218-222`)
+  - Mantido apenas por compatibilidade
+  - Novo campo `tipo_original` para referência histórica
 
-3. **`limpar_despesas_vazias.py`** - Limpeza de despesas inválidas
-   - Remove despesas com descrição vazia + credor NULL + valor 0
-   - Preserva números das despesas para coerência com Excel
-   - Dry-run mode + confirmação obrigatória
-   - Estatísticas antes/depois
+- **Adicionada coluna `tags_display`** (`admin.py:236-242`)
+  - Mostra tags reais em vez do campo deprecated
+  - Interface `filter_horizontal` para melhor UX
 
-4. **`auditar_importacao.py`** - Auditoria Excel vs DB
-   - Compara quantidades e valores entre Excel e base de dados
-   - Valida fornecedores, clientes, projetos, despesas e boletins
-   - Verifica agregação de prémios e boletins
-   - Gera relatório categorizado (✅ OK, ⚠️ Avisos, ❌ Incongruências)
+### Changed - Refatoração do SaldosCalculator
+- **Despesas pessoais agora filtradas por tags específicas** (`saldos.py:247-251`)
+  - Antes: Filtrava por tag PESSOAL + nome no credor (FALHAVA!)
+  - Agora: Filtra por PESSOAL_BA ou PESSOAL_RR (100% preciso)
+  - **Fix crítico**: 9 despesas PESSOAL não estavam a ser contadas em nenhum saldo!
 
-5. **`analisar_caixa.py`** - Análise de fórmulas do Excel
-   - Extrai fórmulas da aba CAIXA usando openpyxl
-   - Compara lógica Excel vs SaldosCalculator
-   - Gera documentação em Markdown
-   - Interpreta fórmulas complexas (SUMIFS, FILTER, REGEXMATCH)
+### Fixed - Proteção contra Linhas Vazias
+- **Skip automático de projetos vazios** (`import_from_excel.py:254-256`)
+  - Projetos sem descrição, cliente e valor=0 são ignorados
+  - Previne criação de 1618+ registos vazios
 
-### 🔄 Changed
+- **Skip automático de despesas vazias** (`import_from_excel.py:376-378`)
+  - Despesas sem descrição, credor e valor=0 são ignoradas
+  - Previne criação de 636+ registos vazios
 
-#### SaldosCalculator - Refatoração Completa
+### Documentation
+- **docs/IMPORT_SYSTEM.md** - Documentação completa do sistema de importação web
+- **README.md** - Atualizado com info do sistema de importação
+- **docs/README.md** - Adicionado link para IMPORT_SYSTEM.md
 
-**Antes**: Lógica única, filtros por `estado=PAGO`
+### Database Changes
+- **Tags criadas**: PESSOAL_BA, PESSOAL_RR
+- **Cleanup realizado**:
+  - Projetos: 1699 → 81 (removidos 1618 vazios)
+  - Despesas: 875 → 239 (removidas 636 vazias)
 
-**Depois**: Lógica dual (Saldo Atual vs Saldo Projetado)
+### Technical Details
+**Files Modified:**
+- `agora_web/core/models.py` - Added ImportacaoDados proxy model
+- `agora_web/core/admin.py` - Added ImportacaoDadosAdmin + updated DespesaAdmin
+- `agora_web/core/templates/admin/core/importacaodados/changelist.html` - Upload template
+- `agora_web/core/management/commands/import_from_excel.py` - Column U reading + empty validation
+- `agora_web/core/utils/saldos.py` - Fixed personal expenses filtering
+- `docs/IMPORT_SYSTEM.md` - New documentation
+- `README.md` - Updated with import system info
 
-**Saldo Atual** (decisões financeiras HOJE):
-- INs: Projetos pagos (data_recibo exists) + Prémios trabalho feito (data_fim < hoje)
-- OUTs: Despesas fixas ÷2 + Boletins PAGOS + Despesas pessoais
+**Testing:**
+- ✅ Excel column U verified (62 PESSOAL expenses, 100% populated)
+- ✅ Tag conversion logic tested (PESSOAL → PESSOAL_BA/RR)
+- ✅ Empty line validation tested (skip successful)
+- ✅ Web upload interface tested
+- ✅ Saldos calculation verified with new tags
 
-**Saldo Projetado** (planeamento médio prazo):
-- INs: Projetos pagos + Prémios TODOS (incluindo futuros)
-- OUTs: Despesas fixas ÷2 + Boletins TODOS (PAGO + PENDENTE) + Despesas pessoais
+### Breaking Changes
+None - All changes are backwards compatible. Old PESSOAL tag still exists but will be automatically converted on next import.
 
-**Mudanças técnicas**:
-- Substituídos filtros `ano__gte/lte` por `data__gte/lte` (Despesa tem campo `data`, não `ano`)
-- Tags para categorização: `ADMINISTRATIVO`, `ORDENADO`, `SUB_ALIMENTACAO`, `PESSOAL`
-- Retorna sempre ambos os saldos + breakdown detalhado
-- Sugestão de boletim baseada em saldo projetado
-
-#### Admin View - SaldoAdmin
-
-- Atualizado para usar filtros de data em vez de método inexistente `calcular_saldo_ano()`
-- Breakdown do ano corrente usando `data_inicio` e `data_fim`
-- Compatível com novo SaldosCalculator
-
-### 🐛 Fixed
-
-1. **Erro 500 no `/admin/core/saldo/`**
-   - Causa: `SaldoAdmin` chamava `calcular_saldo_ano()` que não existia
-   - Fix: Usar `calcular_saldo_bruno/rafael()` com filtros de data
-
-2. **FieldError: Cannot resolve keyword 'ano'**
-   - Causa: Filtros `ano__gte` em modelo Despesa que só tem campo `data`
-   - Fix: Substituir por `data__gte/lte`
-
-3. **Boletim import constraint violation**
-   - Causa: Coluna órfã `socio` (NOT NULL) não mapeada no Django
-   - Fix: Adicionar campo `socio_old` mapeando para coluna órfã
-
-### 📊 Database State
-
-**Estado final após limpeza**:
-- **Fornecedores**: 45 (2 com nome NULL não importaram)
-- **Clientes**: 18 (2 com nome NULL não importaram)
-- **Projetos**: 80 válidos (1,619 vazios removidos)
-- **Despesas**: 236 válidas (639 vazias removidas)
-- **Boletins**: 24 (agregados por sócio/mês/ano)
-
-**Validação**:
-- ✅ Quantidades de projetos: 100% correto (80)
-- ✅ Valores de projetos: 100% correto (€78,746.31)
-- ✅ Prémios Rafael: 100% correto (€9,916.19)
-- ⚠️ Prémio Bruno #P0032: €225.00 faltam (despesa #D000120 não importada)
-
-### 📚 Documentation
-
-#### Novo
-- `CHANGELOG.md` - Este ficheiro
-- `docs/CAIXA_ANALYSIS.md` - Análise das fórmulas Excel da aba CAIXA
-
-#### Atualizado
-- `README.md` - Seções de Features, Comandos, Documentação e Notas de Versão
-- `docs/EXCEL_IMPORT_ANALYSIS.md` - Processo de importação documentado
-
-### 🔧 Technical Details
-
-**Commits principais**:
-- `715f31f` - Importação Excel executada
-- `1b64dd3` - Limpeza de 1,619 projetos vazios
-- `ebe3805` - Auditoria Excel vs DB
-- `231c18b` - Análise da aba CAIXA
-- `7a1b86d` - Refatoração do SaldosCalculator
-- `e016d1a` - Fix erro 500 no admin
-- `7b8161c` - Comando limpar_despesas_vazias
-
-**Ferramentas utilizadas**:
-- openpyxl (leitura de Excel com fórmulas)
-- Django ORM (queries otimizadas)
-- PostgreSQL 16 (base de dados)
-- Docker Compose (ambiente de desenvolvimento)
+### Migration Notes
+After importing Excel with updated data:
+1. All 62 PESSOAL despesas will be converted to PESSOAL_BA or PESSOAL_RR
+2. Old tag PESSOAL can be removed if desired (not required)
+3. Personal expenses will now be correctly counted in saldos
 
 ---
 
-## [2.0.0] - 2025-12
-
-### 🎉 Lançamento Inicial - Django App
-
-**Migração completa de Tkinter+SQLite para Django+PostgreSQL**
+## [2.0.0] - 2025-12-31
 
 ### Added
-- Django 5.0 como framework principal
-- PostgreSQL 16 como base de dados
-- Unfold Admin Theme para interface moderna
-- Docker + Traefik + Cloudflare para deployment
-- Dashboard de Saldos Pessoais
+- Django 5.0 + PostgreSQL 16 base application
+- Dashboard de Saldos Pessoais (dual logic: Atual vs Projetado)
 - Modelo Socio com migração de dados
-- Gestão completa: Projetos, Orçamentos, Despesas, Boletins, Clientes, Fornecedores
-
-### Changed
-- Arquitetura: Desktop → Web
-- Database: SQLite → PostgreSQL 16
-- Interface: Tkinter → Django Admin + Unfold
-- Deployment: Manual → Docker Compose
-
-### Deprecated
-- Aplicação Tkinter (movida para `archive-old-tkinter-app/`)
+- Docker + Traefik + Cloudflare infrastructure
+- Unfold Admin Theme
+- CLI import system (import_from_excel)
 
 ---
 
-## Formato
-
-Este changelog segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
-
-### Tipos de mudanças
-- **Added** - Novas funcionalidades
-- **Changed** - Mudanças em funcionalidades existentes
-- **Deprecated** - Funcionalidades obsoletas (a serem removidas)
-- **Removed** - Funcionalidades removidas
-- **Fixed** - Correções de bugs
-- **Security** - Correções de vulnerabilidades
+**Versão Atual:** 2.1.0
+**Data:** 2026-01-03
