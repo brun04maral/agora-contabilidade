@@ -1,7 +1,7 @@
 # Agora Contabilidade - Documentation
 
 **Project:** Sistema de Contabilidade Django para Agora Media Production
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-01-03
 
 ---
 
@@ -9,6 +9,7 @@
 
 ### 🚀 Getting Started
 - [Main README](../README.md) - Project overview and quick start
+- [Developer Guide](../README-DEV.md) - Development workflow with VS Code Extension
 - [Django App README](../agora_web/README.md) - Django-specific setup
 
 ### 🏗️ Implementation Guides
@@ -60,7 +61,7 @@
 **Debugging:**
 1. Check error history in relevant doc
 2. Use Django shell to test calculations
-3. Check logs: `docker compose -f docker-compose.cloudflare.yml logs -f web`
+3. Check logs: `docker compose logs -f web`
 
 ### For AI Assistants (Claude Code, etc.)
 
