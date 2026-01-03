@@ -213,11 +213,11 @@ class SaldosCalculator:
 
         if data_inicio:
             query_despesas_fixas = query_despesas_fixas.filter(
-                ano__gte=data_inicio.year
+                data__gte=data_inicio
             )
         if data_fim_param:
             query_despesas_fixas = query_despesas_fixas.filter(
-                ano__lte=data_fim_param.year
+                data__lte=data_fim_param
             )
 
         despesas_fixas_total = query_despesas_fixas.aggregate(
@@ -257,11 +257,11 @@ class SaldosCalculator:
 
         if data_inicio:
             query_despesas_pessoais = query_despesas_pessoais.filter(
-                ano__gte=data_inicio.year
+                data__gte=data_inicio
             )
         if data_fim_param:
             query_despesas_pessoais = query_despesas_pessoais.filter(
-                ano__lte=data_fim_param.year
+                data__lte=data_fim_param
             )
 
         despesas_pessoais = query_despesas_pessoais.aggregate(

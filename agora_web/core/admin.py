@@ -473,13 +473,24 @@ class SaldoAdmin(ModelAdmin):
         calculator = SaldosCalculator()
         ano_atual = date.today().year
 
-        # Calcular saldos TOTAIS (de sempre) - inclui tudo: pagos + finalizados + pendentes
+        # Calcular saldos TOTAIS (de sempre)
         saldo_total_ba = calculator.calcular_saldo_bruno(incluir_investimento=False)
         saldo_total_rr = calculator.calcular_saldo_rafael(incluir_investimento=False)
 
-        # Calcular breakdown do ANO CORRENTE
-        breakdown_ba = calculator.calcular_saldo_ano('BA', ano_atual)
-        breakdown_rr = calculator.calcular_saldo_ano('RR', ano_atual)
+        # Calcular breakdown do ANO CORRENTE (usando filtros de data)
+        data_inicio_ano = date(ano_atual, 1, 1)
+        data_fim_ano = date(ano_atual, 12, 31)
+
+        breakdown_ba = calculator.calcular_saldo_bruno(
+            incluir_investimento=False,
+            data_inicio=data_inicio_ano,
+            data_fim=data_fim_ano
+        )
+        breakdown_rr = calculator.calcular_saldo_rafael(
+            incluir_investimento=False,
+            data_inicio=data_inicio_ano,
+            data_fim=data_fim_ano
+        )
 
         context = {
             **self.admin_site.each_context(request),
