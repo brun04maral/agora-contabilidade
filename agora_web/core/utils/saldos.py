@@ -8,16 +8,28 @@ Marca: Agora Media Production
 Este é o módulo mais importante da aplicação!
 Calcula os saldos pessoais de cada sócio com base em:
 
-INs (Entradas - empresa DEVE ao sócio):
-  - Projetos pessoais faturados pela empresa
-  - Prémios recebidos de projetos da empresa (cachets + comissões)
+SALDO ATUAL (Real):
+  INs (Entradas - empresa DEVE ao sócio):
+    - Projetos pessoais com data_recibo (cliente JÁ PAGOU)
+    - Prémios de projetos com data_fim < hoje (trabalho JÁ FEITO)
 
-OUTs (Saídas - empresa PAGA ao sócio):
-  - Despesas fixas mensais ÷ 2 (cada sócio paga metade)
-  - Boletins emitidos (ajudas de custo)
-  - Despesas pessoais excecionais
+  OUTs (Saídas - empresa PAGOU ao sócio):
+    - Despesas fixas mensais ÷ 2 (cada sócio paga metade)
+    - Boletins com estado=PAGO (já foram pagos ao sócio)
+    - Despesas pessoais pagas
 
-Saldo = INs - OUTs
+SALDO PROJETADO (Futuro):
+  INs:
+    - Projetos pessoais com data_recibo (cliente JÁ PAGOU)
+    - Prémios de TODOS os projetos (incluindo futuros agendados)
+
+  OUTs:
+    - Despesas fixas mensais ÷ 2
+    - Boletins TODOS (PAGO + PENDENTE) - já foram declarados às finanças
+    - Despesas pessoais todas
+
+Saldo Atual = INs (trabalho feito) - OUTs (pagos)
+Saldo Projetado = INs (incluindo futuros) - OUTs (incluindo pendentes)
 
 Nota: Investimento inicial está documentado mas NÃO conta no cálculo do saldo.
       É apenas informação de referência histórica.
@@ -29,14 +41,17 @@ from django.db.models import Sum, Q
 
 from core.models import (
     Projeto, TipoProjeto, EstadoProjeto,
-    Despesa, TipoDespesa, EstadoDespesa,
-    Boletim, Socio, EstadoBoletim
+    Despesa, Boletim, Socio, EstadoBoletim
 )
 
 
 class SaldosCalculator:
     """
     Calcula os saldos pessoais dos sócios usando Django ORM
+
+    Retorna sempre dois valores:
+    - saldo_atual: Baseado apenas em trabalho feito e pagamentos efetuados
+    - saldo_projetado: Incluindo trabalho futuro e obrigações fiscais pendentes
     """
 
     # Investimento inicial de cada sócio (referência histórica)
@@ -93,73 +108,65 @@ class SaldosCalculator:
 
     def _calcular_saldo(
         self,
-        socio: str,  # 'BA' ou 'RR'
+        socio_codigo: str,  # 'BA' ou 'RR'
         incluir_investimento: bool = False,
         data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None
+        data_fim_param: Optional[date] = None
     ) -> Dict:
         """
         Calcula o saldo pessoal de um sócio
 
         Args:
-            socio: Sócio ('BA' ou 'RR')
+            socio_codigo: Sócio ('BA' ou 'RR')
             incluir_investimento: Se deve incluir o investimento inicial
             data_inicio: Data de início para filtrar
-            data_fim: Data de fim para filtrar
+            data_fim_param: Data de fim para filtrar
 
         Returns:
             Dict com breakdown completo do saldo
         """
-        # Determinar owner e tipo de despesa pessoal
-        owner = socio
-        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == 'BA' else TipoDespesa.PESSOAL_RR
+        hoje = date.today()
 
-        # === CALCULAR INs (Entradas) ===
+        # === CALCULAR INs SALDO ATUAL (trabalho feito) ===
 
-        # 1. Projetos pessoais (apenas PAGOS)
-        query_projetos_pessoais = Projeto.objects.filter(
+        # 1. Projetos pessoais PAGOS (cliente já pagou)
+        query_projetos_pagos = Projeto.objects.filter(
             tipo=TipoProjeto.PESSOAL,
-            owner=owner,
-            estado=EstadoProjeto.PAGO
+            socio__codigo=socio_codigo,
+            data_recibo__isnull=False  # Cliente já pagou
         )
 
         if data_inicio:
-            query_projetos_pessoais = query_projetos_pessoais.filter(
-                data_faturacao__gte=data_inicio
+            query_projetos_pagos = query_projetos_pagos.filter(
+                data_recibo__gte=data_inicio
             )
-        if data_fim:
-            query_projetos_pessoais = query_projetos_pessoais.filter(
-                data_faturacao__lte=data_fim
+        if data_fim_param:
+            query_projetos_pagos = query_projetos_pagos.filter(
+                data_recibo__lte=data_fim_param
             )
 
-        projetos_pessoais = query_projetos_pessoais.aggregate(
+        projetos_pessoais_pagos = query_projetos_pagos.aggregate(
             total=Sum('valor_sem_iva')
         )['total'] or Decimal("0.00")
 
-        # 2. Prémios de projetos da empresa (apenas PAGOS)
-        if socio == 'BA':
-            query_premios = Projeto.objects.filter(
-                premio_bruno__gt=0,
-                estado=EstadoProjeto.PAGO
-            )
-            campo_premio = 'premio_bruno'
-        else:
-            query_premios = Projeto.objects.filter(
-                premio_rafael__gt=0,
-                estado=EstadoProjeto.PAGO
-            )
-            campo_premio = 'premio_rafael'
+        # 2. Prémios de projetos FINALIZADOS (data_fim < hoje, trabalho feito)
+        campo_premio = 'premio_bruno' if socio_codigo == 'BA' else 'premio_rafael'
+
+        query_premios_feitos = Projeto.objects.filter(
+            **{f'{campo_premio}__gt': 0},
+            data_fim__lt=hoje  # Trabalho já aconteceu
+        )
 
         if data_inicio:
-            query_premios = query_premios.filter(
-                data_faturacao__gte=data_inicio
+            query_premios_feitos = query_premios_feitos.filter(
+                data_fim__gte=data_inicio
             )
-        if data_fim:
-            query_premios = query_premios.filter(
-                data_faturacao__lte=data_fim
+        if data_fim_param:
+            query_premios_feitos = query_premios_feitos.filter(
+                data_fim__lte=data_fim_param
             )
 
-        premios = query_premios.aggregate(
+        premios_feitos = query_premios_feitos.aggregate(
             total=Sum(campo_premio)
         )['total'] or Decimal("0.00")
 
@@ -167,27 +174,50 @@ class SaldosCalculator:
         investimento = Decimal("0.00")
         if incluir_investimento:
             investimento = (
-                self.INVESTIMENTO_INICIAL_BRUNO if socio == 'BA'
+                self.INVESTIMENTO_INICIAL_BRUNO if socio_codigo == 'BA'
                 else self.INVESTIMENTO_INICIAL_RAFAEL
             )
 
-        total_ins = projetos_pessoais + premios + investimento
+        total_ins_atual = projetos_pessoais_pagos + premios_feitos + investimento
 
-        # === CALCULAR OUTs (Saídas) ===
+        # === CALCULAR INs SALDO PROJETADO (incluindo futuros) ===
 
-        # 1. Despesas fixas mensais (divididas por 2)
-        query_despesas_fixas = Despesa.objects.filter(
-            tipo=TipoDespesa.FIXA_MENSAL,
-            estado=EstadoDespesa.PAGO
+        # 4. Prémios de TODOS os projetos (incluindo futuros)
+        query_premios_todos = Projeto.objects.filter(
+            **{f'{campo_premio}__gt': 0}
         )
 
         if data_inicio:
-            query_despesas_fixas = query_despesas_fixas.filter(
-                data__gte=data_inicio
+            query_premios_todos = query_premios_todos.filter(
+                data_fim__gte=data_inicio
             )
-        if data_fim:
+        if data_fim_param:
+            query_premios_todos = query_premios_todos.filter(
+                data_fim__lte=data_fim_param
+            )
+
+        premios_todos = query_premios_todos.aggregate(
+            total=Sum(campo_premio)
+        )['total'] or Decimal("0.00")
+
+        total_ins_projetado = projetos_pessoais_pagos + premios_todos + investimento
+
+        # === CALCULAR OUTs SALDO ATUAL (apenas pagos) ===
+
+        # 5. Despesas fixas mensais (divididas por 2) - só as com tag ADMINISTRATIVO, ORDENADO, SUB_ALIMENTACAO
+        from core.models import TagDespesa
+
+        query_despesas_fixas = Despesa.objects.filter(
+            tags__codigo__in=['ADMINISTRATIVO', 'ORDENADO', 'SUB_ALIMENTACAO']
+        ).distinct()
+
+        if data_inicio:
             query_despesas_fixas = query_despesas_fixas.filter(
-                data__lte=data_fim
+                ano__gte=data_inicio.year
+            )
+        if data_fim_param:
+            query_despesas_fixas = query_despesas_fixas.filter(
+                ano__lte=data_fim_param.year
             )
 
         despesas_fixas_total = query_despesas_fixas.aggregate(
@@ -195,29 +225,9 @@ class SaldosCalculator:
         )['total'] or Decimal("0.00")
         despesas_fixas = despesas_fixas_total / Decimal("2.00")  # Divide por 2
 
-        # 2. Boletins PENDENTES (emitidos mas não pagos)
-        query_boletins_pendentes = Boletim.objects.filter(
-            socio=socio,
-            estado=EstadoBoletim.PENDENTE
-        )
-
-        if data_inicio:
-            query_boletins_pendentes = query_boletins_pendentes.filter(
-                data_emissao__gte=data_inicio
-            )
-        if data_fim:
-            query_boletins_pendentes = query_boletins_pendentes.filter(
-                data_emissao__lte=data_fim
-            )
-
-        # Usar valor_total se existir, senão usar valor (compatibilidade)
-        boletins_pendentes = Decimal("0.00")
-        for b in query_boletins_pendentes:
-            boletins_pendentes += b.valor_total if b.valor_total else (b.valor or Decimal("0.00"))
-
-        # 3. Boletins PAGOS
+        # 6. Boletins PAGOS
         query_boletins_pagos = Boletim.objects.filter(
-            socio=socio,
+            socio__codigo=socio_codigo,
             estado=EstadoBoletim.PAGO
         )
 
@@ -225,104 +235,77 @@ class SaldosCalculator:
             query_boletins_pagos = query_boletins_pagos.filter(
                 data_emissao__gte=data_inicio
             )
-        if data_fim:
+        if data_fim_param:
             query_boletins_pagos = query_boletins_pagos.filter(
-                data_emissao__lte=data_fim
+                data_emissao__lte=data_fim_param
             )
 
-        boletins_pagos = Decimal("0.00")
-        for b in query_boletins_pagos:
-            boletins_pagos += b.valor_total if b.valor_total else (b.valor or Decimal("0.00"))
+        boletins_pagos = query_boletins_pagos.aggregate(
+            total=Sum('valor_total')
+        )['total'] or Decimal("0.00")
 
-        boletins_total = boletins_pendentes + boletins_pagos
-
-        # 4. Despesas pessoais excecionais
+        # 7. Despesas pessoais - só as com tag PESSOAL do sócio
         query_despesas_pessoais = Despesa.objects.filter(
-            tipo=tipo_despesa,
-            estado=EstadoDespesa.PAGO
+            tags__codigo='PESSOAL'
+        ).distinct()
+
+        # Filtrar por credor (nome do sócio)
+        socio_obj = Socio.objects.get(codigo=socio_codigo)
+        query_despesas_pessoais = query_despesas_pessoais.filter(
+            credor__nome__icontains=socio_obj.nome_completo.split()[0]  # "Bruno" ou "Rafael"
         )
 
         if data_inicio:
             query_despesas_pessoais = query_despesas_pessoais.filter(
-                data__gte=data_inicio
+                ano__gte=data_inicio.year
             )
-        if data_fim:
+        if data_fim_param:
             query_despesas_pessoais = query_despesas_pessoais.filter(
-                data__lte=data_fim
+                ano__lte=data_fim_param.year
             )
 
         despesas_pessoais = query_despesas_pessoais.aggregate(
             total=Sum('valor_sem_iva')
         )['total'] or Decimal("0.00")
 
-        # IMPORTANTE: Apenas boletins PAGOS entram no cálculo do saldo!
-        total_outs = despesas_fixas + boletins_pagos + despesas_pessoais
+        total_outs_atual = despesas_fixas + boletins_pagos + despesas_pessoais
 
-        # === CALCULAR SALDO FINAL ===
-        saldo_total = total_ins - total_outs
+        # === CALCULAR OUTs SALDO PROJETADO (incluindo pendentes) ===
 
-        # === PRÉMIOS NÃO FATURADOS (Projetos FINALIZADOS) ===
-        if socio == 'BA':
-            query_premios_nao_faturados = Projeto.objects.filter(
-                estado=EstadoProjeto.FINALIZADO,
-                premio_bruno__gt=0
-            )
-            campo_premio_nf = 'premio_bruno'
-        else:
-            query_premios_nao_faturados = Projeto.objects.filter(
-                estado=EstadoProjeto.FINALIZADO,
-                premio_rafael__gt=0
-            )
-            campo_premio_nf = 'premio_rafael'
-
-        if data_inicio:
-            query_premios_nao_faturados = query_premios_nao_faturados.filter(
-                data_faturacao__gte=data_inicio
-            )
-        if data_fim:
-            query_premios_nao_faturados = query_premios_nao_faturados.filter(
-                data_faturacao__lte=data_fim
-            )
-
-        premios_nao_faturados = query_premios_nao_faturados.aggregate(
-            total=Sum(campo_premio_nf)
-        )['total'] or Decimal("0.00")
-
-        # === PROJETOS PESSOAIS NÃO FATURADOS ===
-        query_pessoais_nao_faturados = Projeto.objects.filter(
-            estado=EstadoProjeto.FINALIZADO,
-            tipo=TipoProjeto.PESSOAL,
-            owner=owner
+        # 8. Boletins TODOS (PAGO + PENDENTE) - já foram declarados
+        query_boletins_todos = Boletim.objects.filter(
+            socio__codigo=socio_codigo
         )
 
         if data_inicio:
-            query_pessoais_nao_faturados = query_pessoais_nao_faturados.filter(
-                data_faturacao__gte=data_inicio
+            query_boletins_todos = query_boletins_todos.filter(
+                data_emissao__gte=data_inicio
             )
-        if data_fim:
-            query_pessoais_nao_faturados = query_pessoais_nao_faturados.filter(
-                data_faturacao__lte=data_fim
+        if data_fim_param:
+            query_boletins_todos = query_boletins_todos.filter(
+                data_emissao__lte=data_fim_param
             )
 
-        pessoais_nao_faturados = query_pessoais_nao_faturados.aggregate(
-            total=Sum('valor_sem_iva')
+        boletins_todos = query_boletins_todos.aggregate(
+            total=Sum('valor_total')
         )['total'] or Decimal("0.00")
 
-        # Saldo projetado
-        saldo_projetado = None
-        total_nao_faturados = premios_nao_faturados + pessoais_nao_faturados
-        if total_nao_faturados > 0:
-            saldo_projetado = float(saldo_total + total_nao_faturados)
+        boletins_pendentes = boletins_todos - boletins_pagos
 
-        # === CALCULAR SUGESTÃO DE BOLETIM ===
-        hoje = date.today()
+        total_outs_projetado = despesas_fixas + boletins_todos + despesas_pessoais
+
+        # === CALCULAR SALDOS FINAIS ===
+        saldo_atual = total_ins_atual - total_outs_atual
+        saldo_projetado = total_ins_projetado - total_outs_projetado
+
+        # === CALCULAR SUGESTÃO DE BOLETIM (baseada no saldo projetado) ===
         mes_atual = hoje.month
         ano_atual = hoje.year
 
         # Meses que já têm boletim emitido
         meses_com_boletim = set(
             Boletim.objects.filter(
-                socio_codigo=socio,
+                socio__codigo=socio_codigo,
                 ano=ano_atual
             ).values_list('mes', flat=True)
         )
@@ -331,325 +314,102 @@ class SaldosCalculator:
         meses_restantes = [m for m in range(mes_atual, 13) if m not in meses_com_boletim]
         num_meses_sem_boletim = len(meses_restantes)
 
-        # Calcular saldo projetado para sugestão
-        total_ins_projetado = total_ins + premios_nao_faturados + pessoais_nao_faturados
-        total_outs_projetado = total_outs + boletins_pendentes
-        saldo_projetado_calc = total_ins_projetado - total_outs_projetado
-
         # Sugestão = saldo projetado / meses restantes
         if num_meses_sem_boletim > 0:
-            sugestao_boletim = max(0, float(saldo_projetado_calc / num_meses_sem_boletim))
+            sugestao_boletim = max(0, float(saldo_projetado / num_meses_sem_boletim))
         else:
             sugestao_boletim = 0.0
 
+        # Breakdown detalhado de prémios
+        premios_futuros = premios_todos - premios_feitos
+
         return {
-            'socio': socio,
-            'saldo_total': float(saldo_total),
-            'saldo_projetado': saldo_projetado,
+            'socio': socio_codigo,
+            'saldo_atual': float(saldo_atual),
+            'saldo_projetado': float(saldo_projetado),
             'ins': {
-                'projetos_pessoais': float(projetos_pessoais),
-                'premios': float(premios),
-                'premios_nao_faturados': float(premios_nao_faturados),
-                'pessoais_nao_faturados': float(pessoais_nao_faturados),
+                'projetos_pessoais_pagos': float(projetos_pessoais_pagos),
+                'premios_trabalho_feito': float(premios_feitos),
+                'premios_trabalho_futuro': float(premios_futuros),
+                'premios_total': float(premios_todos),
                 'investimento_inicial': float(investimento),
-                'total': float(total_ins)
+                'total_atual': float(total_ins_atual),
+                'total_projetado': float(total_ins_projetado)
             },
             'outs': {
                 'despesas_fixas': float(despesas_fixas),
-                'boletins_pendentes': float(boletins_pendentes),
                 'boletins_pagos': float(boletins_pagos),
-                'boletins_total': float(boletins_total),
+                'boletins_pendentes': float(boletins_pendentes),
+                'boletins_total': float(boletins_todos),
                 'despesas_pessoais': float(despesas_pessoais),
-                'total': float(total_outs)
+                'total_atual': float(total_outs_atual),
+                'total_projetado': float(total_outs_projetado)
             },
             'sugestao_boletim': sugestao_boletim
         }
 
-    def calcular_saldo_ano(
-        self,
-        socio: str,
-        ano: int
-    ) -> Dict:
-        """
-        Calcula saldo detalhado para um ano específico (breakdown anual)
-
-        Args:
-            socio: Sócio ('BA' ou 'RR')
-            ano: Ano para calcular
-
-        Returns:
-            Dict com breakdown do ano: INs pagos, a receber, OUTs pagos, por pagar, etc.
-        """
-        owner = socio
-        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == 'BA' else TipoDespesa.PESSOAL_RR
-
-        # Datas do ano
-        data_inicio = date(ano, 1, 1)
-        data_fim = date(ano, 12, 31)
-
-        # === INs PAGOS (ano corrente) ===
-
-        # 1. Projetos pessoais PAGOS do ano
-        projetos_pessoais_pagos = Projeto.objects.filter(
-            tipo=TipoProjeto.PESSOAL,
-            owner=owner,
-            estado=EstadoProjeto.PAGO,
-            data_faturacao__gte=data_inicio,
-            data_faturacao__lte=data_fim
-        ).aggregate(total=Sum('valor_sem_iva'))['total'] or Decimal("0.00")
-
-        # 2. Prémios PAGOS do ano
-        if socio == 'BA':
-            premios_pagos = Projeto.objects.filter(
-                premio_bruno__gt=0,
-                estado=EstadoProjeto.PAGO,
-                data_faturacao__gte=data_inicio,
-                data_faturacao__lte=data_fim
-            ).aggregate(total=Sum('premio_bruno'))['total'] or Decimal("0.00")
-        else:
-            premios_pagos = Projeto.objects.filter(
-                premio_rafael__gt=0,
-                estado=EstadoProjeto.PAGO,
-                data_faturacao__gte=data_inicio,
-                data_faturacao__lte=data_fim
-            ).aggregate(total=Sum('premio_rafael'))['total'] or Decimal("0.00")
-
-        total_ins_pagos = projetos_pessoais_pagos + premios_pagos
-
-        # === INs A RECEBER (finalizados, não pagos) do ano ===
-
-        # 3. Projetos pessoais FINALIZADOS do ano
-        projetos_pessoais_a_receber = Projeto.objects.filter(
-            tipo=TipoProjeto.PESSOAL,
-            owner=owner,
-            estado=EstadoProjeto.FINALIZADO,
-            data_faturacao__gte=data_inicio,
-            data_faturacao__lte=data_fim
-        ).aggregate(total=Sum('valor_sem_iva'))['total'] or Decimal("0.00")
-
-        # 4. Prémios FINALIZADOS do ano
-        if socio == 'BA':
-            premios_a_receber = Projeto.objects.filter(
-                premio_bruno__gt=0,
-                estado=EstadoProjeto.FINALIZADO,
-                data_faturacao__gte=data_inicio,
-                data_faturacao__lte=data_fim
-            ).aggregate(total=Sum('premio_bruno'))['total'] or Decimal("0.00")
-        else:
-            premios_a_receber = Projeto.objects.filter(
-                premio_rafael__gt=0,
-                estado=EstadoProjeto.FINALIZADO,
-                data_faturacao__gte=data_inicio,
-                data_faturacao__lte=data_fim
-            ).aggregate(total=Sum('premio_rafael'))['total'] or Decimal("0.00")
-
-        total_ins_a_receber = projetos_pessoais_a_receber + premios_a_receber
-        total_ins = total_ins_pagos + total_ins_a_receber
-
-        # === OUTs PAGOS (ano corrente) ===
-
-        # 5. Despesas fixas mensais PAGAS do ano (÷ 2)
-        despesas_fixas_total = Despesa.objects.filter(
-            tipo=TipoDespesa.FIXA_MENSAL,
-            estado=EstadoDespesa.PAGO,
-            data__gte=data_inicio,
-            data__lte=data_fim
-        ).aggregate(total=Sum('valor_sem_iva'))['total'] or Decimal("0.00")
-        despesas_fixas = despesas_fixas_total / Decimal("2.00")
-
-        # 6. Boletins PAGOS do ano
-        boletins_pagos = Decimal("0.00")
-        for b in Boletim.objects.filter(
-            socio_codigo=socio,
-            estado=EstadoBoletim.PAGO,
-            data_emissao__gte=data_inicio,
-            data_emissao__lte=data_fim
-        ):
-            boletins_pagos += b.valor_total if b.valor_total else (b.valor or Decimal("0.00"))
-
-        # 7. Despesas pessoais PAGAS do ano
-        despesas_pessoais = Despesa.objects.filter(
-            tipo=tipo_despesa,
-            estado=EstadoDespesa.PAGO,
-            data__gte=data_inicio,
-            data__lte=data_fim
-        ).aggregate(total=Sum('valor_sem_iva'))['total'] or Decimal("0.00")
-
-        total_outs_pagos = despesas_fixas + boletins_pagos + despesas_pessoais
-
-        # === OUTs POR PAGAR (boletins pendentes) do ano ===
-
-        # 8. Boletins PENDENTES do ano
-        boletins_pendentes = Decimal("0.00")
-        for b in Boletim.objects.filter(
-            socio_codigo=socio,
-            estado=EstadoBoletim.PENDENTE,
-            data_emissao__gte=data_inicio,
-            data_emissao__lte=data_fim
-        ):
-            boletins_pendentes += b.valor_total if b.valor_total else (b.valor or Decimal("0.00"))
-
-        total_outs_por_pagar = boletins_pendentes
-        total_outs = total_outs_pagos + total_outs_por_pagar
-
-        # === SALDOS ===
-        saldo_efetivo = total_ins_pagos - total_outs_pagos
-        saldo_projetado = total_ins - total_outs
-
-        # === SUGESTÃO DE BOLETIM (baseada no saldo projetado do ano) ===
-        hoje = date.today()
-        mes_atual = hoje.month
-        ano_atual = hoje.year
-
-        if ano == ano_atual:
-            # Meses que já têm boletim emitido no ano
-            meses_com_boletim = set(
-                Boletim.objects.filter(
-                    socio_codigo=socio,
-                    ano=ano
-                ).values_list('mes', flat=True)
-            )
-
-            # Meses restantes sem boletim
-            meses_restantes = [m for m in range(mes_atual, 13) if m not in meses_com_boletim]
-            num_meses_sem_boletim = len(meses_restantes)
-
-            if num_meses_sem_boletim > 0:
-                sugestao_boletim = max(0, float(saldo_projetado / num_meses_sem_boletim))
-            else:
-                sugestao_boletim = 0.0
-        else:
-            sugestao_boletim = 0.0
-
-        return {
-            'socio': socio,
-            'ano': ano,
-            'ins_pagos': {
-                'projetos_pessoais': float(projetos_pessoais_pagos),
-                'premios': float(premios_pagos),
-                'total': float(total_ins_pagos)
-            },
-            'ins_a_receber': {
-                'projetos_pessoais': float(projetos_pessoais_a_receber),
-                'premios': float(premios_a_receber),
-                'total': float(total_ins_a_receber)
-            },
-            'ins_total': float(total_ins),
-            'outs_pagos': {
-                'despesas_fixas': float(despesas_fixas),
-                'boletins': float(boletins_pagos),
-                'despesas_pessoais': float(despesas_pessoais),
-                'total': float(total_outs_pagos)
-            },
-            'outs_por_pagar': {
-                'boletins': float(boletins_pendentes),
-                'total': float(total_outs_por_pagar)
-            },
-            'outs_total': float(total_outs),
-            'saldo_efetivo': float(saldo_efetivo),
-            'saldo_projetado': float(saldo_projetado),
-            'sugestao_boletim': sugestao_boletim
-        }
-
-    def obter_historico_mensal(
-        self,
-        socio: str,
-        ano: int,
-        incluir_investimento: bool = False
-    ) -> List[Dict]:
-        """
-        Obtém histórico mensal de saldos para um ano específico
-
-        Args:
-            socio: Sócio ('BA' ou 'RR')
-            ano: Ano para obter histórico
-            incluir_investimento: Se deve incluir investimento inicial
-
-        Returns:
-            Lista de dicts com saldos mensais
-        """
-        meses = [
-            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-        ]
-
-        historico = []
-        for mes in range(1, 13):
-            # Calcular até o fim do mês
-            if mes == 12:
-                data_fim = date(ano, 12, 31)
-            else:
-                data_fim = date(ano, mes + 1, 1) - timedelta(days=1)
-
-            saldo_data = self._calcular_saldo(
-                socio,
-                incluir_investimento=incluir_investimento,
-                data_fim=data_fim
-            )
-
-            historico.append({
-                'mes': mes,
-                'mes_nome': meses[mes - 1],
-                'saldo': saldo_data['saldo_total']
-            })
-
-        return historico
-
-    def obter_breakdown_detalhado(self, socio: str) -> Dict:
+    def obter_breakdown_detalhado(self, socio_codigo: str) -> Dict:
         """
         Obtém breakdown detalhado com listas de itens específicos
 
         Args:
-            socio: Sócio ('BA' ou 'RR')
+            socio_codigo: Sócio ('BA' ou 'RR')
 
         Returns:
             Dict com listas detalhadas de projetos, despesas e boletins
         """
-        owner = socio
-        tipo_despesa = TipoDespesa.PESSOAL_BA if socio == 'BA' else TipoDespesa.PESSOAL_RR
+        hoje = date.today()
+        campo_premio = 'premio_bruno' if socio_codigo == 'BA' else 'premio_rafael'
 
-        # Projetos pessoais
+        # Projetos pessoais pagos
         projetos_pessoais = Projeto.objects.filter(
             tipo=TipoProjeto.PESSOAL,
-            owner=owner,
-            estado=EstadoProjeto.PAGO
+            socio__codigo=socio_codigo,
+            data_recibo__isnull=False
         )
 
-        # Projetos com prémios (apenas PAGOS)
-        if socio == 'BA':
-            projetos_premios = Projeto.objects.filter(
-                premio_bruno__gt=0,
-                estado=EstadoProjeto.PAGO
-            )
-        else:
-            projetos_premios = Projeto.objects.filter(
-                premio_rafael__gt=0,
-                estado=EstadoProjeto.PAGO
-            )
+        # Projetos com prémios (trabalho feito)
+        projetos_premios_feitos = Projeto.objects.filter(
+            **{f'{campo_premio}__gt': 0},
+            data_fim__lt=hoje
+        )
+
+        # Projetos com prémios futuros
+        projetos_premios_futuros = Projeto.objects.filter(
+            **{f'{campo_premio}__gt': 0},
+            data_fim__gte=hoje
+        )
 
         # Despesas fixas
         despesas_fixas = Despesa.objects.filter(
-            tipo=TipoDespesa.FIXA_MENSAL,
-            estado=EstadoDespesa.PAGO
-        )
+            tags__codigo__in=['ADMINISTRATIVO', 'ORDENADO', 'SUB_ALIMENTACAO']
+        ).distinct()
 
         # Despesas pessoais
+        socio_obj = Socio.objects.get(codigo=socio_codigo)
         despesas_pessoais = Despesa.objects.filter(
-            tipo=tipo_despesa,
-            estado=EstadoDespesa.PAGO
-        )
+            tags__codigo='PESSOAL',
+            credor__nome__icontains=socio_obj.nome_completo.split()[0]
+        ).distinct()
 
-        # Boletins (apenas PAGOS)
-        boletins = Boletim.objects.filter(
-            socio=socio,
+        # Boletins pagos
+        boletins_pagos = Boletim.objects.filter(
+            socio__codigo=socio_codigo,
             estado=EstadoBoletim.PAGO
         )
 
-        # Converter para dicts (similar ao to_dict() do SQLAlchemy)
+        # Boletins pendentes
+        boletins_pendentes = Boletim.objects.filter(
+            socio__codigo=socio_codigo,
+            estado=EstadoBoletim.PENDENTE
+        )
+
         return {
             'projetos_pessoais': list(projetos_pessoais.values()),
-            'projetos_premios': list(projetos_premios.values()),
+            'projetos_premios_feitos': list(projetos_premios_feitos.values()),
+            'projetos_premios_futuros': list(projetos_premios_futuros.values()),
             'despesas_fixas': list(despesas_fixas.values()),
             'despesas_pessoais': list(despesas_pessoais.values()),
-            'boletins': list(boletins.values())
+            'boletins_pagos': list(boletins_pagos.values()),
+            'boletins_pendentes': list(boletins_pendentes.values())
         }
