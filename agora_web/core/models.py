@@ -591,6 +591,14 @@ class Boletim(models.Model):
     IMPORTANTE: Boletins descontam do saldo quando PAGOS (não quando emitidos).
     """
     numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #B0001
+    socio_old = models.CharField(
+        _('Sócio (OLD)'),
+        max_length=2,
+        db_column='socio',
+        null=True,
+        blank=True,
+        editable=False
+    )  # DEPRECATED - coluna órfã da migração
     socio_codigo = models.CharField(
         _('Sócio (código)'),
         max_length=2,

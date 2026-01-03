@@ -458,6 +458,8 @@ class Command(BaseCommand):
                     ano=ano,
                     defaults={
                         'numero': numero,
+                        'socio_old': socio_codigo,  # Preencher coluna órfã (NOT NULL constraint)
+                        'socio_codigo': socio_codigo,  # Preencher também o campo deprecated
                         'descricao': self.get_month_name(mes),
                         'data_emissao': date(ano, mes, 27),  # Fixo dia 27
                         'data_pagamento': self.parse_date(data_pag) if data_pag else None,
