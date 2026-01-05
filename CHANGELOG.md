@@ -2,6 +2,56 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-01-05
+
+### Fixed - Validação Saldos Excel vs DB
+- **Prémios 100% corretos** após correção de cálculo
+  - Bruno: €5,844.67 (match perfeito com Excel CAIXA)
+  - Rafael: €9,916.19 (match perfeito com Excel CAIXA)
+  - Projetos Pessoais Rafael: €14,103.51 (100% match)
+
+- **Correção crítica em prémios** (`import_from_excel.py:372-378, 446`)
+  - Column P (TOTAL s/IVA) agora usado para prémios com quantidade/dias
+  - Exemplo: #D000120 com quantidade=2 agora calcula €450 em vez de €225
+  - Bug fix: prémios estavam a usar valor unitário (Column J) em vez de total
+
+### Added - Sistema de Validação
+- **Script crosscheck.py** - Compara Excel vs DB (projetos, despesas, boletins)
+- **Documentação completa de validação:**
+  - `docs/SALDOS_VALIDATION_RESULTS.md` - Resultados finais com comparações
+  - `docs/SALDOS_CROSSCHECK.md` - Análise detalhada de discrepâncias
+
+### Changed - Workflow de Desenvolvimento
+- **Documentação atualizada** para refletir workflow real
+  - Commits diretos em `main` para agilidade
+  - Branches opcionais apenas para experimentação arriscada
+  - `README-DEV.md` simplificado e atualizado
+  - `.claude/claude.md` atualizado com workflow correto
+  - `README.md` atualizado
+
+### Validated - Cálculos de Saldos
+- ✅ Despesas fixas: divisão por 2 funcionando corretamente
+- ✅ Estrutura despesas pessoais + boletins validada
+- ✅ Filtro de data 2024+ disponível e testado
+- ✅ Sistema funcional com prémios 100% validados
+
+### Technical Details
+**Files Modified:**
+- `agora_web/core/management/commands/import_from_excel.py` - Fix prémios calculation
+- `docs/SALDOS_VALIDATION_RESULTS.md` - Validation results
+- `docs/SALDOS_CROSSCHECK.md` - Discrepancy analysis
+- `crosscheck.py` - Validation script
+- `README-DEV.md` - Updated workflow
+- `.claude/claude.md` - Updated workflow
+- `README.md` - Updated workflow
+
+**Known Differences (documented, not critical):**
+- Bruno Projetos Pessoais: -€2,000 (filtro ESTADO vs tipo diferente)
+- Despesas Fixas total: +€2,902 (critérios de data/tags diferentes)
+- Despesas Pessoais breakdown (investigar fórmula Excel no futuro)
+
+---
+
 ## [2.1.0] - 2026-01-03
 
 ### Added - Sistema de Importação Web

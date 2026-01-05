@@ -95,31 +95,24 @@ archive-old-tkinter-app/    # 📦 App antiga (apenas histórico)
 
 ## 🔄 Workflow de Desenvolvimento Diário
 
-### **Passo a Passo para Novas Features**
+### **Passo a Passo Simplificado (Direto em Main)**
 
-#### 1️⃣ **Criar Feature Branch**
+**Nota:** Trabalhamos **direto na branch `main`** para agilidade. Branches são opcionais para experimentação.
+
+#### 1️⃣ **Sincronizar Main**
 
 ```bash
-# Sempre partir de main atualizada
+# Garantir que estamos em main e atualizados
 git checkout main
 git pull origin main
-
-# Criar branch com nomenclatura clara
-git checkout -b claude/nome-da-feature-xxxxx
 ```
 
-**Convenção de nomes:**
-- `claude/feat-dashboard-xxx` - Nova funcionalidade
-- `claude/fix-bug-saldos-xxx` - Correção de bug
-- `claude/refactor-models-xxx` - Refactoring
-- `claude/docs-update-xxx` - Atualização de docs
-
-#### 2️⃣ **Desenvolver + Testar Localmente**
+#### 2️⃣ **Desenvolver + Testar**
 
 ```bash
 # Fazer mudanças no código (via Claude ou manual)
 
-# Testar mudanças
+# Rebuild se mudança de código Python/templates
 docker compose down
 docker compose up -d --build web
 
@@ -136,12 +129,13 @@ docker compose logs -f web
 3. Testar funcionalidade
 4. Repetir até funcionar
 
-#### 3️⃣ **Commits Descritivos**
+#### 3️⃣ **Commits Frequentes e Descritivos**
 
 ```bash
-# Adicionar ficheiros
+# Adicionar ficheiros modificados
 git add agora_web/core/models.py
 git add agora_web/core/admin.py
+git add docs/
 
 # Commit com mensagem clara
 git commit -m "feat: add dashboard fiscal com cálculos IVA
@@ -164,56 +158,17 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 | `test:` | Testes | `test: add unit tests for SaldosCalculator` |
 | `chore:` | Manutenção (deps, configs) | `chore: update Django to 5.1` |
 
-#### 4️⃣ **Push da Branch**
+#### 4️⃣ **Push Imediato para Main**
 
 ```bash
-# Push da feature branch
-git push -u origin claude/nome-da-feature-xxxxx
-```
-
-#### 5️⃣ **Testar Mais (Se Necessário)**
-
-Se precisares fazer mais mudanças:
-
-```bash
-# Fazer mudanças
-# Testar
-git add .
-git commit -m "fix: corrigir validação no formulário"
-git push  # (já está com upstream configurado)
-```
-
-#### 6️⃣ **Merge para Main**
-
-Quando a feature estiver **pronta e testada**:
-
-```bash
-# Voltar para main
-git checkout main
-
-# ⚠️ IMPORTANTE: Sincronizar com remote primeiro!
-git pull origin main
-
-# Merge da feature branch
-git merge claude/nome-da-feature-xxxxx
-
-# Push para produção
+# Push direto para main
 git push origin main
 ```
 
-#### 7️⃣ **Deployment Final**
+#### 5️⃣ **Verificar Produção**
 
 ```bash
-# Já estamos no servidor, basta fazer deploy
-./deploy.sh
-
-# OU manualmente:
-docker compose down
-docker compose build --no-cache web
-docker compose up -d
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py collectstatic --noinput
-
+# Já estamos no servidor, deployment é automático via Docker
 # Verificar logs
 docker compose logs -f web
 
@@ -221,15 +176,48 @@ docker compose logs -f web
 # https://app.agoramediaproduction.pt
 ```
 
-#### 8️⃣ **Limpeza (Opcional)**
+---
+
+### 🌿 **Branches Opcionais (Quando Usar)**
+
+**Na maioria dos casos NÃO precisas de branches.** Usa apenas para:
+
+#### Casos de Uso para Branches:
+- 🔬 **Experimentação arriscada** que pode quebrar o sistema
+- 🚧 **Features grandes** que demoram dias/semanas e precisam de múltiplos commits
+- 👥 **Colaboração simultânea** em features diferentes
+
+#### Workflow com Branch (Opcional):
 
 ```bash
-# Apagar branch local (se já não for necessária)
-git branch -d claude/nome-da-feature-xxxxx
+# 1. Criar branch experimental
+git checkout -b claude/feat-experimental-xxx
 
-# Apagar branch remote (se quiser limpar)
-git push origin --delete claude/nome-da-feature-xxxxx
+# 2. Desenvolver + testar
+# [fazer mudanças]
+docker compose up -d --build web
+
+# 3. Commits na branch
+git add .
+git commit -m "feat: experimental feature"
+git push -u origin claude/feat-experimental-xxx
+
+# 4. Quando pronto: merge para main
+git checkout main
+git pull origin main
+git merge claude/feat-experimental-xxx
+git push origin main
+
+# 5. Limpeza (opcional)
+git branch -d claude/feat-experimental-xxx
+git push origin --delete claude/feat-experimental-xxx
 ```
+
+**Convenção de nomes (se usar branches):**
+- `claude/feat-dashboard-xxx` - Nova funcionalidade
+- `claude/fix-bug-saldos-xxx` - Correção de bug
+- `claude/refactor-models-xxx` - Refactoring
+- `claude/docs-update-xxx` - Atualização de docs
 
 ---
 
@@ -237,24 +225,23 @@ git push origin --delete claude/nome-da-feature-xxxxx
 
 ### ✅ **FAZER**
 
-- ✅ Criar **feature branches** para cada tarefa
-- ✅ **Commitar frequentemente** com mensagens claras
-- ✅ **Testar localmente** antes de merge para main
+- ✅ **Commitar frequentemente** em `main` com mensagens claras
+- ✅ **Testar antes de push** (rebuild Docker se necessário)
 - ✅ **Rebuild Docker** após mudanças de código (`--build`)
 - ✅ Fazer **backup da BD** antes de mudanças grandes
 - ✅ Atualizar **documentação** quando arquitetura muda
-- ✅ Usar script `deploy.sh` para deployment
-- ✅ Fazer `git pull` antes de merge
+- ✅ Fazer `git pull` antes de começar nova tarefa
+- ✅ Usar branches **apenas** para experimentação arriscada
 
 ### ❌ **NÃO FAZER**
 
-- ❌ Commit direto em `main` (usar branches!)
 - ❌ Commit de ficheiros `.env` ou secrets
-- ❌ Mudanças sem testar
+- ❌ Push sem testar (quebra produção!)
 - ❌ Esquecer `collectstatic` após mudanças CSS
 - ❌ Mudar nome do volume `agora_web_postgres_data`
-- ❌ Deployment sem backup
+- ❌ Deployment sem backup de BD
 - ❌ Assumir que código está atualizado (sempre `git pull`)
+- ❌ Criar branches desnecessárias (overhead!)
 
 ---
 
@@ -522,8 +509,8 @@ credentials.json       # Credentials
 ## 📊 Workflow Resumido (TL;DR)
 
 ```bash
-# 1. Criar branch
-git checkout -b claude/feature-xxx
+# 1. Sincronizar
+git pull origin main
 
 # 2. Desenvolver + testar
 # [fazer mudanças]
@@ -531,23 +518,20 @@ docker compose up -d --build web
 
 # 3. Commit
 git add .
-git commit -m "feat: descrição"
+git commit -m "feat: descrição clara
 
-# 4. Push
-git push -u origin claude/feature-xxx
+🤖 Generated with Claude Code
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
-# 5. Quando pronto: merge
-git checkout main
-git pull origin main
-git merge claude/feature-xxx
+# 4. Push direto para main
 git push origin main
 
-# 6. Deploy
-./deploy.sh
-
-# 7. ✅ Verificar produção
+# 5. ✅ Verificar produção
 # https://app.agoramediaproduction.pt
+docker compose logs -f web
 ```
+
+**Branches apenas para experimentação!** Na maioria dos casos trabalha direto em `main`.
 
 ---
 

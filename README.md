@@ -186,26 +186,27 @@ docker compose exec web python manage.py createsuperuser
 
 **Ver [README-DEV.md](README-DEV.md) para guia completo!**
 
-Resumo:
+Resumo (direto em `main`):
 ```bash
-# 1. Criar branch
-git checkout -b claude/feature-xxx
+# 1. Sincronizar
+git pull origin main
 
 # 2. Desenvolver + testar
 docker compose up -d --build web
 
-# 3. Commit + push
-git commit -m "feat: descrição"
-git push -u origin claude/feature-xxx
+# 3. Commit + push direto
+git add .
+git commit -m "feat: descrição
 
-# 4. Merge quando pronto
-git checkout main && git pull
-git merge claude/feature-xxx
+🤖 Generated with Claude Code
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 git push origin main
 
-# 5. Deploy
-./deploy.sh
+# 4. Verificar produção
+# https://app.agoramediaproduction.pt
 ```
+
+**Nota:** Branches opcionais para experimentação arriscada.
 
 ---
 

@@ -226,19 +226,25 @@ DB_PASSWORD=Agora2025Prod!SecureDB
 ### Branch Strategy
 
 **Production Branch:** `main`
-- Sempre estável e deployável
-- Merges só após testing
+- Branch principal de trabalho
+- Commits diretos para agilidade
+- Sempre estável (testar antes de push!)
 
-**Feature Branches:** `claude/nome-da-feature-xxxxx`
-- Criar nova branch para cada feature/fix
-- Testar completamente antes de merge
-- Apagar após merge (opcional)
+**Feature Branches:** Opcionais
+- Usar **apenas** para experimentação arriscada ou features grandes (dias/semanas)
+- Na maioria dos casos: trabalhar direto em `main`
+- Se usar: `claude/feat-*`, `claude/fix-*`, `claude/refactor-*`, `claude/docs-*`
 
-**Naming Convention:**
-- `claude/feat-*` - Novas funcionalidades
-- `claude/fix-*` - Correções de bugs
-- `claude/refactor-*` - Refactoring
-- `claude/docs-*` - Atualizações de documentação
+**Workflow Atual (Simplificado):**
+1. `git pull origin main`
+2. Fazer mudanças + testar
+3. `git add . && git commit -m "feat: descrição"`
+4. `git push origin main`
+
+**Quando usar branches:**
+- 🔬 Experimentação que pode quebrar sistema
+- 🚧 Features grandes multi-commit
+- 👥 Colaboração simultânea em features diferentes
 
 ---
 
@@ -453,18 +459,21 @@ docker compose exec db psql -U agora -d agora_production
 
 ## 🚀 Deployment Workflow
 
-**Com VS Code Extension (Workflow Atual):**
+**Com VS Code Extension (Workflow Atual - Simplificado):**
 
-1. **Branch:** `git checkout -b claude/feature-xxx`
+1. **Sync:** `git pull origin main`
 2. **Develop:** Code changes DIRETAMENTE no servidor
 3. **Test:** `docker compose up -d --build web`
-4. **Commit:** `git commit -m "feat: descrição"`
-5. **Push:** `git push -u origin claude/feature-xxx`
-6. **Merge:** `git checkout main && git pull && git merge claude/feature-xxx && git push`
-7. **Deploy:** `./deploy.sh` (já estamos no servidor!)
-8. **Verify:** Testar em https://app.agoramediaproduction.pt
+4. **Commit:** `git add . && git commit -m "feat: descrição"`
+5. **Push:** `git push origin main` (direto para produção!)
+6. **Verify:** Testar em https://app.agoramediaproduction.pt
 
-**Vantagem:** Sem sincronização entre ambientes! Tudo numa máquina só.
+**Vantagens:**
+- ✅ Sem sincronização entre ambientes! Tudo numa máquina só
+- ✅ Sem overhead de branches para tasks pequenas/médias
+- ✅ Deploy contínuo e ágil
+
+**Nota:** Branches opcionais para experimentação arriscada (ver "Branch Strategy" acima).
 
 ---
 
@@ -474,9 +483,10 @@ docker compose exec db psql -U agora -d agora_production
 
 1. **Estamos NO SERVIDOR** - mudanças são diretas, sem worktrees
 2. **Always rebuild Docker** after code changes - código está na imagem
-3. **Testar antes de commit** - `docker compose up -d --build web`
-4. **Feature branches** - sempre criar branch para cada tarefa
-5. **Consulta README-DEV.md** para workflow detalhado
+3. **Testar antes de push** - `docker compose up -d --build web`
+4. **Commit direto em main** - workflow simplificado para agilidade
+5. **Branches opcionais** - apenas para experimentação arriscada
+6. **Consulta README-DEV.md** para workflow detalhado
 
 ### Desenvolvimento
 
