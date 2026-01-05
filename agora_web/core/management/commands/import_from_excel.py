@@ -369,6 +369,14 @@ class Command(BaseCommand):
                 except Exception as e:
                     raise ValueError(f'Valor com IVA inválido: {ws.cell(row_idx, 13).value}') from e
 
+                # Para prémios, usar TOTAL s/IVA (Column P) que considera quantidade e dias
+                try:
+                    total_sem_iva_raw = ws.cell(row_idx, 16).value or 0  # Column P - TOTAL s/IVA
+                    total_sem_iva_str = str(total_sem_iva_raw).replace(',', '.')
+                    valor_total_sem_iva = Decimal(total_sem_iva_str)
+                except Exception as e:
+                    valor_total_sem_iva = valor_sem_iva  # Fallback to unit value
+
                 credor_nome = ws.cell(row_idx, 5).value
                 descricao = ws.cell(row_idx, 8).value or ''
                 socio_nome = ws.cell(row_idx, 21).value  # Coluna U - identifica sócio para despesas PESSOAL
@@ -398,12 +406,16 @@ class Command(BaseCommand):
                     'descricao': descricao,
                     'valor_sem_iva': valor_sem_iva,
                     'valor_com_iva': valor_com_iva,
+                    'valor_total_sem_iva': valor_total_sem_iva,  # Valor total (com quantidade/dias)
                     'data_vencimento': ws.cell(row_idx, 20).value,
                     'nota': ws.cell(row_idx, 23).value,
                 }
 
                 # Classificar
                 if 'PREMIO' in tags or 'COMISSAO_VENDA' in tags:
+                    # Debug
+                    if numero == '#D000120':
+                        self.stdout.write(f'DEBUG: #D000120 classificado como PRÉMIO, valor_total={despesa_raw["valor_total_sem_iva"]}')
                     premios.append(despesa_raw)
                 elif any(t in tags for t in ['PER_DIEM_PT', 'PER_DIEM_FORA']) or \
                      ('DESLOCACAO' in tags and 'PESSOAL' in tags):
@@ -433,7 +445,13 @@ class Command(BaseCommand):
             if not socio:
                 continue
 
-            premios_por_projeto[projeto_numero][socio.codigo] += premio['valor_sem_iva']
+            # Usar valor_total_sem_iva (Column P) que considera quantidade e dias
+            valor_premio = premio['valor_total_sem_iva']
+            premios_por_projeto[projeto_numero][socio.codigo] += valor_premio
+
+            # Debug
+            if premio['numero'] == '#D000120':
+                self.stdout.write(f'DEBUG #D000120: valor_sem_iva={premio["valor_sem_iva"]}, valor_total={valor_premio}, projeto={projeto_numero}')
 
         # Atualizar projetos
         for projeto_numero, valores in premios_por_projeto.items():
