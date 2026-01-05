@@ -136,6 +136,29 @@ agora_web/
 
 ## 🚀 Development Workflow
 
+### 🔧 Workflows de IA Disponíveis
+
+Este projeto suporta **múltiplos workflows de desenvolvimento** com ferramentas de IA:
+
+#### 🖥️ **VS Code Extension (Claude Code)**
+**Quando usar:** Desenvolvimento Django ativo, models, migrations, debugging
+- ✅ Edição direta no servidor via SSH
+- ✅ Django shell para testing
+- ✅ Deploy automático com `./deploy.sh`
+- 📖 **[Ver guia completo →](.claude/workflows/vscode-extension.md)**
+
+#### 🌐 **MCP GitHub (Perplexity, Claude.ai)**
+**Quando usar:** Quick fixes, documentação, trabalho remoto
+- ✅ Edição via GitHub API
+- ✅ Criar PRs diretamente
+- ✅ Trabalhar de qualquer device
+- 📖 **[Ver guia completo →](.claude/workflows/mcp-github.md)**
+
+#### 📚 **Recursos para IA**
+- **Contexto Universal:** [`.claude/claude.md`](.claude/claude.md)
+- **Prompts Reutilizáveis:** [`.claude/prompts/`](.claude/prompts/)
+- **Guia de Desenvolvimento:** [`README-DEV.md`](README-DEV.md)
+
 ### Setup Inicial
 
 ```bash
