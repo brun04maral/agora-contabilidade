@@ -24,9 +24,34 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
     history_list_display = ['history_date', 'history_user', 'history_type']
 
     def get_readonly_fields(self, request, obj=None):
-        """Adiciona campos de audit trail aos readonly fields"""
+        """Adiciona campos de audit trail aos readonly fields + link para histórico"""
         readonly = super().get_readonly_fields(request, obj)
-        return list(readonly) + ['created_at', 'updated_at', 'created_by', 'updated_by']
+        fields = list(readonly) + ['created_at', 'updated_at', 'created_by', 'updated_by']
+
+        # Adiciona link para histórico se objeto já existe
+        if obj and obj.pk:
+            fields.append('history_link')
+
+        return fields
+
+    @display(description='Histórico de Alterações')
+    def history_link(self, obj):
+        """Link para a página de histórico do objeto"""
+        if obj and obj.pk:
+            from django.urls import reverse
+            from django.utils.html import format_html
+
+            history_url = reverse(
+                f'admin:{obj._meta.app_label}_{obj._meta.model_name}_history',
+                args=[obj.pk]
+            )
+            return format_html(
+                '<a href="{}" class="button" style="padding: 8px 16px; background: #d4af37; color: white; '
+                'text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 500;">'
+                '📜 Ver Histórico Completo</a>',
+                history_url
+            )
+        return '-'
 
 
 @admin.register(Socio)
@@ -52,7 +77,7 @@ class SocioAdmin(UnfoldHistoryAdmin):
             'classes': ['collapse']
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -80,7 +105,7 @@ class ClienteAdmin(UnfoldHistoryAdmin):
             'fields': ('angariacao', 'nota')
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -111,7 +136,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -146,7 +171,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -186,7 +211,7 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -240,7 +265,7 @@ class DespesaAdmin(UnfoldHistoryAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -302,7 +327,7 @@ class BoletimAdmin(UnfoldHistoryAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -331,7 +356,7 @@ class BoletimLinhaAdmin(ModelAdmin):
             'fields': ('tipo', 'dias', 'kms')
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -372,7 +397,7 @@ class EquipamentoAdmin(UnfoldHistoryAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
@@ -434,7 +459,7 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
             'classes': ['collapse']
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
             'classes': ['collapse']
         }),
     )
