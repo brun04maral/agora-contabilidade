@@ -5,19 +5,36 @@ Core admin customizations for Agora Contabilidade with Unfold theme
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
+from simple_history.admin import SimpleHistoryAdmin
 from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
     Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal, ImportacaoDados
 )
 
 
+# Custom admin base que combina Unfold + SimpleHistory
+class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
+    """
+    Admin base que combina django-simple-history com Unfold theme
+
+    IMPORTANTE: A ordem de herança importa! SimpleHistoryAdmin deve vir primeiro
+    para que seus métodos sejam usados corretamente.
+    """
+    # Configurações do SimpleHistory
+    history_list_display = ['history_date', 'history_user', 'history_type']
+
+    def get_readonly_fields(self, request, obj=None):
+        """Adiciona created_by e updated_by aos readonly fields"""
+        readonly = super().get_readonly_fields(request, obj)
+        return list(readonly) + ['created_by', 'updated_by']
+
+
 @admin.register(Socio)
-class SocioAdmin(ModelAdmin):
-    """Admin para Sócio com Unfold customization"""
+class SocioAdmin(UnfoldHistoryAdmin):
+    """Admin para Sócio com Unfold customization + History"""
     list_display = ['codigo', 'nome_completo', 'nome_curto', 'email', 'percentagem_participacao', 'ativo', 'created_at']
     list_filter = ['ativo']
     search_fields = ['codigo', 'nome_completo', 'nome_curto', 'email']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['codigo']
 
     fieldsets = (
@@ -35,19 +52,18 @@ class SocioAdmin(ModelAdmin):
             'classes': ['collapse']
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
 
 
 @admin.register(Cliente)
-class ClienteAdmin(ModelAdmin):
-    """Admin para Cliente com Unfold customization"""
+class ClienteAdmin(UnfoldHistoryAdmin):
+    """Admin para Cliente com Unfold customization + History"""
     list_display = ['numero', 'nome', 'nome_formal', 'nif', 'pais', 'email', 'created_at']
     list_filter = ['pais', 'created_at']
     search_fields = ['numero', 'nome', 'nome_formal', 'nif', 'email']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
 
     fieldsets = (
@@ -64,19 +80,18 @@ class ClienteAdmin(ModelAdmin):
             'fields': ('angariacao', 'nota')
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
 
 
 @admin.register(Fornecedor)
-class FornecedorAdmin(ModelAdmin):
+class FornecedorAdmin(UnfoldHistoryAdmin):
     """Admin para Fornecedor com Unfold customization"""
     list_display = ['numero', 'nome', 'estatuto', 'area', 'funcao', 'classificacao', 'email', 'created_at']
     list_filter = ['estatuto', 'area', 'funcao', 'classificacao', 'pais', 'created_at']
     search_fields = ['numero', 'nome', 'nif', 'email', 'area', 'funcao']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
 
     fieldsets = (
@@ -96,19 +111,18 @@ class FornecedorAdmin(ModelAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
 
 
 @admin.register(Projeto)
-class ProjetoAdmin(ModelAdmin):
+class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
     list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'created_at']
     list_filter = ['tipo', 'socio', 'estado', 'data_faturacao', 'created_at']
     search_fields = ['numero', 'descricao', 'cliente__nome']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
     autocomplete_fields = ['cliente']
 
@@ -132,7 +146,7 @@ class ProjetoAdmin(ModelAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
@@ -144,12 +158,11 @@ class ProjetoAdmin(ModelAdmin):
 
 
 @admin.register(DespesaTemplate)
-class DespesaTemplateAdmin(ModelAdmin):
+class DespesaTemplateAdmin(UnfoldHistoryAdmin):
     """Admin para DespesaTemplate com Unfold customization"""
     list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'dia_mes', 'created_at']
     list_filter = ['tipo', 'dia_mes', 'created_at']
     search_fields = ['numero', 'descricao', 'credor__nome']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['dia_mes', '-created_at']
     autocomplete_fields = ['credor', 'projeto']
 
@@ -173,7 +186,7 @@ class DespesaTemplateAdmin(ModelAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
@@ -185,12 +198,11 @@ class DespesaTemplateAdmin(ModelAdmin):
 
 
 @admin.register(Despesa)
-class DespesaAdmin(ModelAdmin):
+class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
     list_display = ['numero', 'tags_display', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
     list_filter = ['tags', 'estado', 'data', 'data_pagamento', 'created_at']
     search_fields = ['numero', 'descricao', 'credor__nome', 'projeto__numero', 'tipo_original']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['-data', '-created_at']
     autocomplete_fields = ['credor', 'projeto', 'despesa_template']
     date_hierarchy = 'data'
@@ -228,7 +240,7 @@ class DespesaAdmin(ModelAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
@@ -256,12 +268,11 @@ class BoletimLinhaInline(TabularInline):
 
 
 @admin.register(Boletim)
-class BoletimAdmin(ModelAdmin):
+class BoletimAdmin(UnfoldHistoryAdmin):
     """Admin para Boletim com Unfold customization"""
     list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento', 'created_at']
     list_filter = ['socio', 'estado', 'mes', 'ano', 'data_emissao', 'created_at']
     search_fields = ['numero', 'nota']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['-data_emissao', '-created_at']
     date_hierarchy = 'data_emissao'
     inlines = [BoletimLinhaInline]
@@ -291,7 +302,7 @@ class BoletimAdmin(ModelAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
@@ -303,7 +314,6 @@ class BoletimLinhaAdmin(ModelAdmin):
     list_display = ['boletim', 'ordem', 'servico_short', 'localidade', 'projeto', 'data_inicio', 'data_fim', 'tipo', 'dias', 'kms', 'created_at']
     list_filter = ['tipo', 'data_inicio', 'created_at']
     search_fields = ['servico', 'localidade', 'boletim__numero']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['boletim', 'ordem']
     autocomplete_fields = ['boletim', 'projeto']
 
@@ -321,7 +331,7 @@ class BoletimLinhaAdmin(ModelAdmin):
             'fields': ('tipo', 'dias', 'kms')
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
@@ -333,12 +343,11 @@ class BoletimLinhaAdmin(ModelAdmin):
 
 
 @admin.register(Equipamento)
-class EquipamentoAdmin(ModelAdmin):
+class EquipamentoAdmin(UnfoldHistoryAdmin):
     """Admin para Equipamento com Unfold customization"""
     list_display = ['numero', 'produto', 'tipo', 'estado', 'uso_pessoal', 'preco_aluguer', 'rendimento_acumulado', 'created_at']
     list_filter = ['estado', 'uso_pessoal', 'tipo', 'created_at']
     search_fields = ['numero', 'produto', 'tipo', 'label', 'referencia', 'numero_serie']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
 
     fieldsets = (
@@ -363,7 +372,7 @@ class EquipamentoAdmin(ModelAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
@@ -394,12 +403,11 @@ class OrcamentoReparticaoInline(TabularInline):
 
 
 @admin.register(Orcamento)
-class OrcamentoAdmin(ModelAdmin):
+class OrcamentoAdmin(UnfoldHistoryAdmin):
     """Admin para Orcamento com Unfold customization"""
     list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao', 'valor_total', 'status', 'created_at']
     list_filter = ['status', 'socio', 'data_criacao', 'created_at']
     search_fields = ['codigo', 'titulo_cliente', 'cliente__nome', 'projeto__numero', 'descricao_proposta']
-    readonly_fields = ['created_at', 'updated_at']
     ordering = ['-data_criacao', '-created_at']
     autocomplete_fields = ['cliente', 'projeto']
     date_hierarchy = 'data_criacao'
@@ -426,7 +434,7 @@ class OrcamentoAdmin(ModelAdmin):
             'classes': ['collapse']
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
