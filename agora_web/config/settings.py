@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 
     # Third party
     'rest_framework',
+    'simple_history',
 
     # Local apps
     'core',
@@ -48,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',  # Audit trail
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -116,8 +118,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # WhiteNoise configuration for serving static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/app/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -126,9 +128,13 @@ UNFOLD = {
     "SITE_TITLE": "Agora Contabilidade",
     "SITE_HEADER": "Agora Media Production",
     "SITE_URL": "/",
+    "SITE_LOGO": {
+        "light": lambda request: "/media/logos/logo_sidebar.png",
+        "dark": lambda request: "/media/logos/logo_sidebar.png",
+    },
     "SITE_ICON": {
-        "light": lambda request: "https://img.icons8.com/fluency/48/accounting.png",
-        "dark": lambda request: "https://img.icons8.com/fluency/48/accounting.png",
+        "light": lambda request: "/media/a (yellow).svg",
+        "dark": lambda request: "/media/a (yellow).svg",
     },
     "COLORS": {
         "primary": {

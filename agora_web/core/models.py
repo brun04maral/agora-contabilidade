@@ -6,10 +6,42 @@ Empresa: Amaral & Reigota - Produção Audiovisual, Lda (NIPC: 518 351 190)
 Marca: Agora Media Production
 """
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+from simple_history.models import HistoricalRecords
 
 
-class Socio(models.Model):
+class UserTrackingMixin(models.Model):
+    """
+    Mixin que adiciona tracking de user (created_by/updated_by)
+
+    NOTA: Não redefine created_at/updated_at porque esses campos
+    já existem nos modelos que usam este mixin.
+    """
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_created',
+        verbose_name=_('Criado por'),
+        editable=False
+    )
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_updated',
+        verbose_name=_('Modificado por'),
+        editable=False
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Socio(UserTrackingMixin, models.Model):
     """
     Sócio da Amaral & Reigota - Produção Audiovisual, Lda
     """
@@ -24,6 +56,9 @@ class Socio(models.Model):
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
+    # Histórico completo de alterações
+    history = HistoricalRecords()
+
     class Meta:
         verbose_name = _('Sócio')
         verbose_name_plural = _('Sócios')
@@ -37,7 +72,7 @@ class Socio(models.Model):
         return f"<Socio(codigo='{self.codigo}', nome='{self.nome_curto}')>"
 
 
-class Cliente(models.Model):
+class Cliente(UserTrackingMixin, models.Model):
     """
     Modelo para armazenar informações de clientes
 
@@ -55,8 +90,9 @@ class Cliente(models.Model):
     email = models.EmailField(_('Email'), max_length=255, blank=True, null=True)
     angariacao = models.CharField(_('Angariação'), max_length=255, blank=True, null=True)  # Como foi angariado
     nota = models.TextField(_('Nota'), blank=True, null=True)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Cliente')
@@ -80,7 +116,7 @@ class EstatutoFornecedor(models.TextChoices):
     SOCIO_GERENTE = 'SOCIO_GERENTE', _('Sócio Gerente')
 
 
-class Fornecedor(models.Model):
+class Fornecedor(UserTrackingMixin, models.Model):
     """
     Modelo para armazenar informações de fornecedores/credores
     """
@@ -116,8 +152,8 @@ class Fornecedor(models.Model):
         help_text=_('Taxa de retenção aplicável (23%, 25%, 16.5%, etc). Apenas para FREELANCER')
     )
 
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Fornecedor')
@@ -146,7 +182,7 @@ class EstadoProjeto(models.TextChoices):
     ANULADO = 'ANULADO', _('Anulado')  # Projeto cancelado
 
 
-class Projeto(models.Model):
+class Projeto(UserTrackingMixin, models.Model):
     """
     Modelo para armazenar projetos da Agora Media
 
@@ -249,8 +285,9 @@ class Projeto(models.Model):
 
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Projeto')
@@ -341,7 +378,7 @@ class TagDespesa(models.Model):
         return f"<TagDespesa(codigo='{self.codigo}', nome='{self.nome}')>"
 
 
-class DespesaTemplate(models.Model):
+class DespesaTemplate(UserTrackingMixin, models.Model):
     """
     Template de despesa recorrente mensal
 
@@ -393,8 +430,9 @@ class DespesaTemplate(models.Model):
 
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Template de Despesa')
@@ -409,7 +447,7 @@ class DespesaTemplate(models.Model):
         return f"<DespesaTemplate(id={self.id}, numero='{self.numero}', descricao='{self.descricao[:30]}', dia={self.dia_mes})>"
 
 
-class Despesa(models.Model):
+class Despesa(UserTrackingMixin, models.Model):
     """
     Modelo para armazenar despesas da empresa
 
@@ -506,8 +544,8 @@ class Despesa(models.Model):
         verbose_name=_('Template de Origem')
     )
 
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Despesa')
@@ -573,7 +611,7 @@ class TipoDeslocacao(models.TextChoices):
     ESTRANGEIRO = 'ESTRANGEIRO', _('Estrangeiro')
 
 
-class Boletim(models.Model):
+class Boletim(UserTrackingMixin, models.Model):
     """
     Modelo para boletins de ajudas de custo (Boletim Itinerário)
 
@@ -653,8 +691,9 @@ class Boletim(models.Model):
 
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Boletim')
@@ -761,7 +800,7 @@ class UsoEquipamento(models.TextChoices):
     PARTILHADO = 'PARTILHADO', _('Partilhado')
 
 
-class Equipamento(models.Model):
+class Equipamento(UserTrackingMixin, models.Model):
     """Modelo para gestão de equipamento da empresa"""
     numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)
     produto = models.CharField(_('Produto'), max_length=255)
@@ -785,8 +824,9 @@ class Equipamento(models.Model):
     foto_url = models.TextField(_('URL da Foto'), blank=True, null=True)
     uso_pessoal = models.CharField(_('Uso Pessoal'), max_length=50, choices=UsoEquipamento.choices, default=UsoEquipamento.EMPRESA)
     nota = models.TextField(_('Nota'), blank=True, null=True)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Equipamento')
@@ -811,7 +851,7 @@ class StatusOrcamento(models.TextChoices):
     CANCELADO = 'CANCELADO', _('Cancelado')
 
 
-class Orcamento(models.Model):
+class Orcamento(UserTrackingMixin, models.Model):
     """Orçamento/Proposta para cliente"""
     codigo = models.CharField(_('Código'), max_length=100, unique=True, db_index=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='orcamentos', verbose_name=_('Cliente'))
@@ -837,8 +877,9 @@ class Orcamento(models.Model):
     tem_versao_cliente = models.BooleanField(_('Tem Versão Cliente'), default=False)
     titulo_cliente = models.CharField(_('Título para Cliente'), max_length=255, blank=True, null=True)
     descricao_cliente = models.TextField(_('Descrição para Cliente'), blank=True, null=True)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
+
+    # Histórico completo de alterações
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _('Orçamento')
