@@ -90,6 +90,8 @@ class Cliente(UserTrackingMixin, models.Model):
     email = models.EmailField(_('Email'), max_length=255, blank=True, null=True)
     angariacao = models.CharField(_('Angariação'), max_length=255, blank=True, null=True)  # Como foi angariado
     nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
@@ -151,6 +153,8 @@ class Fornecedor(UserTrackingMixin, models.Model):
         null=True,
         help_text=_('Taxa de retenção aplicável (23%, 25%, 16.5%, etc). Apenas para FREELANCER')
     )
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
@@ -285,6 +289,8 @@ class Projeto(UserTrackingMixin, models.Model):
 
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
@@ -430,6 +436,8 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
 
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
@@ -543,6 +551,8 @@ class Despesa(UserTrackingMixin, models.Model):
         related_name='despesas_geradas',
         verbose_name=_('Template de Origem')
     )
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
@@ -691,6 +701,8 @@ class Boletim(UserTrackingMixin, models.Model):
 
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
@@ -824,6 +836,8 @@ class Equipamento(UserTrackingMixin, models.Model):
     foto_url = models.TextField(_('URL da Foto'), blank=True, null=True)
     uso_pessoal = models.CharField(_('Uso Pessoal'), max_length=50, choices=UsoEquipamento.choices, default=UsoEquipamento.EMPRESA)
     nota = models.TextField(_('Nota'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
@@ -877,6 +891,8 @@ class Orcamento(UserTrackingMixin, models.Model):
     tem_versao_cliente = models.BooleanField(_('Tem Versão Cliente'), default=False)
     titulo_cliente = models.CharField(_('Título para Cliente'), max_length=255, blank=True, null=True)
     descricao_cliente = models.TextField(_('Descrição para Cliente'), blank=True, null=True)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)
 
     # Histórico completo de alterações
     history = HistoricalRecords()
