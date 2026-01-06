@@ -24,9 +24,9 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
     history_list_display = ['history_date', 'history_user', 'history_type']
 
     def get_readonly_fields(self, request, obj=None):
-        """Adiciona created_by e updated_by aos readonly fields"""
+        """Adiciona campos de audit trail aos readonly fields"""
         readonly = super().get_readonly_fields(request, obj)
-        return list(readonly) + ['created_by', 'updated_by']
+        return list(readonly) + ['created_at', 'updated_at', 'created_by', 'updated_by']
 
 
 @admin.register(Socio)
