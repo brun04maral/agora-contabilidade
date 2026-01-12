@@ -38,23 +38,34 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<!-- Logo Adaptive Coloring - Follows Unfold Theme -->
+<!-- Logo Adaptive Coloring - Match Sidebar Text Color -->
 <style>
-/* Remove custom filters - let Unfold's default theme handle logo colors */
-/* Unfold automatically applies appropriate filters based on light/dark mode */
-img[src*="amp_logo_sidebar"],
-img[src*="amp_logo.svg"] {
-  /* Remove any custom filters */
-  filter: none !important;
-  /* Let Unfold's sidebar color scheme take over */
-  opacity: 0.9;
+/* Logo color matching Unfold's sidebar text color */
+
+/* Light mode: darker gray/black (matching sidebar text) */
+:root img[src*="amp_logo_sidebar"],
+:root img[src*="amp_logo.svg"],
+html:not(.dark) img[src*="amp_logo_sidebar"],
+html:not(.dark) img[src*="amp_logo.svg"] {
+  /* Light mode: keep dark but slightly softened */
+  filter: brightness(0.3) !important;
+  opacity: 0.85;
 }
 
-/* Sidebar logo hover effect */
+/* Dark mode: light gray/white (matching dark sidebar text) */
+.dark img[src*="amp_logo_sidebar"],
+.dark img[src*="amp_logo.svg"],
+html.dark img[src*="amp_logo_sidebar"],
+html.dark img[src*="amp_logo.svg"] {
+  /* Dark mode: invert to white/light and adjust brightness */
+  filter: brightness(0) invert(1) opacity(0.85) !important;
+}
+
+/* Hover effect for both modes */
 img[src*="amp_logo_sidebar"]:hover,
 img[src*="amp_logo.svg"]:hover {
-  opacity: 1;
-  transition: opacity 0.2s ease;
+  opacity: 1 !important;
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 </style>
 
