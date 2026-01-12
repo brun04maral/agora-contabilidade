@@ -86,9 +86,11 @@ Ver [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) para detalhes técnicos
 ### 🎨 Interface
 
 - **Unfold Admin Theme** - Interface moderna e limpa
+- **PWA (Progressive Web App)** - Instalável em desktop e mobile
 - **Cards visuais** - Dashboard com breakdown claro
 - **Responsive** - Funciona em desktop e mobile
-- **Cores personalizadas** - Verde (#2ECC71) para BA, Azul (#3498DB) para RR
+- **Cores personalizadas** - Dourado (#d4af37) tema Agora
+- **Audit Trail** - Histórico completo de alterações com django-simple-history
 
 ---
 
@@ -337,6 +339,7 @@ cat backup.sql | docker compose exec -T db psql -U agora -d agora_production
 | [docs/CAIXA_ANALYSIS.md](docs/CAIXA_ANALYSIS.md) | Análise das fórmulas da aba CAIXA |
 | [docs/SOCIOS_MIGRATION.md](docs/SOCIOS_MIGRATION.md) | Como modelo Socio foi criado |
 | [docs/DATABASE_MANUAL_CHANGES.md](docs/DATABASE_MANUAL_CHANGES.md) | Mudanças manuais na BD |
+| [docs/PWA_BRANDING.md](docs/PWA_BRANDING.md) | 🆕 Progressive Web App e Branding |
 | [docs/README.md](docs/README.md) | Índice completo de documentação |
 
 ### Histórico
@@ -401,6 +404,18 @@ Principais variáveis:
 ---
 
 ## 📝 Notas de Versão
+
+### v2.2 - PWA e Branding (12 Jan 2026)
+- ✅ **Progressive Web App (PWA)** - Instalável como app nativa
+- ✅ Manifest.json com ícones, cores e shortcuts
+- ✅ Service Worker para suporte offline
+- ✅ Meta tags PWA (theme-color, apple-mobile-web-app, etc)
+- ✅ Logo transparente configurado
+- ✅ Branding com cores douradas (#d4af37)
+- ✅ **Audit Trail completo** - django-simple-history integrado
+- ✅ Histórico de alterações inline no admin
+- ✅ Auto-populate de created_by/updated_by
+- 📖 [Ver documentação PWA →](docs/PWA_BRANDING.md)
 
 ### v2.1 - Importação e Limpeza de Dados (03 Jan 2026)
 - ✅ Sistema completo de importação Excel → PostgreSQL (CLI)

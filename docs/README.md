@@ -19,6 +19,7 @@
 | [**SOCIOS_MIGRATION.md**](./SOCIOS_MIGRATION.md) | Complete guide to Socio model implementation | ✅ Complete |
 | [**SALDOS_DASHBOARD.md**](./SALDOS_DASHBOARD.md) | Saldos Pessoais dashboard implementation | ✅ Complete |
 | [**IMPORT_SYSTEM.md**](./IMPORT_SYSTEM.md) | Web-based Excel import system | ✅ Complete |
+| [**PWA_BRANDING.md**](./PWA_BRANDING.md) | 🆕 Progressive Web App & Branding | ✅ Complete |
 | [**DATABASE_MANUAL_CHANGES.md**](./DATABASE_MANUAL_CHANGES.md) | Manual SQL changes history | ✅ Complete |
 
 ### 🤖 For AI Assistants
@@ -38,6 +39,8 @@
 - **Dashboard template:** [SALDOS_DASHBOARD.md](./SALDOS_DASHBOARD.md#template)
 - **Socio admin customization:** [SOCIOS_MIGRATION.md](./SOCIOS_MIGRATION.md#admin-customizations)
 - **Excel import system:** [IMPORT_SYSTEM.md](./IMPORT_SYSTEM.md)
+- **PWA installation:** [PWA_BRANDING.md](./PWA_BRANDING.md#como-instalar-pwa)
+- **Branding configuration:** [PWA_BRANDING.md](./PWA_BRANDING.md#branding)
 
 ### Troubleshooting
 - **500 errors on Saldos page:** [SALDOS_DASHBOARD.md](./SALDOS_DASHBOARD.md#error-history--solutions)
