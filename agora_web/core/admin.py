@@ -81,19 +81,24 @@ class SocioAdmin(UnfoldHistoryAdmin):
     )
 
     def get_urls(self):
-        """Adiciona URL customizada para dashboard do sócio"""
+        """Adiciona URL customizada para editar sócio"""
         from django.urls import path
         urls = super().get_urls()
         custom_urls = [
-            path('<path:object_id>/dashboard/', self.admin_site.admin_view(self.dashboard_view), name='core_socio_dashboard'),
+            path('<path:object_id>/edit/', self.admin_site.admin_view(self.edit_view), name='core_socio_edit'),
         ]
         return custom_urls + urls
 
-    def dashboard_view(self, request, object_id):
-        """View para dashboard de estatísticas do sócio"""
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """Override: Redirecionar para dashboard ao visualizar sócio"""
         from django.shortcuts import render, get_object_or_404
-        from core.models import Socio, Projeto, Despesa
+        from core.models import Socio
 
+        # Se for POST (salvando), usar comportamento padrão
+        if request.method == 'POST':
+            return super().change_view(request, object_id, form_url, extra_context)
+
+        # Se for GET (visualizando), mostrar dashboard
         socio = get_object_or_404(Socio, pk=object_id)
 
         # Estatísticas
@@ -107,7 +112,7 @@ class SocioAdmin(UnfoldHistoryAdmin):
 
         context = {
             **self.admin_site.each_context(request),
-            'title': f'Dashboard - {socio.nome_completo}',
+            'title': socio.nome_completo,
             'socio': socio,
             'num_projetos_pessoais': num_projetos_pessoais,
             'num_despesas_pessoais': num_despesas_pessoais,
@@ -118,6 +123,10 @@ class SocioAdmin(UnfoldHistoryAdmin):
         }
 
         return render(request, 'admin/core/socio/dashboard.html', context)
+
+    def edit_view(self, request, object_id):
+        """View para editar sócio (formulário real)"""
+        return super().change_view(request, object_id)
 
 
 @admin.register(Cliente)

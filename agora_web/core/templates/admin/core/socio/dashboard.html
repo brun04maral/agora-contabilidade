@@ -62,20 +62,33 @@
         border-bottom-color: rgb(75, 85, 99);
     }
 
-    .back-btn {
-        background-color: rgb(156, 163, 175);
-        color: white;
+    .action-btn {
         padding: 0.5rem 1rem;
         border-radius: 0.375rem;
         text-decoration: none;
         font-weight: 600;
         font-size: 0.875rem;
         display: inline-block;
-        margin-bottom: 1.5rem;
+        transition: all 0.2s;
+    }
+
+    .back-btn {
+        background-color: rgb(156, 163, 175);
+        color: white;
     }
 
     .back-btn:hover {
         background-color: rgb(107, 114, 128);
+        color: white;
+    }
+
+    .edit-btn {
+        background-color: rgb(29, 78, 216);
+        color: white;
+    }
+
+    .edit-btn:hover {
+        background-color: rgb(30, 64, 175);
         color: white;
     }
 </style>
@@ -83,15 +96,20 @@
 
 {% block content %}
 <div style="padding: 1.5rem; max-width: 80rem; margin: 0 auto;">
-    <!-- Back button -->
-    <a href="{% url 'admin:core_socio_change' socio.codigo %}" class="back-btn">
-        ← Voltar para edição
-    </a>
+    <!-- Action buttons -->
+    <div style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem;">
+        <a href="{% url 'admin:core_socio_changelist' %}" class="action-btn back-btn">
+            ← Voltar à Lista
+        </a>
+        <a href="{% url 'admin:core_socio_edit' socio.codigo %}" class="action-btn edit-btn">
+            ✏️ Editar Sócio
+        </a>
+    </div>
 
     <!-- Header -->
     <div style="margin-bottom: 2rem;">
         <h1 style="font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem;" class="dashboard-header">
-            Dashboard - {{ socio.nome_completo }}
+            {{ socio.nome_completo }}
         </h1>
         <p style="font-size: 1rem;" class="dashboard-subtext">
             Código: <strong>{{ socio.codigo }}</strong> | Email: <strong>{{ socio.email }}</strong>
