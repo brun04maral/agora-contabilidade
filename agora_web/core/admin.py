@@ -158,6 +158,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     ordering = ['-created_at']
     autocomplete_fields = ['cliente']
     date_hierarchy = 'data_faturacao'  # Filtro de navegação por ano/mês/dia no cabeçalho
+    actions = ['exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -188,6 +189,87 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     def descricao_short(self, obj):
         """Mostra descrição truncada"""
         return obj.descricao[:50] + '...' if len(obj.descricao) > 50 else obj.descricao
+
+    @admin.action(description='📄 Exportar selecionados como PDF')
+    def exportar_pdf(self, request, queryset):
+        """Exporta projetos selecionados como PDF"""
+        from core.utils.relatorios import gerar_relatorio_projetos_pdf
+        return gerar_relatorio_projetos_pdf(queryset, filtros={'tipo_relatorio': 'Selecionados'})
+
+    @admin.action(description='📊 Exportar selecionados como Excel')
+    def exportar_excel(self, request, queryset):
+        """Exporta projetos selecionados como Excel"""
+        from core.utils.relatorios import gerar_relatorio_projetos_excel
+        return gerar_relatorio_projetos_excel(queryset, filtros={'tipo_relatorio': 'Selecionados'})
+
+    def get_urls(self):
+        """Adiciona URL customizada para relatório personalizado"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('relatorio-personalizado/', self.admin_site.admin_view(self.relatorio_personalizado_view), name='core_projeto_relatorio'),
+        ]
+        return custom_urls + urls
+
+    def relatorio_personalizado_view(self, request):
+        """View para formulário de relatório personalizado"""
+        from django.shortcuts import render, redirect
+        from django.contrib import messages
+        from core.forms import RelatorioProjetosForm
+        from core.utils.relatorios import gerar_relatorio_projetos_pdf, gerar_relatorio_projetos_excel
+
+        if request.method == 'POST':
+            form = RelatorioProjetosForm(request.POST)
+            if form.is_valid():
+                # Obter dados do formulário
+                cleaned_data = form.cleaned_data
+
+                # Construir queryset baseado nos filtros
+                queryset = Projeto.objects.all()
+
+                if cleaned_data.get('socio'):
+                    queryset = queryset.filter(socio=cleaned_data['socio'])
+
+                if cleaned_data.get('tipo'):
+                    queryset = queryset.filter(tipo=cleaned_data['tipo'])
+
+                if cleaned_data.get('estado'):
+                    queryset = queryset.filter(estado=cleaned_data['estado'])
+
+                if cleaned_data.get('cliente'):
+                    queryset = queryset.filter(cliente__nome__icontains=cleaned_data['cliente'])
+
+                if cleaned_data.get('data_inicio'):
+                    queryset = queryset.filter(data_faturacao__gte=cleaned_data['data_inicio'])
+
+                if cleaned_data.get('data_fim'):
+                    queryset = queryset.filter(data_faturacao__lte=cleaned_data['data_fim'])
+
+                # Preparar filtros para o relatório
+                filtros = {
+                    'tipo_relatorio': dict(form.TIPO_RELATORIO_CHOICES).get(cleaned_data['tipo_relatorio']),
+                    'socio': str(cleaned_data['socio']) if cleaned_data.get('socio') else None,
+                    'estado': cleaned_data.get('estado'),
+                    'data_inicio': cleaned_data.get('data_inicio'),
+                    'data_fim': cleaned_data.get('data_fim'),
+                }
+
+                # Gerar relatório no formato escolhido
+                if cleaned_data['formato'] == 'pdf':
+                    return gerar_relatorio_projetos_pdf(queryset, filtros)
+                else:
+                    return gerar_relatorio_projetos_excel(queryset, filtros)
+        else:
+            form = RelatorioProjetosForm()
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Criar Relatório Personalizado de Projetos',
+            'form': form,
+            'opts': self.model._meta,
+        }
+
+        return render(request, 'admin/core/projeto/relatorio_form.html', context)
 
 
 @admin.register(DespesaTemplate)
