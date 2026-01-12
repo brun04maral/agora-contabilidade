@@ -3,6 +3,27 @@
 
 {% block extrahead %}
 <style>
+    /* Logo coloring - Match primary color */
+    :root img[src*="amp_logo_sidebar"],
+    :root img[src*="amp_logo.svg"],
+    html:not(.dark) img[src*="amp_logo_sidebar"],
+    html:not(.dark) img[src*="amp_logo.svg"] {
+        filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+        opacity: 0.9;
+    }
+    .dark img[src*="amp_logo_sidebar"],
+    .dark img[src*="amp_logo.svg"],
+    html.dark img[src*="amp_logo_sidebar"],
+    html.dark img[src*="amp_logo.svg"] {
+        filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+        opacity: 0.9;
+    }
+    img[src*="amp_logo_sidebar"]:hover,
+    img[src*="amp_logo.svg"]:hover {
+        opacity: 1 !important;
+        transition: opacity 0.2s ease;
+    }
+
     /* Light mode (default) */
     .saldo-card { background-color: white; border: 1px solid rgb(229, 231, 235); border-radius: 0.5rem; }
     .saldo-header { color: rgb(17, 24, 39); }
