@@ -31,10 +31,14 @@ def populate_audit_fields(sender, instance, **kwargs):
     - Se é novo objeto (sem pk): define created_by e updated_by
     - Se já existe (tem pk): atualiza apenas updated_by
     """
-    user = get_current_user()
+    try:
+        user = get_current_user()
+    except Exception:
+        # Se não conseguir obter o user, simplesmente não atualiza
+        return
 
     # Apenas atualiza se houver um user logado
-    if user and user.is_authenticated:
+    if user and hasattr(user, 'is_authenticated') and user.is_authenticated:
         # Se é novo objeto, define created_by
         if instance.pk is None and hasattr(instance, 'created_by'):
             if not instance.created_by:
@@ -63,7 +67,11 @@ def set_history_user_from_request(sender, **kwargs):
     Isto é um backup caso o middleware não capture o user.
     """
     history_instance = kwargs.get('history_instance')
-    user = get_current_user()
 
-    if user and user.is_authenticated and not history_instance.history_user:
+    try:
+        user = get_current_user()
+    except Exception:
+        return
+
+    if user and hasattr(user, 'is_authenticated') and user.is_authenticated and not history_instance.history_user:
         history_instance.history_user = user

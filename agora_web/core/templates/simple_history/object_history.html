@@ -1,0 +1,132 @@
+{% extends "unfold/change_list.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+    <style>
+        .history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .history-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+        .history-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .history-type-create { background: #d1fae5; color: #065f46; }
+        .history-type-update { background: #dbeafe; color: #1e40af; }
+        .history-type-delete { background: #fee2e2; color: #991b1b; }
+        .history-meta {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .history-user {
+            font-weight: 600;
+            color: #374151;
+        }
+        .history-changes {
+            margin-top: 12px;
+        }
+        .change-item {
+            padding: 8px 12px;
+            background: #f9fafb;
+            border-left: 3px solid #3b82f6;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .change-field {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        .change-value {
+            display: flex;
+            gap: 16px;
+            font-family: monospace;
+            font-size: 13px;
+            align-items: center;
+        }
+        .change-old {
+            color: #dc2626;
+            text-decoration: line-through;
+        }
+        .change-new {
+            color: #16a34a;
+            font-weight: 500;
+        }
+        .no-changes {
+            color: #9ca3af;
+            font-style: italic;
+        }
+    </style>
+
+    <div class="history-container">
+        <h1>{% trans "Change history" %}: {{ title }}</h1>
+
+        {% if action_list %}
+            {% for item in action_list %}
+            <div class="history-item">
+                <div class="history-header">
+                    <div>
+                        <span class="history-type history-type-{% if item.history_type == '+' %}create{% elif item.history_type == '~' %}update{% else %}delete{% endif %}">
+                            {% if item.history_type == "+" %}
+                                Criado
+                            {% elif item.history_type == "~" %}
+                                Atualizado
+                            {% elif item.history_type == "-" %}
+                                Eliminado
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="history-meta">
+                        <span class="history-user">
+                            {% if item.history_user %}
+                                {{ item.history_user.get_full_name|default:item.history_user.username }}
+                            {% else %}
+                                Sistema
+                            {% endif %}
+                        </span>
+                        •
+                        {{ item.history_date|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+
+                <div class="history-changes">
+                    {% if item.history_type == "+" %}
+                        <p class="no-changes">Objeto criado</p>
+                    {% elif item.history_type == "-" %}
+                        <p class="no-changes">Objeto eliminado</p>
+                    {% elif item.history_type == "~" %}
+                        <p class="no-changes">Alteração registada (comparação detalhada disponível na lista completa)</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="history-item">
+                <p class="no-changes">Este objeto não tem histórico de alterações.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

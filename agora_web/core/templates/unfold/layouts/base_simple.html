@@ -1,0 +1,32 @@
+{% extends "unfold/layouts/base_simple.html" %}
+
+{% block footer %}
+<footer class="py-4 mt-8 border-t border-gray-200 dark:border-gray-700">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+            <div class="mb-2 md:mb-0">
+                <strong class="text-gray-800 dark:text-gray-200">Agora Media Production</strong>
+                <span class="mx-2">|</span>
+                <span>Amaral & Reigota - Produção Audiovisual, Lda</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span>NIPC: 518 351 190</span>
+                <span class="hidden md:inline">|</span>
+                <span class="text-xs text-gray-500">v1.0.0</span>
+            </div>
+        </div>
+        <div class="text-center mt-2 text-xs text-gray-500 dark:text-gray-500">
+            © {{ current_year|default:"2025" }} Agora Media Production. Sistema de Contabilidade Interno.
+        </div>
+    </div>
+</footer>
+
+<script>
+// Auto-update current year
+document.addEventListener('DOMContentLoaded', function() {
+    const yearElements = document.querySelectorAll('[data-year]');
+    const currentYear = new Date().getFullYear();
+    yearElements.forEach(el => el.textContent = currentYear);
+});
+</script>
+{% endblock %}

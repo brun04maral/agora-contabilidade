@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'unfold',
     'unfold.contrib.filters',
     'unfold.contrib.forms',
+    'unfold.contrib.simple_history',  # Integration with django-simple-history
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -128,13 +129,27 @@ UNFOLD = {
     "SITE_TITLE": "Agora Contabilidade",
     "SITE_HEADER": "Agora Media Production",
     "SITE_URL": "/",
+    "SITE_SYMBOL": "check_circle",  # Icon for PWA
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "href": lambda request: "/media/logos/favicon.svg",
+        },
+        {
+            "rel": "apple-touch-icon",
+            "sizes": "180x180",
+            "href": lambda request: "/media/logos/apple-touch-icon.png",
+        },
+    ],
     "SITE_LOGO": {
         "light": lambda request: "/media/logos/logo_sidebar.png",
         "dark": lambda request: "/media/logos/logo_sidebar.png",
     },
     "SITE_ICON": {
-        "light": lambda request: "/media/a (yellow).svg",
-        "dark": lambda request: "/media/a (yellow).svg",
+        "light": lambda request: "/media/logos/logo-pwa.svg",
+        "dark": lambda request: "/media/logos/logo-pwa.svg",
     },
     "COLORS": {
         "primary": {
@@ -143,13 +158,24 @@ UNFOLD = {
             "200": "240 210 130",
             "300": "230 190 80",
             "400": "220 170 50",
-            "500": "212 175 55",  # Dourado Agora
+            "500": "212 175 55",  # Dourado Agora (#D4AF37)
             "600": "180 140 40",
             "700": "150 110 30",
             "800": "120 85 20",
             "900": "90 60 10",
+            "950": "70 45 5",
         },
     },
+    "EXTENSIONS": {
+        "modeltranslation": {
+            "flags": {
+                "en": "🇬🇧",
+                "pt": "🇵🇹",
+            },
+        },
+    },
+    "ENVIRONMENT": "config.settings.environment_callback",
+    "THEME": "light",  # Default theme
     "SIDEBAR": {
         "show_search": True,
         "show_all_applications": True,
@@ -232,3 +258,10 @@ UNFOLD = {
         ],
     },
 }
+
+# Environment badge callback for Unfold
+def environment_callback(request):
+    """Display environment badge in admin header"""
+    if DEBUG:
+        return ["Development", "orange"]
+    return ["Production", "green"]

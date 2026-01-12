@@ -28,13 +28,13 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
         readonly = super().get_readonly_fields(request, obj)
         fields = list(readonly) + ['created_at', 'updated_at', 'created_by', 'updated_by']
 
-        # Adiciona link para histórico se objeto já existe
+        # Adiciona link para histórico APENAS se objeto já existe
         if obj and obj.pk:
             fields.append('history_link')
 
         return fields
 
-    @display(description='Histórico de Alterações')
+    @display(description='')
     def history_link(self, obj):
         """Link para a página de histórico do objeto"""
         if obj and obj.pk:
@@ -46,12 +46,10 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
                 args=[obj.pk]
             )
             return format_html(
-                '<a href="{}" class="button" style="padding: 8px 16px; background: #d4af37; color: white; '
-                'text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 500;">'
-                '📜 Ver Histórico Completo</a>',
+                '<a href="{}" class="button">Ver</a>',
                 history_url
             )
-        return '-'
+        return ''
 
 
 @admin.register(Socio)

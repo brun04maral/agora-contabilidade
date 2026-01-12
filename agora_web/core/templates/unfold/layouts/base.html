@@ -1,0 +1,115 @@
+{% extends "unfold/layouts/base.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+
+<!-- PWA Configuration -->
+<meta name="theme-color" content="#d4af37">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agora">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/media/manifest.json">
+
+<!-- Favicons -->
+<link rel="icon" type="image/svg+xml" href="/media/logos/favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="/media/logos/apple-touch-icon.png">
+
+<!-- Open Graph / Social Media -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Agora Contabilidade">
+<meta property="og:description" content="Sistema de contabilidade - Agora Media Production">
+<meta property="og:image" content="/media/logos/logo-pwa.svg">
+
+<!-- Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/media/sw.js')
+      .then(function(registration) {
+        console.log('ServiceWorker registration successful');
+      })
+      .catch(function(err) {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+  });
+}
+</script>
+
+<!-- PWA Install Prompt -->
+<style>
+.pwa-install-banner {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #d4af37;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  z-index: 9999;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.pwa-install-banner button {
+  margin-left: 10px;
+  padding: 5px 15px;
+  border: none;
+  background: white;
+  color: #d4af37;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.pwa-install-banner button:hover {
+  background: #f5f5f5;
+}
+.pwa-install-banner .close {
+  background: transparent;
+  color: white;
+  font-size: 18px;
+  padding: 0 8px;
+}
+</style>
+
+<script>
+// PWA Install Prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Show install banner
+  const banner = document.createElement('div');
+  banner.className = 'pwa-install-banner';
+  banner.innerHTML = `
+    <span>Instalar Agora Contabilidade como app?</span>
+    <button class="install-btn">Instalar</button>
+    <button class="close">×</button>
+  `;
+  document.body.appendChild(banner);
+  banner.style.display = 'block';
+
+  // Install button
+  banner.querySelector('.install-btn').addEventListener('click', () => {
+    banner.style.display = 'none';
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      deferredPrompt = null;
+    });
+  });
+
+  // Close button
+  banner.querySelector('.close').addEventListener('click', () => {
+    banner.style.display = 'none';
+  });
+});
+
+// Track if app was installed
+window.addEventListener('appinstalled', () => {
+  console.log('PWA installed successfully');
+});
+</script>
+{% endblock %}
