@@ -18,10 +18,12 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from django.conf import settings
+import os
 
 import xlsxwriter
 from openpyxl import Workbook
@@ -114,6 +116,16 @@ class RelatorioProjetos(RelatorioBase):
             alignment=TA_CENTER
         )
 
+        # Logo (se existir)
+        logo_path = os.path.join(settings.BASE_DIR.parent, 'media', 'logos', 'logo_sidebar.png')
+        if os.path.exists(logo_path):
+            try:
+                logo = Image(logo_path, width=3*cm, height=3*cm)
+                elements.append(logo)
+                elements.append(Spacer(1, 0.2*cm))
+            except:
+                pass  # Se falhar, continua sem logo
+
         # Cabeçalho
         elements.append(Paragraph(self.EMPRESA_MARCA, title_style))
         elements.append(Paragraph(f"{self.EMPRESA_NOME} | NIPC: {self.EMPRESA_NIPC}", subtitle_style))
@@ -150,11 +162,16 @@ class RelatorioProjetos(RelatorioBase):
         total_premio_rr = Decimal('0.00')
 
         for projeto in projetos:
+            # Truncar cliente para evitar sobreposição
+            cliente_nome = str(projeto.cliente) if projeto.cliente else '-'
+            if len(cliente_nome) > 20:
+                cliente_nome = cliente_nome[:17] + '...'
+
             data.append([
                 projeto.numero,
                 projeto.get_tipo_display(),
                 str(projeto.socio) if projeto.socio else '-',
-                str(projeto.cliente) if projeto.cliente else '-',
+                cliente_nome,
                 projeto.descricao[:40] + '...' if len(projeto.descricao) > 40 else projeto.descricao,
                 self._format_currency(projeto.valor_sem_iva),
                 self._format_currency(projeto.premio_bruno) if projeto.premio_bruno else '-',

@@ -190,13 +190,13 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
         """Mostra descrição truncada"""
         return obj.descricao[:50] + '...' if len(obj.descricao) > 50 else obj.descricao
 
-    @admin.action(description='📄 Exportar selecionados como PDF')
+    @admin.action(description='Exportar PDF')
     def exportar_pdf(self, request, queryset):
         """Exporta projetos selecionados como PDF"""
         from core.utils.relatorios import gerar_relatorio_projetos_pdf
         return gerar_relatorio_projetos_pdf(queryset, filtros={'tipo_relatorio': 'Selecionados'})
 
-    @admin.action(description='📊 Exportar selecionados como Excel')
+    @admin.action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta projetos selecionados como Excel"""
         from core.utils.relatorios import gerar_relatorio_projetos_excel
