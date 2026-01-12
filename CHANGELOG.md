@@ -5,11 +5,37 @@ All notable changes to this project will be documented in this file.
 ## [2.2.0] - 2026-01-12
 
 ### Changed - UI Improvements
+
+- **Smart search with field prefixes in all list views**
+  - Implemented Django search field prefixes for intelligent search prioritization
+  - `^field` - Starts with (exact match at beginning, highest priority)
+  - `@field` - Full-text search (PostgreSQL tsvector)
+  - `field` - Contains (default)
+
+  **Projetos** (8 searchable fields):
+  - Priority: `^numero` (exact code match)
+  - Includes: descricao, cliente (nome + nome_formal), tipo, socio, estado, @nota
+
+  **Despesas** (10 searchable fields):
+  - Priority: `^numero`, `^projeto__numero`
+  - Includes: descricao, credor, tags (codigo + nome), tipo_original, estado, @nota
+
+  **Boletins** (9 searchable fields):
+  - Priority: `^numero`
+  - Includes: socio (codigo + nome_completo + nome_curto), mes, ano, estado, descricao, @nota
+
+  **Orçamentos** (12 searchable fields):
+  - Priority: `^codigo`, `^projeto__numero`
+  - Includes: titulo_cliente, cliente, projeto, socio, status, local_evento
+  - Full-text: @descricao_proposta, @notas_contratuais, @descricao_cliente
+
+  Files: `agora_web/core/admin.py` (lines 148-157, 238-249, 319-329, 464-477)
+
 - **Date hierarchy filter added to Projetos list**
   - Added `date_hierarchy = 'data_faturacao'` in ProjetoAdmin
   - Enables year/month/day navigation in list header (same as Despesas, Boletins, Orçamentos)
-  - File: `agora_web/core/admin.py:151`
-  - Commit: 62f065c
+  - File: `agora_web/core/admin.py:160`
+  - Commit: 3b0defc
 
 ### Added - Progressive Web App (PWA)
 - **PWA Manifest** (`/media/manifest.json`)

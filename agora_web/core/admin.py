@@ -145,7 +145,16 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
     list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'created_at']
     list_filter = ['tipo', 'socio', 'estado', 'data_faturacao', 'created_at']
-    search_fields = ['numero', 'descricao', 'cliente__nome']
+    search_fields = [
+        '^numero',              # Prioridade: match exato no início (ex: "P0001")
+        'descricao',            # Contains na descrição
+        'cliente__nome',        # Contains no nome do cliente
+        'cliente__nome_formal', # Contains no nome formal do cliente
+        'tipo',                 # Contains no tipo (PESSOAL/EMPRESA)
+        'socio__nome_completo', # Contains no nome do sócio
+        'estado',               # Contains no estado
+        '@nota',                # Full-text search nas notas
+    ]
     ordering = ['-created_at']
     autocomplete_fields = ['cliente']
     date_hierarchy = 'data_faturacao'  # Filtro de navegação por ano/mês/dia no cabeçalho
@@ -226,7 +235,18 @@ class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
     list_display = ['numero', 'tags_display', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
     list_filter = ['tags', 'estado', 'data', 'data_pagamento', 'created_at']
-    search_fields = ['numero', 'descricao', 'credor__nome', 'projeto__numero', 'tipo_original']
+    search_fields = [
+        '^numero',              # Prioridade: match exato no início (ex: "D0001")
+        'descricao',            # Contains na descrição
+        'credor__nome',         # Contains no nome do credor/fornecedor
+        'projeto__numero',      # Contains no número do projeto
+        '^projeto__numero',     # Prioridade: projeto exato (ex: "P0001")
+        'tipo_original',        # Contains no tipo original
+        'tags__codigo',         # Contains nos códigos das tags
+        'tags__nome',           # Contains nos nomes das tags
+        'estado',               # Contains no estado (PAGO/PENDENTE)
+        '@nota',                # Full-text search nas notas
+    ]
     ordering = ['-data', '-created_at']
     autocomplete_fields = ['credor', 'projeto', 'despesa_template']
     date_hierarchy = 'data'
@@ -296,7 +316,17 @@ class BoletimAdmin(UnfoldHistoryAdmin):
     """Admin para Boletim com Unfold customization"""
     list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento', 'created_at']
     list_filter = ['socio', 'estado', 'mes', 'ano', 'data_emissao', 'created_at']
-    search_fields = ['numero', 'nota']
+    search_fields = [
+        '^numero',              # Prioridade: match exato no início (ex: "RV2024001")
+        'socio__codigo',        # Contains no código do sócio (BA/RR)
+        'socio__nome_completo', # Contains no nome do sócio
+        'socio__nome_curto',    # Contains no nome curto do sócio
+        'mes',                  # Contains no mês
+        'ano',                  # Contains no ano
+        'estado',               # Contains no estado (PAGO/PENDENTE)
+        'descricao',            # Contains na descrição (campo antigo)
+        '@nota',                # Full-text search nas notas
+    ]
     ordering = ['-data_emissao', '-created_at']
     date_hierarchy = 'data_emissao'
     inlines = [BoletimLinhaInline]
@@ -431,7 +461,20 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
     """Admin para Orcamento com Unfold customization"""
     list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao', 'valor_total', 'status', 'created_at']
     list_filter = ['status', 'socio', 'data_criacao', 'created_at']
-    search_fields = ['codigo', 'titulo_cliente', 'cliente__nome', 'projeto__numero', 'descricao_proposta']
+    search_fields = [
+        '^codigo',              # Prioridade: match exato no início (ex: "ORC2024001")
+        'titulo_cliente',       # Contains no título para o cliente
+        'cliente__nome',        # Contains no nome do cliente
+        'cliente__nome_formal', # Contains no nome formal do cliente
+        '^projeto__numero',     # Prioridade: número exato do projeto
+        'projeto__descricao',   # Contains na descrição do projeto
+        'socio__nome_completo', # Contains no nome do sócio
+        'status',               # Contains no status
+        'local_evento',         # Contains no local do evento
+        '@descricao_proposta',  # Full-text search na descrição da proposta
+        '@notas_contratuais',   # Full-text search nas notas contratuais
+        '@descricao_cliente',   # Full-text search na descrição para cliente
+    ]
     ordering = ['-data_criacao', '-created_at']
     autocomplete_fields = ['cliente', 'projeto']
     date_hierarchy = 'data_criacao'
