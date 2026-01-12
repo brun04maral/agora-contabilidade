@@ -103,7 +103,7 @@ class Cliente(UserTrackingMixin, models.Model):
         db_table = 'clientes'
 
     def __str__(self):
-        return f"{self.numero} - {self.nome}"
+        return self.nome
 
     def __repr__(self):
         return f"<Cliente(id={self.id}, numero='{self.numero}', nome='{self.nome}')>"
@@ -166,7 +166,7 @@ class Fornecedor(UserTrackingMixin, models.Model):
         db_table = 'fornecedores'
 
     def __str__(self):
-        return f"{self.numero} - {self.nome}"
+        return self.nome
 
     def __repr__(self):
         return f"<Fornecedor(id={self.id}, numero='{self.numero}', nome='{self.nome}')>"
