@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed - UI Improvements
 
+- **Logo coloring fixed in Saldos and Fiscal dashboards**
+  - Logo now displays in golden color (#d4af37) consistently across all pages
+  - Added CSS filter directly to custom dashboard templates (Saldos Pessoais, Estado Fiscal)
+  - Issue: Custom dashboards extended `admin/base_site.html` instead of `skeleton.html`
+  - Solution: Duplicated logo CSS filter in both templates' extrahead block
+  - Files: `agora_web/core/templates/admin/core/saldo/changelist.html`, `agora_web/core/templates/admin/core/fiscal/changelist.html`
+  - Commit: 2bb2180
+
 - **Smart search with field prefixes in all list views**
   - Implemented Django search field prefixes for intelligent search prioritization
   - `^field` - Starts with (exact match at beginning, highest priority)
