@@ -147,12 +147,12 @@ UNFOLD = {
         },
     ],
     "SITE_LOGO": {
-        "light": lambda request: "/media/logos/logo-pwa.svg",
-        "dark": lambda request: "/media/logos/logo-pwa.svg",
+        "light": lambda request: "/media/a (yellow).svg",
+        "dark": lambda request: "/media/a (yellow).svg",
     },
     "SITE_ICON": {
-        "light": lambda request: "/media/logos/logo-pwa.svg",
-        "dark": lambda request: "/media/logos/logo-pwa.svg",
+        "light": lambda request: "/media/a (yellow).svg",
+        "dark": lambda request: "/media/a (yellow).svg",
     },
     "COLORS": {
         "primary": {
