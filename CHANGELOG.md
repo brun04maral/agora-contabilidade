@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [2.2.0] - 2026-01-12
 
+### Changed - UI Improvements
+- **Date hierarchy filter added to Projetos list**
+  - Added `date_hierarchy = 'data_faturacao'` in ProjetoAdmin
+  - Enables year/month/day navigation in list header (same as Despesas, Boletins, Orçamentos)
+  - File: `agora_web/core/admin.py:151`
+  - Commit: 62f065c
+
 ### Added - Progressive Web App (PWA)
 - **PWA Manifest** (`/media/manifest.json`)
   - App name, icons, colors, and shortcuts configured

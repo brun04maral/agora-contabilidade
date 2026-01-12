@@ -148,6 +148,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     search_fields = ['numero', 'descricao', 'cliente__nome']
     ordering = ['-created_at']
     autocomplete_fields = ['cliente']
+    date_hierarchy = 'data_faturacao'  # Filtro de navegação por ano/mês/dia no cabeçalho
 
     fieldsets = (
         ('Identificação', {
