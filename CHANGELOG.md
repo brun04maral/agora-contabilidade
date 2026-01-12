@@ -2,7 +2,94 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.2.0] - 2026-01-05
+## [2.2.0] - 2026-01-12
+
+### Added - Progressive Web App (PWA)
+- **PWA Manifest** (`/media/manifest.json`)
+  - App name, icons, colors, and shortcuts configured
+  - Theme color: #d4af37 (golden Agora)
+  - Shortcuts to Projetos, Despesas, Saldos
+  - Installable on desktop and mobile devices
+
+- **Service Worker** (`/media/sw.js`)
+  - Basic offline support with resource caching
+  - Version: v1.0.0
+  - Scoped to /media/ only for security
+
+- **PWA Meta Tags** (in `core/templates/unfold/layouts/skeleton.html`)
+  - theme-color, apple-mobile-web-app-capable, mobile-web-app-capable
+  - Open Graph tags for social media
+  - Custom install prompt in Portuguese
+
+### Added - Branding System
+- **Logo transparente** configured
+  - Using `a (yellow).svg` (transparent SVG)
+  - Configured in Unfold SITE_LOGO and SITE_ICON
+  - Appears in sidebar, favicon, and PWA icons
+
+- **Primary color theme**: #d4af37 (golden Agora)
+  - Complete color scale (50-950) in Unfold config
+  - Applied to buttons, links, focus states, theme-color
+
+- **Custom Templates**
+  - `skeleton.html` - PWA meta tags and Service Worker registration
+  - `base_simple.html` - Footer placeholder
+
+### Added - Audit Trail System
+- **django-simple-history integration**
+  - Complete change history for all models
+  - Inline "Ver Histórico" button in change forms
+  - Auto-populate created_by/updated_by fields
+  - Custom history visualization templates
+
+### Documentation
+- **docs/PWA_BRANDING.md** - Complete technical guide
+- **BRANDING-PWA-IMPLEMENTATION.md** - Executive summary
+- **media/BRANDING-PWA-README.md** - Detailed guide
+- **media/logos/PWA-ICONS-README.md** - Icon generation instructions
+- **README.md** - Updated with v2.2 release notes
+- **docs/README.md** - Updated index with PWA links
+
+### Changed
+- **Template loading priority** - core/templates loads first for Unfold overrides
+- **Unfold configuration** - Updated with new logo and color scheme
+- **README structure** - Added PWA features and audit trail
+
+### Fixed
+- Template override structure (using skeleton.html instead of base.html)
+- Logo transparency issue (SVG instead of PNG with white background)
+- Template discovery by Django (DIRS priority corrected)
+
+### Technical Details
+**Commits:** 10 commits including docs
+- feat: implementar branding completo e PWA (4b988d0)
+- fix: corrigir template PWA para usar skeleton.html (6f3e053)
+- fix: priorizar templates do core para override (9b7d92d)
+- feat: usar logo novo na sidebar e ícones (f845298)
+- fix: usar logo 'a' amarelo transparente (ddc2e1e)
+- docs: documentação completa PWA (9ea2f92, f9e0510)
+
+**Files Changed:** 14+ files, 700+ lines added
+
+**Known Issues:**
+- PWA icon PNGs not generated yet (192x192, 512x512, apple-touch-icon needed)
+- New amp logo has white background (using temporary transparent 'a' logo)
+- Login page customization removed (caused template conflicts)
+
+### Testing
+- [x] Manifest.json accessible and valid
+- [x] Service Worker registered and active
+- [x] PWA meta tags present in HTML
+- [x] Logo appears in sidebar
+- [x] Theme color #d4af37 applied
+- [x] Install prompt works (Desktop Chrome)
+- [ ] PNG icons generated (pending)
+- [ ] Tested on Android/iOS (pending)
+- [ ] Lighthouse PWA audit (pending)
+
+---
+
+## [2.1.5] - 2026-01-05
 
 ### Fixed - Validação Saldos Excel vs DB
 - **Prémios 100% corretos** após correção de cálculo
@@ -155,5 +242,5 @@ After importing Excel with updated data:
 
 ---
 
-**Versão Atual:** 2.1.0
-**Data:** 2026-01-03
+**Versão Atual:** 2.2.0
+**Data:** 2026-01-12
