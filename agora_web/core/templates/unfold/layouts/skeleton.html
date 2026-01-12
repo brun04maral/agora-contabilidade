@@ -14,14 +14,14 @@
 <link rel="manifest" href="/media/manifest.json">
 
 <!-- Favicons -->
-<link rel="icon" type="image/svg+xml" href="/media/logos/favicon.svg">
+<link rel="icon" type="image/svg+xml" href="/media/logos/amp_logo.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="/media/logos/apple-touch-icon.png">
 
 <!-- Open Graph / Social Media -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Agora Contabilidade">
 <meta property="og:description" content="Sistema de contabilidade - Agora Media Production">
-<meta property="og:image" content="/media/logos/logo-pwa.svg">
+<meta property="og:image" content="/media/logos/amp_logo_sidebar.svg">
 
 <!-- Service Worker Registration -->
 <script>
@@ -37,6 +37,26 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- Logo Recoloring to Agora Golden -->
+<style>
+/* Recolor monochrome logo to Agora golden #d4af37 */
+.dark\:invert.dark\:brightness-0 img[src*="amp_logo_sidebar"],
+.dark\:brightness-0 img[src*="amp_logo_sidebar"],
+img[src*="amp_logo_sidebar"] {
+  filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+}
+
+/* For dark mode - use lighter golden */
+.dark img[src*="amp_logo_sidebar"] {
+  filter: brightness(0) saturate(100%) invert(79%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(105%) contrast(87%) !important;
+}
+
+/* Icon in sidebar */
+img[src*="amp_logo.svg"] {
+  filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+}
+</style>
 
 <!-- PWA Install Prompt -->
 <style>
