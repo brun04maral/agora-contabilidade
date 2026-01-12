@@ -9,27 +9,27 @@ All notable changes to this project will be documented in this file.
 - **Smart search with field prefixes in all list views**
   - Implemented Django search field prefixes for intelligent search prioritization
   - `^field` - Starts with (exact match at beginning, highest priority)
-  - `@field` - Full-text search (PostgreSQL tsvector)
   - `field` - Contains (default)
 
   **Projetos** (8 searchable fields):
   - Priority: `^numero` (exact code match)
-  - Includes: descricao, cliente (nome + nome_formal), tipo, socio, estado, @nota
+  - Includes: descricao, cliente (nome + nome_formal), tipo, socio, estado, nota
 
   **Despesas** (10 searchable fields):
   - Priority: `^numero`, `^projeto__numero`
-  - Includes: descricao, credor, tags (codigo + nome), tipo_original, estado, @nota
+  - Includes: descricao, credor, tags (codigo + nome), tipo_original, estado, nota
 
   **Boletins** (9 searchable fields):
   - Priority: `^numero`
-  - Includes: socio (codigo + nome_completo + nome_curto), mes, ano, estado, descricao, @nota
+  - Includes: socio (codigo + nome_completo + nome_curto), mes, ano, estado, descricao, nota
 
   **Orçamentos** (12 searchable fields):
   - Priority: `^codigo`, `^projeto__numero`
-  - Includes: titulo_cliente, cliente, projeto, socio, status, local_evento
-  - Full-text: @descricao_proposta, @notas_contratuais, @descricao_cliente
+  - Includes: titulo_cliente, cliente, projeto, socio, status, local_evento, descricao_proposta, notas_contratuais, descricao_cliente
 
   Files: `agora_web/core/admin.py` (lines 148-157, 238-249, 319-329, 464-477)
+
+  **Note:** Full-text search prefix `@` was removed due to Django compatibility issues
 
 - **Date hierarchy filter added to Projetos list**
   - Added `date_hierarchy = 'data_faturacao'` in ProjetoAdmin

@@ -153,7 +153,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
         'tipo',                 # Contains no tipo (PESSOAL/EMPRESA)
         'socio__nome_completo', # Contains no nome do sócio
         'estado',               # Contains no estado
-        '@nota',                # Full-text search nas notas
+        'nota',                 # Contains nas notas
     ]
     ordering = ['-created_at']
     autocomplete_fields = ['cliente']
@@ -245,7 +245,7 @@ class DespesaAdmin(UnfoldHistoryAdmin):
         'tags__codigo',         # Contains nos códigos das tags
         'tags__nome',           # Contains nos nomes das tags
         'estado',               # Contains no estado (PAGO/PENDENTE)
-        '@nota',                # Full-text search nas notas
+        'nota',                 # Contains nas notas
     ]
     ordering = ['-data', '-created_at']
     autocomplete_fields = ['credor', 'projeto', 'despesa_template']
@@ -325,7 +325,7 @@ class BoletimAdmin(UnfoldHistoryAdmin):
         'ano',                  # Contains no ano
         'estado',               # Contains no estado (PAGO/PENDENTE)
         'descricao',            # Contains na descrição (campo antigo)
-        '@nota',                # Full-text search nas notas
+        'nota',                 # Contains nas notas
     ]
     ordering = ['-data_emissao', '-created_at']
     date_hierarchy = 'data_emissao'
@@ -471,9 +471,9 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
         'socio__nome_completo', # Contains no nome do sócio
         'status',               # Contains no status
         'local_evento',         # Contains no local do evento
-        '@descricao_proposta',  # Full-text search na descrição da proposta
-        '@notas_contratuais',   # Full-text search nas notas contratuais
-        '@descricao_cliente',   # Full-text search na descrição para cliente
+        'descricao_proposta',   # Contains na descrição da proposta
+        'notas_contratuais',    # Contains nas notas contratuais
+        'descricao_cliente',    # Contains na descrição para cliente
     ]
     ordering = ['-data_criacao', '-created_at']
     autocomplete_fields = ['cliente', 'projeto']
