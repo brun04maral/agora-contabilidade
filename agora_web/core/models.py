@@ -71,6 +71,26 @@ class Socio(UserTrackingMixin, models.Model):
     def __repr__(self):
         return f"<Socio(codigo='{self.codigo}', nome='{self.nome_curto}')>"
 
+    def get_num_projetos_pessoais(self):
+        """Retorna o número de projetos pessoais do sócio"""
+        return self.projetos.filter(tipo='PESSOAL').count()
+
+    def get_num_despesas_pessoais(self):
+        """Retorna o número de despesas pessoais do sócio (tag PESSOAL)"""
+        from core.models import Despesa
+        # Despesas com tag PESSOAL que pertencem a este sócio
+        # Identificamos pelo credor sendo um fornecedor relacionado ao sócio
+        # ou pela descrição contendo o nome do sócio
+        return Despesa.objects.filter(tags__codigo='PESSOAL').filter(
+            models.Q(credor__nome__icontains=self.nome_curto) |
+            models.Q(credor__nome__icontains=self.nome_completo) |
+            models.Q(descricao__icontains=self.nome_curto)
+        ).distinct().count()
+
+    def get_num_clientes_angariados(self):
+        """Retorna o número de clientes angariados pelo sócio"""
+        return self.clientes_angariados.count()
+
 
 class Cliente(UserTrackingMixin, models.Model):
     """
@@ -88,7 +108,27 @@ class Cliente(UserTrackingMixin, models.Model):
     pais = models.CharField(_('País'), max_length=100, default='Portugal', blank=True, null=True)
     contacto = models.CharField(_('Contacto'), max_length=50, blank=True, null=True)
     email = models.EmailField(_('Email'), max_length=255, blank=True, null=True)
-    angariacao = models.CharField(_('Angariação'), max_length=255, blank=True, null=True)  # Como foi angariado
+
+    # Angariador: Sócio que angariou o cliente
+    angariador = models.ForeignKey(
+        Socio,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='clientes_angariados',
+        verbose_name=_('Angariador'),
+        help_text=_('Sócio responsável pela angariação deste cliente')
+    )
+
+    # DEPRECATED: Campo antigo mantido temporariamente
+    angariacao = models.CharField(
+        _('Angariação (antigo)'),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_('Campo deprecated - usar campo "angariador"')
+    )
+
     nota = models.TextField(_('Nota'), blank=True, null=True)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True)

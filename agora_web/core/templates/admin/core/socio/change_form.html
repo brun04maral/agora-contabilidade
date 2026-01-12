@@ -1,0 +1,28 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block object-tools %}
+<div style="display: flex; gap: 0.5rem; align-items: center;">
+    {% if original %}
+    <!-- Botão Dashboard -->
+    <a href="{% url 'admin:core_socio_dashboard' original.codigo %}" style="
+        background-color: rgb(126, 34, 206);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    " onmouseover="this.style.backgroundColor='rgb(107, 33, 168)'" onmouseout="this.style.backgroundColor='rgb(126, 34, 206)'">
+        📊 Ver Dashboard
+    </a>
+    {% endif %}
+
+    <!-- Botões padrão do Django Admin -->
+    {{ block.super }}
+</div>
+{% endblock %}

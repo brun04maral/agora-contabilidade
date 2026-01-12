@@ -80,18 +80,60 @@ class SocioAdmin(UnfoldHistoryAdmin):
         }),
     )
 
+    def get_urls(self):
+        """Adiciona URL customizada para dashboard do sócio"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('<path:object_id>/dashboard/', self.admin_site.admin_view(self.dashboard_view), name='core_socio_dashboard'),
+        ]
+        return custom_urls + urls
+
+    def dashboard_view(self, request, object_id):
+        """View para dashboard de estatísticas do sócio"""
+        from django.shortcuts import render, get_object_or_404
+        from core.models import Socio, Projeto, Despesa
+
+        socio = get_object_or_404(Socio, pk=object_id)
+
+        # Estatísticas
+        num_projetos_pessoais = socio.get_num_projetos_pessoais()
+        num_despesas_pessoais = socio.get_num_despesas_pessoais()
+        num_clientes_angariados = socio.get_num_clientes_angariados()
+
+        # Listas detalhadas
+        projetos_pessoais = socio.projetos.filter(tipo='PESSOAL').order_by('-data_faturacao')[:10]
+        clientes_angariados = socio.clientes_angariados.order_by('-created_at')[:10]
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': f'Dashboard - {socio.nome_completo}',
+            'socio': socio,
+            'num_projetos_pessoais': num_projetos_pessoais,
+            'num_despesas_pessoais': num_despesas_pessoais,
+            'num_clientes_angariados': num_clientes_angariados,
+            'projetos_pessoais': projetos_pessoais,
+            'clientes_angariados': clientes_angariados,
+            'opts': self.model._meta,
+        }
+
+        return render(request, 'admin/core/socio/dashboard.html', context)
+
 
 @admin.register(Cliente)
 class ClienteAdmin(UnfoldHistoryAdmin):
     """Admin para Cliente com Unfold customization + History"""
-    list_display = ['numero', 'nome', 'nome_formal', 'nif', 'pais', 'email', 'created_at']
-    list_filter = ['pais', 'created_at']
-    search_fields = ['numero', 'nome', 'nome_formal', 'nif', 'email']
+    list_display = ['numero', 'nome', 'nome_formal', 'angariador', 'nif', 'pais', 'email', 'created_at']
+    list_filter = ['angariador', 'pais', 'created_at']
+    search_fields = ['numero', 'nome', 'nome_formal', 'nif', 'email', 'angariador__nome_completo']
     ordering = ['-created_at']
 
     fieldsets = (
         ('Identificação', {
             'fields': ('numero', 'nome', 'nome_formal')
+        }),
+        ('Angariação', {
+            'fields': ('angariador',)
         }),
         ('Dados Fiscais', {
             'fields': ('nif', 'pais')
@@ -100,7 +142,12 @@ class ClienteAdmin(UnfoldHistoryAdmin):
             'fields': ('morada', 'contacto', 'email')
         }),
         ('Informações Adicionais', {
-            'fields': ('angariacao', 'nota')
+            'fields': ('nota',)
+        }),
+        ('Deprecated', {
+            'fields': ('angariacao',),
+            'classes': ['collapse'],
+            'description': 'Campo antigo mantido por compatibilidade - usar campo "angariador"'
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
