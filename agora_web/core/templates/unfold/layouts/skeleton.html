@@ -38,34 +38,36 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<!-- Logo Adaptive Coloring - Match Sidebar Text Color -->
+<!-- Logo Coloring - Match Active Menu Item Color -->
 <style>
-/* Logo color matching Unfold's sidebar text color */
+/* Logo uses primary color (same as active menu items in sidebar) */
+/* Primary color: #d4af37 (212, 175, 55) */
 
-/* Light mode: darker gray/black (matching sidebar text) */
+/* Light mode: primary color (golden) - matching active sidebar item */
 :root img[src*="amp_logo_sidebar"],
 :root img[src*="amp_logo.svg"],
 html:not(.dark) img[src*="amp_logo_sidebar"],
 html:not(.dark) img[src*="amp_logo.svg"] {
-  /* Light mode: keep dark but slightly softened */
-  filter: brightness(0.3) !important;
-  opacity: 0.85;
+  /* Convert black to golden #d4af37 */
+  filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+  opacity: 0.9;
 }
 
-/* Dark mode: light gray/white (matching dark sidebar text) */
+/* Dark mode: same primary color works on dark background */
 .dark img[src*="amp_logo_sidebar"],
 .dark img[src*="amp_logo.svg"],
 html.dark img[src*="amp_logo_sidebar"],
 html.dark img[src*="amp_logo.svg"] {
-  /* Dark mode: invert to white/light and adjust brightness */
-  filter: brightness(0) invert(1) opacity(0.85) !important;
+  /* Same golden color for dark mode */
+  filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+  opacity: 0.9;
 }
 
-/* Hover effect for both modes */
+/* Hover effect - full opacity */
 img[src*="amp_logo_sidebar"]:hover,
 img[src*="amp_logo.svg"]:hover {
   opacity: 1 !important;
-  transition: opacity 0.2s ease, filter 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 </style>
 
