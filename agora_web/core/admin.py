@@ -106,10 +106,6 @@ class SocioAdmin(UnfoldHistoryAdmin):
         num_despesas_pessoais = socio.get_num_despesas_pessoais()
         num_clientes_angariados = socio.get_num_clientes_angariados()
 
-        # Listas detalhadas
-        projetos_pessoais = socio.projetos.filter(tipo='PESSOAL').order_by('-data_faturacao')[:10]
-        clientes_angariados = socio.clientes_angariados.order_by('-created_at')[:10]
-
         context = {
             **self.admin_site.each_context(request),
             'title': socio.nome_completo,
@@ -117,8 +113,6 @@ class SocioAdmin(UnfoldHistoryAdmin):
             'num_projetos_pessoais': num_projetos_pessoais,
             'num_despesas_pessoais': num_despesas_pessoais,
             'num_clientes_angariados': num_clientes_angariados,
-            'projetos_pessoais': projetos_pessoais,
-            'clientes_angariados': clientes_angariados,
             'opts': self.model._meta,
         }
 
