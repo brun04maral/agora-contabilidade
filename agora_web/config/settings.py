@@ -147,8 +147,8 @@ UNFOLD = {
         },
     ],
     "SITE_LOGO": {
-        "light": lambda request: "/media/logos/logo_sidebar.png",
-        "dark": lambda request: "/media/logos/logo_sidebar.png",
+        "light": lambda request: "/media/logos/logo-pwa.svg",
+        "dark": lambda request: "/media/logos/logo-pwa.svg",
     },
     "SITE_ICON": {
         "light": lambda request: "/media/logos/logo-pwa.svg",
