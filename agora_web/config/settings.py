@@ -130,6 +130,23 @@ MEDIA_ROOT = '/app/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Helper functions for Unfold configuration
+def get_custom_css(request):
+    """Get custom CSS path"""
+    from django.templatetags.static import static
+    return static("css/admin_custom.css")
+
+def get_custom_js(request):
+    """Get custom JavaScript path"""
+    from django.templatetags.static import static
+    return static("js/admin_custom.js")
+
+def environment_callback(request):
+    """Display environment badge in admin header"""
+    if DEBUG:
+        return ["Development", "orange"]
+    return ["Production", "green"]
+
 # Unfold Configuration
 UNFOLD = {
     "SITE_TITLE": "Agora Contabilidade",
@@ -184,6 +201,9 @@ UNFOLD = {
     "THEME": "light",  # Default theme
     "STYLES": [
         get_custom_css,
+    ],
+    "SCRIPTS": [
+        get_custom_js,
     ],
     "SIDEBAR": {
         "show_search": True,
@@ -267,15 +287,3 @@ UNFOLD = {
         ],
     },
 }
-
-# Environment badge callback for Unfold
-def environment_callback(request):
-    """Display environment badge in admin header"""
-    if DEBUG:
-        return ["Development", "orange"]
-    return ["Production", "green"]
-
-def get_custom_css(request):
-    """Get custom CSS path"""
-    from django.templatetags.static import static
-    return static("css/admin_custom.css")

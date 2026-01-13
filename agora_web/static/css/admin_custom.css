@@ -16,17 +16,13 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Tornar toda a linha clicável - expandir área clicável do link */
+/* Tornar toda a linha clicável */
 .change-list table tbody tr {
     position: relative;
 }
 
-/* Fazer o link da primeira coluna cobrir toda a linha */
-.change-list table tbody tr td:first-child a {
-    position: static;
-}
-
-.change-list table tbody tr td:first-child a::before {
+/* Overlay invisível que cobre toda a linha */
+.change-list table tbody tr::after {
     content: '';
     position: absolute;
     top: 0;
@@ -34,15 +30,21 @@
     right: 0;
     bottom: 0;
     z-index: 1;
+    cursor: pointer;
 }
 
-/* Garantir que checkboxes e outros elementos interativos fiquem acima */
+/* Garantir que checkboxes e outros elementos interativos fiquem acima do overlay */
 .change-list table tbody tr td input[type="checkbox"],
 .change-list table tbody tr td select,
 .change-list table tbody tr td button,
-.change-list table tbody tr td a:not(:first-child) {
+.change-list table tbody tr td a {
     position: relative;
     z-index: 2;
+}
+
+/* Quando não há checkbox na linha, o link deve estar por baixo do overlay */
+.change-list table tbody tr:not(:has(input[type="checkbox"])) td:first-child a {
+    z-index: 0;
 }
 
 /* Melhorar visual do checkbox quando hover na linha */
