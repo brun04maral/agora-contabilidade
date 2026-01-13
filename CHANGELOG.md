@@ -2,6 +2,131 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.1] - 2026-01-13
+
+### Added - Sistema de Histórico e Auditoria Completo
+
+#### 1. Comparação Visual Campo-a-Campo
+- **Visual diff implementado na página de histórico**
+  - Compara automaticamente versões consecutivas de cada objeto
+  - Mostra apenas campos que mudaram em cada edição
+  - Valores antigos (vermelho riscado) → valores novos (verde)
+  - Trunca valores longos (máx 100 caracteres)
+  - Identifica primeira versão vs alterações subsequentes
+  - Método: `UnfoldHistoryAdmin.history_view()` (`admin.py:104-177`)
+
+#### 2. Interface Unfold Completa
+- **Layout admin completo na página de histórico**
+  - Sidebar com navegação completa
+  - Header com logo e user menu
+  - Breadcrumbs clicáveis (Home > App > Model > Object > History)
+  - Contexto admin completo via `self.admin_site.each_context(request)`
+  - Template: `core/templates/simple_history/object_history.html`
+
+#### 3. UI/UX Melhorias
+- **Badges coloridos por tipo de operação:**
+  - 🟢 Verde: Criado
+  - 🔵 Azul: Atualizado
+  - 🔴 Vermelho: Eliminado
+- **Cards estilizados:**
+  - Sombra e bordas arredondadas
+  - Separadores visuais entre versões
+  - CSS inline para consistência
+- **Formatação portuguesa:**
+  - Datas: dd/mm/YYYY HH:MM
+  - Labels: "Criado", "Atualizado", "Eliminado"
+  - User: fullname ou username
+
+### Fixed - Correções Críticas no Sistema de Histórico
+
+#### Issue #1: Tabelas Historical* Não Existiam
+- **Sintoma:** Error 500 ao clicar "Ver Histórico"
+- **Causa:** Comando `populate_history` nunca foi executado
+- **Fix:**
+  ```bash
+  docker compose exec web python manage.py populate_history --auto
+  ```
+- **Resultado:** 9 tabelas criadas (core_historicalsocio, core_historicalcliente, etc.)
+
+#### Issue #2: Signals Não Capturavam User
+- **Sintoma:** Campos `created_by` e `updated_by` sempre NULL
+- **Causa:** `get_current_user()` usando API incorreta para django-simple-history v3.4.0
+- **Fix:** Corrigido para usar `HistoricalRecords.context.request.user` (`signals.py:26-30`)
+- **Resultado:** User agora capturado corretamente em todas as edições
+
+#### Issue #3: Template Sem Layout Unfold
+- **Sintoma:** Página de histórico sem sidebar/header (só footer)
+- **Causa:** Faltava `self.admin_site.each_context(request)` no contexto do template
+- **Fix:** Adicionado contexto completo do admin (`admin.py:161-162`)
+- **Resultado:** Sidebar, header e navegação completa agora aparecem
+
+#### Issue #4: AttributeError ao Processar Histórico
+- **Sintoma:** `property 'prev_record' of 'HistoricalProjeto' object has no setter`
+- **Causa:** Tentativa de atribuir propriedades a objetos HistoricalRecord (read-only)
+- **Fix:** Usar dicionários simples como wrappers (`admin.py:120-158`)
+- **Resultado:** Processamento de versões funciona sem erros
+
+#### Issue #5: Cache Django Bloqueava Template Changes
+- **Sintoma:** Mudanças no template não apareciam após rebuild
+- **Causa:** Django cacheia templates compilados
+- **Fix:**
+  ```bash
+  docker compose exec web python manage.py shell -c "from django.core.cache import cache; cache.clear()"
+  ```
+- **Resultado:** Templates atualizam corretamente após rebuild
+
+### Changed - Limpeza de Código
+
+- **Removidos logs de debug** dos signals (`signals.py:43-67`)
+  - Logging completo para troubleshooting foi removido
+  - Mantido apenas exception handling essencial
+  - Código production-ready
+
+### Documentation
+
+- **docs/audit-trail-implementation.md** atualizado (preservando histórico original)
+  - Status de todos os bugs marcado como RESOLVIDO
+  - Adicionadas instruções de troubleshooting
+  - Exemplos visuais da interface
+
+### Technical Details
+
+**Files Modified:**
+- `agora_web/core/admin.py`:
+  - Método `history_view()` com comparação campo-a-campo (linhas 104-177)
+  - Uso de dicionários wrapper para evitar AttributeError
+  - Contexto admin completo com `each_context()`
+
+- `agora_web/core/signals.py`:
+  - Corrigido `get_current_user()` para API v3.4.0 (linhas 26-30)
+  - Removidos logs de debug (código limpo)
+
+- `agora_web/core/templates/simple_history/object_history.html`:
+  - Template completo com layout Unfold
+  - Breadcrumbs usando `unfold/helpers/breadcrumb_item.html`
+  - Containers Tailwind CSS (`px-4 lg:px-12`, `container mx-auto`)
+  - Loop de diff campo-a-campo (linhas 142-150)
+
+**Testing:**
+- [x] Histórico abre sem erro 500
+- [x] Sidebar e header aparecem corretamente
+- [x] Badges coloridos por tipo de operação
+- [x] Comparação campo-a-campo funcional
+- [x] Valores antigos → novos visíveis
+- [x] User tracking funciona (created_by/updated_by)
+- [x] Breadcrumbs clicáveis
+- [x] Formatação PT (datas, labels)
+
+**Known Limitations:**
+- Histórico só funciona para objetos editados via Django ORM (não SQL direto)
+- Objetos criados antes da implementação têm created_by/updated_by NULL
+- Tabelas Historical* podem crescer muito (considerar archiving periódico)
+
+**Commits:**
+- feat: implementar sistema completo de histórico e auditoria (351aae8)
+
+---
+
 ## [2.3.0] - 2026-01-13
 
 ### Added - Dashboard do Sócio e Sistema de Relatórios
