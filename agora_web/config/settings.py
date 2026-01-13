@@ -118,6 +118,9 @@ USE_TZ = True
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # WhiteNoise configuration for serving static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
@@ -179,6 +182,9 @@ UNFOLD = {
     },
     "ENVIRONMENT": "config.settings.environment_callback",
     "THEME": "light",  # Default theme
+    "STYLES": [
+        get_custom_css,
+    ],
     "SIDEBAR": {
         "show_search": True,
         "show_all_applications": True,
@@ -268,3 +274,8 @@ def environment_callback(request):
     if DEBUG:
         return ["Development", "orange"]
     return ["Production", "green"]
+
+def get_custom_css(request):
+    """Get custom CSS path"""
+    from django.templatetags.static import static
+    return static("css/admin_custom.css")

@@ -1,0 +1,109 @@
+/* Agora Contabilidade - Custom Admin Styles */
+
+/* ====================================================================
+   TABLE ROW HOVER & CLICKABLE IMPROVEMENTS
+   ==================================================================== */
+
+/* Efeito hover nas linhas da tabela */
+.change-list table tbody tr {
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.change-list table tbody tr:hover {
+    background-color: rgba(212, 175, 55, 0.08) !important;
+    transform: translateX(2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Tornar toda a linha clicável - expandir área clicável do link */
+.change-list table tbody tr {
+    position: relative;
+}
+
+/* Fazer o link da primeira coluna cobrir toda a linha */
+.change-list table tbody tr td:first-child a {
+    position: static;
+}
+
+.change-list table tbody tr td:first-child a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+/* Garantir que checkboxes e outros elementos interativos fiquem acima */
+.change-list table tbody tr td input[type="checkbox"],
+.change-list table tbody tr td select,
+.change-list table tbody tr td button,
+.change-list table tbody tr td a:not(:first-child) {
+    position: relative;
+    z-index: 2;
+}
+
+/* Melhorar visual do checkbox quando hover na linha */
+.change-list table tbody tr:hover td input[type="checkbox"] {
+    transform: scale(1.1);
+}
+
+/* Estilo para linhas selecionadas */
+.change-list table tbody tr.selected {
+    background-color: rgba(212, 175, 55, 0.15) !important;
+}
+
+.change-list table tbody tr.selected:hover {
+    background-color: rgba(212, 175, 55, 0.2) !important;
+}
+
+/* ====================================================================
+   UNFOLD SPECIFIC IMPROVEMENTS
+   ==================================================================== */
+
+/* Melhorar hover para o tema Unfold (Tailwind-based) */
+.dark .change-list table tbody tr:hover {
+    background-color: rgba(212, 175, 55, 0.12) !important;
+}
+
+/* Smooth transition para todos os elementos interativos */
+.change-list table tbody tr td a,
+.change-list table tbody tr td button {
+    transition: all 0.15s ease-in-out;
+}
+
+/* Destacar texto na linha hover */
+.change-list table tbody tr:hover td {
+    color: inherit;
+}
+
+/* ====================================================================
+   RESPONSIVE IMPROVEMENTS
+   ==================================================================== */
+
+/* Em telas menores, manter o comportamento */
+@media (max-width: 768px) {
+    .change-list table tbody tr:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* ====================================================================
+   ACCESSIBILITY
+   ==================================================================== */
+
+/* Garantir que o foco do teclado seja visível */
+.change-list table tbody tr:focus-within {
+    outline: 2px solid rgb(212, 175, 55);
+    outline-offset: -2px;
+}
+
+/* Melhorar indicação visual de elemento focado */
+.change-list table tbody tr td a:focus {
+    outline: 2px solid rgb(212, 175, 55);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
