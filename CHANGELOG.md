@@ -2,6 +2,165 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] - 2026-01-13
+
+### Added - Dashboard do Sócio e Sistema de Relatórios
+
+#### 1. Dashboard do Sócio
+- **Nova página de dashboard para sócios** com estatísticas personalizadas
+  - Rota: `/admin/core/socio/<codigo>/dashboard/`
+  - Template: `agora_web/core/templates/admin/core/socio/dashboard.html`
+  - Mostra: Projetos Pessoais, Despesas Pessoais, Clientes Angariados
+  - Cards clicáveis que levam às listas filtradas
+  - Logo amarelo consistente com resto da aplicação
+
+- **Novo campo `angariador` no modelo Cliente** (`models.py:148`)
+  - ForeignKey para Socio (identificar quem angariou cada cliente)
+  - Migração manual via SQL (devido a problemas com migrations anteriores)
+  - Ficheiro: `agora_web/core/migrations/0010_add_angariador_to_cliente.py`
+  - Tabelas atualizadas: `clientes` + `core_historicalcliente` (django-simple-history)
+
+- **Método `get_num_clientes_angariados()` no modelo Socio** (`models.py:86-89`)
+  - Conta clientes angariados por cada sócio
+
+#### 2. Sistema de Relatórios (PDF e Excel)
+- **Relatórios implementados para 5 tipos de listas:**
+  - ✅ Projetos (já existia, mantido)
+  - ✅ Despesas (NOVO)
+  - ✅ Clientes (NOVO)
+  - ✅ Fornecedores (NOVO)
+  - ✅ Boletins (NOVO)
+  - ✅ Orçamentos (NOVO)
+
+- **Classes de relatório em `agora_web/core/utils/relatorios.py`:**
+  - `RelatorioDespesas` (linhas 462-618)
+  - `RelatorioClientes` (linhas 620-728)
+  - `RelatorioFornecedores` (linhas 730-839)
+  - `RelatorioBoletins` (linhas 841-963)
+  - `RelatorioOrcamentos` (linhas 965-1089)
+
+- **Ações de exportação adicionadas aos admins:**
+  - DespesaAdmin: `exportar_pdf`, `exportar_excel`
+  - ClienteAdmin: `exportar_pdf`, `exportar_excel`
+  - FornecedorAdmin: `exportar_pdf`, `exportar_excel`
+  - BoletimAdmin: `exportar_pdf`, `exportar_excel`
+  - OrcamentoAdmin: `exportar_pdf`, `exportar_excel`
+
+### Fixed - Filtros no Django Admin
+
+#### 1. Filtros Customizados para evitar erro 400
+- **Problema:** Filtros com ForeignKey usando CharField como PK causavam erro 400
+  - Exemplos: Socio (PK='BA'/'RR'), Angariador
+  - Causa: Django/Unfold tentava fazer AJAX lookup que falhava
+
+- **Solução:** Criados filtros `SimpleListFilter` customizados
+  - `SocioListFilter` (`admin.py:19-31`)
+  - `AngariadorListFilter` (`admin.py:34-46`)
+  - `TagListFilter` (`admin.py:49-62`) - Para ManyToManyField de tags
+
+- **Admins atualizados:**
+  - ProjetoAdmin: Usa `SocioListFilter`
+  - ClienteAdmin: Usa `AngariadorListFilter`
+  - DespesaAdmin: Usa `TagListFilter`
+  - BoletimAdmin: Usa `SocioListFilter`
+  - OrcamentoAdmin: Usa `SocioListFilter`
+
+#### 2. Correção de método no modelo Socio
+- **Bug:** `get_num_despesas_pessoais()` filtrava por tag `PESSOAL` genérica
+  - Problema: Tags reais são `PESSOAL_BA` e `PESSOAL_RR`
+  - Resultado: Mostrava sempre 0 despesas
+
+- **Fix:** Método agora filtra por `PESSOAL_{self.codigo}` (`models.py:78-83`)
+  - Bruno Amaral → `PESSOAL_BA`
+  - Rafael Reigota → `PESSOAL_RR`
+
+### Changed - Melhorias no Sistema de Relatórios
+
+#### 1. Exclusão de parâmetros internos do Django
+- **Problema:** Parâmetros internos apareciam nos nomes dos ficheiros
+- **Solução:** Lista de exclusão expandida em todos os métodos `exportar_*`:
+  ```python
+  exclude_params = ['action', '_selected_action', 'csrfmiddlewaretoken',
+                    'select_across', 'index']
+  ```
+- Aplicado em: ClienteAdmin, FornecedorAdmin, ProjetoAdmin, DespesaAdmin,
+  BoletimAdmin, OrcamentoAdmin
+
+#### 2. Correção de nomes de campos em Orçamentos
+- **Problema:** Campos do modelo Orcamento estavam incorretos no relatório
+- **Fix:** Mapeamento correto dos campos:
+  - `numero` → `codigo`
+  - `descricao` → `titulo_cliente`
+  - `valor` → `valor_total`
+  - `estado` → `status`
+  - `data_emissao` → `data_criacao`
+
+### Known Issues - Nomes de Ficheiros com Filtros
+
+⚠️ **PENDENTE:** Nomes de ficheiros não incluem filtros aplicados
+- **Comportamento esperado:** `despesas_tags_PESSOAL_BA_20260113.pdf`
+- **Comportamento atual:** `despesas_20260113.pdf`
+- **Causa:** Investigação em curso
+- **Código implementado:**
+  - Método `_gerar_nome_arquivo()` em todas as classes de relatório
+  - Captura de filtros via `request.GET` nas ações de admin
+  - Sanitização de valores (substituição de `/` e espaços por `_`)
+
+**Próximos passos:**
+1. Adicionar logging para debug (verificar o que está a ser capturado)
+2. Validar que os filtros estão a ser passados corretamente
+3. Testar com diferentes tipos de filtros
+
+### Technical Details
+
+**Files Created:**
+- `agora_web/core/templates/admin/core/socio/dashboard.html` - Dashboard do sócio
+- `agora_web/core/migrations/0010_add_angariador_to_cliente.py` - Migração do campo angariador
+
+**Files Modified:**
+- `agora_web/core/models.py`:
+  - Added `angariador` field to Cliente (line 148)
+  - Fixed `get_num_despesas_pessoais()` method (lines 78-83)
+  - Added `get_num_clientes_angariados()` method (lines 86-89)
+
+- `agora_web/core/admin.py`:
+  - Added custom filters: SocioListFilter, AngariadorListFilter, TagListFilter (lines 19-62)
+  - Updated list_filter in ProjetoAdmin, ClienteAdmin, DespesaAdmin, BoletimAdmin, OrcamentoAdmin
+  - Added export actions to 5 admins (PDF + Excel)
+  - Fixed parameter exclusion in all export methods
+
+- `agora_web/core/utils/relatorios.py`:
+  - Added 5 new report classes (RelatorioDespesas, RelatorioClientes, RelatorioFornecedores, RelatorioBoletins, RelatorioOrcamentos)
+  - Implemented `_gerar_nome_arquivo()` methods with filter support
+  - Fixed Orcamento field mapping
+
+**Database Changes:**
+- SQL executado diretamente:
+  ```sql
+  ALTER TABLE clientes ADD COLUMN angariador_id VARCHAR(2)
+    REFERENCES socios(codigo) ON DELETE SET NULL;
+  CREATE INDEX clientes_angariador_id_idx ON clientes(angariador_id);
+  ALTER TABLE core_historicalcliente ADD COLUMN angariador_id VARCHAR(2);
+  ```
+
+**Testing:**
+- [x] Dashboard do sócio funcional
+- [x] Cards clicáveis levam às listas filtradas
+- [x] Filtros customizados resolvem erro 400
+- [x] Relatórios PDF/Excel geram corretamente
+- [x] Despesas pessoais contam corretamente no dashboard
+- [x] Campo angariador visível no admin de clientes
+- [ ] Nomes de ficheiros com filtros (PENDENTE)
+
+**Commits:**
+- fix: remover listas de projetos e clientes do dashboard do sócio (0c41585)
+- fix: inverter fluxo de visualização do sócio (8e87113)
+- feat: adicionar angariador e dashboard de estatísticas do sócio (0e7c54e)
+- fix: ajustar sistema de relatórios (26b4401)
+- feat: implementar sistema completo de relatórios para projetos (464d216)
+
+---
+
 ## [2.2.0] - 2026-01-12
 
 ### Changed - UI Improvements

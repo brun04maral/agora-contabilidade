@@ -76,16 +76,11 @@ class Socio(UserTrackingMixin, models.Model):
         return self.projetos.filter(tipo='PESSOAL').count()
 
     def get_num_despesas_pessoais(self):
-        """Retorna o número de despesas pessoais do sócio (tag PESSOAL)"""
+        """Retorna o número de despesas pessoais do sócio (tag PESSOAL_BA ou PESSOAL_RR)"""
         from core.models import Despesa
-        # Despesas com tag PESSOAL que pertencem a este sócio
-        # Identificamos pelo credor sendo um fornecedor relacionado ao sócio
-        # ou pela descrição contendo o nome do sócio
-        return Despesa.objects.filter(tags__codigo='PESSOAL').filter(
-            models.Q(credor__nome__icontains=self.nome_curto) |
-            models.Q(credor__nome__icontains=self.nome_completo) |
-            models.Q(descricao__icontains=self.nome_curto)
-        ).distinct().count()
+        # Despesas com tag PESSOAL_{codigo_socio}
+        tag_codigo = f'PESSOAL_{self.codigo}'
+        return Despesa.objects.filter(tags__codigo=tag_codigo).distinct().count()
 
     def get_num_clientes_angariados(self):
         """Retorna o número de clientes angariados pelo sócio"""

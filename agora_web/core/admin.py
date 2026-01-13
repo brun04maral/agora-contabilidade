@@ -3,6 +3,9 @@
 Core admin customizations for Agora Contabilidade with Unfold theme
 """
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import path, reverse
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 from simple_history.admin import SimpleHistoryAdmin
@@ -10,6 +13,53 @@ from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
     Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal, ImportacaoDados
 )
+
+
+# Filtros customizados simples para evitar erro 400
+class SocioListFilter(SimpleListFilter):
+    """Filtro simples para Socio"""
+    title = 'sócio'
+    parameter_name = 'socio'
+
+    def lookups(self, request, model_admin):
+        socios = Socio.objects.all()
+        return [(s.codigo, s.nome_completo) for s in socios]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(socio__codigo=self.value())
+        return queryset
+
+
+class AngariadorListFilter(SimpleListFilter):
+    """Filtro simples para Angariador"""
+    title = 'angariador'
+    parameter_name = 'angariador'
+
+    def lookups(self, request, model_admin):
+        socios = Socio.objects.all()
+        return [(s.codigo, s.nome_completo) for s in socios]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(angariador__codigo=self.value())
+        return queryset
+
+
+class TagListFilter(SimpleListFilter):
+    """Filtro simples para Tags (evita erro 400 com ManyToMany)"""
+    title = 'tags'
+    parameter_name = 'tags'
+
+    def lookups(self, request, model_admin):
+        from core.models import TagDespesa
+        tags = TagDespesa.objects.all().order_by('codigo')
+        return [(tag.codigo, f"{tag.codigo} - {tag.nome}") for tag in tags]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(tags__codigo=self.value()).distinct()
+        return queryset
 
 
 # Custom admin base que combina Unfold + SimpleHistory
@@ -127,9 +177,10 @@ class SocioAdmin(UnfoldHistoryAdmin):
 class ClienteAdmin(UnfoldHistoryAdmin):
     """Admin para Cliente com Unfold customization + History"""
     list_display = ['numero', 'nome', 'nome_formal', 'angariador', 'nif', 'pais', 'email', 'created_at']
-    list_filter = ['angariador', 'pais', 'created_at']
+    list_filter = [AngariadorListFilter, 'pais', 'created_at']
     search_fields = ['numero', 'nome', 'nome_formal', 'nif', 'email', 'angariador__nome_completo']
     ordering = ['-created_at']
+    actions = ['exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -158,6 +209,26 @@ class ClienteAdmin(UnfoldHistoryAdmin):
         }),
     )
 
+    @admin.action(description='Exportar PDF')
+    def exportar_pdf(self, request, queryset):
+        """Exporta clientes selecionados como PDF"""
+        from core.utils.relatorios import gerar_relatorio_clientes_pdf
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_clientes_pdf(queryset, filtros=filtros)
+
+    @admin.action(description='Exportar Excel')
+    def exportar_excel(self, request, queryset):
+        """Exporta clientes selecionados como Excel"""
+        from core.utils.relatorios import gerar_relatorio_clientes_excel
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_clientes_excel(queryset, filtros=filtros)
+
 
 @admin.register(Fornecedor)
 class FornecedorAdmin(UnfoldHistoryAdmin):
@@ -166,6 +237,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
     list_filter = ['estatuto', 'area', 'funcao', 'classificacao', 'pais', 'created_at']
     search_fields = ['numero', 'nome', 'nif', 'email', 'area', 'funcao']
     ordering = ['-created_at']
+    actions = ['exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -189,12 +261,32 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
         }),
     )
 
+    @admin.action(description='Exportar PDF')
+    def exportar_pdf(self, request, queryset):
+        """Exporta fornecedores selecionados como PDF"""
+        from core.utils.relatorios import gerar_relatorio_fornecedores_pdf
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_fornecedores_pdf(queryset, filtros=filtros)
+
+    @admin.action(description='Exportar Excel')
+    def exportar_excel(self, request, queryset):
+        """Exporta fornecedores selecionados como Excel"""
+        from core.utils.relatorios import gerar_relatorio_fornecedores_excel
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_fornecedores_excel(queryset, filtros=filtros)
+
 
 @admin.register(Projeto)
 class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
     list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'created_at']
-    list_filter = ['tipo', 'socio', 'estado', 'data_faturacao', 'created_at']
+    list_filter = ['tipo', SocioListFilter, 'estado', 'data_faturacao', 'created_at']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "P0001")
         'descricao',            # Contains na descrição
@@ -244,13 +336,21 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     def exportar_pdf(self, request, queryset):
         """Exporta projetos selecionados como PDF"""
         from core.utils.relatorios import gerar_relatorio_projetos_pdf
-        return gerar_relatorio_projetos_pdf(queryset, filtros={'tipo_relatorio': 'Selecionados'})
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_projetos_pdf(queryset, filtros=filtros)
 
     @admin.action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta projetos selecionados como Excel"""
         from core.utils.relatorios import gerar_relatorio_projetos_excel
-        return gerar_relatorio_projetos_excel(queryset, filtros={'tipo_relatorio': 'Selecionados'})
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_projetos_excel(queryset, filtros=filtros)
 
     def get_urls(self):
         """Adiciona URL customizada para relatório personalizado"""
@@ -366,7 +466,7 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
 class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
     list_display = ['numero', 'tags_display', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
-    list_filter = ['tags', 'estado', 'data', 'data_pagamento', 'created_at']
+    list_filter = [TagListFilter, 'estado', 'data', 'data_pagamento', 'created_at']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "D0001")
         'descricao',            # Contains na descrição
@@ -383,6 +483,7 @@ class DespesaAdmin(UnfoldHistoryAdmin):
     autocomplete_fields = ['credor', 'projeto', 'despesa_template']
     date_hierarchy = 'data'
     filter_horizontal = ['tags']  # Interface melhor para ManyToMany
+    actions = ['exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -434,6 +535,26 @@ class DespesaAdmin(UnfoldHistoryAdmin):
         """Mostra descrição truncada"""
         return obj.descricao[:30] + '...' if len(obj.descricao) > 30 else obj.descricao
 
+    @admin.action(description='Exportar PDF')
+    def exportar_pdf(self, request, queryset):
+        """Exporta despesas selecionadas como PDF"""
+        from core.utils.relatorios import gerar_relatorio_despesas_pdf
+        filtros = {
+            'tipo_relatorio': 'Selecionadas',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_despesas_pdf(queryset, filtros=filtros)
+
+    @admin.action(description='Exportar Excel')
+    def exportar_excel(self, request, queryset):
+        """Exporta despesas selecionadas como Excel"""
+        from core.utils.relatorios import gerar_relatorio_despesas_excel
+        filtros = {
+            'tipo_relatorio': 'Selecionadas',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_despesas_excel(queryset, filtros=filtros)
+
 
 class BoletimLinhaInline(TabularInline):
     """Inline para linhas de boletim"""
@@ -447,7 +568,7 @@ class BoletimLinhaInline(TabularInline):
 class BoletimAdmin(UnfoldHistoryAdmin):
     """Admin para Boletim com Unfold customization"""
     list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento', 'created_at']
-    list_filter = ['socio', 'estado', 'mes', 'ano', 'data_emissao', 'created_at']
+    list_filter = [SocioListFilter, 'estado', 'mes', 'ano', 'data_emissao', 'created_at']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "RV2024001")
         'socio__codigo',        # Contains no código do sócio (BA/RR)
@@ -462,6 +583,7 @@ class BoletimAdmin(UnfoldHistoryAdmin):
     ordering = ['-data_emissao', '-created_at']
     date_hierarchy = 'data_emissao'
     inlines = [BoletimLinhaInline]
+    actions = ['exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -492,6 +614,26 @@ class BoletimAdmin(UnfoldHistoryAdmin):
             'classes': ['collapse']
         }),
     )
+
+    @admin.action(description='Exportar PDF')
+    def exportar_pdf(self, request, queryset):
+        """Exporta boletins selecionados como PDF"""
+        from core.utils.relatorios import gerar_relatorio_boletins_pdf
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_boletins_pdf(queryset, filtros=filtros)
+
+    @admin.action(description='Exportar Excel')
+    def exportar_excel(self, request, queryset):
+        """Exporta boletins selecionados como Excel"""
+        from core.utils.relatorios import gerar_relatorio_boletins_excel
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_boletins_excel(queryset, filtros=filtros)
 
 
 @admin.register(BoletimLinha)
@@ -592,7 +734,7 @@ class OrcamentoReparticaoInline(TabularInline):
 class OrcamentoAdmin(UnfoldHistoryAdmin):
     """Admin para Orcamento com Unfold customization"""
     list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao', 'valor_total', 'status', 'created_at']
-    list_filter = ['status', 'socio', 'data_criacao', 'created_at']
+    list_filter = ['status', SocioListFilter, 'data_criacao', 'created_at']
     search_fields = [
         '^codigo',              # Prioridade: match exato no início (ex: "ORC2024001")
         'titulo_cliente',       # Contains no título para o cliente
@@ -610,6 +752,7 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
     ordering = ['-data_criacao', '-created_at']
     autocomplete_fields = ['cliente', 'projeto']
     date_hierarchy = 'data_criacao'
+    actions = ['exportar_pdf', 'exportar_excel']
     inlines = [OrcamentoSecaoInline, OrcamentoItemInline, OrcamentoReparticaoInline]
 
     fieldsets = (
@@ -637,6 +780,26 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
             'classes': ['collapse']
         }),
     )
+
+    @admin.action(description='Exportar PDF')
+    def exportar_pdf(self, request, queryset):
+        """Exporta orçamentos selecionados como PDF"""
+        from core.utils.relatorios import gerar_relatorio_orcamentos_pdf
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_orcamentos_pdf(queryset, filtros=filtros)
+
+    @admin.action(description='Exportar Excel')
+    def exportar_excel(self, request, queryset):
+        """Exporta orçamentos selecionados como Excel"""
+        from core.utils.relatorios import gerar_relatorio_orcamentos_excel
+        filtros = {
+            'tipo_relatorio': 'Selecionados',
+            'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
+        }
+        return gerar_relatorio_orcamentos_excel(queryset, filtros=filtros)
 
 
 @admin.register(OrcamentoSecao)

@@ -3,6 +3,27 @@
 
 {% block extrahead %}
 <style>
+    /* Logo coloring - Match primary color */
+    :root img[src*="amp_logo_sidebar"],
+    :root img[src*="amp_logo.svg"],
+    html:not(.dark) img[src*="amp_logo_sidebar"],
+    html:not(.dark) img[src*="amp_logo.svg"] {
+        filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+        opacity: 0.9;
+    }
+    .dark img[src*="amp_logo_sidebar"],
+    .dark img[src*="amp_logo.svg"],
+    html.dark img[src*="amp_logo_sidebar"],
+    html.dark img[src*="amp_logo.svg"] {
+        filter: brightness(0) saturate(100%) invert(69%) sepia(45%) saturate(526%) hue-rotate(11deg) brightness(95%) contrast(87%) !important;
+        opacity: 0.9;
+    }
+    img[src*="amp_logo_sidebar"]:hover,
+    img[src*="amp_logo.svg"]:hover {
+        opacity: 1 !important;
+        transition: opacity 0.2s ease;
+    }
+
     /* Light mode (default) */
     .dashboard-card { background-color: white; border: 1px solid rgb(229, 231, 235); border-radius: 0.5rem; padding: 1.5rem; }
     .dashboard-header { color: rgb(17, 24, 39); }
@@ -118,29 +139,29 @@
 
     <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="dashboard-card stat-card">
+        <a href="{% url 'admin:core_projeto_changelist' %}?tipo=PESSOAL&socio={{ socio.codigo }}" class="dashboard-card stat-card" style="text-decoration: none; display: block; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)';">
             <div class="stat-number blue-text">{{ num_projetos_pessoais }}</div>
             <div class="stat-label dashboard-header">Projetos Pessoais</div>
             <p style="font-size: 0.75rem; margin-top: 0.5rem;" class="dashboard-subtext">
                 Projetos tipo PESSOAL
             </p>
-        </div>
+        </a>
 
-        <div class="dashboard-card stat-card">
+        <a href="{% url 'admin:core_despesa_changelist' %}?tags=PESSOAL_{{ socio.codigo }}" class="dashboard-card stat-card" style="text-decoration: none; display: block; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)';">
             <div class="stat-number green-text">{{ num_despesas_pessoais }}</div>
             <div class="stat-label dashboard-header">Despesas Pessoais</div>
             <p style="font-size: 0.75rem; margin-top: 0.5rem;" class="dashboard-subtext">
                 Despesas com tag PESSOAL
             </p>
-        </div>
+        </a>
 
-        <div class="dashboard-card stat-card">
+        <a href="{% url 'admin:core_cliente_changelist' %}?angariador={{ socio.codigo }}" class="dashboard-card stat-card" style="text-decoration: none; display: block; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)';">
             <div class="stat-number purple-text">{{ num_clientes_angariados }}</div>
             <div class="stat-label dashboard-header">Clientes Angariados</div>
             <p style="font-size: 0.75rem; margin-top: 0.5rem;" class="dashboard-subtext">
                 Total de clientes
             </p>
-        </div>
+        </a>
     </div>
 
 </div>
