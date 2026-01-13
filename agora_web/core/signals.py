@@ -17,11 +17,20 @@ def get_current_user():
     """
     Obtém o user atual do middleware de simple_history
 
-    IMPORTANTE: Isto funciona porque o HistoryRequestMiddleware
-    armazena o user atual no thread local.
+    IMPORTANTE: Na versão 3.4.0, o middleware armazena o request em
+    HistoricalRecords.context.request (não o user diretamente).
     """
-    from simple_history.middleware import HistoryRequestMiddleware
-    return HistoryRequestMiddleware.get_current_user()
+    try:
+        from simple_history.models import HistoricalRecords
+
+        # Obter request do context
+        if hasattr(HistoricalRecords.context, 'request'):
+            request = HistoricalRecords.context.request
+            if hasattr(request, 'user'):
+                return request.user
+        return None
+    except (ImportError, AttributeError, RuntimeError):
+        return None
 
 
 def populate_audit_fields(sender, instance, **kwargs):

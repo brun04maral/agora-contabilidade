@@ -101,6 +101,81 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
             )
         return ''
 
+    def history_view(self, request, object_id, extra_context=None):
+        """
+        Override history_view para adicionar comparação campo-a-campo
+        """
+        # Obter objeto atual
+        model = self.model
+        obj = self.get_object(request, object_id)
+
+        # Obter histórico ordenado (mais recente primeiro)
+        history = list(model.history.filter(id=object_id).order_by('-history_date'))
+
+        # Processar cada item do histórico criando wrappers
+        action_list = []
+
+        for i, record in enumerate(history):
+            # Criar wrapper como dicionário (melhor compatibilidade com Django templates)
+            wrapper = {
+                'history_instance': record,
+                'history_type': record.history_type,
+                'history_date': record.history_date,
+                'history_user': record.history_user,
+                'prev_record': None,
+                'diff_against_prev': []
+            }
+
+            # Se tem registo anterior, calcular diferenças
+            if i < len(history) - 1 and record.history_type == '~':
+                prev_record = history[i + 1]
+                wrapper['prev_record'] = prev_record
+
+                try:
+                    delta = record.diff_against(prev_record)
+                    changes = []
+
+                    for change in delta.changes:
+                        # Obter verbose_name do campo
+                        try:
+                            field = model._meta.get_field(change.field)
+                            field_verbose_name = field.verbose_name
+                        except:
+                            field_verbose_name = change.field
+
+                        changes.append({
+                            'field': change.field,
+                            'field_verbose_name': field_verbose_name,
+                            'old_value': change.old,
+                            'new_value': change.new,
+                        })
+
+                    wrapper['diff_against_prev'] = changes
+                except Exception as e:
+                    # Se falhar o diff, deixa vazio
+                    wrapper['diff_against_prev'] = []
+
+            action_list.append(wrapper)
+
+        # Preparar context com todas as variáveis necessárias do admin
+        context = {
+            **self.admin_site.each_context(request),
+            'title': f'Histórico de modificações: {obj}',
+            'action_list': action_list,
+            'object': obj,
+            'opts': model._meta,
+            'app_label': model._meta.app_label,
+            'has_view_permission': self.has_view_permission(request, obj),
+            'has_change_permission': self.has_change_permission(request, obj),
+        }
+
+        if extra_context:
+            context.update(extra_context)
+
+        # Renderizar template customizado
+        from django.template.response import TemplateResponse
+        return TemplateResponse(request, 'simple_history/object_history.html', context)
+
 
 @admin.register(Socio)
 class SocioAdmin(UnfoldHistoryAdmin):
