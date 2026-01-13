@@ -91,6 +91,7 @@ Ver [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) para detalhes técnicos
 - **Responsive** - Funciona em desktop e mobile
 - **Cores personalizadas** - Dourado (#d4af37) tema Agora
 - **Audit Trail** - Histórico completo de alterações com django-simple-history
+- **UI Interativa** - Hover suave e linhas clicáveis nas listas (v2.3.2)
 
 ---
 

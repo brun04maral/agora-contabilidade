@@ -2,6 +2,56 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.2] - 2026-01-13
+
+### Added - Melhorias de UI nas Listas do Admin
+
+#### 1. Efeito Hover Interativo nas Linhas
+- **Hover visual suave nas tabelas de lista**
+  - Cor dourada (#D4AF37) com opacidade 8% seguindo tema Agora
+  - Transição suave de 0.2s para melhor experiência
+  - Leve movimento para direita (2px) ao fazer hover
+  - Box-shadow sutil para elevação visual
+  - Compatível com tema claro e escuro do Unfold
+  - CSS: `static/css/admin_custom.css`
+
+#### 2. Linhas Totalmente Clicáveis
+- **JavaScript customizado para navegação intuitiva**
+  - Clique em qualquer parte da linha para abrir o item
+  - Suporte para Ctrl/Cmd+Click para abrir em nova aba
+  - Preserva funcionalidade de elementos interativos (checkboxes, botões, links)
+  - Múltiplos seletores para compatibilidade (Django Admin padrão + Unfold)
+  - MutationObserver para conteúdo carregado dinamicamente
+  - Logging detalhado no console para debugging
+  - JavaScript: `static/js/admin_custom.js`
+
+#### 3. Integração com Unfold Theme
+- **Configuração via UNFOLD settings:**
+  - `UNFOLD["STYLES"]` carrega CSS customizado via função helper
+  - `UNFOLD["SCRIPTS"]` carrega JavaScript via função helper
+  - Template customizado: `core/templates/admin/base_site.html`
+  - Funções helper em `config/settings.py`: `get_custom_css()`, `get_custom_js()`
+
+#### 4. Acessibilidade Mantida
+- **Foco de teclado visível:**
+  - Outline dourado em elementos focados
+  - Navegação por teclado preservada
+  - Screen readers compatíveis
+
+### Technical Details
+- **Arquivos criados:**
+  - `agora_web/static/css/admin_custom.css` - 109 linhas
+  - `agora_web/static/js/admin_custom.js` - 107 linhas
+  - `agora_web/core/templates/admin/base_site.html`
+- **Arquivos modificados:**
+  - `agora_web/config/settings.py` - Adicionadas funções helper e config UNFOLD
+- **Commits:**
+  - `9f07810` - feat: adicionar efeito hover e linhas clicáveis nas listas do admin
+  - `aa19f3b` - fix: tornar linhas das listas realmente clicáveis com JavaScript
+  - `07b2a8e` - fix: corrigir funcionalidade de clique nas linhas com JavaScript robusto
+
+---
+
 ## [2.3.1] - 2026-01-13
 
 ### Added - Sistema de Histórico e Auditoria Completo
