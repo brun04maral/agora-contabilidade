@@ -2,6 +2,101 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.4] - 2026-01-14
+
+### Added - Auto-Preenchimento de Códigos Sequenciais
+
+#### 1. Próximo Código na Sequência
+- **Implementado `get_changeform_initial_data()` no `UnfoldHistoryAdmin`**
+  - Calcula automaticamente o próximo código disponível ao criar novos objetos
+  - Usa regex para encontrar o maior número existente e incrementa
+  - Formatos suportados: `#P0081`, `#D000336`, `#C0023`, `#F0047`, `#E000028`, `#TD000001`
+  - Código: `core/admin.py:107-166`
+
+#### 2. Modelos com Auto-Preenchimento
+- **Projeto:** `#P0001` → `#P9999` (4 dígitos)
+- **Despesa:** `#D000001` → `#D999999` (6 dígitos)
+- **Cliente:** `#C0001` → `#C9999` (4 dígitos)
+- **Fornecedor:** `#F0001` → `#F9999` (4 dígitos)
+- **Equipamento:** `#E000001` → `#E999999` (6 dígitos)
+- **DespesaTemplate:** `#TD000001` → `#TD999999` (6 dígitos)
+- **Boletim:** Não implementado (usa formato especial `#B-{SOCIO}-{ANO}-{MÊS}`)
+
+### Added - Campo Data Recibo em Projetos
+
+#### 3. Campo Data Recibo Visível e Editável
+- **Adicionado `data_recibo` aos fieldsets do ProjetoAdmin**
+  - Campo aparece na secção "Datas" no formulário de edição
+  - Campo aparece também na lista de projetos (`list_display`)
+  - Código: `core/admin.py:472` e `core/admin.py:444`
+
+#### 4. Importância do Campo
+- **Campo `data_recibo` é CRÍTICO para cálculo de saldos**
+  - Sistema de Saldos Pessoais (`core/utils/saldos.py`) só conta projetos pessoais que têm `data_recibo`
+  - Representa quando o cliente efetivamente pagou (dinheiro entrou)
+  - Projetos com `estado=PAGO` mas sem `data_recibo` **NÃO aparecem nos saldos**
+  - **NOTA:** Lógica de saldos precisa de revisão futura para melhor clareza
+
+### Changed - Melhorias de UI/UX (continuação v2.3.3)
+
+#### 5. Remoção da Barra de Pesquisa da Sidebar
+- (Já documentado em v2.3.3)
+
+### Technical Details
+- **Arquivos modificados:**
+  - `agora_web/core/admin.py`:
+    - Adicionado `get_changeform_initial_data()` ao `UnfoldHistoryAdmin`
+    - Adicionado `data_recibo` aos fieldsets e list_display de ProjetoAdmin
+- **Testing:**
+  - Testado auto-preenchimento via Django shell - todos os formatos corretos ✅
+  - Campo `data_recibo` confirmado visível no formulário ✅
+
+### Known Issues
+- **Lógica de Saldos Pessoais precisa de revisão:**
+  - Confusão entre `estado=PAGO`, `data_recibo`, `data_faturacao`
+  - Projetos pagos podem não aparecer nos saldos se faltarem campos
+  - Requer análise detalhada e possível refatoração
+
+---
+
+## [2.3.3] - 2026-01-14
+
+### Fixed - Bug Crítico ao Adicionar Novos Objetos
+
+#### 1. Erro 500 na Página de Criação
+- **Problema:** Erro "Unknown field(s) (history_link) specified" ao tentar adicionar novos projetos (ou qualquer modelo com histórico)
+- **Causa raiz:** Campo `history_link` estava hardcoded nos fieldsets mas só funciona quando o objeto já existe (tem `pk`)
+- **Impacto:** Impossível criar novos Projetos, Despesas, Clientes, etc. via admin (erro 500)
+
+#### 2. Solução Implementada
+- **Adicionado `get_fieldsets()` ao `UnfoldHistoryAdmin`**
+  - Remove dinamicamente o campo `history_link` dos fieldsets quando `obj is None` (modo criação)
+  - Mantém o campo quando `obj.pk` existe (modo edição)
+  - Aplica-se automaticamente a todos os modelos que herdam de `UnfoldHistoryAdmin`
+  - Código: `core/admin.py:87-105`
+
+#### 3. Comportamento Correto
+- **Página de criação (Add):** Não mostra link de histórico (porque não há histórico ainda)
+- **Página de edição (Change):** Mostra link "Ver Histórico" no fieldset Metadata
+- **Todos os modelos afetados:** Projeto, Despesa, Cliente, Fornecedor, Boletim, Equipamento, Orcamento, Socio, DespesaTemplate, ImportacaoDados
+
+### Changed - Melhorias de UI/UX
+
+#### 4. Remoção da Barra de Pesquisa da Sidebar
+- **Configuração:** `UNFOLD["SIDEBAR"]["show_search"]` alterado para `False`
+- **Motivo:** Simplificar interface e reduzir clutter visual
+- **Ficheiro:** `config/settings.py:209`
+
+### Technical Details
+- **Arquivos modificados:**
+  - `agora_web/core/admin.py` - Adicionado método `get_fieldsets()` ao `UnfoldHistoryAdmin`
+  - `agora_web/config/settings.py` - Desativada barra de pesquisa na sidebar
+- **Testing:**
+  - Testado via Django shell com `add_view()` - Status 200 ✅
+  - Verificado que todos os modelos herdam a correção automaticamente
+
+---
+
 ## [2.3.2] - 2026-01-13
 
 ### Added - Melhorias de UI nas Listas do Admin

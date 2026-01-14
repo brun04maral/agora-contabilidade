@@ -84,6 +84,87 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
 
         return fields
 
+    def get_fieldsets(self, request, obj=None):
+        """Remove history_link dos fieldsets quando estamos criando um novo objeto"""
+        fieldsets = super().get_fieldsets(request, obj)
+
+        # Se estamos criando (não existe obj), remover history_link dos fieldsets
+        if not obj or not obj.pk:
+            fieldsets = list(fieldsets)  # Make mutable copy
+            for i, (name, options) in enumerate(fieldsets):
+                if 'fields' in options and 'history_link' in options['fields']:
+                    # Create mutable copy of fields tuple
+                    fields = list(options['fields'])
+                    if 'history_link' in fields:
+                        fields.remove('history_link')
+                    # Update the fieldset with new fields
+                    options = dict(options)
+                    options['fields'] = tuple(fields)
+                    fieldsets[i] = (name, options)
+
+        return fieldsets
+
+    def get_changeform_initial_data(self, request):
+        """Pré-preenche o próximo código/número na sequência ao criar novo objeto"""
+        initial = super().get_changeform_initial_data(request)
+
+        # Detectar o nome do campo (pode ser 'numero' ou 'codigo')
+        field_name = None
+        prefix = None
+
+        if hasattr(self.model, 'numero'):
+            field_name = 'numero'
+            # Mapear modelo -> prefixo
+            model_name = self.model.__name__
+            prefix_map = {
+                'Projeto': 'P',
+                'Despesa': 'D',
+                'Cliente': 'C',
+                'Fornecedor': 'F',
+                'DespesaTemplate': 'TD',
+                'Boletim': 'B',
+                'Equipamento': 'E',
+            }
+            prefix = prefix_map.get(model_name)
+        elif hasattr(self.model, 'codigo') and self.model.__name__ == 'Orcamento':
+            field_name = 'codigo'
+            # Orçamento usa padrão diferente, skip por agora
+            prefix = None
+
+        if field_name and prefix:
+            # Buscar o último código com esse prefixo
+            import re
+            from django.db.models import Max
+
+            # Obter todos os códigos que começam com o prefixo
+            all_codes = self.model.objects.filter(
+                **{f'{field_name}__startswith': f'#{prefix}'}
+            ).values_list(field_name, flat=True)
+
+            # Extrair números e encontrar o maior
+            max_num = 0
+            pattern = rf'#?{re.escape(prefix)}(\d+)'
+            for code in all_codes:
+                match = re.match(pattern, code)
+                if match:
+                    num = int(match.group(1))
+                    max_num = max(max_num, num)
+
+            # Próximo número
+            next_num = max_num + 1
+
+            # Formato com padding (ex: P0081, D000001, E000028)
+            if prefix == 'P':
+                next_code = f'#{prefix}{next_num:04d}'
+            elif prefix in ['D', 'TD', 'E']:
+                next_code = f'#{prefix}{next_num:06d}'
+            else:
+                next_code = f'#{prefix}{next_num:04d}'
+
+            initial[field_name] = next_code
+
+        return initial
+
     @display(description='')
     def history_link(self, obj):
         """Link para a página de histórico do objeto"""
@@ -360,7 +441,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
 @admin.register(Projeto)
 class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
-    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'created_at']
+    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'data_recibo', 'created_at']
     list_filter = ['tipo', SocioListFilter, 'estado', 'data_faturacao', 'created_at']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "P0001")
@@ -388,7 +469,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
             'fields': ('valor_sem_iva', 'premio_bruno', 'premio_rafael')
         }),
         ('Datas', {
-            'fields': ('data_inicio', 'data_fim', 'data_faturacao', 'data_vencimento')
+            'fields': ('data_inicio', 'data_fim', 'data_faturacao', 'data_vencimento', 'data_recibo')
         }),
         ('Estado', {
             'fields': ('estado',)
