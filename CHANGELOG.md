@@ -52,10 +52,13 @@ All notable changes to this project will be documented in this file.
   - Campo `data_recibo` confirmado visível no formulário ✅
 
 ### Known Issues
-- **Lógica de Saldos Pessoais precisa de revisão:**
+- **Lógica de Saldos Pessoais precisa de revisão:** ⚠️ **DOCUMENTADO**
   - Confusão entre `estado=PAGO`, `data_recibo`, `data_faturacao`
   - Projetos pagos podem não aparecer nos saldos se faltarem campos
-  - Requer análise detalhada e possível refatoração
+  - Projetos `CANCELADO` não são excluídos (contam incorretamente)
+  - Falta categoria "A Receber" para projetos `FINALIZADO` sem `data_recibo`
+  - **Especificação completa:** `docs/SALDOS_REVISION_SPEC.md`
+  - **Status:** 📝 Aprovado, aguarda implementação (estimativa: 3-4h)
 
 ---
 
