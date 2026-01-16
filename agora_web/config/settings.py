@@ -115,6 +115,13 @@ TIME_ZONE = 'Europe/Lisbon'
 USE_I18N = True
 USE_TZ = True
 
+# Date formatting (DD/MM/AAAA)
+DATE_FORMAT = 'd/m/Y'
+SHORT_DATE_FORMAT = 'd/m/Y'
+DATETIME_FORMAT = 'd/m/Y H:i'
+SHORT_DATETIME_FORMAT = 'd/m/Y H:i'
+USE_L10N = False  # Disable localization to use custom formats
+
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -132,14 +139,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Helper functions for Unfold configuration
 def get_custom_css(request):
-    """Get custom CSS path"""
+    """Get custom CSS path with cache busting"""
     from django.templatetags.static import static
-    return static("css/admin_custom.css")
+    return static("css/admin_custom.css") + "?v=3.2.0-1768572715"
 
 def get_custom_js(request):
-    """Get custom JavaScript path"""
+    """Get custom JavaScript path with cache busting"""
     from django.templatetags.static import static
-    return static("js/admin_custom.js")
+    import time
+    return static("js/admin_custom.js") + f"?v=4.0.0-{int(time.time())}"
 
 def environment_callback(request):
     """Display environment badge in admin header"""

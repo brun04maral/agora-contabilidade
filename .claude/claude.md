@@ -16,6 +16,12 @@ Sistema de contabilidade Django para **Amaral & Reigota - Produção Audiovisual
 
 **Deployment:** Production via Docker Compose com Traefik como reverse proxy local. Cloudflare fornece DNS, proxy e SSL (não Cloudflare Tunnel).
 
+### ⚠️ REGRA IMPORTANTE: Unfold Documentation First
+**Sempre que fizeres alterações ao Unfold:**
+1. **Consulta PRIMEIRO a documentação oficial:** https://unfoldadmin.com/docs/
+2. **Se não houver documentação sobre o tema:** Pesquisa na web (GitHub issues, Stack Overflow, etc.)
+3. **Nunca assumes** - verifica sempre a sintaxe correta antes de implementar
+
 ---
 
 ## ⚠️ CRÍTICO: Ambiente de Trabalho
@@ -377,6 +383,13 @@ docker compose exec web python manage.py createsuperuser
 
 ### Rebuild após Mudanças de Código
 ```bash
+# ⚠️ SEMPRE usar --build quando alterar código Python (settings.py, models.py, admin.py, etc)
+docker compose up -d --build web
+
+# Se mudanças em static files (CSS/JS):
+docker compose exec web python manage.py collectstatic --noinput
+
+# Rebuild completo (raramente necessário):
 docker compose down
 docker compose build --no-cache web
 docker compose up -d
@@ -410,7 +423,27 @@ docker compose exec db psql -U agora -d agora_production
 **Problema:** Alterações não aparecem na app
 **Solução:** Código está na imagem Docker, não montado como volume → `docker compose up -d --build web`
 
-### 4. PostgreSQL PROTECT vs RESTRICT
+### 4. Cache Busting Not Working (Static Files)
+**Problema:** Alterações em CSS/JS não aparecem no browser mesmo após Cloudflare cache purge
+**Root Cause:** `docker compose restart web` NÃO copia código atualizado para o container
+**Solução CORRETA:**
+```bash
+# ❌ ERRADO - não atualiza código Python dentro do container
+docker compose restart web
+
+# ✅ CERTO - rebuild da imagem com código atualizado
+docker compose up -d --build web
+docker compose exec web python manage.py collectstatic --noinput
+```
+
+**⚠️ CRÍTICO:** Quando alterar `settings.py` (ou qualquer ficheiro Python):
+1. SEMPRE usar `--build` flag
+2. Cache busting só funciona se o settings.py no container tiver a versão correta
+3. Testar com: `docker compose exec web python manage.py shell -c "from config.settings import get_custom_css; ..."`
+
+**Histórico:** 16 Jan 2026 - Cache busting timestamp não aplicado porque restart não copiou settings.py
+
+### 5. PostgreSQL PROTECT vs RESTRICT
 **Problema:** SQL com `ON DELETE PROTECT` falha
 **Solução:** PostgreSQL usa `RESTRICT` não `PROTECT`
 

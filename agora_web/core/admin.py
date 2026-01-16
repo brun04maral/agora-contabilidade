@@ -4,10 +4,12 @@ Core admin customizations for Agora Contabilidade with Unfold theme
 """
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.actions import delete_selected
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import path, reverse
+from django.utils.html import format_html
 from unfold.admin import ModelAdmin, TabularInline
-from unfold.decorators import display
+from unfold.decorators import display, action
 from simple_history.admin import SimpleHistoryAdmin
 from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
@@ -72,6 +74,16 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
     """
     # Configurações do SimpleHistory
     history_list_display = ['history_date', 'history_user', 'history_type']
+
+    @action(description='Remover selecionados', permissions=['delete'])
+    def delete_selected(self, request, queryset):
+        """Ação de remoção em lote (wrapper para delete_selected do Django)"""
+        from django.contrib.admin.actions import delete_selected as django_delete_selected
+        return django_delete_selected(self, request, queryset)
+
+    def has_delete_permission(self, request, obj=None):
+        """Permissão para deletar (necessário para a ação delete_selected)"""
+        return super().has_delete_permission(request, obj)
 
     def get_readonly_fields(self, request, obj=None):
         """Adiciona campos de audit trail aos readonly fields + link para histórico"""
@@ -336,7 +348,7 @@ class ClienteAdmin(UnfoldHistoryAdmin):
     list_filter = [AngariadorListFilter, 'pais', 'created_at']
     search_fields = ['numero', 'nome', 'nome_formal', 'nif', 'email', 'angariador__nome_completo']
     ordering = ['-created_at']
-    actions = ['exportar_pdf', 'exportar_excel']
+    actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -365,7 +377,7 @@ class ClienteAdmin(UnfoldHistoryAdmin):
         }),
     )
 
-    @admin.action(description='Exportar PDF')
+    @action(description='Exportar PDF')
     def exportar_pdf(self, request, queryset):
         """Exporta clientes selecionados como PDF"""
         from core.utils.relatorios import gerar_relatorio_clientes_pdf
@@ -375,7 +387,7 @@ class ClienteAdmin(UnfoldHistoryAdmin):
         }
         return gerar_relatorio_clientes_pdf(queryset, filtros=filtros)
 
-    @admin.action(description='Exportar Excel')
+    @action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta clientes selecionados como Excel"""
         from core.utils.relatorios import gerar_relatorio_clientes_excel
@@ -393,7 +405,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
     list_filter = ['estatuto', 'area', 'funcao', 'classificacao', 'pais', 'created_at']
     search_fields = ['numero', 'nome', 'nif', 'email', 'area', 'funcao']
     ordering = ['-created_at']
-    actions = ['exportar_pdf', 'exportar_excel']
+    actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -417,7 +429,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
         }),
     )
 
-    @admin.action(description='Exportar PDF')
+    @action(description='Exportar PDF')
     def exportar_pdf(self, request, queryset):
         """Exporta fornecedores selecionados como PDF"""
         from core.utils.relatorios import gerar_relatorio_fornecedores_pdf
@@ -427,7 +439,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
         }
         return gerar_relatorio_fornecedores_pdf(queryset, filtros=filtros)
 
-    @admin.action(description='Exportar Excel')
+    @action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta fornecedores selecionados como Excel"""
         from core.utils.relatorios import gerar_relatorio_fornecedores_excel
@@ -441,7 +453,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
 @admin.register(Projeto)
 class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
-    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao', 'data_recibo', 'created_at']
+    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao_formatted', 'data_recibo_formatted', 'created_at_formatted']
     list_filter = ['tipo', SocioListFilter, 'estado', 'data_faturacao', 'created_at']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "P0001")
@@ -456,7 +468,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     ordering = ['-created_at']
     autocomplete_fields = ['cliente']
     date_hierarchy = 'data_faturacao'  # Filtro de navegação por ano/mês/dia no cabeçalho
-    actions = ['exportar_pdf', 'exportar_excel']
+    actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -469,7 +481,8 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
             'fields': ('valor_sem_iva', 'premio_bruno', 'premio_rafael')
         }),
         ('Datas', {
-            'fields': ('data_inicio', 'data_fim', 'data_faturacao', 'data_vencimento', 'data_recibo')
+            'fields': (('data_inicio', 'data_fim'), 'data_faturacao', 'data_vencimento', 'data_recibo'),
+            'description': 'Período do projeto e datas de faturação/pagamento'
         }),
         ('Estado', {
             'fields': ('estado',)
@@ -485,10 +498,28 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
 
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
-        """Mostra descrição truncada"""
-        return obj.descricao[:50] + '...' if len(obj.descricao) > 50 else obj.descricao
+        """Mostra descrição truncada com tooltip"""
+        if len(obj.descricao) > 50:
+            truncated = obj.descricao[:50] + '...'
+            return format_html('<span title="{}">{}</span>', obj.descricao, truncated)
+        return obj.descricao
 
-    @admin.action(description='Exportar PDF')
+    @display(description='Data Faturação', ordering='data_faturacao')
+    def data_faturacao_formatted(self, obj):
+        """Mostra data de faturação no formato DD/MM/AAAA"""
+        return obj.data_faturacao.strftime('%d/%m/%Y') if obj.data_faturacao else '-'
+
+    @display(description='Data Pagamento', ordering='data_recibo')
+    def data_recibo_formatted(self, obj):
+        """Mostra data de pagamento no formato DD/MM/AAAA"""
+        return obj.data_recibo.strftime('%d/%m/%Y') if obj.data_recibo else '-'
+
+    @display(description='Criado em', ordering='created_at')
+    def created_at_formatted(self, obj):
+        """Mostra data de criação no formato DD/MM/AAAA"""
+        return obj.created_at.strftime('%d/%m/%Y') if obj.created_at else '-'
+
+    @action(description='Exportar PDF')
     def exportar_pdf(self, request, queryset):
         """Exporta projetos selecionados como PDF"""
         from core.utils.relatorios import gerar_relatorio_projetos_pdf
@@ -498,7 +529,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
         }
         return gerar_relatorio_projetos_pdf(queryset, filtros=filtros)
 
-    @admin.action(description='Exportar Excel')
+    @action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta projetos selecionados como Excel"""
         from core.utils.relatorios import gerar_relatorio_projetos_excel
@@ -614,14 +645,17 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
 
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
-        """Mostra descrição truncada"""
-        return obj.descricao[:30] + '...' if len(obj.descricao) > 30 else obj.descricao
+        """Mostra descrição truncada com tooltip"""
+        if len(obj.descricao) > 30:
+            truncated = obj.descricao[:30] + '...'
+            return format_html('<span title="{}">{}</span>', obj.descricao, truncated)
+        return obj.descricao
 
 
 @admin.register(Despesa)
 class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
-    list_display = ['numero', 'tags_display', 'data', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento', 'created_at']
+    list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento_formatted', 'created_at_formatted']
     list_filter = [TagListFilter, 'estado', 'data', 'data_pagamento', 'created_at']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "D0001")
@@ -639,7 +673,7 @@ class DespesaAdmin(UnfoldHistoryAdmin):
     autocomplete_fields = ['credor', 'projeto', 'despesa_template']
     date_hierarchy = 'data'
     filter_horizontal = ['tags']  # Interface melhor para ManyToMany
-    actions = ['exportar_pdf', 'exportar_excel']
+    actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -688,10 +722,28 @@ class DespesaAdmin(UnfoldHistoryAdmin):
 
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
-        """Mostra descrição truncada"""
-        return obj.descricao[:30] + '...' if len(obj.descricao) > 30 else obj.descricao
+        """Mostra descrição truncada com tooltip"""
+        if len(obj.descricao) > 30:
+            truncated = obj.descricao[:30] + '...'
+            return format_html('<span title="{}">{}</span>', obj.descricao, truncated)
+        return obj.descricao
 
-    @admin.action(description='Exportar PDF')
+    @display(description='Data', ordering='data')
+    def data_formatted(self, obj):
+        """Mostra data no formato DD/MM/AAAA"""
+        return obj.data.strftime('%d/%m/%Y') if obj.data else '-'
+
+    @display(description='Data Pagamento', ordering='data_pagamento')
+    def data_pagamento_formatted(self, obj):
+        """Mostra data de pagamento no formato DD/MM/AAAA"""
+        return obj.data_pagamento.strftime('%d/%m/%Y') if obj.data_pagamento else '-'
+
+    @display(description='Criado em', ordering='created_at')
+    def created_at_formatted(self, obj):
+        """Mostra data de criação no formato DD/MM/AAAA"""
+        return obj.created_at.strftime('%d/%m/%Y') if obj.created_at else '-'
+
+    @action(description='Exportar PDF')
     def exportar_pdf(self, request, queryset):
         """Exporta despesas selecionadas como PDF"""
         from core.utils.relatorios import gerar_relatorio_despesas_pdf
@@ -701,7 +753,7 @@ class DespesaAdmin(UnfoldHistoryAdmin):
         }
         return gerar_relatorio_despesas_pdf(queryset, filtros=filtros)
 
-    @admin.action(description='Exportar Excel')
+    @action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta despesas selecionadas como Excel"""
         from core.utils.relatorios import gerar_relatorio_despesas_excel
@@ -723,7 +775,7 @@ class BoletimLinhaInline(TabularInline):
 @admin.register(Boletim)
 class BoletimAdmin(UnfoldHistoryAdmin):
     """Admin para Boletim com Unfold customization"""
-    list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento', 'created_at']
+    list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao_formatted', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento_formatted', 'created_at_formatted']
     list_filter = [SocioListFilter, 'estado', 'mes', 'ano', 'data_emissao', 'created_at']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "RV2024001")
@@ -739,7 +791,7 @@ class BoletimAdmin(UnfoldHistoryAdmin):
     ordering = ['-data_emissao', '-created_at']
     date_hierarchy = 'data_emissao'
     inlines = [BoletimLinhaInline]
-    actions = ['exportar_pdf', 'exportar_excel']
+    actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
 
     fieldsets = (
         ('Identificação', {
@@ -771,7 +823,22 @@ class BoletimAdmin(UnfoldHistoryAdmin):
         }),
     )
 
-    @admin.action(description='Exportar PDF')
+    @display(description='Data Emissão', ordering='data_emissao')
+    def data_emissao_formatted(self, obj):
+        """Mostra data de emissão no formato DD/MM/AAAA"""
+        return obj.data_emissao.strftime('%d/%m/%Y') if obj.data_emissao else '-'
+
+    @display(description='Data Pagamento', ordering='data_pagamento')
+    def data_pagamento_formatted(self, obj):
+        """Mostra data de pagamento no formato DD/MM/AAAA"""
+        return obj.data_pagamento.strftime('%d/%m/%Y') if obj.data_pagamento else '-'
+
+    @display(description='Criado em', ordering='created_at')
+    def created_at_formatted(self, obj):
+        """Mostra data de criação no formato DD/MM/AAAA"""
+        return obj.created_at.strftime('%d/%m/%Y') if obj.created_at else '-'
+
+    @action(description='Exportar PDF')
     def exportar_pdf(self, request, queryset):
         """Exporta boletins selecionados como PDF"""
         from core.utils.relatorios import gerar_relatorio_boletins_pdf
@@ -781,7 +848,7 @@ class BoletimAdmin(UnfoldHistoryAdmin):
         }
         return gerar_relatorio_boletins_pdf(queryset, filtros=filtros)
 
-    @admin.action(description='Exportar Excel')
+    @action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta boletins selecionados como Excel"""
         from core.utils.relatorios import gerar_relatorio_boletins_excel
@@ -795,7 +862,7 @@ class BoletimAdmin(UnfoldHistoryAdmin):
 @admin.register(BoletimLinha)
 class BoletimLinhaAdmin(ModelAdmin):
     """Admin para BoletimLinha com Unfold customization"""
-    list_display = ['boletim', 'ordem', 'servico_short', 'localidade', 'projeto', 'data_inicio', 'data_fim', 'tipo', 'dias', 'kms', 'created_at']
+    list_display = ['boletim', 'ordem', 'servico_short', 'localidade', 'projeto', 'data_inicio_formatted', 'data_fim_formatted', 'tipo', 'dias', 'kms', 'created_at_formatted']
     list_filter = ['tipo', 'data_inicio', 'created_at']
     search_fields = ['servico', 'localidade', 'boletim__numero']
     ordering = ['boletim', 'ordem']
@@ -822,8 +889,26 @@ class BoletimLinhaAdmin(ModelAdmin):
 
     @display(description='Serviço', ordering='servico')
     def servico_short(self, obj):
-        """Mostra serviço truncado"""
-        return obj.servico[:30] + '...' if len(obj.servico) > 30 else obj.servico
+        """Mostra serviço truncado com tooltip"""
+        if len(obj.servico) > 30:
+            truncated = obj.servico[:30] + '...'
+            return format_html('<span title="{}">{}</span>', obj.servico, truncated)
+        return obj.servico
+
+    @display(description='Data Início', ordering='data_inicio')
+    def data_inicio_formatted(self, obj):
+        """Mostra data de início no formato DD/MM/AAAA"""
+        return obj.data_inicio.strftime('%d/%m/%Y') if obj.data_inicio else '-'
+
+    @display(description='Data Fim', ordering='data_fim')
+    def data_fim_formatted(self, obj):
+        """Mostra data de fim no formato DD/MM/AAAA"""
+        return obj.data_fim.strftime('%d/%m/%Y') if obj.data_fim else '-'
+
+    @display(description='Criado em', ordering='created_at')
+    def created_at_formatted(self, obj):
+        """Mostra data de criação no formato DD/MM/AAAA"""
+        return obj.created_at.strftime('%d/%m/%Y') if obj.created_at else '-'
 
 
 @admin.register(Equipamento)
@@ -889,7 +974,7 @@ class OrcamentoReparticaoInline(TabularInline):
 @admin.register(Orcamento)
 class OrcamentoAdmin(UnfoldHistoryAdmin):
     """Admin para Orcamento com Unfold customization"""
-    list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao', 'valor_total', 'status', 'created_at']
+    list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao_formatted', 'valor_total', 'status', 'created_at_formatted']
     list_filter = ['status', SocioListFilter, 'data_criacao', 'created_at']
     search_fields = [
         '^codigo',              # Prioridade: match exato no início (ex: "ORC2024001")
@@ -908,7 +993,7 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
     ordering = ['-data_criacao', '-created_at']
     autocomplete_fields = ['cliente', 'projeto']
     date_hierarchy = 'data_criacao'
-    actions = ['exportar_pdf', 'exportar_excel']
+    actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
     inlines = [OrcamentoSecaoInline, OrcamentoItemInline, OrcamentoReparticaoInline]
 
     fieldsets = (
@@ -937,7 +1022,7 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
         }),
     )
 
-    @admin.action(description='Exportar PDF')
+    @action(description='Exportar PDF')
     def exportar_pdf(self, request, queryset):
         """Exporta orçamentos selecionados como PDF"""
         from core.utils.relatorios import gerar_relatorio_orcamentos_pdf
@@ -947,7 +1032,7 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
         }
         return gerar_relatorio_orcamentos_pdf(queryset, filtros=filtros)
 
-    @admin.action(description='Exportar Excel')
+    @action(description='Exportar Excel')
     def exportar_excel(self, request, queryset):
         """Exporta orçamentos selecionados como Excel"""
         from core.utils.relatorios import gerar_relatorio_orcamentos_excel
@@ -956,6 +1041,16 @@ class OrcamentoAdmin(UnfoldHistoryAdmin):
             'filters': {k: v for k, v in request.GET.items() if k not in ['action', '_selected_action', 'csrfmiddlewaretoken', 'select_across', 'index']}
         }
         return gerar_relatorio_orcamentos_excel(queryset, filtros=filtros)
+
+    @display(description='Data Criação', ordering='data_criacao')
+    def data_criacao_formatted(self, obj):
+        """Mostra data de criação no formato DD/MM/AAAA"""
+        return obj.data_criacao.strftime('%d/%m/%Y') if obj.data_criacao else '-'
+
+    @display(description='Criado em', ordering='created_at')
+    def created_at_formatted(self, obj):
+        """Mostra data de criação no formato DD/MM/AAAA"""
+        return obj.created_at.strftime('%d/%m/%Y') if obj.created_at else '-'
 
 
 @admin.register(OrcamentoSecao)
@@ -979,8 +1074,11 @@ class OrcamentoItemAdmin(ModelAdmin):
 
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
-        """Mostra descrição truncada"""
-        return obj.descricao[:50] + '...' if len(obj.descricao) > 50 else obj.descricao
+        """Mostra descrição truncada com tooltip"""
+        if len(obj.descricao) > 50:
+            truncated = obj.descricao[:50] + '...'
+            return format_html('<span title="{}">{}</span>', obj.descricao, truncated)
+        return obj.descricao
 
 
 @admin.register(OrcamentoReparticao)

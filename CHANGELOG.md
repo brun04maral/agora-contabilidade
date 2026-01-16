@@ -2,6 +2,206 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.2] - 2026-01-16
+
+### Added - Total de Seleção com Floating Box
+
+#### 1. Caixa Flutuante de Total sem IVA
+- **Implementada caixa flutuante no canto inferior direito que mostra totais de seleção**
+  - Formato: "X Projetos selecionados | TOTAL sem IVA: €12.345,67"
+  - Deteta automaticamente o tipo de entidade (Projetos, Despesas ou Boletins)
+  - Aparece apenas quando há registos selecionados com valores
+  - Desaparece automaticamente quando não há seleção
+  - Estilo integrado com tema Unfold (fundo branco, bordas cinza, sombra suave)
+  - Total em cor dourada (#D4AF37) para destaque
+
+#### 2. Funcionalidade Técnica
+- **Parse robusto de valores monetários portugueses:**
+  - Suporta formato "250,00 €", "1.234,56 €", etc.
+  - Remove símbolos €, espaços, pontos de milhar
+  - Converte vírgula decimal para ponto
+  - Validação com `isNaN()` para segurança
+- **Seleção de colunas inteligente:**
+  - Procura por `.field-valor_sem_iva` primeiro
+  - Fallback para `.field-valor`
+  - Fallback para qualquer `td[class*="valor"]`
+- **Event listeners otimizados:**
+  - Evento `change` em checkboxes individuais
+  - Evento `change` no checkbox "Selecionar todos"
+  - Timeout de 500ms no carregamento para garantir DOM pronto
+  - Atualização em tempo real sem recarregar página
+
+#### 3. Resolução de Problemas Técnicos
+- **Problema:** Template skeleton.html não incluía JavaScript customizado
+  - **Solução:** Adicionado `<script src="{% static 'js/admin_custom.js' %}">` ao template
+  - **Local:** `core/templates/unfold/layouts/skeleton.html` no bloco `extrahead`
+- **Problema:** Selector `.paginator` não existe no Unfold 0.75.0
+  - **Solução:** Mudado para floating box com `position: fixed`
+  - **Benefício:** Sempre visível independente da estrutura do DOM
+- **Problema:** Cache busting não funcionava com `docker compose restart`
+  - **Solução:** Usar sempre `docker compose up -d --build web` para mudanças
+  - **Documentado:** em `.claude/claude.md` secção "Docker Code Not Updating"
+
+#### 4. Ficheiros Alterados
+- **`static/js/admin_custom.js`** (v7.0.0-production):
+  - Função `parseMoneyValue(text)` - parse de valores PT
+  - Função `updateSelectionTotal()` - lógica principal
+  - Função `initSelectionTotalListeners()` - setup de event listeners
+  - Auto-deteção de tipo de entidade (Projetos/Despesas/Boletins)
+  - Floating box com estilo Unfold integrado
+- **`core/templates/unfold/layouts/skeleton.html`**:
+  - Adicionado `{% load static %}` no topo
+  - Adicionado `<script src="{% static 'js/admin_custom.js' %}?v=7.0.0-production">`
+- **`config/settings.py`**:
+  - Mantém funções `get_custom_js()` e `get_custom_css()` para cache busting
+  - Configurado em `UNFOLD['SCRIPTS']` e `UNFOLD['STYLES']`
+
+#### 5. Testing & Debug
+- Testado com seleção de 1, 10, 81 projetos
+- Verificado cálculo correto de totais (somou €84.917,47 em 81 projetos)
+- Testado "Selecionar todos" e desseleção
+- Validado formato de números português
+- Confirmado aparecimento/desaparecimento automático da caixa
+
+## [2.3.7] - 2026-01-16
+
+### Changed - Usar Dropdown de Ações Nativo do Unfold
+
+#### 1. Reverter para Dropdown de Ações (Melhor UX)
+- **Removidos botões de ação no cabeçalho, voltando ao dropdown nativo do Unfold 0.75.0**
+  - Dropdown do Unfold 0.75.0 tem UX superior ao da versão 0.20.0
+  - Interface mais limpa e consistente
+  - Todas as ações (Remover, Exportar PDF, Exportar Excel) agora no dropdown
+- **Mudanças no código:**
+  - Removido `actions_list_hide_default` do UnfoldHistoryAdmin
+  - Mudado `actions_list` para `actions` em todos os admins
+  - Removido JavaScript de enable/disable de botões (não necessário)
+  - Removido CSS de botões disabled (não necessário)
+  - Cache busting atualizado para v2.3.7
+- **Ficheiros alterados:**
+  - `core/admin.py` - actions_list → actions
+  - `static/css/admin_custom.css` - removido CSS de action buttons
+  - `static/js/admin_custom.js` - removido JS de action buttons
+  - `config/settings.py` - cache busting v2.3.7
+
+## [2.3.6] - 2026-01-16
+
+### Changed - Atualização Major do Unfold Admin Theme
+
+#### 1. Upgrade Unfold 0.20.0 → 0.75.0
+- **Atualizado django-unfold de 0.20.0 para 0.75.0** (55 versões!)
+  - Mais de 1 ano de melhorias, bug fixes e novas funcionalidades
+  - Suporte nativo para `actions_list_hide_default` (adicionado na v0.70.0)
+  - Melhorias de performance e UI/UX
+  - Compatível com Django 5.0
+- **Mudanças no código:**
+  - Adicionado `actions_list_hide_default = True` no UnfoldHistoryAdmin (agora funciona nativamente)
+  - Removido CSS manual para esconder dropdown (Unfold faz isso nativamente)
+  - Cache busting atualizado para v2.3.6
+- **Ficheiros alterados:**
+  - `requirements.txt` - django-unfold==0.75.0
+  - `core/admin.py` - actions_list_hide_default nativo
+  - `static/css/admin_custom.css` - removido CSS hack
+  - `config/settings.py` - cache busting v2.3.6
+- **Referências:**
+  - [Unfold 0.75.0 Release](https://pypi.org/project/django-unfold/0.75.0/)
+  - [Unfold Documentation](https://unfoldadmin.com/docs/)
+  - [Unfold GitHub Releases](https://github.com/unfoldadmin/django-unfold/releases)
+
+## [2.3.5] - 2026-01-16
+
+### Changed - Melhorias de UX em Listas
+
+#### 1. Botões de Ação Substituem Dropdown
+- **Dropdown de ações removido, substituído por botões visíveis**
+  - Usado `actions_list` (botões no topo) ao invés de dropdown padrão
+  - Configurado `actions_list_hide_default = True` no UnfoldHistoryAdmin para esconder dropdown nativo
+  - Botões "Remover", "Exportar PDF" e "Exportar Excel" aparecem como botões no topo da lista
+  - **Adicionada ação `delete_selected`** com permissões corretas
+  - Aplicado em todos os admins: ClienteAdmin, FornecedorAdmin, ProjetoAdmin, DespesaAdmin, BoletimAdmin, OrcamentoAdmin
+  - Substituído decorator `@admin.action` por `@action` do Unfold
+- **Botões aparecem desabilitados quando nada está selecionado**
+  - CSS customizado: `opacity: 0.4`, `cursor: not-allowed`, `pointer-events: none`
+  - JavaScript gerencia estado dos botões baseado na seleção de checkboxes
+  - MutationObserver detecta botões carregados dinamicamente
+  - Sem hover effect quando desabilitado
+  - Compatível com dark mode
+- **Correções aplicadas:**
+  - Adicionado `permissions=['delete']` ao decorator de `delete_selected`
+  - Implementado `has_delete_permission()` no UnfoldHistoryAdmin
+  - Usado propriedade nativa `actions_list_hide_default = True` conforme documentação oficial
+- **Código:**
+  - `core/admin.py` - configuração `actions_list` + `actions_list_hide_default = True` em UnfoldHistoryAdmin
+  - `static/css/admin_custom.css` - estilos para estado desabilitado
+  - `static/js/admin_custom.js` - lógica enable/disable dinâmica com console.log para debug
+- **Referência:** [Unfold Actions Documentation](https://unfoldadmin.com/docs/actions/introduction/)
+
+#### 2. Tooltips em Campos Truncados
+- **Adicionados tooltips HTML em todos os campos truncados**
+  - Ao passar o rato sobre texto truncado (`...`), mostra o texto completo
+  - Implementado nos seguintes campos:
+    - **ProjetoAdmin:** `descricao_short` (truncado em 50 caracteres)
+    - **DespesaTemplateAdmin:** `descricao_short` (truncado em 30 caracteres)
+    - **DespesaAdmin:** `descricao_short` (truncado em 30 caracteres)
+    - **BoletimLinhaAdmin:** `servico_short` (truncado em 30 caracteres)
+    - **OrcamentoItemAdmin:** `descricao_short` (truncado em 50 caracteres)
+  - Usa `format_html()` com atributo `title` para tooltip nativo do browser
+  - Código: todos os métodos `*_short()` em `core/admin.py`
+
+### Changed - Melhorias nos Campos de Data
+
+#### 3. Formato de Datas DD/MM/AAAA em Todas as Listas
+- **Configurado formato global de datas para DD/MM/AAAA**
+  - Settings: `DATE_FORMAT = 'd/m/Y'`, `USE_L10N = False`
+  - Código: `config/settings.py:118-123`
+
+#### 4. Métodos Formatados para Datas nas Listas
+- **Criados métodos `*_formatted()` em todos os admins**
+  - **ProjetoAdmin:**
+    - `data_faturacao_formatted()` - Data Faturação
+    - `data_recibo_formatted()` - Data Pagamento
+    - `created_at_formatted()` - Criado em
+  - **DespesaAdmin:**
+    - `data_formatted()` - Data
+    - `data_pagamento_formatted()` - Data Pagamento
+    - `created_at_formatted()` - Criado em
+  - **BoletimAdmin:**
+    - `data_emissao_formatted()` - Data Emissão
+    - `data_pagamento_formatted()` - Data Pagamento
+    - `created_at_formatted()` - Criado em
+  - **BoletimLinhaAdmin:**
+    - `data_inicio_formatted()` - Data Início
+    - `data_fim_formatted()` - Data Fim
+    - `created_at_formatted()` - Criado em
+  - **OrcamentoAdmin:**
+    - `data_criacao_formatted()` - Data Criação
+    - `created_at_formatted()` - Criado em
+
+#### 5. UX Melhorado para Período do Projeto
+- **Campos de data lado a lado no formulário de projetos**
+  - `data_inicio` e `data_fim` aparecem na mesma linha
+  - Descrição adicionada ao fieldset: "Período do projeto e datas de faturação/pagamento"
+  - Código: `core/admin.py:471-473`
+
+#### 6. Help Texts Claros em Todos os Campos de Data
+- **Adicionados help texts descritivos no modelo Projeto**
+  - `data_inicio`: "Início do período de execução do projeto"
+  - `data_fim`: "Fim do período de execução do projeto"
+  - `data_faturacao`: "Data em que a fatura foi emitida"
+  - `data_vencimento`: "Prazo acordado para pagamento (deadline)"
+  - `data_recibo` → renomeado para **"Data Pagamento"**: "Data em que o cliente efetivamente pagou o projeto"
+  - Código: `core/models.py:261-311`
+
+### Technical Details
+- **Arquivos modificados:**
+  - `agora_web/config/settings.py`: Formato global de datas
+  - `agora_web/core/admin.py`: Métodos formatados em todos os admins
+  - `agora_web/core/models.py`: Help texts nos campos de data do Projeto
+- **Testing:**
+  - Todas as listas mostram datas no formato DD/MM/AAAA ✅
+  - Campos de período lado a lado no formulário ✅
+  - Help texts visíveis ao preencher campos ✅
+
 ## [2.3.4] - 2026-01-14
 
 ### Added - Auto-Preenchimento de Códigos Sequenciais

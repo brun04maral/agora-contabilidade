@@ -258,8 +258,18 @@ class Projeto(UserTrackingMixin, models.Model):
     )
 
     # Datas
-    data_inicio = models.DateField(_('Data Início'), blank=True, null=True)
-    data_fim = models.DateField(_('Data Fim'), blank=True, null=True)
+    data_inicio = models.DateField(
+        _('Data Início'),
+        blank=True,
+        null=True,
+        help_text='Início do período de execução do projeto'
+    )
+    data_fim = models.DateField(
+        _('Data Fim'),
+        blank=True,
+        null=True,
+        help_text='Fim do período de execução do projeto'
+    )
 
     # Descrição
     descricao = models.TextField(_('Descrição'))
@@ -268,8 +278,18 @@ class Projeto(UserTrackingMixin, models.Model):
     valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
 
     # Faturação
-    data_faturacao = models.DateField(_('Data Faturação'), blank=True, null=True)
-    data_vencimento = models.DateField(_('Data Vencimento'), blank=True, null=True)
+    data_faturacao = models.DateField(
+        _('Data Faturação'),
+        blank=True,
+        null=True,
+        help_text='Data em que a fatura foi emitida'
+    )
+    data_vencimento = models.DateField(
+        _('Data Vencimento'),
+        blank=True,
+        null=True,
+        help_text='Prazo acordado para pagamento (deadline)'
+    )
     estado = models.CharField(
         _('Estado'),
         max_length=20,
@@ -284,10 +304,10 @@ class Projeto(UserTrackingMixin, models.Model):
 
     # Campos adicionais (importados da Google Sheet)
     data_recibo = models.DateField(
-        _('Data Recibo'),
+        _('Data Pagamento'),
         blank=True,
         null=True,
-        help_text='Data em que o cliente pagou o projeto'
+        help_text='Data em que o cliente efetivamente pagou o projeto'
     )
     orcamento_url = models.URLField(
         _('Link Orçamento'),

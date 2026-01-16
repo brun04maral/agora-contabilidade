@@ -41,6 +41,7 @@
 - **Excel import system:** [IMPORT_SYSTEM.md](./IMPORT_SYSTEM.md)
 - **PWA installation:** [PWA_BRANDING.md](./PWA_BRANDING.md#como-instalar-pwa)
 - **Branding configuration:** [PWA_BRANDING.md](./PWA_BRANDING.md#branding)
+- **Selection total floating box:** [CHANGELOG.md](../CHANGELOG.md#242---2026-01-16) - Total sem IVA de seleções (v2.4.2)
 
 ### Troubleshooting
 - **500 errors on Saldos page:** [SALDOS_DASHBOARD.md](./SALDOS_DASHBOARD.md#error-history--solutions)
