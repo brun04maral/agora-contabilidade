@@ -6,10 +6,12 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+from core.views import changelog_view
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/admin/', permanent=False), name='index'),
     path('admin/', admin.site.urls),
+    path('admin/changelog/', changelog_view, name='changelog'),
 ]
 
 # Serve media files in development

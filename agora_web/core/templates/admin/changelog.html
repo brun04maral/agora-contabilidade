@@ -1,0 +1,136 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .changelog-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .changelog-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #d4af37;
+        }
+
+        .changelog-header h1 {
+            margin: 0;
+            color: #1a1a1a;
+            font-size: 2rem;
+        }
+
+        .version-badge {
+            background: #d4af37;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .changelog-content {
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .changelog-content h2 {
+            color: #d4af37;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .changelog-content h3 {
+            color: #555;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .changelog-content h4 {
+            color: #666;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .changelog-content ul {
+            margin-left: 1.5rem;
+        }
+
+        .changelog-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .changelog-content code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #c7254e;
+        }
+
+        .changelog-content pre {
+            background: #f8f8f8;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            border-left: 3px solid #d4af37;
+        }
+
+        .changelog-content pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .changelog-content a {
+            color: #d4af37;
+            text-decoration: none;
+        }
+
+        .changelog-content a:hover {
+            text-decoration: underline;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #d4af37;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .back-button:hover {
+            background: #b8962f;
+            color: white;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="changelog-container">
+    <a href="{% url 'admin:index' %}" class="back-button">← Voltar ao Admin</a>
+
+    <div class="changelog-header">
+        <h1>Changelog</h1>
+        <span class="version-badge">v0.2.43</span>
+    </div>
+
+    <div class="changelog-content">
+        {{ changelog_html|safe }}
+    </div>
+</div>
+{% endblock %}

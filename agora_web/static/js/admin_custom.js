@@ -155,13 +155,52 @@
         setTimeout(updateSelectionTotal, 500);
     }
 
+    function makeEnvironmentBadgeClickable() {
+        // Tentar múltiplos seletores para o badge de environment
+        const badgeSelectors = [
+            '.badge',  // Unfold badge class
+            '[class*="badge"]',  // Any class containing "badge"
+            'span[class*="Development"]',
+            'span[class*="Production"]',
+            'div[class*="environment"]'
+        ];
+
+        let environmentBadge = null;
+
+        for (const selector of badgeSelectors) {
+            const elements = document.querySelectorAll(selector);
+            for (const el of elements) {
+                const text = el.textContent.trim();
+                if (text === 'Development' || text === 'Production') {
+                    environmentBadge = el;
+                    break;
+                }
+            }
+            if (environmentBadge) break;
+        }
+
+        if (environmentBadge && !environmentBadge.classList.contains('clickable-badge')) {
+            environmentBadge.style.cursor = 'pointer';
+            environmentBadge.title = 'Ver histórico de versões (CHANGELOG)';
+
+            environmentBadge.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = '/admin/changelog/';
+            });
+
+            environmentBadge.classList.add('clickable-badge');
+        }
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             initClickableRows();
             initSelectionTotalListeners();
+            setTimeout(makeEnvironmentBadgeClickable, 1000);  // Delay for Unfold to load
         });
     } else {
         initClickableRows();
         initSelectionTotalListeners();
+        setTimeout(makeEnvironmentBadgeClickable, 1000);  // Delay for Unfold to load
     }
 })();
