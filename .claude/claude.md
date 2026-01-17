@@ -520,7 +520,7 @@ docker compose exec web python manage.py collectstatic --noinput
 
 ## 📝 Recent Major Changes
 
-### ✅ UI/UX Improvements (17 Jan 2026) - v2.4.3
+### ✅ UI/UX Improvements (17 Jan 2026) - v0.2.43
 **Nomenclatura Simplificada:**
 - "Número" → "ID" em todos os modelos (Cliente, Fornecedor, Projeto, Despesa, Boletim, Equipamento)
 - "Sócio Responsável" → "Gestor" (Projeto, Orçamento)
@@ -641,7 +641,11 @@ docker compose exec web python manage.py collectstatic --noinput
 
 ---
 
-**Last Updated:** 2026-01-03
-**Project Status:** ✅ Production Ready
+**Last Updated:** 2026-01-17
+**Project Status:** 🚧 Development (Beta v0.2.43)
 **Production Branch:** `main`
 **Workflow:** VS Code Extension (direto no servidor)
+
+**Versioning Strategy:**
+- v0.x.x = Development/Beta (current)
+- v1.0.0 = First production-ready release

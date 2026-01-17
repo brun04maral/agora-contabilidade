@@ -406,13 +406,13 @@ Principais variáveis:
 
 ## 📝 Notas de Versão
 
-### v2.4.3 - UI/UX Improvements (17 Jan 2026)
+### v0.2.43 - UI/UX Improvements (17 Jan 2026) 🚧 DEVELOPMENT
 - ✅ **Nomenclatura simplificada:** "Número" → "ID", "Sócio Responsável" → "Gestor"
 - ✅ **Listas mais limpas:** Removida coluna "Criado em" de todas as listas admin
 - ✅ Melhor legibilidade e terminologia mais profissional
-- 📖 [Ver detalhes →](CHANGELOG.md#243---2026-01-17)
+- 📖 [Ver detalhes →](CHANGELOG.md#0243---2026-01-17)
 
-### v2.2 - PWA e Branding (12 Jan 2026)
+### v0.2.2 - PWA e Branding (12 Jan 2026)
 - ✅ **Progressive Web App (PWA)** - Instalável como app nativa
 - ✅ Manifest.json com ícones, cores e shortcuts
 - ✅ Service Worker para suporte offline
@@ -424,7 +424,7 @@ Principais variáveis:
 - ✅ Auto-populate de created_by/updated_by
 - 📖 [Ver documentação PWA →](docs/PWA_BRANDING.md)
 
-### v2.1 - Importação e Limpeza de Dados (03 Jan 2026)
+### v0.2.1 - Importação e Limpeza de Dados (03 Jan 2026)
 - ✅ Sistema completo de importação Excel → PostgreSQL (CLI)
 - ✅ **NOVO:** Interface web para upload de Excel (admin panel)
 - ✅ Comandos de limpeza: `limpar_projetos_vazios`, `limpar_despesas_vazias`
@@ -435,14 +435,14 @@ Principais variáveis:
 - ✅ Base de dados sincronizada com Excel (81 projetos, 239 despesas, 24 boletins)
 - ✅ Proteção contra importação de linhas vazias (skip automático)
 
-### v2.0 - Django App (Dez 2025)
+### v0.2.0 - Django App (Dez 2025)
 - ✅ Django 5.0 + PostgreSQL 16
 - ✅ Dashboard de Saldos Pessoais
 - ✅ Modelo Socio com migração de dados
 - ✅ Docker + Traefik + Cloudflare
 - ✅ Unfold Admin Theme
 
-### v1.0 - Tkinter App (Descontinuada)
+### v0.1.0 - Tkinter App (Descontinuada)
 - ❌ Aplicação desktop (Tkinter + SQLite)
 - ❌ Arquivada em `archive-old-tkinter-app/`
 
@@ -477,5 +477,5 @@ Principais variáveis:
 ---
 
 **© 2025 Agora Media Production**
-**Última Atualização:** 2026-01-03
-**Versão:** 2.0 (Django App)
+**Última Atualização:** 2026-01-17
+**Versão:** 0.2.43 (Development - Beta)

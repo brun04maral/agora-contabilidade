@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.4.3] - 2026-01-17
+## [0.2.43] - 2026-01-17
 
 ### Changed - UI/UX Improvements
 
@@ -40,7 +40,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [2.4.2] - 2026-01-16
+## [0.2.42] - 2026-01-16
 
 ### Added - Total de Seleção com Floating Box
 
