@@ -16,11 +16,93 @@ Sistema de contabilidade Django para **Amaral & Reigota - Produção Audiovisual
 
 **Deployment:** Production via Docker Compose com Traefik como reverse proxy local. Cloudflare fornece DNS, proxy e SSL (não Cloudflare Tunnel).
 
-### ⚠️ REGRA IMPORTANTE: Unfold Documentation First
+### ⚠️ REGRAS IMPORTANTES
+
+#### 1. Unfold Documentation First
 **Sempre que fizeres alterações ao Unfold:**
 1. **Consulta PRIMEIRO a documentação oficial:** https://unfoldadmin.com/docs/
 2. **Se não houver documentação sobre o tema:** Pesquisa na web (GitHub issues, Stack Overflow, etc.)
 3. **Nunca assumes** - verifica sempre a sintaxe correta antes de implementar
+
+#### 2. 🚫 NUNCA Usar Emojis - SEMPRE Material Icons
+**CRÍTICO:** Este projeto usa **Material Icons** exclusivamente, NUNCA emojis.
+
+**❌ ERRADO:**
+```html
+<h2>📚 Centro de Documentação</h2>
+<button>✅ Guardar</button>
+```
+
+**✅ CORRETO:**
+```html
+<h2><span class="material-icons">menu_book</span> Centro de Documentação</h2>
+<button><span class="material-icons">check</span> Guardar</button>
+```
+
+**Porquê?**
+- Consistência visual com Unfold Admin Theme
+- Melhor integração com design system
+- Emojis variam entre browsers/OS
+- Material Icons têm tamanho/cor controlável via CSS
+
+**Quando adicionar ícones:**
+1. Verifica que Material Icons está carregado: `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
+2. Usa: `<span class="material-icons">icon_name</span>`
+3. Lista completa: https://fonts.google.com/icons
+
+#### 3. 🔧 Django Migrations com simple_history
+
+**PROBLEMA RECORRENTE:** Ao adicionar campos a modelos que usam `HistoricalRecords`, as tabelas históricas (`core_historical*`) não são atualizadas automaticamente pelas migrations manuais.
+
+**SINTOMA:**
+```python
+ProgrammingError: column "novo_campo" of relation "core_historicalmodelname" does not exist
+```
+
+**✅ SOLUÇÃO CORRETA:**
+
+**Opção 1: Usar makemigrations automático (RECOMENDADO)**
+```bash
+# Django detecta mudanças em TODOS os modelos (incluindo históricos)
+docker compose exec web python manage.py makemigrations core
+docker compose exec web python manage.py migrate core
+```
+
+**Opção 2: Se criar migration manual, adicionar campos SQL diretamente**
+```bash
+# Após migration manual falhar
+docker compose exec db psql -U agora -d agora_production -c \
+  "ALTER TABLE core_historicalmodelname ADD COLUMN IF NOT EXISTS novo_campo tipo DEFAULT valor;"
+```
+
+**❌ NUNCA:**
+- Criar migrations manuais sem considerar tabelas históricas
+- Tentar adicionar campos às tabelas historical via `migrations.AddField` em migrations manuais (o modelo Historical não existe no state da migration)
+
+**PORQUÊ?**
+- O `simple_history` cria automaticamente modelos `HistoricalX` para cada modelo com `history = HistoricalRecords()`
+- Estes modelos espelham TODOS os campos do modelo original
+- Migrations manuais não incluem estes modelos por default
+- O Django `makemigrations` detecta automaticamente todos os modelos (incluindo Historical)
+
+**EXEMPLO PRÁTICO:**
+```python
+# models.py - Adicionar campo 'ativa' a DespesaTemplate
+class DespesaTemplate(models.Model):
+    # ... campos existentes ...
+    ativa = models.BooleanField(default=True)  # NOVO CAMPO
+    history = HistoricalRecords()  # <- Cria HistoricalDespesaTemplate automaticamente
+
+# ✅ CORRETO: makemigrations detecta mudança em AMBOS os modelos
+python manage.py makemigrations core
+# Creates:
+# - Add field ativa to despesatemplate
+# - Add field ativa to historicaldespesatemplate (automático!)
+
+# ❌ ERRADO: Migration manual só adiciona a despesatemplate
+migrations.AddField(model_name='despesatemplate', name='ativa', ...)
+# Resultado: Erro ao gravar porque HistoricalDespesaTemplate não tem o campo
+```
 
 ---
 
@@ -520,7 +602,7 @@ docker compose exec web python manage.py collectstatic --noinput
 
 ## 📝 Recent Major Changes
 
-### ✅ UI/UX Improvements (17 Jan 2026) - v0.2.43
+### ✅ UI/UX Improvements (17 Jan 2026) - v0.2.45
 **Nomenclatura Simplificada:**
 - "Número" → "ID" em todos os modelos (Cliente, Fornecedor, Projeto, Despesa, Boletim, Equipamento)
 - "Sócio Responsável" → "Gestor" (Projeto, Orçamento)
@@ -642,7 +724,7 @@ docker compose exec web python manage.py collectstatic --noinput
 ---
 
 **Last Updated:** 2026-01-17
-**Project Status:** 🚧 Development (Beta v0.2.43)
+**Project Status:** 🚧 Development (Beta v0.2.45)
 **Production Branch:** `main`
 **Workflow:** VS Code Extension (direto no servidor)
 

@@ -7,6 +7,7 @@ Marca: Agora Media Production
 """
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
@@ -447,14 +448,34 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
     Não entra em cálculos financeiros.
 
     Exemplo: Salário pago dia 27 de cada mês
+
+    Campos importantes:
+    - ativa: Se False, o template não gera despesas automaticamente
+    - estado_default: Estado que as despesas criadas terão (PENDENTE, PAGO, etc)
+    - tags: Categorização da despesa (novo sistema, substitui 'tipo')
+    - dia_mes: Dia do mês para criação (limitado a 1-28)
     """
     numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #TD000001
+
+    # DEPRECATED: Campo antigo mantido por compatibilidade
     tipo = models.CharField(
-        _('Tipo'),
+        _('Tipo (deprecated)'),
         max_length=20,
         choices=TipoDespesa.choices,
         default=TipoDespesa.FIXA_MENSAL,
-        db_index=True
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text='Campo antigo - usar tags em vez disto'
+    )
+
+    # Sistema de tags (novo)
+    tags = models.ManyToManyField(
+        'TagDespesa',
+        related_name='templates',
+        verbose_name=_('Tags'),
+        blank=True,
+        help_text='Tags que categorizam esta despesa (ex: Equipamento, Pessoal)'
     )
 
     # Credor/Fornecedor
@@ -486,8 +507,27 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
     irs_retido = models.DecimalField(_('IRS Retido'), max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text=_('Retenção na fonte (normalmente 23% para freelancers)'))
     taxa_retencao_irs = models.DecimalField(_('Taxa Retenção IRS'), max_digits=5, decimal_places=2, default=0, blank=True, null=True, help_text=_('Taxa aplicada (23%, 25%, 16.5%, etc)'))
 
-    # Dia do mês para gerar (1-31)
-    dia_mes = models.IntegerField(_('Dia do Mês'))  # Dia do mês em que a despesa deve ser gerada
+    # Recorrência
+    dia_mes = models.IntegerField(
+        _('Dia do Mês'),
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(28)
+        ],
+        help_text=_('Dia do mês para criação automática (1-28)')
+    )
+    ativa = models.BooleanField(
+        _('Ativa'),
+        default=True,
+        help_text=_('Se desativada, não cria despesas automaticamente')
+    )
+    estado_default = models.CharField(
+        _('Estado Default'),
+        max_length=20,
+        choices=EstadoDespesa.choices,
+        default=EstadoDespesa.PENDENTE,
+        help_text=_('Estado que as despesas criadas terão')
+    )
 
     # Metadata
     nota = models.TextField(_('Nota'), blank=True, null=True)
@@ -498,16 +538,17 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _('Template de Despesa')
-        verbose_name_plural = _('Templates de Despesa')
+        verbose_name = _('Despesa Fixa Mensal')
+        verbose_name_plural = _('Despesas Fixas Mensais')
         ordering = ['dia_mes', '-created_at']
         db_table = 'despesa_templates'
 
     def __str__(self):
-        return f"{self.numero} - {self.descricao[:30]} (dia {self.dia_mes})"
+        status = "✓" if self.ativa else "✗"
+        return f"{status} {self.numero} - {self.descricao[:30]} (dia {self.dia_mes})"
 
     def __repr__(self):
-        return f"<DespesaTemplate(id={self.id}, numero='{self.numero}', descricao='{self.descricao[:30]}', dia={self.dia_mes})>"
+        return f"<DespesaTemplate(id={self.id}, numero='{self.numero}', descricao='{self.descricao[:30]}', dia={self.dia_mes}, ativa={self.ativa})>"
 
 
 class Despesa(UserTrackingMixin, models.Model):

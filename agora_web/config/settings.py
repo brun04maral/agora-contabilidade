@@ -186,12 +186,12 @@ UNFOLD = {
         },
     ],
     "SITE_LOGO": {
-        "light": lambda request: "/media/logos/amp_logo_sidebar.svg",
-        "dark": lambda request: "/media/logos/amp_logo_sidebar.svg",
+        "light": lambda request: "/media/logos/app_logo_sidebar.svg",
+        "dark": lambda request: "/media/logos/app_logo_sidebar.svg",
     },
     "SITE_ICON": {
-        "light": lambda request: "/media/logos/amp_logo.svg",
-        "dark": lambda request: "/media/logos/amp_logo.svg",
+        "light": lambda request: "/media/logos/app_logo_sidebar.svg",
+        "dark": lambda request: "/media/logos/app_logo_sidebar.svg",
     },
     "COLORS": {
         "primary": {
@@ -275,6 +275,11 @@ UNFOLD = {
                         "title": "Fornecedores",
                         "icon": "store",
                         "link": "/admin/core/fornecedor/",
+                    },
+                    {
+                        "title": "Despesas Fixas",
+                        "icon": "event_repeat",
+                        "link": "/admin/core/despesatemplate/",
                     },
                     {
                         "title": "Equipamento",

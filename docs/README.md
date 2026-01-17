@@ -1,7 +1,7 @@
 # Agora Contabilidade - Documentation
 
 **Project:** Sistema de Contabilidade Django para Agora Media Production
-**Last Updated:** 2026-01-03
+**Last Updated:** 2026-01-17
 
 ---
 
@@ -18,9 +18,21 @@
 |----------|-------------|--------|
 | [**SOCIOS_MIGRATION.md**](./SOCIOS_MIGRATION.md) | Complete guide to Socio model implementation | ✅ Complete |
 | [**SALDOS_DASHBOARD.md**](./SALDOS_DASHBOARD.md) | Saldos Pessoais dashboard implementation | ✅ Complete |
+| [**SALDOS_REVISION_SPEC.md**](./SALDOS_REVISION_SPEC.md) | Especificação para revisão da lógica de saldos | 🚧 Pendente |
+| [**FISCAL_CATEGORIZATION.md**](./FISCAL_CATEGORIZATION.md) | Sistema de categorização fiscal (IRC/IVA/IRS/TSU) | 📝 Draft |
 | [**IMPORT_SYSTEM.md**](./IMPORT_SYSTEM.md) | Web-based Excel import system | ✅ Complete |
-| [**PWA_BRANDING.md**](./PWA_BRANDING.md) | 🆕 Progressive Web App & Branding | ✅ Complete |
+| [**PWA_BRANDING.md**](./PWA_BRANDING.md) | Progressive Web App & Branding | ✅ Complete |
 | [**DATABASE_MANUAL_CHANGES.md**](./DATABASE_MANUAL_CHANGES.md) | Manual SQL changes history | ✅ Complete |
+| [**audit-trail-implementation.md**](./audit-trail-implementation.md) | Sistema de auditoria de alterações | ✅ Complete |
+
+### 🧪 Análises & Validações
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**CAIXA_ANALYSIS.md**](./CAIXA_ANALYSIS.md) | Análise fórmulas Excel CAIXA | ✅ Complete |
+| [**SALDOS_CROSSCHECK.md**](./SALDOS_CROSSCHECK.md) | Validação cruzada Excel vs DB | ✅ Complete |
+| [**SALDOS_VALIDATION_RESULTS.md**](./SALDOS_VALIDATION_RESULTS.md) | Resultados validação saldos | ✅ Complete |
+| [**PROJETO_DATAS_REFACTOR.md**](./PROJETO_DATAS_REFACTOR.md) | Proposta refatoração datas | ❌ Rejeitada |
 
 ### 🤖 For AI Assistants
 - [`.claude/claude.md`](../.claude/claude.md) - Complete project context for Claude Code and other AI tools
@@ -42,6 +54,12 @@
 - **PWA installation:** [PWA_BRANDING.md](./PWA_BRANDING.md#como-instalar-pwa)
 - **Branding configuration:** [PWA_BRANDING.md](./PWA_BRANDING.md#branding)
 - **Selection total floating box:** [CHANGELOG.md](../CHANGELOG.md#242---2026-01-16) - Total sem IVA de seleções (v2.4.2)
+
+### Fiscal & Tax
+- **Fiscal categorization system:** [FISCAL_CATEGORIZATION.md](./FISCAL_CATEGORIZATION.md) - IRC/IVA/IRS/TSU tags
+- **Questões para contabilista:** [QUESTOES_CONTABILISTA.md](./QUESTOES_CONTABILISTA.md) - Questionário fiscal
+- **Fiscal calculator:** [fiscal.py](../agora_web/core/utils/fiscal.py) - IVA, IRS, IRC calculators
+- **Tags operacionais:** [tags_despesa.json](../agora_web/core/fixtures/tags_despesa.json)
 
 ### Troubleshooting
 - **500 errors on Saldos page:** [SALDOS_DASHBOARD.md](./SALDOS_DASHBOARD.md#error-history--solutions)

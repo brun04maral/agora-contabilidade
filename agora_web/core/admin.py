@@ -453,7 +453,7 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
 @admin.register(Projeto)
 class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
-    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao_formatted', 'data_recibo_formatted']
+    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_projeto_formatted']
     list_filter = ['tipo', SocioListFilter, 'estado', 'data_faturacao']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "P0001")
@@ -491,7 +491,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
@@ -503,6 +503,32 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
             truncated = obj.descricao[:50] + '...'
             return format_html('<span title="{}">{}</span>', obj.descricao, truncated)
         return obj.descricao
+
+    @display(description='Data Projeto', ordering='data_inicio')
+    def data_projeto_formatted(self, obj):
+        """
+        Mostra data do projeto no formato inteligente:
+        - Mesmo dia: DD/MM/AAAA
+        - Vários dias, mesmo mês: DD-DD/MM/AAAA
+        - Atravessa meses: DD/MM-DD/MM/AAAA
+        """
+        if not obj.data_inicio:
+            return '-'
+
+        # Se não tem data fim, mostra só data início
+        if not obj.data_fim:
+            return obj.data_inicio.strftime('%d/%m/%Y')
+
+        # Se é o mesmo dia
+        if obj.data_inicio == obj.data_fim:
+            return obj.data_inicio.strftime('%d/%m/%Y')
+
+        # Se é o mesmo mês
+        if obj.data_inicio.month == obj.data_fim.month and obj.data_inicio.year == obj.data_fim.year:
+            return f"{obj.data_inicio.day}-{obj.data_fim.day}/{obj.data_inicio.month:02d}/{obj.data_inicio.year}"
+
+        # Se atravessa meses (mesmo ano ou anos diferentes)
+        return f"{obj.data_inicio.strftime('%d/%m')}-{obj.data_fim.strftime('%d/%m/%Y')}"
 
     @display(description='Data Faturação', ordering='data_faturacao')
     def data_faturacao_formatted(self, obj):
@@ -611,16 +637,21 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
 
 @admin.register(DespesaTemplate)
 class DespesaTemplateAdmin(UnfoldHistoryAdmin):
-    """Admin para DespesaTemplate com Unfold customization"""
-    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'dia_mes']
-    list_filter = ['tipo', 'dia_mes']
+    """Admin para Despesas Fixas Mensais com Unfold customization"""
+    list_display = ['ativa_icon', 'numero', 'descricao_short', 'credor', 'tags_display', 'valor_sem_iva', 'dia_mes', 'estado_default']
+    list_filter = ['ativa', 'estado_default', 'dia_mes', 'tags']
     search_fields = ['numero', 'descricao', 'credor__nome']
     ordering = ['dia_mes', '-created_at']
     autocomplete_fields = ['credor', 'projeto']
+    filter_horizontal = ['tags']  # Melhor UX para ManyToMany
 
     fieldsets = (
         ('Identificação', {
-            'fields': ('numero', 'tipo')
+            'fields': ('numero',)
+        }),
+        ('Categorização', {
+            'fields': ('tags',),
+            'description': 'Sistema moderno de categorização (substitui campo "tipo" deprecated)'
         }),
         ('Fornecedor/Projeto', {
             'fields': ('credor', 'projeto')
@@ -629,27 +660,44 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
             'fields': ('descricao',)
         }),
         ('Valores', {
-            'fields': ('valor_sem_iva', 'valor_com_iva', 'irs_retido')
+            'fields': ('valor_sem_iva', 'valor_com_iva', 'irs_retido', 'taxa_retencao_irs')
         }),
         ('Recorrência', {
-            'fields': ('dia_mes',)
+            'fields': ('dia_mes', 'ativa', 'estado_default'),
+            'description': 'Configuração da criação automática mensal'
         }),
         ('Informações Adicionais', {
             'fields': ('nota',)
         }),
         ('Metadata', {
-            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by', 'history_link'),
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
 
+    @display(description='', ordering='ativa', boolean=True)
+    def ativa_icon(self, obj):
+        """Mostra ícone de ativo/inativo"""
+        return obj.ativa
+
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
         """Mostra descrição truncada com tooltip"""
-        if len(obj.descricao) > 30:
-            truncated = obj.descricao[:30] + '...'
+        if len(obj.descricao) > 40:
+            truncated = obj.descricao[:40] + '...'
             return format_html('<span title="{}">{}</span>', obj.descricao, truncated)
         return obj.descricao
+
+    @display(description='Tags')
+    def tags_display(self, obj):
+        """Mostra tags numa lista compacta"""
+        tags = obj.tags.all()
+        if not tags:
+            return '-'
+        tag_names = ', '.join([tag.nome for tag in tags[:3]])
+        if obj.tags.count() > 3:
+            tag_names += f' (+{obj.tags.count() - 3})'
+        return tag_names
 
 
 @admin.register(Despesa)

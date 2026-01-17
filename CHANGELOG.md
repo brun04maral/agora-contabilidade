@@ -2,6 +2,241 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-01-17
+
+### Added - Sistema de Despesas Fixas Mensais & Categorização Fiscal
+
+#### 1. Sistema de Despesas Fixas Mensais (Templates)
+- **Modelo `DespesaTemplate` melhorado:**
+  - Campo `ativa` (BooleanField): Controla se o template gera despesas automaticamente
+  - Campo `estado_default` (CharField): Define estado inicial das despesas criadas (PENDENTE/PAGO/VENCIDO)
+  - Campo `tags` (ManyToManyField): Sistema de tags para categorização (substitui campo `tipo` deprecated)
+  - Validação `dia_mes`: Limitado a 1-28 (evita problemas com meses de 29-31 dias)
+  - Verbose names atualizados: "Despesa Fixa Mensal" / "Despesas Fixas Mensais"
+  - `__str__` melhorado: Mostra ✓/✗ baseado em `ativa`
+
+- **Migration 0011_despesatemplate_improvements:**
+  - Adiciona campos `ativa` e `estado_default` (model + historical)
+  - Adiciona validators ao campo `dia_mes` (MinValueValidator(1), MaxValueValidator(28))
+  - Adiciona ManyToMany para `tags`
+  - Deprecia campo `tipo` (mantido por compatibilidade)
+  - Atualiza Meta options (verbose_name, ordering)
+
+- **Admin `DespesaTemplateAdmin`:**
+  - list_display: `['ativa_icon', 'numero', 'descricao_short', 'credor', 'tags_display', 'valor_sem_iva', 'dia_mes', 'estado_default']`
+  - list_filter: `['ativa', 'estado_default', 'dia_mes', 'tags']`
+  - filter_horizontal: `['tags']` - Interface multi-select para tags
+  - Display methods: `ativa_icon()` (boolean icon), `tags_display()` (comma-separated com limit)
+  - Fieldsets reorganizados com descrições
+
+- **Management Command `criar_despesas_fixas`:**
+  - Executável via cron job diariamente
+  - Flags: `--dry-run` (simulação), `--dia <N>` (dia específico)
+  - Lógica:
+    - Filtra templates ativos para o dia atual
+    - Verifica se despesa já existe para o mês (evita duplicados)
+    - Gera número sequencial (#D000001, #D000002, etc.)
+    - Copia dados do template (credor, projeto, valores, estado_default)
+    - Copia tags do template
+    - Log detalhado: criadas, existentes, erros
+  - Tratamento de erros: Dias inválidos (ex: 31 em fevereiro)
+
+- **Menu Unfold:**
+  - Adicionada entrada "Despesas Fixas" na secção "Gestão"
+  - Icon: `event_repeat`
+  - Link: `/admin/core/despesatemplate/`
+
+#### 2. Documentação de Categorização Fiscal
+
+- **[FISCAL_CATEGORIZATION.md](docs/FISCAL_CATEGORIZATION.md) (24KB):**
+  - Especificação completa do sistema de tags fiscais dual
+  - Conceitos fundamentais: IRC, IVA, IRS, TSU
+  - Tags Operacionais vs Tags Fiscais (sistema proposto)
+  - Categorias fiscais detalhadas:
+    - IRC: `DEDUTIVEL_100`, `DEDUTIVEL_PARCIAL`, `NAO_DEDUTIVEL`, `INVESTIMENTO`
+    - IVA: `DEDUTIVEL_100`, `NAO_DEDUTIVEL`, `MISTO`
+    - IRS: `ISENTO`, `RETENCAO_TRABALHO`, `RETENCAO_25`, `RETENCAO_11_5`
+    - TSU: `GERENTE`, `TRABALHADOR`, `ISENTO`
+  - Mapeamento automático tag operacional → tags fiscais
+  - Implementação técnica: Opção A (campos separados) vs Opção B (modelo TagFiscal)
+  - 5 casos de uso práticos com cálculos detalhados
+  - Templates de relatórios fiscais
+  - Referências à legislação portuguesa (CIRC, CIVA, CIRS, Seg. Social)
+
+- **[QUESTOES_CONTABILISTA.md](docs/QUESTOES_CONTABILISTA.md) (11KB):**
+  - Questionário estruturado em 6 secções
+  - 24 questões específicas sobre IRC, IVA, IRS, TSU
+  - Pedido de validação da estrutura de tags propostas
+  - Pedido de validação do mapeamento automático
+  - Informação adicional da empresa (CAE, regime, volume negócios)
+  - Formato de resposta estruturado
+
+- **[docs/README.md](docs/README.md) atualizado:**
+  - Nova secção "Fiscal & Tax" com 4 links:
+    - Sistema de categorização fiscal
+    - Questionário para contabilista
+    - Fiscal calculator (fiscal.py)
+    - Tags operacionais (tags_despesa.json)
+
+#### 3. Documentação no .claude/claude.md
+
+- **Nova secção "3. 🔧 Django Migrations com simple_history":**
+  - Problema: Migrations manuais não incluem tabelas Historical
+  - Erro comum: `column "X" of relation "core_historicalY" does not exist`
+  - Soluções corretas:
+    - Opção 1: Usar `makemigrations` (auto-detecta historical tables)
+    - Opção 2: SQL direto com `ALTER TABLE core_historicalX ADD COLUMN...`
+  - O que NUNCA fazer: Migrations manuais sem considerar historical tables
+  - Exemplo prático com DespesaTemplate
+
+### Technical Notes
+
+- **Breaking Changes:** Nenhuma - campos novos têm defaults
+- **Database Impact:** 4 novos campos em `despesa_templates` + historical
+- **Cron Job Required:** Adicionar `python manage.py criar_despesas_fixas` ao cron diário
+- **Future Work:**
+  - Implementar sistema de tags fiscais (após validação do contabilista)
+  - Criar relatórios fiscais por categoria
+  - Auto-atribuição de tags fiscais via signals
+
+### Migration Issues & Resolutions
+
+- **Issue:** Manual migration não incluía tabelas `HistoricalDespesaTemplate`
+- **Error:** `ProgrammingError: column "ativa" of relation "core_historicaldespesatemplate" does not exist`
+- **Resolution:**
+  - Faked migration: `python manage.py migrate --fake`
+  - Added columns via SQL: `ALTER TABLE core_historicaldespesatemplate ADD COLUMN IF NOT EXISTS...`
+- **Documented:** Padrão adicionado a `.claude/claude.md` para evitar repetição
+
+---
+
+## [0.2.45] - 2026-01-17
+
+### Fixed - Logo & Branding Cleanup
+
+#### 1. Limpeza de Logos e Favicons
+- **Removidos ficheiros antigos de `media/logos/`:**
+  - logo.svg, logo-pwa.svg
+  - logo_login.png, logo_login@2x.png
+  - logo_sidebar.png, logo_sidebar@2x.png
+  - Ficheiros ocultos macOS (._*)
+
+- **Ficheiros mantidos:**
+  - `favicon.svg` - Favicon principal (3KB)
+  - `app_logo_sidebar.svg` - Logo para sidebar/login (26KB)
+  - `apple-touch-icon.png` - Apple touch icon 180x180 (4.6KB)
+
+#### 2. Configuração de Logos Atualizada
+- **settings.py - UNFOLD configuration:**
+  - `SITE_LOGO`: `amp_logo_sidebar.svg` → `app_logo_sidebar.svg`
+  - `SITE_ICON`: `amp_logo.svg` → `app_logo_sidebar.svg`
+  - Rebuild do container necessário para aplicar
+
+#### 3. Serving de Media Files
+- **urls.py - Media files serving:**
+  - Adicionado `path('media/<path:path>', serve, ...)` para Gunicorn
+  - Funciona independentemente de DEBUG mode
+  - Ficheiros media agora servidos corretamente via HTTPS
+
+#### 4. Logo Colorido via CSS
+- **admin_custom.css - Logo sidebar dinâmico:**
+  - CSS filter para aplicar cor dourada (#D4AF37) ao logo
+  - Suporte para `fill` em SVG paths
+  - Funciona em modo claro e escuro
+  - Cor sincronizada com tema Unfold (primary-500)
+
+#### 5. Favicon Redirect
+- **urls.py - Favicon handling:**
+  - `path('favicon.ico', RedirectView(...))` permanente (301)
+  - Redireciona `/favicon.ico` → `/media/logos/favicon.svg`
+  - Resolve conflito com favicon antigo do DRF
+
+### Technical Details
+- **Volume mount:** `./media:/app/media` permite alterações imediatas
+- **Rebuild necessário:** Alterações em settings.py requerem `docker compose build web`
+- **Collectstatic:** CSS changes requerem `python manage.py collectstatic --noinput`
+
+---
+
+## [0.2.44] - 2026-01-17
+
+### Added - Documentation System
+
+#### 1. Centro de Documentação Completo
+- **Sistema de documentação integrado no admin**
+  - Página índice com 12 documentos organizados em 4 categorias
+  - Render Markdown → HTML com syntax highlighting (Pygments)
+  - TOC (Table of Contents) automático
+  - Material Icons em vez de emojis
+  - Design responsivo integrado com Unfold theme
+
+#### 2. Funcionalidades
+- **Visualizador de Documentos** (`/docs/<doc_key>/`)
+  - Syntax highlighting para code blocks
+  - Breadcrumbs para navegação
+  - Link "Editar no GitHub" em cada página
+  - Suporte: código, tabelas, listas, blockquotes
+
+- **Badge Development Clicável**
+  - Click no badge → redireciona para `/changelog/`
+  - Tooltip: "v0.2.44 | Última atualização: 17/01/2026"
+  - Efeito hover com opacidade e scale
+
+- **Conversão Automática de Links .md**
+  - Links internos em markdown convertidos automaticamente para URLs do sistema
+  - Preserva âncoras (#section) nos links
+  - Suporta paths relativos (../README.md, ./SOCIOS_MIGRATION.md)
+  - Navegação fluída entre documentos
+
+#### 7. Auditoria e Correções da Documentação
+- **Auditoria completa realizada** (17 Jan 2026)
+  - Verificados 12 documentos principais + 3 adicionais
+  - Corrigida inconsistência de versão (v0.2.43 → v0.2.44)
+  - Atualizado docs/README.md com 4 documentos faltantes
+  - Adicionada secção "Análises & Validações"
+  - Atualizada data "Last Updated" em docs/README.md e audit-trail-implementation.md
+  - Score final: 85/100 → 95/100
+
+#### 3. Navegação
+- **Sidebar Unfold:** Nova secção "Documentação"
+  - Centro de Docs
+  - Changelog
+- **Botões de ação:**
+  - "Voltar à App" (retorna ao admin)
+  - "Início" (vai para índice docs)
+  - "Editar no GitHub"
+
+#### 4. Documentos Disponíveis
+**Geral:** Visão Geral, Changelog, Índice
+**Técnico:** BD Manual, Saldos Dashboard, Saldos Revision, Sócios, Audit Trail
+**Features:** Excel Import, Sistema Importação, PWA
+**Suporte:** Contexto Claude
+
+#### 5. Arquitetura
+- `core/views_docs.py` - Sistema modular de documentação
+- `core/templates/docs/` - Templates reutilizáveis (base, index, document)
+- `DOCS_CONFIG` em settings.py
+- Markdown + CodeHilite + TOC extensions
+- Dockerfile: copia README.md, CHANGELOG.md, docs/, .claude/claude.md
+
+#### 6. Ficheiros Criados/Modificados
+- **Novos:**
+  - `agora_web/core/views_docs.py`
+  - `agora_web/core/templates/docs/base.html`
+  - `agora_web/core/templates/docs/index.html`
+  - `agora_web/core/templates/docs/document.html`
+  - `agora_web/core/templates/admin/changelog.html`
+
+- **Modificados:**
+  - `agora_web/config/settings.py` (DOCS_CONFIG, sidebar)
+  - `agora_web/config/urls.py` (rotas /docs/)
+  - `agora_web/Dockerfile` (COPY docs)
+  - `docker-compose.yml` (build context)
+  - `requirements.txt` (markdown, pygments)
+  - `agora_web/static/js/admin_custom.js` (badge clicável)
+
+---
+
 ## [0.2.43] - 2026-01-17
 
 ### Changed - UI/UX Improvements
