@@ -137,6 +137,17 @@ MEDIA_ROOT = '/app/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Documentation Configuration
+DOCS_CONFIG = {
+    'ROOT_PATH': Path('/app/docs'),
+    'MAIN_README': Path('/app/README.md'),
+    'CHANGELOG': Path('/app/CHANGELOG.md'),
+    'CLAUDE_MD': Path('/app/claude.md'),
+    'ENABLE_SEARCH': False,  # Para implementar futuramente
+    'GITHUB_REPO': 'brun04maral/agora-contabilidade',
+    'GITHUB_BRANCH': 'main',
+}
+
 # Helper functions for Unfold configuration
 def get_custom_css(request):
     """Get custom CSS path with cache busting"""
@@ -289,6 +300,21 @@ UNFOLD = {
                         "title": "Fiscal",
                         "icon": "assessment",
                         "link": "/admin/core/fiscal/",
+                    },
+                ],
+            },
+            {
+                "title": "Documentação",
+                "items": [
+                    {
+                        "title": "Centro de Docs",
+                        "icon": "menu_book",
+                        "link": "/docs/",
+                    },
+                    {
+                        "title": "Changelog",
+                        "icon": "history",
+                        "link": "/changelog/",
                     },
                 ],
             },

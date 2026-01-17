@@ -13,8 +13,8 @@ def changelog_view(request):
     Display the CHANGELOG.md file with version history.
     Only accessible to staff members.
     """
-    # Read CHANGELOG.md from project root
-    changelog_path = Path(__file__).resolve().parent.parent.parent / 'CHANGELOG.md'
+    # Read CHANGELOG.md from /app/ (copied during Docker build)
+    changelog_path = Path('/app/CHANGELOG.md')
 
     try:
         with open(changelog_path, 'r', encoding='utf-8') as f:
@@ -26,7 +26,7 @@ def changelog_view(request):
             extensions=['fenced_code', 'tables', 'nl2br']
         )
     except FileNotFoundError:
-        changelog_html = "<p>CHANGELOG.md not found.</p>"
+        changelog_html = f"<p>CHANGELOG.md not found at {changelog_path}</p>"
 
     context = {
         'changelog_html': changelog_html,

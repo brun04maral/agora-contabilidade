@@ -7,11 +7,18 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from core.views import changelog_view
+from core.views_docs import docs_index, docs_view
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/admin/', permanent=False), name='index'),
+
+    # Documentation
+    path('docs/', docs_index, name='docs_index'),
+    path('docs/<str:doc_key>/', docs_view, name='docs_view'),
+    path('changelog/', changelog_view, name='changelog'),  # Mantém compatibilidade
+
+    # Admin
     path('admin/', admin.site.urls),
-    path('admin/changelog/', changelog_view, name='changelog'),
 ]
 
 # Serve media files in development

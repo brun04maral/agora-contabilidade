@@ -15,13 +15,19 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
+COPY agora_web/requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install gunicorn psycopg2-binary
 
-# Copy project
-COPY . .
+# Copy Django project
+COPY agora_web/ .
+
+# Copy documentation from project root
+COPY CHANGELOG.md /app/CHANGELOG.md
+COPY README.md /app/README.md
+COPY docs/ /app/docs/
+COPY .claude/claude.md /app/claude.md
 
 # Create static and media directories
 RUN mkdir -p /app/static /app/media

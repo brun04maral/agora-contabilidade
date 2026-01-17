@@ -156,39 +156,62 @@
     }
 
     function makeEnvironmentBadgeClickable() {
-        // Tentar múltiplos seletores para o badge de environment
-        const badgeSelectors = [
-            '.badge',  // Unfold badge class
-            '[class*="badge"]',  // Any class containing "badge"
-            'span[class*="Development"]',
-            'span[class*="Production"]',
-            'div[class*="environment"]'
-        ];
-
+        // Procurar por QUALQUER elemento que contenha o texto "Development" ou "Production"
+        const allElements = document.querySelectorAll('*');
         let environmentBadge = null;
 
-        for (const selector of badgeSelectors) {
-            const elements = document.querySelectorAll(selector);
-            for (const el of elements) {
-                const text = el.textContent.trim();
-                if (text === 'Development' || text === 'Production') {
+        for (const el of allElements) {
+            // Verificar apenas elementos que tenham texto direto (não filhos)
+            const directText = Array.from(el.childNodes)
+                .filter(node => node.nodeType === Node.TEXT_NODE)
+                .map(node => node.textContent.trim())
+                .join('');
+
+            const fullText = el.textContent.trim();
+
+            if ((directText === 'Development' || directText === 'Production' ||
+                 fullText === 'Development' || fullText === 'Production') &&
+                !el.classList.contains('clickable-badge')) {
+
+                // Verificar se é um elemento pequeno (badge), não um container grande
+                const rect = el.getBoundingClientRect();
+                if (rect.width < 200 && rect.height < 100) {
                     environmentBadge = el;
+                    console.log('Environment badge encontrado:', el, 'Texto:', fullText);
                     break;
                 }
             }
-            if (environmentBadge) break;
         }
 
         if (environmentBadge && !environmentBadge.classList.contains('clickable-badge')) {
             environmentBadge.style.cursor = 'pointer';
-            environmentBadge.title = 'Ver histórico de versões (CHANGELOG)';
+            environmentBadge.title = 'v0.2.43 | Última atualização: 17/01/2026';
+
+            // Visual feedback
+            environmentBadge.style.transition = 'all 0.2s ease-in-out';
 
             environmentBadge.addEventListener('click', function(e) {
                 e.preventDefault();
-                window.location.href = '/admin/changelog/';
+                e.stopPropagation();
+                console.log('Badge clicado! Redirecionando para changelog...');
+                window.location.href = '/changelog/';
+            });
+
+            environmentBadge.addEventListener('mouseenter', function() {
+                this.style.opacity = '0.85';
+                this.style.transform = 'scale(1.05)';
+            });
+
+            environmentBadge.addEventListener('mouseleave', function() {
+                this.style.opacity = '1';
+                this.style.transform = 'scale(1)';
             });
 
             environmentBadge.classList.add('clickable-badge');
+            console.log('Badge configurado como clicável com sucesso!');
+        } else {
+            console.log('Badge não encontrado. Tentando novamente em 2s...');
+            setTimeout(makeEnvironmentBadgeClickable, 2000);
         }
     }
 

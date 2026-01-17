@@ -1,0 +1,174 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <style>
+        .docs-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .docs-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #d4af37;
+        }
+
+        .docs-header h1 {
+            margin: 0;
+            color: #1a1a1a;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .docs-header .material-icons {
+            font-size: 2.5rem;
+            color: #d4af37;
+        }
+
+        .docs-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .docs-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #d4af37;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .docs-button:hover {
+            background: #b8962f;
+            color: white;
+        }
+
+        .docs-button.secondary {
+            background: #6c757d;
+        }
+
+        .docs-button.secondary:hover {
+            background: #5a6268;
+        }
+
+        .docs-content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* Breadcrumbs */
+        .docs-breadcrumbs {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .docs-breadcrumbs a {
+            color: #d4af37;
+            text-decoration: none;
+        }
+
+        .docs-breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+
+        .docs-breadcrumbs span {
+            color: #6c757d;
+            margin: 0 0.5rem;
+        }
+
+        /* Main content area */
+        .docs-main {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+        }
+
+        /* TOC Sidebar */
+        .docs-toc {
+            padding: 1.5rem;
+            background: #f8f9fa;
+            position: sticky;
+            top: 2rem;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        .docs-toc h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .docs-toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .docs-toc li {
+            margin-bottom: 0.5rem;
+        }
+
+        .docs-toc a {
+            color: #495057;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .docs-toc a:hover {
+            color: #d4af37;
+        }
+
+        /* Body content */
+        .docs-body {
+            padding: 2rem;
+            min-height: 400px;
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-container">
+    <div class="docs-header">
+        <h1>
+            {% block header_icon %}<span class="material-icons">menu_book</span>{% endblock %}
+            {% block header_title %}{{ title }}{% endblock %}
+        </h1>
+        <div class="docs-actions">
+            {% block header_actions %}
+            <a href="{% url 'docs_index' %}" class="docs-button secondary">
+                <span class="material-icons" style="font-size: 1rem;">home</span>
+                Início
+            </a>
+            {% endblock %}
+        </div>
+    </div>
+
+    <div class="docs-content">
+        {% block breadcrumbs %}{% endblock %}
+
+        {% block docs_body %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

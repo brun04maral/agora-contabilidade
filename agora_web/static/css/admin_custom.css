@@ -83,3 +83,34 @@
     outline-offset: 2px;
     border-radius: 2px;
 }
+
+/* ====================================================================
+   ENVIRONMENT BADGE - CLICKABLE CHANGELOG
+   ==================================================================== */
+
+/* Tornar qualquer badge que contenha "Development" ou "Production" clicável */
+[class*="badge"]:has-text("Development"),
+[class*="badge"]:has-text("Production"),
+span:has-text("Development"),
+span:has-text("Production") {
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Estilo genérico para badges clicáveis */
+.clickable-badge {
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+
+.clickable-badge:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+}
+
+.clickable-badge:active {
+    transform: scale(0.98);
+}
+
+/* Indicador visual removido - apenas hover effect */
