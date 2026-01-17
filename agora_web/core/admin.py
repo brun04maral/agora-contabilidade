@@ -703,7 +703,7 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
 @admin.register(Despesa)
 class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
-    list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento_formatted']
+    list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'projeto_id_display', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado']
     list_filter = [TagListFilter, 'estado', 'data', 'data_pagamento']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "D0001")
@@ -780,6 +780,11 @@ class DespesaAdmin(UnfoldHistoryAdmin):
     def data_formatted(self, obj):
         """Mostra data no formato DD/MM/AAAA"""
         return obj.data.strftime('%d/%m/%Y') if obj.data else '-'
+
+    @display(description='Projeto', ordering='projeto__numero')
+    def projeto_id_display(self, obj):
+        """Mostra apenas o ID/número do projeto"""
+        return obj.projeto.numero if obj.projeto else '-'
 
     @display(description='Data Pagamento', ordering='data_pagamento')
     def data_pagamento_formatted(self, obj):
