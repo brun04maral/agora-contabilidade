@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.3] - 2026-01-17
+
+### Changed - UI/UX Improvements
+
+#### 1. Nomenclatura Simplificada
+- **"Número" → "ID"**
+  - Alterado em todos os modelos: Cliente, Fornecedor, Projeto, Despesa, Boletim, Equipamento
+  - Objetivo: Terminologia mais concisa e internacional
+  - Afeta: Formulários de criação/edição, colunas de listagem, labels
+
+- **"Sócio Responsável" → "Gestor"**
+  - Alterado nos modelos: Projeto, Orçamento
+  - Objetivo: Termo mais claro e direto para o papel de gestão
+  - Afeta: Formulários de projeto/orçamento, filtros, colunas
+
+#### 2. Listas Admin Mais Limpas
+- **Removida coluna "Criado em" de todas as listas**
+  - Afeta: Sócios, Clientes, Fornecedores, Projetos, Despesas Templates, Despesas, Boletins, Linhas de Boletim, Equipamento, Orçamentos
+  - Objetivo: Reduzir ruído visual e focar em informação relevante
+  - Nota: Campo ainda disponível na visualização detalhada de cada registo
+
+#### 3. Ficheiros Alterados
+- **`core/models.py`**:
+  - 7× alterações: `verbose_name=_('Número')` → `verbose_name=_('ID')`
+  - 2× alterações: `verbose_name=_('Sócio Responsável')` → `verbose_name=_('Gestor')`
+
+- **`core/admin.py`**:
+  - 10× remoções de `'created_at'` dos `list_display`
+  - 3× remoções de `'created_at_formatted'` dos `list_display`
+
+#### 4. Impacto
+- ✅ Melhor legibilidade das listas admin
+- ✅ Terminologia mais consistente e profissional
+- ✅ Redução de scroll horizontal em ecrãs pequenos
+- ⚠️ Não afeta dados ou funcionalidade - apenas labels
+
+---
+
 ## [2.4.2] - 2026-01-16
 
 ### Added - Total de Seleção com Floating Box

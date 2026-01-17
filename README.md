@@ -406,6 +406,12 @@ Principais variáveis:
 
 ## 📝 Notas de Versão
 
+### v2.4.3 - UI/UX Improvements (17 Jan 2026)
+- ✅ **Nomenclatura simplificada:** "Número" → "ID", "Sócio Responsável" → "Gestor"
+- ✅ **Listas mais limpas:** Removida coluna "Criado em" de todas as listas admin
+- ✅ Melhor legibilidade e terminologia mais profissional
+- 📖 [Ver detalhes →](CHANGELOG.md#243---2026-01-17)
+
 ### v2.2 - PWA e Branding (12 Jan 2026)
 - ✅ **Progressive Web App (PWA)** - Instalável como app nativa
 - ✅ Manifest.json com ícones, cores e shortcuts

@@ -273,7 +273,7 @@ class UnfoldHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
 @admin.register(Socio)
 class SocioAdmin(UnfoldHistoryAdmin):
     """Admin para Sócio com Unfold customization + History"""
-    list_display = ['codigo', 'nome_completo', 'nome_curto', 'email', 'percentagem_participacao', 'ativo', 'created_at']
+    list_display = ['codigo', 'nome_completo', 'nome_curto', 'email', 'percentagem_participacao', 'ativo']
     list_filter = ['ativo']
     search_fields = ['codigo', 'nome_completo', 'nome_curto', 'email']
     ordering = ['codigo']
@@ -344,8 +344,8 @@ class SocioAdmin(UnfoldHistoryAdmin):
 @admin.register(Cliente)
 class ClienteAdmin(UnfoldHistoryAdmin):
     """Admin para Cliente com Unfold customization + History"""
-    list_display = ['numero', 'nome', 'nome_formal', 'angariador', 'nif', 'pais', 'email', 'created_at']
-    list_filter = [AngariadorListFilter, 'pais', 'created_at']
+    list_display = ['numero', 'nome', 'nome_formal', 'angariador', 'nif', 'pais', 'email']
+    list_filter = [AngariadorListFilter, 'pais']
     search_fields = ['numero', 'nome', 'nome_formal', 'nif', 'email', 'angariador__nome_completo']
     ordering = ['-created_at']
     actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
@@ -401,8 +401,8 @@ class ClienteAdmin(UnfoldHistoryAdmin):
 @admin.register(Fornecedor)
 class FornecedorAdmin(UnfoldHistoryAdmin):
     """Admin para Fornecedor com Unfold customization"""
-    list_display = ['numero', 'nome', 'estatuto', 'area', 'funcao', 'classificacao', 'email', 'created_at']
-    list_filter = ['estatuto', 'area', 'funcao', 'classificacao', 'pais', 'created_at']
+    list_display = ['numero', 'nome', 'estatuto', 'area', 'funcao', 'classificacao', 'email']
+    list_filter = ['estatuto', 'area', 'funcao', 'classificacao', 'pais']
     search_fields = ['numero', 'nome', 'nif', 'email', 'area', 'funcao']
     ordering = ['-created_at']
     actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
@@ -453,8 +453,8 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
 @admin.register(Projeto)
 class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
-    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao_formatted', 'data_recibo_formatted', 'created_at_formatted']
-    list_filter = ['tipo', SocioListFilter, 'estado', 'data_faturacao', 'created_at']
+    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_faturacao_formatted', 'data_recibo_formatted']
+    list_filter = ['tipo', SocioListFilter, 'estado', 'data_faturacao']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "P0001")
         'descricao',            # Contains na descrição
@@ -612,8 +612,8 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
 @admin.register(DespesaTemplate)
 class DespesaTemplateAdmin(UnfoldHistoryAdmin):
     """Admin para DespesaTemplate com Unfold customization"""
-    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'dia_mes', 'created_at']
-    list_filter = ['tipo', 'dia_mes', 'created_at']
+    list_display = ['numero', 'tipo', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'dia_mes']
+    list_filter = ['tipo', 'dia_mes']
     search_fields = ['numero', 'descricao', 'credor__nome']
     ordering = ['dia_mes', '-created_at']
     autocomplete_fields = ['credor', 'projeto']
@@ -655,8 +655,8 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
 @admin.register(Despesa)
 class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
-    list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento_formatted', 'created_at_formatted']
-    list_filter = [TagListFilter, 'estado', 'data', 'data_pagamento', 'created_at']
+    list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'projeto', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado', 'data_pagamento_formatted']
+    list_filter = [TagListFilter, 'estado', 'data', 'data_pagamento']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "D0001")
         'descricao',            # Contains na descrição
@@ -775,8 +775,8 @@ class BoletimLinhaInline(TabularInline):
 @admin.register(Boletim)
 class BoletimAdmin(UnfoldHistoryAdmin):
     """Admin para Boletim com Unfold customization"""
-    list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao_formatted', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento_formatted', 'created_at_formatted']
-    list_filter = [SocioListFilter, 'estado', 'mes', 'ano', 'data_emissao', 'created_at']
+    list_display = ['numero', 'socio', 'mes', 'ano', 'data_emissao_formatted', 'valor_total', 'total_ajudas_nacionais', 'total_ajudas_estrangeiro', 'total_kms', 'estado', 'data_pagamento_formatted']
+    list_filter = [SocioListFilter, 'estado', 'mes', 'ano', 'data_emissao']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "RV2024001")
         'socio__codigo',        # Contains no código do sócio (BA/RR)
@@ -862,8 +862,8 @@ class BoletimAdmin(UnfoldHistoryAdmin):
 @admin.register(BoletimLinha)
 class BoletimLinhaAdmin(ModelAdmin):
     """Admin para BoletimLinha com Unfold customization"""
-    list_display = ['boletim', 'ordem', 'servico_short', 'localidade', 'projeto', 'data_inicio_formatted', 'data_fim_formatted', 'tipo', 'dias', 'kms', 'created_at_formatted']
-    list_filter = ['tipo', 'data_inicio', 'created_at']
+    list_display = ['boletim', 'ordem', 'servico_short', 'localidade', 'projeto', 'data_inicio_formatted', 'data_fim_formatted', 'tipo', 'dias', 'kms']
+    list_filter = ['tipo', 'data_inicio']
     search_fields = ['servico', 'localidade', 'boletim__numero']
     ordering = ['boletim', 'ordem']
     autocomplete_fields = ['boletim', 'projeto']
@@ -914,8 +914,8 @@ class BoletimLinhaAdmin(ModelAdmin):
 @admin.register(Equipamento)
 class EquipamentoAdmin(UnfoldHistoryAdmin):
     """Admin para Equipamento com Unfold customization"""
-    list_display = ['numero', 'produto', 'tipo', 'estado', 'uso_pessoal', 'preco_aluguer', 'rendimento_acumulado', 'created_at']
-    list_filter = ['estado', 'uso_pessoal', 'tipo', 'created_at']
+    list_display = ['numero', 'produto', 'tipo', 'estado', 'uso_pessoal', 'preco_aluguer', 'rendimento_acumulado']
+    list_filter = ['estado', 'uso_pessoal', 'tipo']
     search_fields = ['numero', 'produto', 'tipo', 'label', 'referencia', 'numero_serie']
     ordering = ['-created_at']
 
@@ -974,8 +974,8 @@ class OrcamentoReparticaoInline(TabularInline):
 @admin.register(Orcamento)
 class OrcamentoAdmin(UnfoldHistoryAdmin):
     """Admin para Orcamento com Unfold customization"""
-    list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao_formatted', 'valor_total', 'status', 'created_at_formatted']
-    list_filter = ['status', SocioListFilter, 'data_criacao', 'created_at']
+    list_display = ['codigo', 'cliente', 'projeto', 'socio', 'data_criacao_formatted', 'valor_total', 'status']
+    list_filter = ['status', SocioListFilter, 'data_criacao']
     search_fields = [
         '^codigo',              # Prioridade: match exato no início (ex: "ORC2024001")
         'titulo_cliente',       # Contains no título para o cliente

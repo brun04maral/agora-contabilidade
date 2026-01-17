@@ -95,7 +95,7 @@ class Cliente(UserTrackingMixin, models.Model):
     - nome: Nome curto/informal usado em listagens e referências rápidas (max 120 chars)
     - nome_formal: Nome completo/formal da empresa (ex: "Empresa X, Lda.") usado em documentos oficiais (max 255 chars)
     """
-    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #C0001
+    numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #C0001
     nome = models.CharField(_('Nome'), max_length=120)  # Nome curto para listagens
     nome_formal = models.CharField(_('Nome Formal'), max_length=255)  # Nome completo/formal
     nif = models.CharField(_('NIF'), max_length=20, blank=True, null=True)
@@ -157,7 +157,7 @@ class Fornecedor(UserTrackingMixin, models.Model):
     """
     Modelo para armazenar informações de fornecedores/credores
     """
-    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #F0001
+    numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #F0001
     nome = models.CharField(_('Nome'), max_length=255)
     estatuto = models.CharField(
         _('Estatuto'),
@@ -229,7 +229,7 @@ class Projeto(UserTrackingMixin, models.Model):
     - EMPRESA: Apenas prémios entram nos saldos (owner indica quem angariou)
     - PESSOAL: Valor total entra nos INs do owner (BA ou RR)
     """
-    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #P0001
+    numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #P0001
     tipo = models.CharField(
         _('Tipo'),
         max_length=20,
@@ -244,7 +244,7 @@ class Projeto(UserTrackingMixin, models.Model):
         null=True,
         blank=True,
         related_name='projetos',
-        verbose_name=_('Sócio Responsável')
+        verbose_name=_('Gestor')
     )
 
     # Cliente
@@ -448,7 +448,7 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
 
     Exemplo: Salário pago dia 27 de cada mês
     """
-    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #TD000001
+    numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #TD000001
     tipo = models.CharField(
         _('Tipo'),
         max_length=20,
@@ -520,7 +520,7 @@ class Despesa(UserTrackingMixin, models.Model):
     - EQUIPAMENTO: Pode descontar do saldo se configurado
     - PROJETO: Associada a projeto, não impacta saldos diretamente
     """
-    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #D000001
+    numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #D000001
 
     # DEPRECATED: Campo antigo mantido por compatibilidade
     tipo = models.CharField(
@@ -693,7 +693,7 @@ class Boletim(UserTrackingMixin, models.Model):
 
     IMPORTANTE: Boletins descontam do saldo quando PAGOS (não quando emitidos).
     """
-    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)  # Ex: #B0001
+    numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #B0001
     socio_old = models.CharField(
         _('Sócio (OLD)'),
         max_length=2,
@@ -869,7 +869,7 @@ class UsoEquipamento(models.TextChoices):
 
 class Equipamento(UserTrackingMixin, models.Model):
     """Modelo para gestão de equipamento da empresa"""
-    numero = models.CharField(_('Número'), max_length=20, unique=True, db_index=True)
+    numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)
     produto = models.CharField(_('Produto'), max_length=255)
     tipo = models.CharField(_('Tipo'), max_length=100, blank=True, null=True)
     label = models.CharField(_('Label'), max_length=100, blank=True, null=True)
@@ -932,7 +932,7 @@ class Orcamento(UserTrackingMixin, models.Model):
         null=True,
         blank=True,
         related_name='orcamentos',
-        verbose_name=_('Sócio Responsável')
+        verbose_name=_('Gestor')
     )
     data_criacao = models.DateField(_('Data de Criação'))
     data_evento = models.CharField(_('Data do Evento'), max_length=200, blank=True, null=True)
