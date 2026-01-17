@@ -703,7 +703,7 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
 @admin.register(Despesa)
 class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
-    list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'projeto_id_display', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado']
+    list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado']
     list_filter = [TagListFilter, 'estado', 'data', 'data_pagamento']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "D0001")
