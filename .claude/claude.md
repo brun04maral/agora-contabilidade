@@ -409,7 +409,76 @@ docker compose exec db psql -U agora -d agora_production
 
 ## 🐛 Known Issues & Solutions
 
-### 1. Migration 0004 Faked
+### 1. Git Push com SSH (RESOLVIDO)
+**Problema:** Git push falha com "could not read Username for 'https://github.com'"
+**Causa:** Remote configurado com HTTPS em vez de SSH
+**Solução:**
+```bash
+# Verificar autenticação SSH
+ssh -T git@github.com
+# Should return: "Hi brun04maral! You've successfully authenticated..."
+
+# Mudar remote para SSH
+git remote set-url origin git@github.com:brun04maral/agora-contabilidade.git
+
+# Verificar
+git remote -v
+# Should show: git@github.com:brun04maral/agora-contabilidade.git
+
+# Push funciona agora
+git push origin main
+```
+
+**Chave SSH:** `~/.ssh/id_ed25519` já configurada e autenticada
+
+### 2. Recuperação após Apagar Pasta do Servidor
+**Problema:** Pasta do projeto apagada do servidor
+**O que sobrevive:**
+- ✅ Base de dados PostgreSQL (em Docker Volume externo: `/var/lib/docker/volumes/agora_web_postgres_data/`)
+- ✅ Volumes Docker (staticfiles, media)
+- ❌ Código fonte (precisa recuperar do GitHub)
+- ❌ `.env` (precisa recriar)
+
+**Solução:**
+```bash
+# 1. Clonar do GitHub
+git clone git@github.com:brun04maral/agora-contabilidade.git
+cd agora-contabilidade
+
+# 2. Recriar .env (ver secção Environment Variables abaixo)
+cat > .env <<EOF
+DEBUG=False
+SECRET_KEY=f#&l*&fzdxbrdttr1rjfn279x-aey=86p%a0a3yxgjj4-@vp12
+DJANGO_SETTINGS_MODULE=config.settings
+DOMAIN=app.agoramediaproduction.pt
+ALLOWED_HOSTS=app.agoramediaproduction.pt,localhost,127.0.0.1
+DB_NAME=agora_production
+DB_USER=agora
+DB_PASSWORD=Agora2025Prod!SecureDB
+DB_HOST=db
+DB_PORT=5432
+EOF
+
+# 3. Remover containers antigos (se existirem)
+docker rm -f agora_db agora_web
+
+# 4. Iniciar containers
+docker compose up -d --build
+
+# 5. Corrigir permissões e coletar static files
+docker compose exec -u root web chown -R agora:agora /app/staticfiles /app/static /app/media
+docker compose exec web python manage.py collectstatic --noinput
+
+# 6. Verificar que tudo funciona
+docker compose exec web python manage.py check
+```
+
+**Por que a BD sobrevive:**
+- Volume PostgreSQL é **externo** (`external: true` no docker-compose.yml)
+- Localização: `/var/lib/docker/volumes/agora_web_postgres_data/_data/`
+- Só é apagado com `docker volume rm` explícito
+
+### 3. Migration 0004 Faked
 **Problema:** Migration incluía tabelas já existentes
 **Solução:** `--fake` + criar tabelas manualmente via SQL
 **Detalhes:** `docs/DATABASE_MANUAL_CHANGES.md`
@@ -450,6 +519,31 @@ docker compose exec web python manage.py collectstatic --noinput
 ---
 
 ## 📝 Recent Major Changes
+
+### ✅ UI/UX Improvements (17 Jan 2026) - v2.4.3
+**Nomenclatura Simplificada:**
+- "Número" → "ID" em todos os modelos (Cliente, Fornecedor, Projeto, Despesa, Boletim, Equipamento)
+- "Sócio Responsável" → "Gestor" (Projeto, Orçamento)
+
+**Listas Admin Limpas:**
+- Removida coluna "Criado em" de todas as listas
+- Reduz ruído visual e melhora legibilidade
+- Campo ainda disponível na view detalhada
+
+**Ficheiros:** `core/models.py`, `core/admin.py`
+**Commit:** 3b27a9b
+
+### ✅ Recuperação Completa do Servidor (17 Jan 2026)
+**Situação:** Pasta do projeto apagada do servidor
+**Recuperação:**
+- ✅ Código recuperado do GitHub
+- ✅ `.env` recriado com credenciais corretas
+- ✅ Base de dados intacta (Docker Volume externo)
+- ✅ Containers reconstruídos e funcionais
+- ✅ Static files recoletados
+- ✅ Git SSH configurado para pushes automáticos
+
+**Lição:** Docker Volumes externos (`external: true`) são essenciais para persistência de dados!
 
 ### ✅ Socio Model Implementation (Dec 2025)
 - Created `Socio` model with BA/RR data
