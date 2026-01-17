@@ -141,13 +141,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 def get_custom_css(request):
     """Get custom CSS path with cache busting"""
     from django.templatetags.static import static
-    return static("css/admin_custom.css") + "?v=3.2.0-1768572715"
+    return static("css/admin_custom.css") + "?v=2.4.3"
 
 def get_custom_js(request):
     """Get custom JavaScript path with cache busting"""
     from django.templatetags.static import static
     import time
-    return static("js/admin_custom.js") + f"?v=4.0.0-{int(time.time())}"
+    return static("js/admin_custom.js") + f"?v=2.4.3-{int(time.time())}"
 
 def environment_callback(request):
     """Display environment badge in admin header"""
