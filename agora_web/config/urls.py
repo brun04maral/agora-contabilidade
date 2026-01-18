@@ -15,6 +15,10 @@ urlpatterns = [
     # Favicon redirect to ensure correct one is served
     path('favicon.ico', RedirectView.as_view(url='/media/logos/favicon.svg', permanent=True)),
 
+    # Redirects para compatibilidade com URLs antigas
+    path('docs/', RedirectView.as_view(url='/admin/core/documentacao/', permanent=True)),
+    path('docs/<str:doc_key>/', RedirectView.as_view(url='/admin/core/documentacao/%(doc_key)s/', permanent=True)),
+
     # Fiscal export (mantém rota para Excel export)
     path('fiscal/export/', export_fiscal_excel, name='export_fiscal_excel'),
 
