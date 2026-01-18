@@ -314,12 +314,7 @@ UNFOLD = {
                     {
                         "title": "Centro de Docs",
                         "icon": "menu_book",
-                        "link": "/docs/",
-                    },
-                    {
-                        "title": "Changelog",
-                        "icon": "history",
-                        "link": "/changelog/",
+                        "link": "/admin/core/documentacao/",
                     },
                 ],
             },
