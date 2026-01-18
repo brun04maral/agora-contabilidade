@@ -1,0 +1,42 @@
+[
+  {
+    "model": "core.tagirc",
+    "pk": "IRC_DEDUTIVEL_100",
+    "fields": {
+      "nome": "IRC Dedutível 100%",
+      "descricao": "Despesa totalmente dedutível para efeitos de IRC (ex: ordenados, equipamento, serviços relacionados com a atividade)",
+      "percentagem_dedutivel": 100.00,
+      "ordem": 1
+    }
+  },
+  {
+    "model": "core.tagirc",
+    "pk": "IRC_DEDUTIVEL_PARCIAL",
+    "fields": {
+      "nome": "IRC Dedutível Parcial",
+      "descricao": "Despesa parcialmente dedutível para efeitos de IRC (ex: viaturas >€25.000, entretenimento com limites)",
+      "percentagem_dedutivel": 50.00,
+      "ordem": 2
+    }
+  },
+  {
+    "model": "core.tagirc",
+    "pk": "IRC_NAO_DEDUTIVEL",
+    "fields": {
+      "nome": "IRC Não Dedutível",
+      "descricao": "Despesa não dedutível para efeitos de IRC (ex: multas, despesas pessoais, IRC pago)",
+      "percentagem_dedutivel": 0.00,
+      "ordem": 3
+    }
+  },
+  {
+    "model": "core.tagirc",
+    "pk": "IRC_INVESTIMENTO",
+    "fields": {
+      "nome": "IRC Investimento (Amortizável)",
+      "descricao": "Ativo imobilizado sujeito a depreciação/amortização (ex: equipamento >€1.000, viaturas). Dedutível via amortizações.",
+      "percentagem_dedutivel": 0.00,
+      "ordem": 4
+    }
+  }
+]

@@ -7,8 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from django.views.static import serve
-from core.views import changelog_view, export_fiscal_excel, fiscal_iva_view, fiscal_irs_view, fiscal_irc_view
-from core.views_docs import docs_index, docs_view
+from core.views import export_fiscal_excel
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/admin/', permanent=False), name='index'),
@@ -16,18 +15,10 @@ urlpatterns = [
     # Favicon redirect to ensure correct one is served
     path('favicon.ico', RedirectView.as_view(url='/media/logos/favicon.svg', permanent=True)),
 
-    # Documentation
-    path('docs/', docs_index, name='docs_index'),
-    path('docs/<str:doc_key>/', docs_view, name='docs_view'),
-    path('changelog/', changelog_view, name='changelog'),  # Mantém compatibilidade
-
-    # Fiscal Pages
-    path('fiscal/iva/', fiscal_iva_view, name='fiscal_iva'),
-    path('fiscal/irs/', fiscal_irs_view, name='fiscal_irs'),
-    path('fiscal/irc/', fiscal_irc_view, name='fiscal_irc'),
+    # Fiscal export (mantém rota para Excel export)
     path('fiscal/export/', export_fiscal_excel, name='export_fiscal_excel'),
 
-    # Admin
+    # Admin (inclui Documentação e Fiscal integrados)
     path('admin/', admin.site.urls),
 ]
 

@@ -1,0 +1,42 @@
+[
+  {
+    "model": "core.tagiva",
+    "pk": "IVA_DEDUTIVEL_100",
+    "fields": {
+      "nome": "IVA Dedutível 100%",
+      "descricao": "IVA totalmente dedutível (ex: equipamento, serviços para a atividade, alojamento em trabalho)",
+      "percentagem_dedutivel": 100.00,
+      "ordem": 1
+    }
+  },
+  {
+    "model": "core.tagiva",
+    "pk": "IVA_NAO_DEDUTIVEL",
+    "fields": {
+      "nome": "IVA Não Dedutível",
+      "descricao": "IVA não dedutível (ex: viaturas ligeiras de passageiros, combustíveis uso misto, refeições)",
+      "percentagem_dedutivel": 0.00,
+      "ordem": 2
+    }
+  },
+  {
+    "model": "core.tagiva",
+    "pk": "IVA_MISTO",
+    "fields": {
+      "nome": "IVA Uso Misto (Pro-rata)",
+      "descricao": "IVA parcialmente dedutível - uso misto empresa/pessoal (sujeito a pro-rata ou justificação)",
+      "percentagem_dedutivel": 50.00,
+      "ordem": 3
+    }
+  },
+  {
+    "model": "core.tagiva",
+    "pk": "IVA_ISENTO",
+    "fields": {
+      "nome": "IVA Isento / Sem IVA",
+      "descricao": "Operação isenta de IVA ou sem IVA aplicável (ex: serviços financeiros, seguros, despesas sem fatura)",
+      "percentagem_dedutivel": 0.00,
+      "ordem": 4
+    }
+  }
+]

@@ -276,7 +276,7 @@ class Projeto(UserTrackingMixin, models.Model):
     descricao = models.TextField(_('Descrição'))
 
     # Valores
-    valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
+    valor_sem_iva = models.DecimalField(_('Valor s/ IVA'), max_digits=10, decimal_places=2, default=0)
 
     # Faturação
     data_faturacao = models.DateField(
@@ -440,6 +440,194 @@ class TagDespesa(models.Model):
         return f"<TagDespesa(codigo='{self.codigo}', nome='{self.nome}')>"
 
 
+# ===================================================================
+# CATEGORIZAÇÃO FISCAL
+# ===================================================================
+
+class TagIRC(models.Model):
+    """
+    Tags de categorização para IRC (Imposto sobre o Rendimento de Pessoas Coletivas)
+
+    Define se uma despesa é dedutível ou não para efeitos de IRC.
+    """
+    codigo = models.CharField(
+        _('Código'),
+        max_length=50,
+        unique=True,
+        primary_key=True,
+        help_text='Código único (ex: IRC_DEDUTIVEL_100, IRC_NAO_DEDUTIVEL)'
+    )
+    nome = models.CharField(
+        _('Nome'),
+        max_length=100,
+        help_text='Nome apresentável'
+    )
+    descricao = models.TextField(
+        _('Descrição'),
+        blank=True,
+        null=True,
+        help_text='Descrição detalhada da categoria'
+    )
+    percentagem_dedutivel = models.DecimalField(
+        _('% Dedutível'),
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Percentagem dedutível (0-100%)'
+    )
+    ordem = models.IntegerField(_('Ordem'), default=0)
+
+    class Meta:
+        verbose_name = _('Tag IRC')
+        verbose_name_plural = _('Tags IRC')
+        ordering = ['ordem', 'nome']
+        db_table = 'tags_irc'
+
+    def __str__(self):
+        return f"{self.nome} ({self.percentagem_dedutivel}%)"
+
+
+class TagIVA(models.Model):
+    """
+    Tags de categorização para IVA (Imposto sobre o Valor Acrescentado)
+
+    Define se o IVA de uma despesa é dedutível ou não.
+    """
+    codigo = models.CharField(
+        _('Código'),
+        max_length=50,
+        unique=True,
+        primary_key=True,
+        help_text='Código único (ex: IVA_DEDUTIVEL_100, IVA_NAO_DEDUTIVEL)'
+    )
+    nome = models.CharField(
+        _('Nome'),
+        max_length=100,
+        help_text='Nome apresentável'
+    )
+    descricao = models.TextField(
+        _('Descrição'),
+        blank=True,
+        null=True,
+        help_text='Descrição detalhada da categoria'
+    )
+    percentagem_dedutivel = models.DecimalField(
+        _('% Dedutível'),
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Percentagem de IVA dedutível (0-100%)'
+    )
+    ordem = models.IntegerField(_('Ordem'), default=0)
+
+    class Meta:
+        verbose_name = _('Tag IVA')
+        verbose_name_plural = _('Tags IVA')
+        ordering = ['ordem', 'nome']
+        db_table = 'tags_iva'
+
+    def __str__(self):
+        return f"{self.nome} ({self.percentagem_dedutivel}%)"
+
+
+class TagIRS(models.Model):
+    """
+    Tags de categorização para IRS (Imposto sobre o Rendimento de Pessoas Singulares)
+
+    Define o regime de retenção na fonte aplicável.
+    """
+    codigo = models.CharField(
+        _('Código'),
+        max_length=50,
+        unique=True,
+        primary_key=True,
+        help_text='Código único (ex: IRS_ISENTO, IRS_RETENCAO_TRABALHO)'
+    )
+    nome = models.CharField(
+        _('Nome'),
+        max_length=100,
+        help_text='Nome apresentável'
+    )
+    descricao = models.TextField(
+        _('Descrição'),
+        blank=True,
+        null=True,
+        help_text='Descrição detalhada da categoria'
+    )
+    taxa_retencao_default = models.DecimalField(
+        _('Taxa Retenção Default'),
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Taxa de retenção padrão (pode ser sobreposta por cada despesa)'
+    )
+    ordem = models.IntegerField(_('Ordem'), default=0)
+
+    class Meta:
+        verbose_name = _('Tag IRS')
+        verbose_name_plural = _('Tags IRS')
+        ordering = ['ordem', 'nome']
+        db_table = 'tags_irs'
+
+    def __str__(self):
+        return f"{self.nome} ({self.taxa_retencao_default}%)"
+
+
+class TagTSU(models.Model):
+    """
+    Tags de categorização para TSU (Taxa Social Única / Segurança Social)
+
+    Define o regime de incidência de contribuições para a Segurança Social.
+    """
+    codigo = models.CharField(
+        _('Código'),
+        max_length=50,
+        unique=True,
+        primary_key=True,
+        help_text='Código único (ex: TSU_GERENTE, TSU_TRABALHADOR)'
+    )
+    nome = models.CharField(
+        _('Nome'),
+        max_length=100,
+        help_text='Nome apresentável'
+    )
+    descricao = models.TextField(
+        _('Descrição'),
+        blank=True,
+        null=True,
+        help_text='Descrição detalhada da categoria'
+    )
+    taxa_empresa = models.DecimalField(
+        _('Taxa Empresa'),
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Taxa paga pela empresa (%)'
+    )
+    taxa_trabalhador = models.DecimalField(
+        _('Taxa Trabalhador'),
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Taxa descontada ao trabalhador (%)'
+    )
+    ordem = models.IntegerField(_('Ordem'), default=0)
+
+    class Meta:
+        verbose_name = _('Tag TSU')
+        verbose_name_plural = _('Tags TSU')
+        ordering = ['ordem', 'nome']
+        db_table = 'tags_tsu'
+
+    def __str__(self):
+        return f"{self.nome} (Emp: {self.taxa_empresa}% / Trab: {self.taxa_trabalhador}%)"
+
+
 class DespesaTemplate(UserTrackingMixin, models.Model):
     """
     Template de despesa recorrente mensal
@@ -500,12 +688,50 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
     descricao = models.TextField(_('Descrição'))
 
     # Valores
-    valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
-    valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
+    valor_sem_iva = models.DecimalField(_('Valor s/ IVA'), max_digits=10, decimal_places=2, default=0)
+    valor_com_iva = models.DecimalField(_('Valor c/ IVA'), max_digits=10, decimal_places=2, default=0)
 
     # IRS Retenção na Fonte
     irs_retido = models.DecimalField(_('IRS Retido'), max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text=_('Retenção na fonte (normalmente 23% para freelancers)'))
     taxa_retencao_irs = models.DecimalField(_('Taxa Retenção IRS'), max_digits=5, decimal_places=2, default=0, blank=True, null=True, help_text=_('Taxa aplicada (23%, 25%, 16.5%, etc)'))
+
+    # Tags Fiscais (categorização fiscal automática)
+    tag_irc = models.ForeignKey(
+        'TagIRC',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='templates',
+        verbose_name=_('Tag IRC'),
+        help_text='Categoria de dedutibilidade IRC'
+    )
+    tag_iva = models.ForeignKey(
+        'TagIVA',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='templates',
+        verbose_name=_('Tag IVA'),
+        help_text='Categoria de dedutibilidade IVA'
+    )
+    tag_irs = models.ForeignKey(
+        'TagIRS',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='templates',
+        verbose_name=_('Tag IRS'),
+        help_text='Regime de retenção IRS'
+    )
+    tag_tsu = models.ForeignKey(
+        'TagTSU',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='templates',
+        verbose_name=_('Tag TSU'),
+        help_text='Regime de Segurança Social'
+    )
 
     # Recorrência
     dia_mes = models.IntegerField(
@@ -618,12 +844,50 @@ class Despesa(UserTrackingMixin, models.Model):
     descricao = models.TextField(_('Descrição'))
 
     # Valores
-    valor_sem_iva = models.DecimalField(_('Valor sem IVA'), max_digits=10, decimal_places=2, default=0)
-    valor_com_iva = models.DecimalField(_('Valor com IVA'), max_digits=10, decimal_places=2, default=0)
+    valor_sem_iva = models.DecimalField(_('Valor s/ IVA'), max_digits=10, decimal_places=2, default=0)
+    valor_com_iva = models.DecimalField(_('Valor c/ IVA'), max_digits=10, decimal_places=2, default=0)
 
     # IRS Retenção na Fonte
     irs_retido = models.DecimalField(_('IRS Retido'), max_digits=10, decimal_places=2, default=0, blank=True, null=True, help_text=_('Retenção na fonte (normalmente 23% para freelancers)'))
     taxa_retencao_irs = models.DecimalField(_('Taxa Retenção IRS'), max_digits=5, decimal_places=2, default=0, blank=True, null=True, help_text=_('Taxa aplicada (23%, 25%, 16.5%, etc)'))
+
+    # Tags Fiscais (categorização fiscal automática)
+    tag_irc = models.ForeignKey(
+        'TagIRC',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='despesas',
+        verbose_name=_('Tag IRC'),
+        help_text='Categoria de dedutibilidade IRC'
+    )
+    tag_iva = models.ForeignKey(
+        'TagIVA',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='despesas',
+        verbose_name=_('Tag IVA'),
+        help_text='Categoria de dedutibilidade IVA'
+    )
+    tag_irs = models.ForeignKey(
+        'TagIRS',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='despesas',
+        verbose_name=_('Tag IRS'),
+        help_text='Regime de retenção IRS'
+    )
+    tag_tsu = models.ForeignKey(
+        'TagTSU',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='despesas',
+        verbose_name=_('Tag TSU'),
+        help_text='Regime de Segurança Social'
+    )
 
     # Estado
     estado = models.CharField(
@@ -697,6 +961,18 @@ class Despesa(UserTrackingMixin, models.Model):
     def impacta_irc(self):
         """Retorna True se alguma tag da despesa impacta IRC"""
         return self.tags.filter(impacta_irc=True).exists()
+
+    # Helper methods para tags fiscais
+    @property
+    def fiscal_info(self):
+        """Retorna dict com informação fiscal completa"""
+        return {
+            'irc_dedutivel': self.tag_irc.percentagem_dedutivel if self.tag_irc else 0,
+            'iva_dedutivel': self.tag_iva.percentagem_dedutivel if self.tag_iva else 0,
+            'irs_taxa': self.tag_irs.taxa_retencao_default if self.tag_irs else 0,
+            'tsu_empresa': self.tag_tsu.taxa_empresa if self.tag_tsu else 0,
+            'tsu_trabalhador': self.tag_tsu.taxa_trabalhador if self.tag_tsu else 0,
+        }
 
 
 class CodigoSocio(models.TextChoices):
@@ -1155,4 +1431,19 @@ class ImportacaoDados(models.Model):
         verbose_name = _('Importação de Dados')
         verbose_name_plural = _('Importação de Dados')
         db_table = 'importacao_view'  # Tabela fictícia
+        default_permissions = ()  # Sem permissões de add/change/delete
+
+
+class Documentacao(models.Model):
+    """
+    Proxy model para mostrar Centro de Documentação no admin
+    Não tem tabela na BD - renderiza documentação markdown
+    """
+    id = models.IntegerField(primary_key=True)  # Dummy field
+
+    class Meta:
+        managed = False  # Django não cria tabela
+        verbose_name = _('Documentação')
+        verbose_name_plural = _('Documentação')
+        db_table = 'documentacao_view'  # Tabela fictícia
         default_permissions = ()  # Sem permissões de add/change/delete

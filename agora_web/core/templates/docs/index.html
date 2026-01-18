@@ -94,7 +94,7 @@
 
 {% block docs_body %}
 <div class="docs-intro">
-    <h2>📚 Centro de Documentação</h2>
+    <h2>Centro de Documentação</h2>
     <p>Toda a documentação do projeto Agora Contabilidade num só lugar</p>
 </div>
 
@@ -108,7 +108,7 @@
             {% for doc in docs %}
             <a href="{% url 'docs_view' doc.key %}" class="doc-card">
                 <div class="doc-card-header">
-                    <span class="material-icons doc-card-icon">{{ doc.icon }}</span>
+                    <span class="material-symbols-outlined doc-card-icon">{{ doc.icon }}</span>
                     <h4 class="doc-card-title">{{ doc.title }}</h4>
                 </div>
                 <p class="doc-card-description">{{ doc.description }}</p>
@@ -120,12 +120,12 @@
 
     <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #dee2e6; text-align: center; color: #6c757d;">
         <p>
-            <span class="material-icons" style="vertical-align: middle; font-size: 1.2rem;">code</span>
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">code</span>
             Desenvolvido com Django • PostgreSQL • Docker
         </p>
         <p style="margin-top: 0.5rem;">
             <a href="https://github.com/{{ github_repo }}" target="_blank" style="color: #d4af37; text-decoration: none;">
-                <span class="material-icons" style="vertical-align: middle; font-size: 1rem;">open_in_new</span>
+                <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1rem;">open_in_new</span>
                 Ver no GitHub
             </a>
         </p>

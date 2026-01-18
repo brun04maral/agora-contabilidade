@@ -129,4 +129,54 @@ A aba CAIXA contém o cálculo de saldos pessoais dos sócios.
 
 ## 🔍 Comparação com SaldosCalculator
 
-Ver comando: `python manage.py analisar_caixa`
+O comando de gestão Django permite validar se os cálculos implementados no sistema correspondem às fórmulas Excel:
+
+```bash
+python manage.py analisar_caixa
+```
+
+### Resultados da Validação
+
+A implementação em [agora_web/core/utils/saldos.py](../agora_web/core/utils/saldos.py) replica fielmente a lógica Excel:
+
+**Componentes Validados:**
+- ✅ **INs (Entradas):**
+  - Investimento inicial (valor fixo por sócio)
+  - Prémios pagos (filtro de despesas tipo "Ordenado|Sub. Alimentação")
+  - Projetos pessoais pagos (SUMIFS em projetos)
+  - Prémios não faturados (filtro de "Prémio|Comissão venda")
+
+- ✅ **OUTs (Saídas):**
+  - Despesas fixas mensais divididas por 2 sócios
+  - Boletins (ajudas de custo pessoais)
+  - Despesas pessoais (deslocações, per diems)
+
+- ✅ **Cálculo do Saldo:**
+  - Com investimento + salários em atraso
+  - Sem investimento + salários em atraso
+
+### Diferenças Identificadas
+
+**Nenhuma diferença significativa** entre cálculo Excel e Django. Pequenas discrepâncias de arredondamento (<€0.01) são esperadas devido a diferenças de precisão numérica.
+
+### Documentação Relacionada
+
+Para detalhes sobre a implementação do dashboard de saldos, consultar:
+- [SALDOS_DASHBOARD.md](./SALDOS_DASHBOARD.md) - Implementação completa do dashboard
+- [SALDOS_CROSSCHECK.md](./SALDOS_CROSSCHECK.md) - Validação cruzada Excel vs DB
+- [SALDOS_VALIDATION_RESULTS.md](./SALDOS_VALIDATION_RESULTS.md) - Resultados detalhados
+
+---
+
+## 📋 Conclusão
+
+A aba CAIXA do Excel implementa uma lógica de saldos pessoais baseada em:
+1. **Entradas** (INs): O que a empresa deve ao sócio
+2. **Saídas** (OUTs): O que a empresa já pagou ao sócio
+3. **Saldo**: Diferença entre INs e OUTs
+
+Esta lógica foi **replicada com sucesso** no sistema Django através do `SaldosCalculator`, permitindo cálculo dinâmico e em tempo real dos saldos pessoais de cada sócio.
+
+---
+
+**Last Updated:** 2026-01-03

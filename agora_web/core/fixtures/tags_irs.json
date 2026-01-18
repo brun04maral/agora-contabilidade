@@ -1,0 +1,52 @@
+[
+  {
+    "model": "core.tagirs",
+    "pk": "IRS_ISENTO",
+    "fields": {
+      "nome": "IRS Isento",
+      "descricao": "Isento de retenção na fonte (ex: subsídio alimentação ≤€10,20/dia em vales, ajudas de custo dentro dos limites legais)",
+      "taxa_retencao_default": 0.00,
+      "ordem": 1
+    }
+  },
+  {
+    "model": "core.tagirs",
+    "pk": "IRS_RETENCAO_TRABALHO",
+    "fields": {
+      "nome": "IRS Trabalho Dependente",
+      "descricao": "Trabalho dependente - aplicar tabela AT por escalões (ordenados de gerentes/trabalhadores). Taxa varia conforme remuneração.",
+      "taxa_retencao_default": 0.00,
+      "ordem": 2
+    }
+  },
+  {
+    "model": "core.tagirs",
+    "pk": "IRS_RETENCAO_25",
+    "fields": {
+      "nome": "IRS Independente 25%",
+      "descricao": "Trabalho independente - Prestação de serviços (freelancers). Taxa de retenção 25% (regra geral).",
+      "taxa_retencao_default": 25.00,
+      "ordem": 3
+    }
+  },
+  {
+    "model": "core.tagirs",
+    "pk": "IRS_RETENCAO_11_5",
+    "fields": {
+      "nome": "IRS Independente 11,5%",
+      "descricao": "Trabalho independente - Atividades profissionais específicas (técnicos, profissionais liberais). Taxa de retenção 11,5%.",
+      "taxa_retencao_default": 11.50,
+      "ordem": 4
+    }
+  },
+  {
+    "model": "core.tagirs",
+    "pk": "IRS_RETENCAO_16_5",
+    "fields": {
+      "nome": "IRS Independente 16,5%",
+      "descricao": "Trabalho independente - Atividades artísticas, literárias e científicas. Taxa de retenção 16,5%.",
+      "taxa_retencao_default": 16.50,
+      "ordem": 5
+    }
+  }
+]

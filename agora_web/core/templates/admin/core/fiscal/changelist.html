@@ -97,24 +97,6 @@
         <p style="font-size: 0.875rem;" class="fiscal-subtext">Gestão de IVA, IRS e IRC</p>
     </div>
 
-
-    <!-- Próximas Obrigações -->
-    {% if obrigacoes %}
-    <div class="fiscal-alert-bg fiscal-alert-border" style="border-left: 4px solid; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;" class="fiscal-alert-text">Próximas Obrigações</h3>
-        <div style="font-size: 0.875rem;" class="fiscal-alert-text">
-            {% for obr in obrigacoes %}
-            <div class="flex justify-between py-1 {% if not forloop.last %}border-b fiscal-alert-border{% endif %}">
-                <span><strong>{{ obr.tipo }}:</strong> {{ obr.descricao }}</span>
-                <span class="font-medium {% if obr.dias_restantes <= 7 %}red-text{% elif obr.dias_restantes <= 15 %}text-orange-600{% else %}green-text{% endif %}">
-                    {{ obr.prazo|date:"d/m/Y" }} ({{ obr.dias_restantes }} dias)
-                </span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Cards Clicáveis -->
     <div class="fiscal-grid" style="margin-bottom: 1.5rem;">
 
@@ -169,6 +151,23 @@
             </div>
         </a>
     </div>
+
+    <!-- Próximas Obrigações -->
+    {% if obrigacoes %}
+    <div class="fiscal-alert-bg fiscal-alert-border" style="border-left: 4px solid; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;" class="fiscal-alert-text">Próximas Obrigações</h3>
+        <div style="font-size: 0.875rem;" class="fiscal-alert-text">
+            {% for obr in obrigacoes %}
+            <div class="flex justify-between py-1 {% if not forloop.last %}border-b fiscal-alert-border{% endif %}">
+                <span><strong>{{ obr.tipo }}:</strong> {{ obr.descricao }}</span>
+                <span class="font-medium {% if obr.dias_restantes <= 7 %}red-text{% elif obr.dias_restantes <= 15 %}text-orange-600{% else %}green-text{% endif %}">
+                    {{ obr.prazo|date:"d/m/Y" }} ({{ obr.dias_restantes }} dias)
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
 </div>
 {% endblock %}

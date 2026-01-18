@@ -87,6 +87,24 @@ DOCS_STRUCTURE = {
         'file': '.claude/claude.md',
         'description': 'Contexto e instruções para assistente IA'
     },
+    'logo-cleanup': {
+        'title': 'Logo & Branding Cleanup',
+        'icon': 'palette',
+        'file': 'docs/LOGO_BRANDING_CLEANUP.md',
+        'description': 'Limpeza e configuração de logos e favicons'
+    },
+    'fiscal-system': {
+        'title': 'Sistema Fiscal',
+        'icon': 'account_balance',
+        'file': 'docs/FISCAL_SYSTEM_GUIDE.md',
+        'description': 'Sistema de categorização fiscal completo (IRC, IVA, IRS, TSU)'
+    },
+    'respostas-contabilista': {
+        'title': 'Respostas do Contabilista',
+        'icon': 'question_answer',
+        'file': 'docs/RESPOSTAS_CONTABILISTA.md',
+        'description': 'Respostas do contabilista sobre categorização fiscal'
+    },
 }
 
 
@@ -109,6 +127,101 @@ def get_doc_path(doc_key):
         return settings.DOCS_CONFIG['ROOT_PATH'] / file_path.replace('docs/', '')
 
 
+def convert_md_links_to_urls(html):
+    """Convert .md file links to documentation URLs."""
+    import re
+
+    # Mapeamento de ficheiros .md para doc_key
+    # Incluindo variações com paths relativos
+    md_to_key = {
+        # Root level files
+        'README.md': 'overview',
+        '../README.md': 'overview',
+        'CHANGELOG.md': 'changelog',
+        '../CHANGELOG.md': 'changelog',
+
+        # docs/ folder files
+        'docs/README.md': 'docs-index',
+        './README.md': 'docs-index',  # Quando dentro de docs/
+        'README-DEV.md': 'overview',  # README-DEV não existe no sistema, redireciona para overview
+        '../README-DEV.md': 'overview',
+
+        'DATABASE_MANUAL_CHANGES.md': 'database-manual',
+        './DATABASE_MANUAL_CHANGES.md': 'database-manual',
+        'docs/DATABASE_MANUAL_CHANGES.md': 'database-manual',
+
+        'EXCEL_IMPORT_ANALYSIS.md': 'excel-import',
+        './EXCEL_IMPORT_ANALYSIS.md': 'excel-import',
+        'docs/EXCEL_IMPORT_ANALYSIS.md': 'excel-import',
+
+        'IMPORT_SYSTEM.md': 'import-system',
+        './IMPORT_SYSTEM.md': 'import-system',
+        'docs/IMPORT_SYSTEM.md': 'import-system',
+
+        'PWA_BRANDING.md': 'pwa',
+        './PWA_BRANDING.md': 'pwa',
+        'docs/PWA_BRANDING.md': 'pwa',
+
+        'SALDOS_DASHBOARD.md': 'saldos-dashboard',
+        './SALDOS_DASHBOARD.md': 'saldos-dashboard',
+        'docs/SALDOS_DASHBOARD.md': 'saldos-dashboard',
+
+        'SALDOS_REVISION_SPEC.md': 'saldos-revision',
+        './SALDOS_REVISION_SPEC.md': 'saldos-revision',
+        'docs/SALDOS_REVISION_SPEC.md': 'saldos-revision',
+
+        'SOCIOS_MIGRATION.md': 'socios',
+        './SOCIOS_MIGRATION.md': 'socios',
+        'docs/SOCIOS_MIGRATION.md': 'socios',
+
+        'audit-trail-implementation.md': 'audit-trail',
+        './audit-trail-implementation.md': 'audit-trail',
+        'docs/audit-trail-implementation.md': 'audit-trail',
+
+        'LOGO_BRANDING_CLEANUP.md': 'logo-cleanup',
+        './LOGO_BRANDING_CLEANUP.md': 'logo-cleanup',
+        'docs/LOGO_BRANDING_CLEANUP.md': 'logo-cleanup',
+
+        'FISCAL_SYSTEM_GUIDE.md': 'fiscal-system',
+        './FISCAL_SYSTEM_GUIDE.md': 'fiscal-system',
+        'docs/FISCAL_SYSTEM_GUIDE.md': 'fiscal-system',
+
+        'RESPOSTAS_CONTABILISTA.md': 'respostas-contabilista',
+        './RESPOSTAS_CONTABILISTA.md': 'respostas-contabilista',
+        'docs/RESPOSTAS_CONTABILISTA.md': 'respostas-contabilista',
+
+        # agora_web/ folder
+        'agora_web/README.md': 'overview',  # Redireciona para overview
+        '../agora_web/README.md': 'overview',
+
+        # .claude/ folder
+        'claude.md': 'claude',
+        '.claude/claude.md': 'claude',
+        '../.claude/claude.md': 'claude',
+    }
+
+    # Pattern para encontrar href="...file.md" ou href="...file.md#anchor"
+    # Captura: grupo 1 = path completo, grupo 2 = âncora (opcional)
+    pattern = r'href="([^"]+\.md)(#[^"]*)?\"'
+
+    def replace_link(match):
+        file_path = match.group(1)
+        anchor = match.group(2) or ''  # Preserva a âncora se existir
+
+        # Tenta encontrar o doc_key correspondente
+        if file_path in md_to_key:
+            doc_key = md_to_key[file_path]
+            return f'href="/docs/{doc_key}/{anchor}"'
+
+        # Se não encontrou match direto, retorna o link original
+        return match.group(0)
+
+    # Substituir todos os links .md
+    html = re.sub(pattern, replace_link, html)
+
+    return html
+
+
 def render_markdown(content):
     """Render markdown to HTML with syntax highlighting and TOC."""
     md = markdown.Markdown(extensions=[
@@ -129,6 +242,9 @@ def render_markdown(content):
     html = md.convert(content)
     toc = md.toc if hasattr(md, 'toc') else ''
 
+    # Converter links .md para URLs do sistema de documentação
+    html = convert_md_links_to_urls(html)
+
     return html, toc
 
 
@@ -145,7 +261,8 @@ def docs_index(request):
     categories = {
         'Geral': ['overview', 'changelog', 'docs-index'],
         'Técnico': ['database-manual', 'saldos-dashboard', 'saldos-revision', 'socios', 'audit-trail'],
-        'Features': ['excel-import', 'import-system', 'pwa'],
+        'Features': ['excel-import', 'import-system', 'pwa', 'logo-cleanup'],
+        'Fiscal': ['fiscal-system', 'respostas-contabilista'],
         'Suporte': ['claude'],
     }
 

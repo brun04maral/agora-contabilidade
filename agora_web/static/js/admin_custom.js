@@ -185,7 +185,7 @@
 
         if (environmentBadge && !environmentBadge.classList.contains('clickable-badge')) {
             environmentBadge.style.cursor = 'pointer';
-            environmentBadge.title = 'v0.2.43 | Última atualização: 17/01/2026';
+            environmentBadge.title = 'v0.2.45 | Última atualização: 17/01/2026';
 
             // Visual feedback
             environmentBadge.style.transition = 'all 0.2s ease-in-out';
@@ -215,15 +215,203 @@
         }
     }
 
+    // ========== AUTO-SUGESTÃO DE TAGS FISCAIS ==========
+
+    // Mapeamento simplificado (keywords mais comuns) - o backend tem mapeamento completo
+    const FISCAL_QUICK_MAP = {
+        'ordenado': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: null },
+        'gerente': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: 'TSU_GERENTE' },
+        'subsídio': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_ISENTO', tsu: 'TSU_ISENTO' },
+        'freelancer': { irc: 'IRC_DEDUTIVEL_100', iva: 'IVA_DEDUTIVEL_100', irs: 'IRS_RETENCAO_25', tsu: 'TSU_INDEPENDENTE' },
+        'equipamento': { irc: 'IRC_INVESTIMENTO', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
+        'renting': { irc: 'IRC_DEDUTIVEL_100', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
+        'gasolina': { irc: 'IRC_NAO_DEDUTIVEL', iva: 'IVA_NAO_DEDUTIVEL', irs: null, tsu: null },
+        'gasóleo': { irc: 'IRC_DEDUTIVEL_PARCIAL', iva: 'IVA_MISTO', irs: null, tsu: null },
+    };
+
+    function suggestFiscalTags() {
+        // Detectar se estamos na página de edição de Despesa ou DespesaTemplate
+        const isDespesaPage = window.location.pathname.includes('/despesa/') ||
+                              window.location.pathname.includes('/despesatemplate/');
+
+        if (!isDespesaPage) return;
+
+        // Verificar se já foi inicializado (prevenir duplicação)
+        if (document.querySelector('.fiscal-suggest-button')) return;
+
+        // Encontrar campos de descrição e tags operacionais
+        const descField = document.querySelector('#id_descricao, textarea[name="descricao"]');
+        const tagsField = document.querySelector('#id_tags_from, #id_tags_to, select[name="tags"]');
+
+        // Campos fiscais
+        const ircField = document.querySelector('#id_tag_irc, select[name="tag_irc"]');
+        const ivaField = document.querySelector('#id_tag_iva, select[name="tag_iva"]');
+        const irsField = document.querySelector('#id_tag_irs, select[name="tag_irs"]');
+        const tsuField = document.querySelector('#id_tag_tsu, select[name="tag_tsu"]');
+
+        if (!descField) return;
+
+        // Criar botão de auto-sugestão com Material Symbol (Unfold usa material-symbols-outlined)
+        const suggestButton = document.createElement('button');
+        suggestButton.type = 'button';
+        suggestButton.className = 'button fiscal-suggest-button';
+        suggestButton.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1.25rem; vertical-align: middle; margin-right: 4px;">auto_awesome</span>Sugerir Tags Fiscais';
+        suggestButton.style.cssText = 'margin-left: 10px; padding: 6px 12px; font-size: 13px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center;';
+
+        suggestButton.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+            this.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+        });
+
+        suggestButton.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+            this.style.boxShadow = 'none';
+        });
+
+        suggestButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            const description = descField.value.toLowerCase();
+
+            // Procurar match
+            let bestMatch = null;
+            let bestKeyword = '';
+
+            for (const [keyword, mapping] of Object.entries(FISCAL_QUICK_MAP)) {
+                if (description.includes(keyword)) {
+                    // Preferir matches mais específicos (keywords mais longas)
+                    if (!bestMatch || keyword.length > bestKeyword.length) {
+                        bestMatch = mapping;
+                        bestKeyword = keyword;
+                    }
+                }
+            }
+
+            if (bestMatch) {
+                // Aplicar sugestões
+                if (ircField && bestMatch.irc) setSelectValue(ircField, bestMatch.irc);
+                if (ivaField && bestMatch.iva) setSelectValue(ivaField, bestMatch.iva);
+                if (irsField && bestMatch.irs) setSelectValue(irsField, bestMatch.irs);
+                if (tsuField && bestMatch.tsu) setSelectValue(tsuField, bestMatch.tsu);
+
+                // Feedback visual
+                const tagCount = [bestMatch.irc, bestMatch.iva, bestMatch.irs, bestMatch.tsu].filter(x => x).length;
+                showNotification('Tags fiscais sugeridas: "' + bestKeyword + '" (' + tagCount + ' tags)', 'success');
+            } else {
+                showNotification('Nenhuma sugestão automática. Por favor categorizar manualmente.', 'warning');
+            }
+        });
+
+        // Inserir botão após campo de descrição
+        const descRow = descField.closest('.form-row, .field-descricao, div');
+        if (descRow) {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = 'margin-top: 8px;';
+            buttonContainer.appendChild(suggestButton);
+            descRow.appendChild(buttonContainer);
+        }
+    }
+
+    function setSelectValue(selectElement, value) {
+        if (!selectElement || !value) return false;
+
+        // Verificar se é Select2 (autocomplete do Django Admin)
+        const hasSelect2Data = typeof jQuery !== 'undefined' && jQuery(selectElement).data('select2');
+        const hasSelect2Class = selectElement.classList.contains('select2-hidden-accessible');
+
+        if (hasSelect2Data || hasSelect2Class) {
+            // Para Django autocomplete_fields com Select2
+            let option = selectElement.querySelector('option[value="' + value + '"]');
+
+            if (!option) {
+                // Criar nova opção com o codigo (PK) como valor e texto
+                option = new Option(value, value, true, true);
+                selectElement.appendChild(option);
+            }
+
+            // Atualizar Select2
+            const $select = jQuery(selectElement);
+            $select.val(value);
+            $select.trigger('change');
+            $select.trigger('change.select2');
+
+            return true;
+        }
+
+        // Select normal (fallback)
+        for (let i = 0; i < selectElement.options.length; i++) {
+            if (selectElement.options[i].value === value) {
+                selectElement.selectedIndex = i;
+                selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function showNotification(message, type) {
+        // Remover notificações anteriores
+        const oldNotif = document.querySelector('.fiscal-notification');
+        if (oldNotif) oldNotif.remove();
+
+        const notification = document.createElement('div');
+        notification.className = 'fiscal-notification';
+        notification.textContent = message;
+
+        const bgColor = type === 'success' ? 'rgb(16, 185, 129)' : 'rgb(245, 158, 11)';
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10000;
+            padding: 12px 20px;
+            background: ${bgColor};
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        // Adicionar animação
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(notification);
+
+        // Auto-remover após 4 segundos
+        setTimeout(function() {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(function() {
+                notification.remove();
+            }, 300);
+        }, 4000);
+    }
+
+    // ========== INICIALIZAÇÃO ==========
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             initClickableRows();
             initSelectionTotalListeners();
             setTimeout(makeEnvironmentBadgeClickable, 1000);  // Delay for Unfold to load
+            setTimeout(suggestFiscalTags, 500);  // Init fiscal suggestions
         });
     } else {
         initClickableRows();
         initSelectionTotalListeners();
         setTimeout(makeEnvironmentBadgeClickable, 1000);  // Delay for Unfold to load
+        setTimeout(suggestFiscalTags, 500);  // Init fiscal suggestions
     }
 })();

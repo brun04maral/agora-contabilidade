@@ -1,0 +1,46 @@
+[
+  {
+    "model": "core.tagtsu",
+    "pk": "TSU_GERENTE",
+    "fields": {
+      "nome": "TSU Gerente",
+      "descricao": "Regime de Segurança Social para gerentes/administradores. Taxas vigentes em 2026: Empresa 21,4% + Gerente 9,3%.",
+      "taxa_empresa": 21.40,
+      "taxa_trabalhador": 9.30,
+      "ordem": 1
+    }
+  },
+  {
+    "model": "core.tagtsu",
+    "pk": "TSU_TRABALHADOR",
+    "fields": {
+      "nome": "TSU Trabalhador Dependente",
+      "descricao": "Regime de Segurança Social para trabalhadores por conta de outrem. Taxas vigentes: Empresa 23,75% + Trabalhador 11%.",
+      "taxa_empresa": 23.75,
+      "taxa_trabalhador": 11.00,
+      "ordem": 2
+    }
+  },
+  {
+    "model": "core.tagtsu",
+    "pk": "TSU_ISENTO",
+    "fields": {
+      "nome": "TSU Isento",
+      "descricao": "Isento de TSU (ex: subsídio alimentação ≤€10,20/dia em vales, freelancers - pagam regime próprio, prémios dentro de certos limites)",
+      "taxa_empresa": 0.00,
+      "taxa_trabalhador": 0.00,
+      "ordem": 3
+    }
+  },
+  {
+    "model": "core.tagtsu",
+    "pk": "TSU_INDEPENDENTE",
+    "fields": {
+      "nome": "TSU Trabalhador Independente",
+      "descricao": "Trabalhador independente (freelancer) - paga regime próprio de Segurança Social. A empresa não desconta TSU sobre pagamentos.",
+      "taxa_empresa": 0.00,
+      "taxa_trabalhador": 0.00,
+      "ordem": 4
+    }
+  }
+]

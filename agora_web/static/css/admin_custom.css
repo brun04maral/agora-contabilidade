@@ -114,3 +114,33 @@ span:has-text("Production") {
 }
 
 /* Indicador visual removido - apenas hover effect */
+
+/* ====================================================================
+   LOGO SIDEBAR - DYNAMIC COLOR
+   ==================================================================== */
+
+/* Aplicar cor dourada ao logo da sidebar */
+.sidebar-logo img,
+.sidebar-logo svg,
+[class*="sidebar"] img[src*="logo"],
+[class*="sidebar"] svg,
+img[src*="app_logo_sidebar"],
+/* Unfold specific selectors */
+.bg-primary-600 img,
+.bg-primary-600 svg,
+aside img[src*="logo"],
+aside svg {
+    filter: brightness(0) saturate(100%) invert(60%) sepia(42%) saturate(806%) hue-rotate(7deg) brightness(95%) contrast(87%);
+}
+
+/* Alternativa: usar currentColor se o SVG suportar */
+.sidebar-logo svg path,
+aside svg path {
+    fill: #D4AF37 !important;
+}
+
+/* Para garantir que funciona em modo claro e escuro */
+.dark .sidebar-logo svg path,
+.dark aside svg path {
+    fill: #D4AF37 !important;
+}

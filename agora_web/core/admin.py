@@ -13,7 +13,7 @@ from unfold.decorators import display, action
 from simple_history.admin import SimpleHistoryAdmin
 from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
-    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal, ImportacaoDados,
+    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal, ImportacaoDados, Documentacao,
     TagIRC, TagIVA, TagIRS, TagTSU
 )
 
@@ -1597,3 +1597,326 @@ class ImportacaoDadosAdmin(ModelAdmin):
         }
 
         return render(request, 'admin/core/importacaodados/changelist.html', context)
+
+
+@admin.register(Documentacao)
+class DocumentacaoAdmin(ModelAdmin):
+    """Admin para Centro de Documentação"""
+
+    # Documentation structure
+    DOCS_STRUCTURE = {
+        'overview': {
+            'title': 'Visão Geral',
+            'icon': 'info',
+            'file': 'README.md',
+            'description': 'Visão geral do projeto Agora Contabilidade'
+        },
+        'changelog': {
+            'title': 'Changelog',
+            'icon': 'history',
+            'file': 'CHANGELOG.md',
+            'description': 'Histórico completo de versões e alterações'
+        },
+        'database-manual': {
+            'title': 'Alterações Manuais BD',
+            'icon': 'build',
+            'file': 'docs/DATABASE_MANUAL_CHANGES.md',
+            'description': 'Histórico de alterações manuais na base de dados'
+        },
+        'docs-index': {
+            'title': 'Índice da Documentação',
+            'icon': 'list',
+            'file': 'docs/README.md',
+            'description': 'Índice completo da documentação do projeto'
+        },
+        'excel-import': {
+            'title': 'Importação Excel',
+            'icon': 'upload_file',
+            'file': 'docs/EXCEL_IMPORT_ANALYSIS.md',
+            'description': 'Análise do sistema de importação de dados via Excel'
+        },
+        'import-system': {
+            'title': 'Sistema de Importação',
+            'icon': 'cloud_upload',
+            'file': 'docs/IMPORT_SYSTEM.md',
+            'description': 'Documentação do sistema de importação'
+        },
+        'pwa': {
+            'title': 'PWA & Branding',
+            'icon': 'install_mobile',
+            'file': 'docs/PWA_BRANDING.md',
+            'description': 'Progressive Web App e configuração de branding'
+        },
+        'saldos-dashboard': {
+            'title': 'Dashboard de Saldos',
+            'icon': 'dashboard',
+            'file': 'docs/SALDOS_DASHBOARD.md',
+            'description': 'Documentação do dashboard de saldos pessoais'
+        },
+        'saldos-revision': {
+            'title': 'Revisão de Saldos',
+            'icon': 'fact_check',
+            'file': 'docs/SALDOS_REVISION_SPEC.md',
+            'description': 'Especificação para revisão da lógica de saldos'
+        },
+        'socios': {
+            'title': 'Migração de Sócios',
+            'icon': 'people',
+            'file': 'docs/SOCIOS_MIGRATION.md',
+            'description': 'Documentação da migração do modelo Socio'
+        },
+        'audit-trail': {
+            'title': 'Audit Trail',
+            'icon': 'history_edu',
+            'file': 'docs/audit-trail-implementation.md',
+            'description': 'Implementação do sistema de auditoria'
+        },
+        'claude': {
+            'title': 'Contexto IA (Claude)',
+            'icon': 'smart_toy',
+            'file': '.claude/claude.md',
+            'description': 'Contexto e instruções para assistente IA'
+        },
+        'logo-cleanup': {
+            'title': 'Logo & Branding Cleanup',
+            'icon': 'palette',
+            'file': 'docs/LOGO_BRANDING_CLEANUP.md',
+            'description': 'Limpeza e configuração de logos e favicons'
+        },
+        'fiscal-system': {
+            'title': 'Sistema Fiscal',
+            'icon': 'account_balance',
+            'file': 'docs/FISCAL_SYSTEM_GUIDE.md',
+            'description': 'Sistema de categorização fiscal completo (IRC, IVA, IRS, TSU)'
+        },
+        'fiscal-dashboard': {
+            'title': 'Dashboard Fiscal',
+            'icon': 'assessment',
+            'file': 'docs/FISCAL_DASHBOARD.md',
+            'description': 'Dashboard fiscal integrado com IVA/IRS/IRC'
+        },
+        'respostas-contabilista': {
+            'title': 'Respostas do Contabilista',
+            'icon': 'question_answer',
+            'file': 'docs/RESPOSTAS_CONTABILISTA.md',
+            'description': 'Respostas do contabilista sobre categorização fiscal'
+        },
+    }
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def get_urls(self):
+        """Adiciona URLs customizadas para documentação"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('', self.admin_site.admin_view(self.docs_index_view), name='core_documentacao_index'),
+            path('<str:doc_key>/', self.admin_site.admin_view(self.docs_detail_view), name='core_documentacao_detail'),
+        ]
+        return custom_urls + urls
+
+    def get_doc_path(self, doc_key):
+        """Get absolute path for a documentation file."""
+        from django.conf import settings
+
+        if doc_key not in self.DOCS_STRUCTURE:
+            return None
+
+        file_path = self.DOCS_STRUCTURE[doc_key]['file']
+
+        # Build absolute path based on file location
+        if file_path == 'README.md':
+            return settings.DOCS_CONFIG['MAIN_README']
+        elif file_path == 'CHANGELOG.md':
+            return settings.DOCS_CONFIG['CHANGELOG']
+        elif file_path == '.claude/claude.md':
+            return settings.DOCS_CONFIG['CLAUDE_MD']
+        else:
+            # docs/ folder
+            return settings.DOCS_CONFIG['ROOT_PATH'] / file_path.replace('docs/', '')
+
+    def convert_md_links_to_urls(self, html):
+        """Convert .md file links to documentation URLs."""
+        import re
+
+        # Mapeamento de ficheiros .md para doc_key
+        md_to_key = {
+            'README.md': 'overview',
+            '../README.md': 'overview',
+            'CHANGELOG.md': 'changelog',
+            '../CHANGELOG.md': 'changelog',
+            'docs/README.md': 'docs-index',
+            './README.md': 'docs-index',
+            'DATABASE_MANUAL_CHANGES.md': 'database-manual',
+            './DATABASE_MANUAL_CHANGES.md': 'database-manual',
+            'docs/DATABASE_MANUAL_CHANGES.md': 'database-manual',
+            'EXCEL_IMPORT_ANALYSIS.md': 'excel-import',
+            './EXCEL_IMPORT_ANALYSIS.md': 'excel-import',
+            'IMPORT_SYSTEM.md': 'import-system',
+            './IMPORT_SYSTEM.md': 'import-system',
+            'PWA_BRANDING.md': 'pwa',
+            './PWA_BRANDING.md': 'pwa',
+            'SALDOS_DASHBOARD.md': 'saldos-dashboard',
+            './SALDOS_DASHBOARD.md': 'saldos-dashboard',
+            'SALDOS_REVISION_SPEC.md': 'saldos-revision',
+            './SALDOS_REVISION_SPEC.md': 'saldos-revision',
+            'SOCIOS_MIGRATION.md': 'socios',
+            './SOCIOS_MIGRATION.md': 'socios',
+            'audit-trail-implementation.md': 'audit-trail',
+            './audit-trail-implementation.md': 'audit-trail',
+            'LOGO_BRANDING_CLEANUP.md': 'logo-cleanup',
+            './LOGO_BRANDING_CLEANUP.md': 'logo-cleanup',
+            'FISCAL_SYSTEM_GUIDE.md': 'fiscal-system',
+            './FISCAL_SYSTEM_GUIDE.md': 'fiscal-system',
+            'FISCAL_DASHBOARD.md': 'fiscal-dashboard',
+            './FISCAL_DASHBOARD.md': 'fiscal-dashboard',
+            'RESPOSTAS_CONTABILISTA.md': 'respostas-contabilista',
+            './RESPOSTAS_CONTABILISTA.md': 'respostas-contabilista',
+            'claude.md': 'claude',
+            '.claude/claude.md': 'claude',
+            '../.claude/claude.md': 'claude',
+        }
+
+        pattern = r'href="([^"]+\.md)(#[^"]*)?\"'
+
+        def replace_link(match):
+            file_path = match.group(1)
+            anchor = match.group(2) or ''
+
+            if file_path in md_to_key:
+                doc_key = md_to_key[file_path]
+                return f'href="/admin/core/documentacao/{doc_key}/{anchor}"'
+
+            return match.group(0)
+
+        html = re.sub(pattern, replace_link, html)
+        return html
+
+    def render_markdown(self, content):
+        """Render markdown to HTML with syntax highlighting and TOC."""
+        import markdown
+        from markdown.extensions.codehilite import CodeHiliteExtension
+        from markdown.extensions.toc import TocExtension
+
+        md = markdown.Markdown(extensions=[
+            'fenced_code',
+            'tables',
+            'nl2br',
+            CodeHiliteExtension(
+                linenums=False,
+                guess_lang=True,
+                css_class='highlight'
+            ),
+            TocExtension(
+                title='Índice',
+                toc_depth='2-4'
+            ),
+        ])
+
+        html = md.convert(content)
+        toc = md.toc if hasattr(md, 'toc') else ''
+
+        # Converter links .md para URLs do sistema de documentação
+        html = self.convert_md_links_to_urls(html)
+
+        return html, toc
+
+    def extract_title(self, content):
+        """Extract first H1 from markdown content."""
+        import re
+        match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+        return match.group(1) if match else 'Documentação'
+
+    def docs_index_view(self, request):
+        """Documentation center index page."""
+        from django.shortcuts import render
+        from django.conf import settings
+
+        # Group docs by category
+        categories = {
+            'Geral': ['overview', 'changelog', 'docs-index'],
+            'Técnico': ['database-manual', 'saldos-dashboard', 'saldos-revision', 'socios', 'audit-trail'],
+            'Features': ['excel-import', 'import-system', 'pwa', 'logo-cleanup'],
+            'Fiscal': ['fiscal-system', 'fiscal-dashboard', 'respostas-contabilista'],
+            'Suporte': ['claude'],
+        }
+
+        docs_by_category = {}
+        for category, doc_keys in categories.items():
+            docs_by_category[category] = [
+                {**self.DOCS_STRUCTURE[key], 'key': key}
+                for key in doc_keys
+                if key in self.DOCS_STRUCTURE
+            ]
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Centro de Documentação',
+            'docs_by_category': docs_by_category,
+            'github_repo': settings.DOCS_CONFIG['GITHUB_REPO'],
+        }
+
+        return render(request, 'admin/core/documentacao/index.html', context)
+
+    def docs_detail_view(self, request, doc_key):
+        """View a specific documentation page."""
+        from django.shortcuts import render
+        from django.http import Http404
+        from django.conf import settings
+
+        if doc_key not in self.DOCS_STRUCTURE:
+            raise Http404("Documentação não encontrada")
+
+        doc_info = self.DOCS_STRUCTURE[doc_key]
+        doc_path = self.get_doc_path(doc_key)
+
+        if not doc_path or not doc_path.exists():
+            context = {
+                **self.admin_site.each_context(request),
+                'title': doc_info['title'],
+                'doc_key': doc_key,
+                'error': f"Ficheiro não encontrado: {doc_path}",
+            }
+            return render(request, 'admin/core/documentacao/document.html', context)
+
+        try:
+            with open(doc_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            html, toc = self.render_markdown(content)
+            title = self.extract_title(content) or doc_info['title']
+
+            # Generate GitHub edit URL
+            github_edit_url = (
+                f"https://github.com/{settings.DOCS_CONFIG['GITHUB_REPO']}/edit/"
+                f"{settings.DOCS_CONFIG['GITHUB_BRANCH']}/{doc_info['file']}"
+            )
+
+            context = {
+                **self.admin_site.each_context(request),
+                'title': title,
+                'doc_key': doc_key,
+                'doc_info': doc_info,
+                'content_html': html,
+                'toc_html': toc,
+                'github_edit_url': github_edit_url,
+                'all_docs': self.DOCS_STRUCTURE,
+            }
+
+            return render(request, 'admin/core/documentacao/document.html', context)
+
+        except Exception as e:
+            context = {
+                **self.admin_site.each_context(request),
+                'title': doc_info['title'],
+                'doc_key': doc_key,
+                'error': f"Erro ao ler ficheiro: {str(e)}",
+            }
+            return render(request, 'admin/core/documentacao/document.html', context)

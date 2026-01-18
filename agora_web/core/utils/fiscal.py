@@ -110,29 +110,45 @@ class FiscalCalculator:
             })
 
         # ======= IVA DEDUTÍVEL (Despesas PAGAS) =======
-        # IVA dedutível = valor_com_iva - valor_sem_iva
+        # IVA dedutível = (valor_com_iva - valor_sem_iva) * percentagem_dedutivel / 100
+        # Usa tag_iva para determinar percentagem de dedutibilidade
 
         despesas_pagas = Despesa.objects.filter(
             estado='PAGO',
             data_pagamento__gte=inicio,
             data_pagamento__lte=fim
-        ).values('id', 'numero', 'descricao', 'valor_sem_iva', 'valor_com_iva', 'data_pagamento')
+        ).select_related('tag_iva').values(
+            'id', 'numero', 'descricao', 'valor_sem_iva', 'valor_com_iva',
+            'data_pagamento', 'tag_iva__codigo', 'tag_iva__percentagem_dedutivel'
+        )
 
         iva_dedutivel_total = Decimal('0')
         despesas_list = []
+        despesas_sem_tag = 0
 
         for desp in despesas_pagas:
             valor_sem_iva = Decimal(str(desp['valor_sem_iva'] or 0))
             valor_com_iva = Decimal(str(desp['valor_com_iva'] or 0))
-            iva = valor_com_iva - valor_sem_iva
+            iva_bruto = valor_com_iva - valor_sem_iva
 
-            if iva > 0:  # Só conta se tiver IVA
-                iva_dedutivel_total += iva
+            if iva_bruto > 0:  # Só conta se tiver IVA
+                # Aplicar percentagem de dedutibilidade da tag
+                percentagem = Decimal(str(desp['tag_iva__percentagem_dedutivel'] or 100))
+                iva_dedutivel = iva_bruto * percentagem / Decimal('100')
+                iva_dedutivel_total += iva_dedutivel
+
+                # Contar despesas sem tag para alertar
+                if not desp['tag_iva__codigo']:
+                    despesas_sem_tag += 1
+
                 despesas_list.append({
                     'numero': desp['numero'],
                     'descricao': desp['descricao'][:50],
                     'valor_sem_iva': valor_sem_iva,
-                    'iva': iva,
+                    'iva_bruto': iva_bruto,
+                    'iva_dedutivel': iva_dedutivel,
+                    'percentagem_dedutivel': percentagem,
+                    'tag_iva': desp['tag_iva__codigo'] or 'SEM_TAG',
                     'data': desp['data_pagamento']
                 })
 
@@ -170,11 +186,56 @@ class FiscalCalculator:
             'iva_dedutivel': {
                 'total': iva_dedutivel_total,
                 'despesas_count': len(despesas_list),
-                'despesas': despesas_list
+                'despesas': despesas_list,
+                'despesas_sem_tag': despesas_sem_tag
             },
             'iva_a_pagar': iva_a_pagar,
             'prazo_declaracao': prazo_decl,
             'prazo_pagamento': prazo_pag
+        }
+
+    def calcular_iva_anual(self, ano: int) -> Dict:
+        """
+        Calcula IVA para o ano completo (soma dos 4 trimestres).
+
+        Returns: Mesmo formato que calcular_iva_trimestral mas com dados agregados
+        """
+        from decimal import Decimal
+
+        iva_liquidado_total = Decimal('0')
+        iva_dedutivel_total = Decimal('0')
+        despesas_sem_tag = 0
+
+        # Somar os 4 trimestres
+        for trimestre in [1, 2, 3, 4]:
+            iva_trim = self.calcular_iva_trimestral(ano, trimestre)
+            iva_liquidado_total += iva_trim['iva_liquidado']['total']
+            iva_dedutivel_total += iva_trim['iva_dedutivel']['total']
+            despesas_sem_tag += iva_trim['iva_dedutivel']['despesas_sem_tag']
+
+        iva_a_pagar = iva_liquidado_total - iva_dedutivel_total
+
+        return {
+            'periodo': {
+                'ano': ano,
+                'trimestre': None,  # Indica ano completo
+                'inicio': date(ano, 1, 1),
+                'fim': date(ano, 12, 31)
+            },
+            'iva_liquidado': {
+                'total': iva_liquidado_total,
+                'projetos_count': 0,  # Não agregamos lista de projetos
+                'projetos': []
+            },
+            'iva_dedutivel': {
+                'total': iva_dedutivel_total,
+                'despesas_count': 0,  # Não agregamos lista de despesas
+                'despesas': [],
+                'despesas_sem_tag': despesas_sem_tag
+            },
+            'iva_a_pagar': iva_a_pagar,
+            'prazo_declaracao': date(ano + 1, 2, 20),  # Último prazo do ano
+            'prazo_pagamento': date(ano + 1, 2, 25)
         }
 
     # ========================================================================
@@ -318,14 +379,24 @@ class FiscalCalculator:
 
         receitas_total = Decimal(str(receitas_agg['total'] or 0))
 
-        # Despesas = Despesas PAGAS no ano
-        despesas_agg = Despesa.objects.filter(
+        # Despesas = Despesas PAGAS no ano (aplicando percentagem de dedutibilidade IRC)
+        despesas_pagas = Despesa.objects.filter(
             estado='PAGO',
             data_pagamento__gte=inicio,
             data_pagamento__lte=fim
-        ).aggregate(total=Sum('valor_sem_iva'))
+        ).select_related('tag_irc').values('valor_sem_iva', 'tag_irc__percentagem_dedutivel')
 
-        despesas_total = Decimal(str(despesas_agg['total'] or 0))
+        despesas_total = Decimal('0')
+        despesas_sem_tag_irc = 0
+
+        for desp in despesas_pagas:
+            valor = Decimal(str(desp['valor_sem_iva'] or 0))
+            percentagem = Decimal(str(desp['tag_irc__percentagem_dedutivel'] or 100))
+            despesa_dedutivel = valor * percentagem / Decimal('100')
+            despesas_total += despesa_dedutivel
+
+            if not desp['tag_irc__percentagem_dedutivel']:
+                despesas_sem_tag_irc += 1
 
         # Lucro tributável (simplificado - TOC faz correções fiscais)
         lucro = receitas_total - despesas_total
@@ -348,6 +419,7 @@ class FiscalCalculator:
             'ano': ano,
             'receitas_total': receitas_total,
             'despesas_total': despesas_total,
+            'despesas_sem_tag_irc': despesas_sem_tag_irc,
             'lucro_tributavel': lucro,
             'irc_16': irc_16,
             'irc_20': irc_20,
@@ -423,3 +495,122 @@ class FiscalCalculator:
 
         # Filtrar apenas futuras ou hoje
         return [o for o in obrigacoes if o['dias_restantes'] >= 0]
+
+    # ========================================================================
+    # BREAKDOWN POR TAGS FISCAIS
+    # ========================================================================
+
+    def breakdown_iva_por_tags(
+        self,
+        ano: int,
+        trimestre: int = None
+    ) -> Dict:
+        """
+        Breakdown detalhado de IVA dedutível agrupado por TagIVA
+
+        Args:
+            ano: Ano fiscal
+            trimestre: 1-4 para trimestre específico, None para ano completo
+
+        Returns:
+            Dict com estrutura:
+            {
+                'IVA_DEDUTIVEL_100': {'count': int, 'iva_bruto': Decimal, 'iva_dedutivel': Decimal},
+                'IVA_MISTO': {...},
+                'SEM_TAG': {...},
+                ...
+            }
+        """
+        from collections import defaultdict
+
+        if trimestre is None:
+            # Ano completo
+            inicio = date(ano, 1, 1)
+            fim = date(ano, 12, 31)
+        else:
+            # Trimestre específico
+            inicio, fim = self.get_periodo_trimestre(ano, trimestre)
+
+        despesas = Despesa.objects.filter(
+            estado='PAGO',
+            data_pagamento__gte=inicio,
+            data_pagamento__lte=fim
+        ).select_related('tag_iva').values(
+            'valor_sem_iva', 'valor_com_iva',
+            'tag_iva__codigo', 'tag_iva__nome', 'tag_iva__percentagem_dedutivel'
+        )
+
+        breakdown = defaultdict(lambda: {
+            'count': 0,
+            'iva_bruto': Decimal('0'),
+            'iva_dedutivel': Decimal('0'),
+            'nome': ''
+        })
+
+        for desp in despesas:
+            valor_sem_iva = Decimal(str(desp['valor_sem_iva'] or 0))
+            valor_com_iva = Decimal(str(desp['valor_com_iva'] or 0))
+            iva_bruto = valor_com_iva - valor_sem_iva
+
+            if iva_bruto > 0:
+                tag_codigo = desp['tag_iva__codigo'] or 'SEM_TAG'
+                percentagem = Decimal(str(desp['tag_iva__percentagem_dedutivel'] or 100))
+                iva_dedutivel = iva_bruto * percentagem / Decimal('100')
+
+                breakdown[tag_codigo]['count'] += 1
+                breakdown[tag_codigo]['iva_bruto'] += iva_bruto
+                breakdown[tag_codigo]['iva_dedutivel'] += iva_dedutivel
+                breakdown[tag_codigo]['nome'] = desp['tag_iva__nome'] or 'Sem Tag'
+                breakdown[tag_codigo]['percentagem'] = percentagem
+
+        return dict(breakdown)
+
+    def breakdown_irc_por_tags(
+        self,
+        ano: int
+    ) -> Dict:
+        """
+        Breakdown detalhado de despesas IRC agrupado por TagIRC
+
+        Returns:
+            Dict com estrutura:
+            {
+                'IRC_DEDUTIVEL_100': {'count': int, 'valor_bruto': Decimal, 'valor_dedutivel': Decimal},
+                'IRC_INVESTIMENTO': {...},
+                'SEM_TAG': {...},
+                ...
+            }
+        """
+        from collections import defaultdict
+        inicio = date(ano, 1, 1)
+        fim = date(ano, 12, 31)
+
+        despesas = Despesa.objects.filter(
+            estado='PAGO',
+            data_pagamento__gte=inicio,
+            data_pagamento__lte=fim
+        ).select_related('tag_irc').values(
+            'valor_sem_iva',
+            'tag_irc__codigo', 'tag_irc__nome', 'tag_irc__percentagem_dedutivel'
+        )
+
+        breakdown = defaultdict(lambda: {
+            'count': 0,
+            'valor_bruto': Decimal('0'),
+            'valor_dedutivel': Decimal('0'),
+            'nome': ''
+        })
+
+        for desp in despesas:
+            valor = Decimal(str(desp['valor_sem_iva'] or 0))
+            tag_codigo = desp['tag_irc__codigo'] or 'SEM_TAG'
+            percentagem = Decimal(str(desp['tag_irc__percentagem_dedutivel'] or 100))
+            valor_dedutivel = valor * percentagem / Decimal('100')
+
+            breakdown[tag_codigo]['count'] += 1
+            breakdown[tag_codigo]['valor_bruto'] += valor
+            breakdown[tag_codigo]['valor_dedutivel'] += valor_dedutivel
+            breakdown[tag_codigo]['nome'] = desp['tag_irc__nome'] or 'Sem Tag'
+            breakdown[tag_codigo]['percentagem'] = percentagem
+
+        return dict(breakdown)

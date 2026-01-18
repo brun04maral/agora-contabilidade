@@ -49,6 +49,24 @@ docker compose logs -f web
 
 ---
 
+## ⚠️ Propósito da App
+
+### O que ESTA APP É:
+✅ **Sistema de contabilidade interna** para os sócios da Agora Media
+✅ **Ferramenta de reconciliação** com contabilidade organizada externa
+✅ **Sistema de saldos pessoais** (quem deve a quem entre sócios)
+✅ **Gerador de relatórios** para enviar ao contabilista oficial
+✅ **Sistema de boletins itinerários** para per diems e despesas de deslocação
+
+### O que NÃO É:
+❌ **NÃO substitui** a contabilidade organizada oficial
+❌ **NÃO gera** declarações fiscais oficiais (IRS, IRC, IVA)
+❌ **NÃO substitui** software profissional (Primavera, PHC, etc.)
+
+**Workflow:** Sócios → App (organizar) → Relatórios → Contabilista oficial → Declarações fiscais
+
+---
+
 ## ✨ Features Principais
 
 ### 💰 Saldos Pessoais (CORE Feature)
@@ -68,6 +86,23 @@ Dashboard que calcula automaticamente quanto a empresa deve a cada sócio com **
 - Sistema de tags para categorização flexível de despesas
 
 Ver [docs/SALDOS_DASHBOARD.md](docs/SALDOS_DASHBOARD.md) para detalhes técnicos.
+
+### 🧾 Boletins Itinerários (Sistema de Per Diems)
+Sistema completo para documentar deslocações e ajudas de custo conforme Lei 106/98:
+- Registo de deslocações (data, origem, destino, objetivo, kms)
+- Cálculo automático de per diems (€62,75/dia Portugal, varia estrangeiro)
+- Ajudas quilométricas (€0,40/km) para viaturas pessoais
+- Exportação PDF para anexar à contabilidade
+- **Importante:** Sem boletim, ajudas de custo podem ser tributadas como rendimento!
+
+### 🏷️ Sistema Fiscal (v0.3.0 - Janeiro 2026)
+Pré-categorização automática de despesas para facilitar comunicação com contabilista:
+- Tags fiscais (IRC, IVA, IRS, TSU) baseadas em regras portuguesas
+- Auto-sugestão inteligente via JavaScript (detecta keywords)
+- 50+ mapeamentos (ordenado, freelancer, equipamento, renting, etc.)
+- Preparação de dados para contabilista (não substitui declarações oficiais)
+
+Ver [docs/FISCAL_SYSTEM_GUIDE.md](docs/FISCAL_SYSTEM_GUIDE.md) para detalhes técnicos.
 
 ### 📊 Gestão Completa
 
@@ -406,7 +441,7 @@ Principais variáveis:
 
 ## 📝 Notas de Versão
 
-### v0.2.43 - UI/UX Improvements (17 Jan 2026) 🚧 DEVELOPMENT
+### v0.2.45 - Logo & Branding Cleanup (17 Jan 2026) 🚧 DEVELOPMENT
 - ✅ **Nomenclatura simplificada:** "Número" → "ID", "Sócio Responsável" → "Gestor"
 - ✅ **Listas mais limpas:** Removida coluna "Criado em" de todas as listas admin
 - ✅ Melhor legibilidade e terminologia mais profissional
