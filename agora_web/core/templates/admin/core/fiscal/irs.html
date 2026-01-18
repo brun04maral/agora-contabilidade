@@ -1,0 +1,172 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+<style>
+    /* Reusar estilos */
+    .fiscal-card { background-color: white; border: 1px solid rgb(229, 231, 235); border-radius: 0.5rem; }
+    .fiscal-header { color: rgb(17, 24, 39); }
+    .fiscal-subtext { color: rgb(107, 114, 128); }
+    .fiscal-border { border-color: rgb(229, 231, 235); }
+    .fiscal-bg-secondary { background-color: rgb(249, 250, 251); }
+    .red-text { color: rgb(220, 38, 38); }
+    .table-header-bg { background-color: rgb(249, 250, 251); }
+    .table-row-border { border-color: rgb(243, 244, 246); }
+
+    .dark .fiscal-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
+    .dark .fiscal-header { color: rgb(243, 244, 246); }
+    .dark .fiscal-subtext { color: rgb(156, 163, 175); }
+    .dark .fiscal-border { border-color: rgb(75, 85, 99); }
+    .dark .fiscal-bg-secondary { background-color: rgba(17, 24, 39, 0.5); }
+    .dark .red-text { color: rgb(248, 113, 113); }
+    .dark .table-header-bg { background-color: rgba(17, 24, 39, 0.5); }
+    .dark .table-row-border { border-color: rgb(75, 85, 99); }
+
+    /* Tabs */
+    .fiscal-tabs {
+        display: flex;
+        gap: 0.25rem;
+        border-bottom: 2px solid rgb(229, 231, 235);
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .fiscal-tab {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgb(107, 114, 128);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+    }
+    .fiscal-tab:hover {
+        color: #8B9474;
+        border-bottom-color: #8B9474;
+    }
+    .fiscal-tab.active {
+        color: #8B9474;
+        border-bottom-color: #8B9474;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 1.5rem; max-width: 80rem; margin: 0 auto;">
+
+    <!-- Breadcrumbs -->
+    <div style="margin-bottom: 1rem;">
+        <a href="/admin/core/fiscal/" style="color: rgb(107, 114, 128); text-decoration: none; font-size: 0.875rem;">
+            ← Estado Fiscal
+        </a>
+        <span style="color: rgb(107, 114, 128); margin: 0 0.5rem;">/</span>
+        <span style="color: #8B9474; font-weight: 600; font-size: 0.875rem;">IRS Mensal</span>
+        <span style="color: rgb(107, 114, 128); margin: 0 0.5rem;">/</span>
+        <span style="color: rgb(107, 114, 128); font-size: 0.875rem;">{{ irs.periodo.mes_nome }}/{{ ano_atual }}</span>
+    </div>
+
+    <!-- Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="fiscal-header">IRS Retido Mensal</h1>
+        <p style="font-size: 0.875rem;" class="fiscal-subtext">Gestão de retenções IRS por mês</p>
+    </div>
+
+    <!-- Year Navigation -->
+    <div style="margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.875rem; font-weight: 600;" class="fiscal-header">Ano:</span>
+            {% for ano in anos_disponiveis %}
+                <a href="?ano={{ ano }}&mes={{ mes_atual }}"
+                   style="padding: 0.375rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; text-decoration: none; transition: all 0.2s; {% if ano == ano_atual %}background-color: rgb(59, 130, 246); color: white; font-weight: 600;{% else %}background-color: rgb(243, 244, 246); color: rgb(75, 85, 99);{% endif %}"
+                   onmouseover="if ({{ ano }} != {{ ano_atual }}) this.style.backgroundColor='rgb(229, 231, 235)'"
+                   onmouseout="if ({{ ano }} != {{ ano_atual }}) this.style.backgroundColor='rgb(243, 244, 246)'">
+                    {{ ano }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Mês Tabs -->
+    <div class="fiscal-tabs">
+        {% for mes in meses %}
+            <a href="?ano={{ ano_atual }}&mes={{ mes.num }}" class="fiscal-tab {% if mes_atual == mes.num %}active{% endif %}">
+                {{ mes.nome|slice:":3" }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Resumo -->
+    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;" class="fiscal-header">
+            Resumo {{ irs.periodo.mes_nome }}/{{ ano_atual }}
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+            <div>
+                <div style="font-size: 0.75rem; margin-bottom: 0.5rem;" class="fiscal-subtext">Total Retido</div>
+                <div style="font-size: 1.5rem; font-weight: 700;" class="red-text">€{{ irs.total_retido|floatformat:2 }}</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">A entregar ao Estado</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; margin-bottom: 0.5rem;" class="fiscal-subtext">Retenções</div>
+                <div style="font-size: 1.5rem; font-weight: 700;" class="fiscal-header">{{ irs.despesas_count }}</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">despesas</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; margin-bottom: 0.5rem;" class="fiscal-subtext">Prazo</div>
+                <div style="font-size: 1.5rem; font-weight: 700;" class="fiscal-header">{{ irs.prazo_pagamento|date:"d/m" }}</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">{{ irs.prazo_pagamento|date:"Y" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Retenções -->
+    {% if irs.despesas %}
+    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">
+            Detalhes das Retenções
+        </h3>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="table-header-bg border-b fiscal-border">
+                        <th class="px-3 py-3 text-left font-semibold fiscal-header">Fornecedor</th>
+                        <th class="px-3 py-3 text-left font-semibold fiscal-header">Descrição</th>
+                        <th class="px-3 py-3 text-right font-semibold fiscal-header">Valor Base</th>
+                        <th class="px-3 py-3 text-center font-semibold fiscal-header">Taxa</th>
+                        <th class="px-3 py-3 text-right font-semibold fiscal-header">IRS Retido</th>
+                        <th class="px-3 py-3 text-center font-semibold fiscal-header">Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for desp in irs.despesas %}
+                    <tr class="border-b table-row-border">
+                        <td class="px-3 py-3 font-medium fiscal-header">{{ desp.fornecedor }}</td>
+                        <td class="px-3 py-3 fiscal-subtext">{{ desp.descricao|truncatechars:30 }}</td>
+                        <td class="px-3 py-3 text-right fiscal-header">€{{ desp.valor_base|floatformat:2 }}</td>
+                        <td class="px-3 py-3 text-center fiscal-subtext">{{ desp.taxa|floatformat:1 }}%</td>
+                        <td class="px-3 py-3 text-right red-text font-semibold">€{{ desp.irs_retido|floatformat:2 }}</td>
+                        <td class="px-3 py-3 text-center fiscal-subtext text-xs">{{ desp.data|date:"d/m/Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-header-bg font-semibold">
+                        <td colspan="4" class="px-3 py-3 text-right fiscal-header">TOTAL:</td>
+                        <td class="px-3 py-3 text-right red-text">€{{ irs.total_retido|floatformat:2 }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="fiscal-card" style="padding: 2rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); text-align: center;">
+        <p class="fiscal-subtext">Sem dados para {{ irs.periodo.mes_nome }}/{{ ano_atual }}</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -79,6 +79,12 @@
     @media (max-width: 768px) {
         .fiscal-grid, .fiscal-detail-grid { grid-template-columns: 1fr; }
     }
+
+    /* Clickable cards */
+    .fiscal-card-link:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.15) !important;
+    }
 </style>
 {% endblock %}
 
@@ -87,9 +93,10 @@
 
     <!-- Header -->
     <div style="margin-bottom: 1.5rem;">
-        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="fiscal-header">Estado Fiscal {{ ano_atual }}</h1>
+        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="fiscal-header">Estado Fiscal</h1>
         <p style="font-size: 0.875rem;" class="fiscal-subtext">Gestão de IVA, IRS e IRC</p>
     </div>
+
 
     <!-- Próximas Obrigações -->
     {% if obrigacoes %}
@@ -108,213 +115,59 @@
     </div>
     {% endif %}
 
-    <!-- Cards de Resumo -->
+    <!-- Cards Clicáveis -->
     <div class="fiscal-grid" style="margin-bottom: 1.5rem;">
 
-        <!-- Card IVA -->
-        <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-            <div style="margin-bottom: 0.75rem;">
-                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="fiscal-subtext">IVA - Trimestre {{ trimestre_atual }}/{{ ano_atual }}</div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if iva.iva_a_pagar >= 0 %}red-text{% else %}green-text{% endif %}">
-                    €{{ iva.iva_a_pagar|floatformat:2 }}
+        <!-- Card IVA (clicável) -->
+        <a href="/fiscal/iva/" class="fiscal-card fiscal-card-link" style="padding: 1.25rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); text-decoration: none; display: block; border-left: 4px solid #D4A574; transition: all 0.3s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <div>
+                    <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; color: #D4A574;">IVA Trimestral</div>
+                    <div style="font-size: 0.75rem;" class="fiscal-subtext">Q{{ trimestre_atual }}/{{ ano_atual }}</div>
                 </div>
-                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">{% if iva.iva_a_pagar >= 0 %}A Pagar ao Estado{% else %}A Recuperar{% endif %}</div>
+                <span class="material-symbols-outlined" style="font-size: 1.5rem; color: #D4A574;">arrow_forward</span>
             </div>
-            <div style="border-top: 1px solid; padding-top: 0.75rem;" class="fiscal-border">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
-                    <span class="fiscal-subtext">IVA Liquidado</span>
-                    <span style="font-weight: 600;" class="green-text">€{{ iva.iva_liquidado.total|floatformat:2 }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
-                    <span class="fiscal-subtext">IVA Dedutível</span>
-                    <span style="font-weight: 600;" class="red-text">€{{ iva.iva_dedutivel.total|floatformat:2 }}</span>
-                </div>
-                <div style="font-size: 0.75rem; padding-top: 0.5rem; border-top: 1px solid; margin-top: 0.5rem;" class="fiscal-subtext fiscal-border">
-                    <div>Declaração: {{ iva.prazo_declaracao|date:"d/m/Y" }}</div>
-                    <div>Pagamento: {{ iva.prazo_pagamento|date:"d/m/Y" }}</div>
-                </div>
+            <div style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;" class="{% if iva.iva_a_pagar >= 0 %}red-text{% else %}green-text{% endif %}">
+                €{{ iva.iva_a_pagar|floatformat:2 }}
             </div>
-        </div>
+            <div style="font-size: 0.75rem;" class="fiscal-subtext">
+                {% if iva.iva_a_pagar >= 0 %}A Pagar ao Estado{% else %}A Recuperar{% endif %} • Prazo: {{ iva.prazo_pagamento|date:"d/m/Y" }}
+            </div>
+        </a>
 
-        <!-- Card IRS Retido -->
-        <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-            <div style="margin-bottom: 0.75rem;">
-                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="fiscal-subtext">IRS Retido - {{ irs.periodo.mes_nome }}</div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="{% if irs.total_retido > 0 %}red-text{% else %}fiscal-subtext{% endif %}">
-                    €{{ irs.total_retido|floatformat:2 }}
+        <!-- Card IRS (clicável) -->
+        <a href="/fiscal/irs/" class="fiscal-card fiscal-card-link" style="padding: 1.25rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); text-decoration: none; display: block; border-left: 4px solid #8B9474; transition: all 0.3s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <div>
+                    <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; color: #8B9474;">IRS Mensal</div>
+                    <div style="font-size: 0.75rem;" class="fiscal-subtext">{{ irs.periodo.mes_nome }}/{{ ano_atual }}</div>
                 </div>
-                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">A Entregar ao Estado</div>
+                <span class="material-symbols-outlined" style="font-size: 1.5rem; color: #8B9474;">arrow_forward</span>
             </div>
-            <div style="border-top: 1px solid; padding-top: 0.75rem;" class="fiscal-border">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
-                    <span class="fiscal-subtext">Retenções</span>
-                    <span style="font-weight: 600;" class="fiscal-header">{{ irs.despesas_count }}</span>
-                </div>
-                {% if irs.total_retido > 0 %}
-                <div style="font-size: 0.75rem; padding-top: 0.5rem; border-top: 1px solid; margin-top: 0.5rem;" class="fiscal-subtext fiscal-border">
-                    <div>Declaração: {{ irs.prazo_declaracao|date:"d/m/Y" }}</div>
-                    <div>Pagamento: {{ irs.prazo_pagamento|date:"d/m/Y" }}</div>
-                </div>
-                {% else %}
-                <div style="font-size: 0.75rem; padding-top: 0.5rem; border-top: 1px solid; margin-top: 0.5rem;" class="fiscal-subtext fiscal-border">
-                    Sem retenções neste mês
-                </div>
-                {% endif %}
+            <div style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;" class="{% if irs.total_retido > 0 %}red-text{% else %}fiscal-subtext{% endif %}">
+                €{{ irs.total_retido|floatformat:2 }}
             </div>
-        </div>
+            <div style="font-size: 0.75rem;" class="fiscal-subtext">
+                {{ irs.despesas_count }} retenções • Prazo: {{ irs.prazo_pagamento|date:"d/m/Y" }}
+            </div>
+        </a>
 
-        <!-- Card IRC -->
-        <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-            <div style="margin-bottom: 0.75rem;">
-                <div style="font-size: 0.75rem; margin-bottom: 0.25rem;" class="fiscal-subtext">IRC Estimado {{ ano_atual }}</div>
-                <div style="font-size: 1.875rem; font-weight: 700;" class="blue-text">
-                    €{{ irc.irc_total|floatformat:2 }}
+        <!-- Card IRC (clicável) -->
+        <a href="/fiscal/irc/" class="fiscal-card fiscal-card-link" style="padding: 1.25rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); text-decoration: none; display: block; border-left: 4px solid #A89674; transition: all 0.3s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <div>
+                    <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; color: #A89674;">IRC Anual</div>
+                    <div style="font-size: 0.75rem;" class="fiscal-subtext">Ano {{ ano_atual }}</div>
                 </div>
-                <div style="font-size: 0.75rem; margin-top: 0.25rem;" class="fiscal-subtext">Imposto Estimado</div>
+                <span class="material-symbols-outlined" style="font-size: 1.5rem; color: #A89674;">arrow_forward</span>
             </div>
-            <div style="border-top: 1px solid; padding-top: 0.75rem;" class="fiscal-border">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
-                    <span class="fiscal-subtext">Lucro Tributável</span>
-                    <span style="font-weight: 600;" class="fiscal-header">€{{ irc.lucro_tributavel|floatformat:2 }}</span>
-                </div>
-                <div style="font-size: 0.75rem; margin-top: 0.5rem;" class="fiscal-subtext">
-                    <div>16% (primeiros €50k): €{{ irc.irc_16|floatformat:2 }}</div>
-                    <div>20% (excedente): €{{ irc.irc_20|floatformat:2 }}</div>
-                </div>
+            <div style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: #A89674;">
+                €{{ irc.irc_total|floatformat:2 }}
             </div>
-        </div>
-    </div>
-
-    <!-- Detalhes IVA Trimestral -->
-    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
-        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">IVA Trimestre {{ trimestre_atual }}/{{ ano_atual }}</h3>
-
-        <div class="fiscal-detail-grid">
-            <!-- IVA Liquidado -->
-            <div>
-                <h4 class="text-xs font-semibold green-text mb-3 uppercase tracking-wide">IVA Liquidado</h4>
-                <div class="fiscal-bg-secondary p-4 rounded-md mb-3">
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="fiscal-subtext">Total</span>
-                        <span class="font-semibold fiscal-header">€{{ iva.iva_liquidado.total|floatformat:2 }}</span>
-                    </div>
-                    <div class="flex justify-between text-xs fiscal-subtext">
-                        <span>Projetos</span>
-                        <span>{{ iva.iva_liquidado.projetos_count }}</span>
-                    </div>
-                </div>
-                {% if iva.iva_liquidado.projetos %}
-                <div class="max-h-60 overflow-y-auto space-y-2">
-                    {% for proj in iva.iva_liquidado.projetos|slice:":10" %}
-                    <div class="p-2 border-b table-row-border text-xs">
-                        <div class="flex justify-between mb-0.5">
-                            <span class="font-medium fiscal-header">{{ proj.numero }}</span>
-                            <span class="font-semibold green-text">€{{ proj.iva|floatformat:2 }}</span>
-                        </div>
-                        <div class="fiscal-subtext text-xs">{{ proj.descricao|truncatechars:40 }} • {{ proj.data|date:"d/m/Y" }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
+            <div style="font-size: 0.75rem;" class="fiscal-subtext">
+                Estimativa • Prazo: {{ irc.prazo_declaracao|date:"d/m/Y" }}
             </div>
-
-            <!-- IVA Dedutível -->
-            <div>
-                <h4 class="text-xs font-semibold red-text mb-3 uppercase tracking-wide">IVA Dedutível</h4>
-                <div class="fiscal-bg-secondary p-4 rounded-md mb-3">
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="fiscal-subtext">Total</span>
-                        <span class="font-semibold fiscal-header">€{{ iva.iva_dedutivel.total|floatformat:2 }}</span>
-                    </div>
-                    <div class="flex justify-between text-xs fiscal-subtext">
-                        <span>Despesas</span>
-                        <span>{{ iva.iva_dedutivel.despesas_count }}</span>
-                    </div>
-                </div>
-                {% if iva.iva_dedutivel.despesas %}
-                <div class="max-h-60 overflow-y-auto space-y-2">
-                    {% for desp in iva.iva_dedutivel.despesas|slice:":10" %}
-                    <div class="p-2 border-b table-row-border text-xs">
-                        <div class="flex justify-between mb-0.5">
-                            <span class="font-medium fiscal-header">{{ desp.numero }}</span>
-                            <span class="font-semibold red-text">€{{ desp.iva|floatformat:2 }}</span>
-                        </div>
-                        <div class="fiscal-subtext text-xs">{{ desp.descricao|truncatechars:40 }} • {{ desp.data|date:"d/m/Y" }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Detalhes IRS Mensal -->
-    {% if irs.despesas %}
-    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
-        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">IRS Retido - {{ irs.periodo.mes_nome }}/{{ ano_atual }}</h3>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="table-header-bg border-b fiscal-border">
-                        <th class="px-3 py-3 text-left font-semibold fiscal-header">Fornecedor</th>
-                        <th class="px-3 py-3 text-left font-semibold fiscal-header">Descrição</th>
-                        <th class="px-3 py-3 text-right font-semibold fiscal-header">Valor Base</th>
-                        <th class="px-3 py-3 text-center font-semibold fiscal-header">Taxa</th>
-                        <th class="px-3 py-3 text-right font-semibold fiscal-header">IRS Retido</th>
-                        <th class="px-3 py-3 text-center font-semibold fiscal-header">Data</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for desp in irs.despesas %}
-                    <tr class="border-b table-row-border">
-                        <td class="px-3 py-3 font-medium fiscal-header">{{ desp.fornecedor }}</td>
-                        <td class="px-3 py-3 fiscal-subtext">{{ desp.descricao|truncatechars:30 }}</td>
-                        <td class="px-3 py-3 text-right fiscal-header">€{{ desp.valor_base|floatformat:2 }}</td>
-                        <td class="px-3 py-3 text-center fiscal-subtext">{{ desp.taxa|floatformat:1 }}%</td>
-                        <td class="px-3 py-3 text-right red-text font-semibold">€{{ desp.irs_retido|floatformat:2 }}</td>
-                        <td class="px-3 py-3 text-center fiscal-subtext text-xs">{{ desp.data|date:"d/m/Y" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr class="table-header-bg font-semibold">
-                        <td colspan="4" class="px-3 py-3 text-right fiscal-header">TOTAL:</td>
-                        <td class="px-3 py-3 text-right red-text">€{{ irs.total_retido|floatformat:2 }}</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Info IRC -->
-    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">IRC Estimado {{ ano_atual }}</h3>
-
-        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="green-bg border-l-3-green">
-                <span style="font-size: 0.875rem;" class="green-text">Receitas Totais</span>
-                <span style="font-weight: 600;" class="green-text">€{{ irc.receitas_total|floatformat:2 }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="red-bg border-l-3-red">
-                <span style="font-size: 0.875rem;" class="red-text">Despesas Totais</span>
-                <span style="font-weight: 600;" class="red-text">€{{ irc.despesas_total|floatformat:2 }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="blue-bg border-l-3-blue">
-                <span style="font-size: 0.875rem;" class="blue-text">Lucro Tributável</span>
-                <span style="font-weight: 600;" class="blue-text">€{{ irc.lucro_tributavel|floatformat:2 }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="yellow-bg border-l-3-yellow">
-                <span style="font-size: 0.875rem; font-weight: 600;" class="yellow-text">IRC Total Estimado</span>
-                <span style="font-weight: 700; font-size: 1rem;" class="yellow-text">€{{ irc.irc_total|floatformat:2 }}</span>
-            </div>
-        </div>
-
-        <div style="margin-top: 0.75rem; padding: 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;" class="fiscal-bg-secondary fiscal-subtext">
-            <strong>Nota:</strong> Cálculo simplificado. O TOC fará as correções fiscais necessárias (despesas não dedutíveis, benefícios fiscais, prejuízos anteriores, etc).
-        </div>
+        </a>
     </div>
 
 </div>

@@ -1,0 +1,191 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+<style>
+    /* Reusar estilos */
+    .fiscal-card { background-color: white; border: 1px solid rgb(229, 231, 235); border-radius: 0.5rem; }
+    .fiscal-header { color: rgb(17, 24, 39); }
+    .fiscal-subtext { color: rgb(107, 114, 128); }
+    .fiscal-border { border-color: rgb(229, 231, 235); }
+    .fiscal-bg-secondary { background-color: rgb(249, 250, 251); }
+    .green-bg { background-color: rgb(240, 253, 244); }
+    .green-text { color: rgb(22, 163, 74); }
+    .red-bg { background-color: rgb(254, 242, 242); }
+    .red-text { color: rgb(220, 38, 38); }
+    .yellow-bg { background-color: rgb(254, 252, 232); }
+    .yellow-text { color: rgb(133, 77, 14); }
+    .table-header-bg { background-color: rgb(249, 250, 251); }
+    .table-row-border { border-color: rgb(243, 244, 246); }
+    .border-l-3-green { border-left: 3px solid rgb(22, 163, 74); }
+    .border-l-3-red { border-left: 3px solid rgb(220, 38, 38); }
+    .border-l-3-yellow { border-left: 3px solid rgb(202, 138, 4); }
+    .fiscal-alert-bg { background-color: rgb(254, 252, 232); border-color: rgb(250, 204, 21); }
+    .fiscal-alert-text { color: rgb(146, 64, 14); }
+    .fiscal-alert-border { border-color: rgb(254, 240, 138); }
+
+    .dark .fiscal-card { background-color: rgb(31, 41, 55); border-color: rgb(75, 85, 99); }
+    .dark .fiscal-header { color: rgb(243, 244, 246); }
+    .dark .fiscal-subtext { color: rgb(156, 163, 175); }
+    .dark .fiscal-border { border-color: rgb(75, 85, 99); }
+    .dark .fiscal-bg-secondary { background-color: rgba(17, 24, 39, 0.5); }
+    .dark .green-bg { background-color: rgba(6, 78, 59, 0.2); }
+    .dark .green-text { color: rgb(74, 222, 128); }
+    .dark .red-bg { background-color: rgba(127, 29, 29, 0.2); }
+    .dark .red-text { color: rgb(248, 113, 113); }
+    .dark .yellow-bg { background-color: rgba(133, 77, 14, 0.2); }
+    .dark .yellow-text { color: rgb(253, 224, 71); }
+    .dark .table-header-bg { background-color: rgba(17, 24, 39, 0.5); }
+    .dark .table-row-border { border-color: rgb(75, 85, 99); }
+    .dark .border-l-3-green { border-left: 3px solid rgb(34, 197, 94); }
+    .dark .border-l-3-red { border-left: 3px solid rgb(239, 68, 68); }
+    .dark .border-l-3-yellow { border-left: 3px solid rgb(234, 179, 8); }
+    .dark .fiscal-alert-bg { background-color: rgba(133, 77, 14, 0.2); border-color: rgb(161, 98, 7); }
+    .dark .fiscal-alert-text { color: rgb(253, 224, 71); }
+    .dark .fiscal-alert-border { border-color: rgb(133, 77, 14); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 1.5rem; max-width: 80rem; margin: 0 auto;">
+
+    <!-- Breadcrumbs -->
+    <div style="margin-bottom: 1rem;">
+        <a href="/admin/core/fiscal/" style="color: rgb(107, 114, 128); text-decoration: none; font-size: 0.875rem;">
+            ← Estado Fiscal
+        </a>
+        <span style="color: rgb(107, 114, 128); margin: 0 0.5rem;">/</span>
+        <span style="color: #A89674; font-weight: 600; font-size: 0.875rem;">IRC Anual</span>
+        <span style="color: rgb(107, 114, 128); margin: 0 0.5rem;">/</span>
+        <span style="color: rgb(107, 114, 128); font-size: 0.875rem;">{{ ano_atual }}</span>
+    </div>
+
+    <!-- Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem;" class="fiscal-header">IRC Anual</h1>
+        <p style="font-size: 0.875rem;" class="fiscal-subtext">Estimativa de IRC por ano</p>
+    </div>
+
+    <!-- Year Navigation -->
+    <div style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.875rem; font-weight: 600;" class="fiscal-header">Ano:</span>
+            {% for ano in anos_disponiveis %}
+                <a href="?ano={{ ano }}"
+                   style="padding: 0.375rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; text-decoration: none; transition: all 0.2s; {% if ano == ano_atual %}background-color: rgb(59, 130, 246); color: white; font-weight: 600;{% else %}background-color: rgb(243, 244, 246); color: rgb(75, 85, 99);{% endif %}"
+                   onmouseover="if ({{ ano }} != {{ ano_atual }}) this.style.backgroundColor='rgb(229, 231, 235)'"
+                   onmouseout="if ({{ ano }} != {{ ano_atual }}) this.style.backgroundColor='rgb(243, 244, 246)'">
+                    {{ ano }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Resumo + Exportar -->
+    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0;" class="fiscal-header">
+                Resumo IRC {{ ano_atual }}
+            </h3>
+            <a href="/fiscal/export/?type=irc&ano={{ ano_atual }}"
+               class="button"
+               style="padding: 6px 12px; font-size: 13px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: all 0.3s;"
+               onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)';"
+               onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle; margin-right: 4px;">download</span>
+                Exportar Excel
+            </a>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="green-bg border-l-3-green">
+                <span style="font-size: 0.875rem;" class="green-text">Receitas Totais</span>
+                <span style="font-weight: 600;" class="green-text">€{{ irc.receitas_total|floatformat:2 }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="red-bg border-l-3-red">
+                <span style="font-size: 0.875rem;" class="red-text">Despesas Totais</span>
+                <span style="font-weight: 600;" class="red-text">€{{ irc.despesas_total|floatformat:2 }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 0.25rem;" class="yellow-bg border-l-3-yellow">
+                <span style="font-size: 0.875rem; font-weight: 600;" class="yellow-text">Lucro Tributável</span>
+                <span style="font-weight: 700; font-size: 1rem;" class="yellow-text">€{{ irc.lucro_tributavel|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem; padding: 0.75rem; border-top: 1px solid;" class="fiscal-border">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.875rem;" class="fiscal-subtext">IRC 16% (primeiros €50k)</span>
+                <span style="font-weight: 600;" class="fiscal-header">€{{ irc.irc_16|floatformat:2 }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 0.875rem;" class="fiscal-subtext">IRC 20% (excedente)</span>
+                <span style="font-weight: 600;" class="fiscal-header">€{{ irc.irc_20|floatformat:2 }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid;" class="fiscal-border">
+                <span style="font-size: 0.875rem; font-weight: 600;" class="fiscal-header">IRC Total Estimado</span>
+                <span style="font-weight: 700; font-size: 1.25rem; color: #A89674;">€{{ irc.irc_total|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 0.75rem; padding: 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;" class="fiscal-bg-secondary fiscal-subtext">
+            <strong>Nota:</strong> Cálculo simplificado. O TOC fará as correções fiscais necessárias (despesas não dedutíveis, benefícios fiscais, prejuízos anteriores, etc).
+        </div>
+    </div>
+
+    <!-- Alert -->
+    {% if irc.despesas_sem_tag_irc > 0 %}
+    <div class="fiscal-alert-bg fiscal-alert-border" style="border-left: 4px solid; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        <span class="fiscal-alert-text" style="font-size: 0.875rem; font-weight: 600;">
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1rem; margin-right: 0.25rem;">warning</span>
+            {{ irc.despesas_sem_tag_irc }} despesa(s) sem tag IRC (assumido 100% dedutível)
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- Breakdown por Tags -->
+    {% if irc_breakdown %}
+    <div class="fiscal-card" style="padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;" class="fiscal-header">
+            Breakdown por Categoria Fiscal
+        </h3>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="table-header-bg border-b fiscal-border">
+                        <th class="px-3 py-3 text-left font-semibold fiscal-header">Categoria</th>
+                        <th class="px-3 py-3 text-center font-semibold fiscal-header">Despesas</th>
+                        <th class="px-3 py-3 text-right font-semibold fiscal-header">Valor Bruto</th>
+                        <th class="px-3 py-3 text-center font-semibold fiscal-header">% Dedutível</th>
+                        <th class="px-3 py-3 text-right font-semibold fiscal-header">Valor Dedutível</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tag_codigo, data in irc_breakdown.items %}
+                    <tr class="border-b table-row-border">
+                        <td class="px-3 py-3">
+                            <span class="font-medium fiscal-header">{{ data.nome }}</span>
+                            <span class="fiscal-subtext text-xs block">{{ tag_codigo }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center fiscal-subtext">{{ data.count }}</td>
+                        <td class="px-3 py-3 text-right fiscal-header">€{{ data.valor_bruto|floatformat:2 }}</td>
+                        <td class="px-3 py-3 text-center {% if data.percentagem == 100 %}green-text{% elif data.percentagem == 0 %}red-text{% else %}yellow-text{% endif %} font-semibold">
+                            {{ data.percentagem|floatformat:0 }}%
+                        </td>
+                        <td class="px-3 py-3 text-right font-semibold {% if data.percentagem == 100 %}green-text{% elif data.percentagem == 0 %}red-text{% else %}yellow-text{% endif %}">
+                            €{{ data.valor_dedutivel|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="fiscal-card" style="padding: 2rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); text-align: center;">
+        <p class="fiscal-subtext">Sem dados para {{ ano_atual }}</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
