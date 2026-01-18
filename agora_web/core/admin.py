@@ -13,7 +13,8 @@ from unfold.decorators import display, action
 from simple_history.admin import SimpleHistoryAdmin
 from .models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, DespesaTemplate, Boletim, BoletimLinha,
-    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal, ImportacaoDados
+    Equipamento, Orcamento, OrcamentoSecao, OrcamentoItem, OrcamentoReparticao, Saldo, Fiscal, ImportacaoDados,
+    TagIRC, TagIVA, TagIRS, TagTSU
 )
 
 
@@ -341,6 +342,86 @@ class SocioAdmin(UnfoldHistoryAdmin):
         return super().change_view(request, object_id)
 
 
+# ===================================================================
+# TAGS FISCAIS - Categorização IRC, IVA, IRS, TSU
+# ===================================================================
+
+@admin.register(TagIRC)
+class TagIRCAdmin(ModelAdmin):
+    """Admin para Tags IRC (dedutibilidade IRC)"""
+    list_display = ['codigo', 'nome', 'percentagem_dedutivel', 'ordem']
+    list_editable = ['ordem']
+    search_fields = ['codigo', 'nome', 'descricao']
+    ordering = ['ordem', 'codigo']
+
+    fieldsets = (
+        (None, {
+            'fields': ('codigo', 'nome', 'percentagem_dedutivel', 'ordem')
+        }),
+        ('Detalhes', {
+            'fields': ('descricao',),
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(TagIVA)
+class TagIVAAdmin(ModelAdmin):
+    """Admin para Tags IVA (dedutibilidade IVA)"""
+    list_display = ['codigo', 'nome', 'percentagem_dedutivel', 'ordem']
+    list_editable = ['ordem']
+    search_fields = ['codigo', 'nome', 'descricao']
+    ordering = ['ordem', 'codigo']
+
+    fieldsets = (
+        (None, {
+            'fields': ('codigo', 'nome', 'percentagem_dedutivel', 'ordem')
+        }),
+        ('Detalhes', {
+            'fields': ('descricao',),
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(TagIRS)
+class TagIRSAdmin(ModelAdmin):
+    """Admin para Tags IRS (regime de retenção)"""
+    list_display = ['codigo', 'nome', 'taxa_retencao_default', 'ordem']
+    list_editable = ['ordem']
+    search_fields = ['codigo', 'nome', 'descricao']
+    ordering = ['ordem', 'codigo']
+
+    fieldsets = (
+        (None, {
+            'fields': ('codigo', 'nome', 'taxa_retencao_default', 'ordem')
+        }),
+        ('Detalhes', {
+            'fields': ('descricao',),
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(TagTSU)
+class TagTSUAdmin(ModelAdmin):
+    """Admin para Tags TSU (Segurança Social)"""
+    list_display = ['codigo', 'nome', 'taxa_empresa', 'taxa_trabalhador', 'ordem']
+    list_editable = ['ordem']
+    search_fields = ['codigo', 'nome', 'descricao']
+    ordering = ['ordem', 'codigo']
+
+    fieldsets = (
+        (None, {
+            'fields': ('codigo', 'nome', 'taxa_empresa', 'taxa_trabalhador', 'ordem')
+        }),
+        ('Detalhes', {
+            'fields': ('descricao',),
+            'classes': ['collapse']
+        }),
+    )
+
+
 @admin.register(Cliente)
 class ClienteAdmin(UnfoldHistoryAdmin):
     """Admin para Cliente com Unfold customization + History"""
@@ -642,7 +723,7 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
     list_filter = ['ativa', 'estado_default', 'dia_mes', 'tags']
     search_fields = ['numero', 'descricao', 'credor__nome']
     ordering = ['dia_mes', '-created_at']
-    autocomplete_fields = ['credor', 'projeto']
+    autocomplete_fields = ['credor', 'projeto', 'tag_irc', 'tag_iva', 'tag_irs', 'tag_tsu']
     filter_horizontal = ['tags']  # Melhor UX para ManyToMany
 
     fieldsets = (
@@ -652,6 +733,10 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
         ('Categorização', {
             'fields': ('tags',),
             'description': 'Sistema moderno de categorização (substitui campo "tipo" deprecated)'
+        }),
+        ('Categorização Fiscal', {
+            'fields': ('tag_irc', 'tag_iva', 'tag_irs', 'tag_tsu'),
+            'description': 'Categorização fiscal automática conforme legislação 2026'
         }),
         ('Fornecedor/Projeto', {
             'fields': ('credor', 'projeto')
@@ -718,7 +803,7 @@ class DespesaAdmin(UnfoldHistoryAdmin):
         'nota',                 # Contains nas notas
     ]
     ordering = ['-data', '-created_at']
-    autocomplete_fields = ['credor', 'projeto', 'despesa_template']
+    autocomplete_fields = ['credor', 'projeto', 'despesa_template', 'tag_irc', 'tag_iva', 'tag_irs', 'tag_tsu']
     date_hierarchy = 'data'
     filter_horizontal = ['tags']  # Interface melhor para ManyToMany
     actions = ['delete_selected', 'exportar_pdf', 'exportar_excel']
@@ -729,6 +814,10 @@ class DespesaAdmin(UnfoldHistoryAdmin):
         }),
         ('Categorização', {
             'fields': ('tags', 'tipo_original')
+        }),
+        ('Categorização Fiscal', {
+            'fields': ('tag_irc', 'tag_iva', 'tag_irs', 'tag_tsu'),
+            'description': 'Categorização fiscal automática conforme legislação 2026'
         }),
         ('Fornecedor/Projeto', {
             'fields': ('credor', 'projeto')
@@ -1216,40 +1305,220 @@ class FiscalAdmin(ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
+    def get_urls(self):
+        """Adiciona URLs customizadas para páginas dedicadas"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('iva/', self.admin_site.admin_view(self.iva_view), name='core_fiscal_iva'),
+            path('irs/', self.admin_site.admin_view(self.irs_view), name='core_fiscal_irs'),
+            path('irc/', self.admin_site.admin_view(self.irc_view), name='core_fiscal_irc'),
+        ]
+        return custom_urls + urls
+
+    def iva_view(self, request):
+        """Página dedicada IVA com navegação trimestral"""
+        from core.utils.fiscal import FiscalCalculator
+        from core.models import Despesa, Projeto
+        from datetime import datetime
+
+        calculator = FiscalCalculator()
+        hoje = datetime.now().date()
+
+        ano = int(request.GET.get('ano', hoje.year))
+        trimestre = int(request.GET.get('trimestre', ((hoje.month - 1) // 3) + 1))
+
+        anos_despesas = Despesa.objects.dates('data', 'year', order='ASC').values_list('data__year', flat=True)
+        anos_projetos = Projeto.objects.dates('data_inicio', 'year', order='ASC').values_list('data_inicio__year', flat=True)
+        anos_disponiveis = sorted(set(list(anos_despesas) + list(anos_projetos)))
+
+        iva = calculator.calcular_iva_trimestral(ano, trimestre)
+        iva_breakdown = calculator.breakdown_iva_por_tags(ano, trimestre)
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'IVA Trimestral',
+            'ano_atual': ano,
+            'trimestre_atual': trimestre,
+            'anos_disponiveis': anos_disponiveis,
+            'iva': iva,
+            'iva_breakdown': iva_breakdown,
+        }
+
+        return render(request, 'admin/core/fiscal/iva.html', context)
+
+    def irs_view(self, request):
+        """Página dedicada IRS com navegação mensal"""
+        from core.utils.fiscal import FiscalCalculator
+        from core.models import Despesa, Projeto
+        from datetime import datetime
+
+        calculator = FiscalCalculator()
+        hoje = datetime.now().date()
+
+        ano = int(request.GET.get('ano', hoje.year))
+        mes = int(request.GET.get('mes', hoje.month))
+
+        anos_despesas = Despesa.objects.dates('data', 'year', order='ASC').values_list('data__year', flat=True)
+        anos_projetos = Projeto.objects.dates('data_inicio', 'year', order='ASC').values_list('data_inicio__year', flat=True)
+        anos_disponiveis = sorted(set(list(anos_despesas) + list(anos_projetos)))
+
+        irs = calculator.calcular_irs_mensal(ano, mes)
+
+        meses = [
+            {'num': 1, 'nome': 'Janeiro'},
+            {'num': 2, 'nome': 'Fevereiro'},
+            {'num': 3, 'nome': 'Março'},
+            {'num': 4, 'nome': 'Abril'},
+            {'num': 5, 'nome': 'Maio'},
+            {'num': 6, 'nome': 'Junho'},
+            {'num': 7, 'nome': 'Julho'},
+            {'num': 8, 'nome': 'Agosto'},
+            {'num': 9, 'nome': 'Setembro'},
+            {'num': 10, 'nome': 'Outubro'},
+            {'num': 11, 'nome': 'Novembro'},
+            {'num': 12, 'nome': 'Dezembro'},
+        ]
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'IRS Mensal',
+            'ano_atual': ano,
+            'mes_atual': mes,
+            'anos_disponiveis': anos_disponiveis,
+            'meses': meses,
+            'irs': irs,
+        }
+
+        return render(request, 'admin/core/fiscal/irs.html', context)
+
+    def irc_view(self, request):
+        """Página dedicada IRC com navegação anual"""
+        from core.utils.fiscal import FiscalCalculator
+        from core.models import Despesa, Projeto
+        from datetime import datetime
+
+        calculator = FiscalCalculator()
+        hoje = datetime.now().date()
+
+        ano = int(request.GET.get('ano', hoje.year))
+
+        anos_despesas = Despesa.objects.dates('data', 'year', order='ASC').values_list('data__year', flat=True)
+        anos_projetos = Projeto.objects.dates('data_inicio', 'year', order='ASC').values_list('data_inicio__year', flat=True)
+        anos_disponiveis = sorted(set(list(anos_despesas) + list(anos_projetos)))
+
+        irc = calculator.estimar_irc_anual(ano)
+        irc_breakdown = calculator.breakdown_irc_por_tags(ano)
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'IRC Anual',
+            'ano_atual': ano,
+            'anos_disponiveis': anos_disponiveis,
+            'irc': irc,
+            'irc_breakdown': irc_breakdown,
+        }
+
+        return render(request, 'admin/core/fiscal/irc.html', context)
+
     def changelist_view(self, request, extra_context=None):
         """Vista personalizada para mostrar dashboard fiscal"""
         from django.shortcuts import render
         from core.utils.fiscal import FiscalCalculator
         from datetime import date
+        from core.models import Despesa, Projeto
 
         calculator = FiscalCalculator()
         hoje = date.today()
-        ano_atual = hoje.year
-        mes_atual = hoje.month
-        trimestre_atual = (mes_atual - 1) // 3 + 1
 
-        # Calcular IVA Trimestral (trimestre atual)
-        iva = calculator.calcular_iva_trimestral(ano_atual, trimestre_atual)
+        # Get year and trimestre from URL parameters
+        ano_param = request.GET.get('ano')
+        trimestre_param = request.GET.get('trimestre')
+
+        # Determine current values
+        mes_atual = hoje.month
+        trimestre_atual_real = (mes_atual - 1) // 3 + 1
+
+        ano_selecionado = int(ano_param) if ano_param else hoje.year
+        trimestre_selecionado = int(trimestre_param) if trimestre_param else None
+        trimestre_atual = trimestre_selecionado if trimestre_selecionado else trimestre_atual_real
+
+        # Get available years from database (years with despesas or projetos)
+        anos_despesas = Despesa.objects.dates('data', 'year', order='ASC').values_list('data__year', flat=True)
+        anos_projetos = Projeto.objects.dates('data_inicio', 'year', order='ASC').values_list('data_inicio__year', flat=True)
+        anos_disponiveis = sorted(set(list(anos_despesas) + list(anos_projetos)))
+
+        # If no data, default to current year
+        if not anos_disponiveis:
+            anos_disponiveis = [hoje.year]
+
+        # Build date_hierarchy context (Unfold format)
+        date_hierarchy_context = {'show': True}
+
+        if trimestre_param:
+            # Level 2: Quarter selected - show back to year
+            date_hierarchy_context['back'] = {
+                'link': f'?ano={ano_selecionado}',
+                'title': str(ano_selecionado)
+            }
+            date_hierarchy_context['choices'] = [
+                {'title': f'Q{trimestre_param}', 'link': None}  # Current level, no link
+            ]
+        elif ano_param:
+            # Level 1: Year selected - show back to root + quarters
+            date_hierarchy_context['back'] = {
+                'link': '?',
+                'title': 'Todos os anos'
+            }
+            date_hierarchy_context['choices'] = [
+                {'title': str(ano_selecionado), 'link': None},  # Current year, no link
+            ] + [
+                {'title': f'Q{q}', 'link': f'?ano={ano_selecionado}&trimestre={q}'}
+                for q in [1, 2, 3, 4]
+            ]
+        else:
+            # Level 0: Root - show all years
+            date_hierarchy_context['choices'] = [
+                {'title': str(ano), 'link': f'?ano={ano}'}
+                for ano in anos_disponiveis
+            ]
+
+        # Calcular IVA (trimestre específico ou ano completo)
+        if trimestre_selecionado:
+            iva = calculator.calcular_iva_trimestral(ano_selecionado, trimestre_selecionado)
+            iva_breakdown = calculator.breakdown_iva_por_tags(ano_selecionado, trimestre_selecionado)
+        else:
+            # Ano completo
+            iva = calculator.calcular_iva_anual(ano_selecionado)
+            iva_breakdown = calculator.breakdown_iva_por_tags(ano_selecionado, None)
 
         # Calcular IRS Mensal (mês atual)
-        irs = calculator.calcular_irs_mensal(ano_atual, mes_atual)
+        irs = calculator.calcular_irs_mensal(ano_selecionado, mes_atual)
 
-        # Estimar IRC Anual (ano atual)
-        irc = calculator.estimar_irc_anual(ano_atual)
+        # Estimar IRC Anual (ano selecionado)
+        irc = calculator.estimar_irc_anual(ano_selecionado)
 
         # Próximas obrigações
         obrigacoes = calculator.proximas_obrigacoes()
 
+        # Breakdown IRC
+        irc_breakdown = calculator.breakdown_irc_por_tags(ano_selecionado)
+
         context = {
             **self.admin_site.each_context(request),
             'title': 'Estado Fiscal',
-            'ano_atual': ano_atual,
+            'ano_atual': ano_selecionado,
+            'ano_selecionado': ano_selecionado,
+            'trimestre_selecionado': trimestre_selecionado,  # None if viewing all year
             'mes_atual': mes_atual,
             'trimestre_atual': trimestre_atual,
             'iva': iva,
             'irs': irs,
             'irc': irc,
             'obrigacoes': obrigacoes[:5],  # Próximas 5 obrigações
+            'iva_breakdown': iva_breakdown,
+            'irc_breakdown': irc_breakdown,
+            'date_hierarchy': date_hierarchy_context,  # Unfold date_hierarchy format
         }
 
         # Render template directly (não chamar super() para evitar query na tabela inexistente)

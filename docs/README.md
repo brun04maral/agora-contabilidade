@@ -18,6 +18,7 @@
 |----------|-------------|--------|
 | [**SOCIOS_MIGRATION.md**](./SOCIOS_MIGRATION.md) | Complete guide to Socio model implementation | ✅ Complete |
 | [**SALDOS_DASHBOARD.md**](./SALDOS_DASHBOARD.md) | Saldos Pessoais dashboard implementation | ✅ Complete |
+| [**FISCAL_DASHBOARD.md**](./FISCAL_DASHBOARD.md) | Dashboard Fiscal integrado com IVA/IRS/IRC | ✅ Complete |
 | [**SALDOS_REVISION_SPEC.md**](./SALDOS_REVISION_SPEC.md) | Especificação para revisão da lógica de saldos | 🚧 Pendente |
 | [**FISCAL_CATEGORIZATION.md**](./FISCAL_CATEGORIZATION.md) | Sistema de categorização fiscal (IRC/IVA/IRS/TSU) | 📝 Draft |
 | [**IMPORT_SYSTEM.md**](./IMPORT_SYSTEM.md) | Web-based Excel import system | ✅ Complete |
@@ -56,6 +57,7 @@
 - **Selection total floating box:** [CHANGELOG.md](../CHANGELOG.md#242---2026-01-16) - Total sem IVA de seleções (v2.4.2)
 
 ### Fiscal & Tax
+- **Dashboard Fiscal integrado:** [FISCAL_DASHBOARD.md](./FISCAL_DASHBOARD.md) - IVA/IRS/IRC páginas dedicadas no admin
 - **Fiscal categorization system:** [FISCAL_CATEGORIZATION.md](./FISCAL_CATEGORIZATION.md) - IRC/IVA/IRS/TSU tags
 - **Questões para contabilista:** [QUESTOES_CONTABILISTA.md](./QUESTOES_CONTABILISTA.md) - Questionário fiscal
 - **Fiscal calculator:** [fiscal.py](../agora_web/core/utils/fiscal.py) - IVA, IRS, IRC calculators

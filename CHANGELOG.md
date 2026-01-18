@@ -2,6 +2,120 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-01-18
+
+### Added - Dashboard Fiscal Integrado no Admin
+
+#### 1. Dashboard Fiscal com Páginas Dedicadas
+
+- **Landing Page `/admin/core/fiscal/`:**
+  - 3 cards clicáveis com cores terra (IVA #D4A574, IRS #8B9474, IRC #A89674)
+  - Mostra dados do período corrente (trimestre/mês/ano atual)
+  - Hover effects: translateY(-4px) + shadow
+  - Material Icons `arrow_forward` para indicar navegação
+  - Informação contextual: valores, prazos, contagens
+
+- **Páginas Dedicadas Integradas no Admin:**
+  - **IVA** (`/admin/core/fiscal/iva/`): Navegação trimestral com tabs Q1/Q2/Q3/Q4
+  - **IRS** (`/admin/core/fiscal/irs/`): Navegação mensal com tabs Jan-Dez
+  - **IRC** (`/admin/core/fiscal/irc/`): Navegação anual (sem tabs)
+  - Todas as páginas renderizam dentro da frame do Unfold (sidebar + header funcionam!)
+  - Breadcrumbs: Estado Fiscal > [Tipo] > [Período]
+  - Navegação por ano via chips clicáveis
+  - Tabs estilo Unfold com border-bottom ativo
+
+- **Breakdown por Tags Fiscais:**
+  - Tabelas detalhadas de dedutibilidade por categoria
+  - Color coding: verde (100%), vermelho (0%), laranja (parcial)
+  - Contagem de despesas por tag
+  - Valores brutos vs dedutíveis
+
+- **Alertas Inteligentes:**
+  - ⚠ Avisos para despesas sem tags fiscais (assumido 100% dedutível)
+  - Destaque visual com fundo amarelo
+
+- **Exportação Excel:**
+  - Botão verde com gradiente e ícone `download`
+  - Relatórios IVA e IRC formatados com:
+    - Headers azuis + texto branco
+    - Color coding (verde/vermelho/laranja)
+    - Bordas e formatação de valores (€#,##0.00)
+    - Auto-ajuste de colunas
+    - Alertas destacados
+  - Filename: `Fiscal_IVA_Q1_2025_20260118.xlsx`
+
+#### 2. Arquitetura Técnica
+
+- **FiscalAdmin.get_urls():**
+  - Custom URLs registadas via `get_urls()` no admin
+  - URLs: `iva/`, `irs/`, `irc/` (relativas a `/admin/core/fiscal/`)
+  - Views protegidas com `self.admin_site.admin_view()`
+  - Context inclui `**self.admin_site.each_context(request)` para Unfold integration
+
+- **View Methods:**
+  - `iva_view()`: Cálculos IVA trimestral + breakdown
+  - `irs_view()`: Cálculos IRS mensal + lista retenções
+  - `irc_view()`: Estimativa IRC anual + breakdown + cálculo 16%/20%
+  - Cada view faz render com template dedicado
+
+- **Templates (agora_web/core/templates/admin/core/fiscal/):**
+  - `changelist.html`: Landing page com cards
+  - `iva.html`: Página dedicada IVA
+  - `irs.html`: Página dedicada IRS
+  - `irc.html`: Página dedicada IRC
+  - Todos herdam de `admin/base_site.html` (Unfold integration!)
+
+- **Lazy Loading:**
+  - Apenas calcula dados do período selecionado (performance)
+  - Queries otimizadas com `select_related` e `prefetch_related`
+  - Anos disponíveis calculados a partir de dados existentes
+
+#### 3. Design System
+
+- **Cores Terra:**
+  - IVA: `#D4A574` (bege dourado)
+  - IRS: `#8B9474` (verde oliva)
+  - IRC: `#A89674` (bronze)
+
+- **Dark Mode Support:**
+  - Todas as cores têm variantes dark mode
+  - Classes `.dark` aplicadas automaticamente pelo Unfold
+
+- **Responsive Design:**
+  - Grid 3 colunas → 1 coluna em mobile
+  - Tabs quebram em múltiplas linhas se necessário
+
+#### 4. Documentação
+
+- **[FISCAL_DASHBOARD.md](docs/FISCAL_DASHBOARD.md) (47KB):**
+  - Guia completo de implementação
+  - Mockups ASCII da UI
+  - Arquitetura detalhada (Proxy Model, Admin, Templates)
+  - Padrões de navegação (breadcrumbs, chips, tabs)
+  - Testing checklist
+  - Performance considerations
+  - Troubleshooting guide
+
+- **[docs/README.md](docs/README.md) atualizado:**
+  - Novo link "Dashboard Fiscal Integrado" na secção "Fiscal & Tax"
+
+### Technical Notes
+
+- **Breaking Changes:** Nenhuma
+- **URL Changes:** Views fiscais movidas de `/fiscal/*` para `/admin/core/fiscal/*`
+- **Files Changed:**
+  - `agora_web/core/admin.py` (linhas 1294-1543): Custom URLs + views
+  - `agora_web/core/templates/admin/core/fiscal/*.html`: 4 templates
+  - `agora_web/core/views.py` (linhas 161-388): Export Excel function
+  - `agora_web/core/utils/fiscal.py`: FiscalCalculator
+- **Future Work:**
+  - Gráficos temporais (Chart.js)
+  - Comparação entre períodos
+  - Keyboard shortcuts
+  - API REST endpoints
+
+---
+
 ## [0.3.0] - 2026-01-17
 
 ### Added - Sistema de Despesas Fixas Mensais & Categorização Fiscal
