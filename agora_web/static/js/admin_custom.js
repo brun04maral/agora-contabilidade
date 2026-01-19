@@ -185,7 +185,16 @@
 
         if (environmentBadge && !environmentBadge.classList.contains('clickable-badge')) {
             environmentBadge.style.cursor = 'pointer';
-            environmentBadge.title = 'v0.2.45 | Última atualização: 17/01/2026';
+
+            // Extrair versão do próprio badge text (formato: "Development v0.3.1")
+            const badgeText = environmentBadge.textContent.trim();
+            const versionMatch = badgeText.match(/v?(\d+\.\d+\.\d+)/);
+            const version = versionMatch ? versionMatch[1] : '0.3.1';
+
+            // Tooltip dinâmico com versão extraída
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            environmentBadge.title = `v${version} | Última atualização: ${dateStr}`;
 
             // Visual feedback
             environmentBadge.style.transition = 'all 0.2s ease-in-out';
@@ -194,7 +203,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Badge clicado! Redirecionando para changelog...');
-                window.location.href = '/changelog/';
+                window.location.href = '/admin/core/documentacao/changelog/';
             });
 
             environmentBadge.addEventListener('mouseenter', function() {
