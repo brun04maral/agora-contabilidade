@@ -141,6 +141,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DOCS_CONFIG = {
     'ROOT_PATH': Path('/app/docs'),
     'MAIN_README': Path('/app/README.md'),
+    'README_DEV': Path('/app/README-DEV.md'),
     'CHANGELOG': Path('/app/CHANGELOG.md'),
     'CLAUDE_MD': Path('/app/claude.md'),
     'ENABLE_SEARCH': False,  # Para implementar futuramente
@@ -160,11 +161,27 @@ def get_custom_js(request):
     import time
     return static("js/admin_custom.js") + f"?v=0.2.43-{int(time.time())}"
 
+def get_current_version():
+    """Extract current version from CHANGELOG.md"""
+    import re
+    try:
+        changelog_path = BASE_DIR.parent / 'CHANGELOG.md'
+        with open(changelog_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # Find first version in format ## [X.Y.Z]
+        match = re.search(r'##\s*\[(\d+\.\d+\.\d+)\]', content)
+        if match:
+            return match.group(1)
+    except Exception:
+        pass
+    return "0.3.1"  # Fallback
+
 def environment_callback(request):
-    """Display environment badge in admin header"""
+    """Display environment badge in admin header with current version"""
+    version = get_current_version()
     if DEBUG:
-        return ["Development", "orange"]
-    return ["Production", "green"]
+        return ["Development", "orange", f"v{version}"]
+    return ["Production", "green", f"v{version}"]
 
 # Unfold Configuration
 UNFOLD = {

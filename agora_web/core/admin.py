@@ -1741,7 +1741,7 @@ class DocumentacaoAdmin(ModelAdmin):
         if file_path == 'README.md':
             return settings.DOCS_CONFIG['MAIN_README']
         elif file_path == 'README-DEV.md':
-            return settings.BASE_DIR.parent / 'README-DEV.md'
+            return settings.DOCS_CONFIG['README_DEV']
         elif file_path == 'CHANGELOG.md':
             return settings.DOCS_CONFIG['CHANGELOG']
         elif file_path == '.claude/claude.md':
