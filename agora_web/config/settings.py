@@ -180,8 +180,8 @@ def environment_callback(request):
     """Display environment badge in admin header with current version"""
     version = get_current_version()
     if DEBUG:
-        return ["Development", "orange", f"v{version}"]
-    return ["Production", "green", f"v{version}"]
+        return [f"Development v{version}", "warning"]
+    return [f"Production v{version}", "success"]
 
 # Unfold Configuration
 UNFOLD = {
@@ -337,21 +337,4 @@ UNFOLD = {
             },
         ],
     },
-    "TABS": [
-        {
-            "models": [],
-            "items": [
-                {
-                    "title": "Development",
-                    "icon": "code",
-                    "link": "/admin/core/documentacao/dev-guide/",
-                },
-                {
-                    "title": "Changelog",
-                    "icon": "history",
-                    "link": "/admin/core/documentacao/changelog/",
-                },
-            ],
-        },
-    ],
 }
