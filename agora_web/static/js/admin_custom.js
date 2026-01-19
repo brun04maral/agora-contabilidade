@@ -169,8 +169,8 @@
 
             const fullText = el.textContent.trim();
 
-            if ((directText === 'Development' || directText === 'Production' ||
-                 fullText === 'Development' || fullText === 'Production') &&
+            if ((directText.includes('Development') || directText.includes('Production') ||
+                 fullText.includes('Development') || fullText.includes('Production')) &&
                 !el.classList.contains('clickable-badge')) {
 
                 // Verificar se é um elemento pequeno (badge), não um container grande
