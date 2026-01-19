@@ -320,4 +320,21 @@ UNFOLD = {
             },
         ],
     },
+    "TABS": [
+        {
+            "models": [],
+            "items": [
+                {
+                    "title": "Development",
+                    "icon": "code",
+                    "link": "/admin/core/documentacao/dev-guide/",
+                },
+                {
+                    "title": "Changelog",
+                    "icon": "history",
+                    "link": "/admin/core/documentacao/changelog/",
+                },
+            ],
+        },
+    ],
 }

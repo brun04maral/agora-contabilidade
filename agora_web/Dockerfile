@@ -26,6 +26,7 @@ COPY agora_web/ .
 # Copy documentation from project root
 COPY CHANGELOG.md /app/CHANGELOG.md
 COPY README.md /app/README.md
+COPY README-DEV.md /app/README-DEV.md
 COPY docs/ /app/docs/
 COPY .claude/claude.md /app/claude.md
 

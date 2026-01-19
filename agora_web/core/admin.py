@@ -1611,6 +1611,12 @@ class DocumentacaoAdmin(ModelAdmin):
             'file': 'README.md',
             'description': 'Visão geral do projeto Agora Contabilidade'
         },
+        'dev-guide': {
+            'title': 'Guia do Desenvolvedor',
+            'icon': 'code',
+            'file': 'README-DEV.md',
+            'description': 'Workflow de desenvolvimento com VS Code Extension'
+        },
         'changelog': {
             'title': 'Changelog',
             'icon': 'history',
@@ -1734,6 +1740,8 @@ class DocumentacaoAdmin(ModelAdmin):
         # Build absolute path based on file location
         if file_path == 'README.md':
             return settings.DOCS_CONFIG['MAIN_README']
+        elif file_path == 'README-DEV.md':
+            return settings.BASE_DIR.parent / 'README-DEV.md'
         elif file_path == 'CHANGELOG.md':
             return settings.DOCS_CONFIG['CHANGELOG']
         elif file_path == '.claude/claude.md':
@@ -1750,6 +1758,8 @@ class DocumentacaoAdmin(ModelAdmin):
         md_to_key = {
             'README.md': 'overview',
             '../README.md': 'overview',
+            'README-DEV.md': 'dev-guide',
+            '../README-DEV.md': 'dev-guide',
             'CHANGELOG.md': 'changelog',
             '../CHANGELOG.md': 'changelog',
             'docs/README.md': 'docs-index',
@@ -1841,7 +1851,7 @@ class DocumentacaoAdmin(ModelAdmin):
 
         # Group docs by category
         categories = {
-            'Geral': ['overview', 'changelog', 'docs-index'],
+            'Geral': ['overview', 'dev-guide', 'changelog', 'docs-index'],
             'Técnico': ['database-manual', 'saldos-dashboard', 'saldos-revision', 'socios', 'audit-trail'],
             'Features': ['excel-import', 'import-system', 'pwa', 'logo-cleanup'],
             'Fiscal': ['fiscal-system', 'fiscal-dashboard', 'respostas-contabilista'],
