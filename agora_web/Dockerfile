@@ -31,10 +31,10 @@ COPY docs/ /app/docs/
 COPY .claude/claude.md /app/claude.md
 
 # Create static and media directories
-RUN mkdir -p /app/static /app/media
+RUN mkdir -p /app/static /app/media /app/staticfiles
 
-# Collect static files (will be run during deployment)
-# RUN python manage.py collectstatic --noinput
+# Collect static files
+RUN python manage.py collectstatic --noinput
 
 # Create non-root user
 RUN useradd -m -u 1000 agora && \
