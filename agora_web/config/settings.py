@@ -152,14 +152,12 @@ DOCS_CONFIG = {
 # Helper functions for Unfold configuration
 def get_custom_css(request):
     """Get custom CSS path with cache busting"""
-    from django.templatetags.static import static
-    return static("css/admin_custom.css") + "?v=0.2.43"
+    return "/static/css/admin_custom.css?v=0.2.43"
 
 def get_custom_js(request):
     """Get custom JavaScript path with cache busting"""
-    from django.templatetags.static import static
     import time
-    return static("js/admin_custom.js") + f"?v=0.2.43-{int(time.time())}"
+    return f"/static/js/admin_custom.js?v=0.2.43-{int(time.time())}"
 
 def get_current_version():
     """Extract current version from CHANGELOG.md"""
