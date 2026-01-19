@@ -186,15 +186,20 @@
         if (environmentBadge && !environmentBadge.classList.contains('clickable-badge')) {
             environmentBadge.style.cursor = 'pointer';
 
-            // Extrair versão do próprio badge text (formato: "Development v0.3.1")
-            const badgeText = environmentBadge.textContent.trim();
-            const versionMatch = badgeText.match(/v?(\d+\.\d+\.\d+)/);
-            const version = versionMatch ? versionMatch[1] : '0.3.1';
+            // Buscar versão do CHANGELOG via fetch
+            fetch('/admin/core/documentacao/changelog/')
+                .then(response => response.text())
+                .then(html => {
+                    const versionMatch = html.match(/##\s*\[(\d+\.\d+\.\d+)\]/);
+                    const version = versionMatch ? versionMatch[1] : '0.3.1';
 
-            // Tooltip dinâmico com versão extraída
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            environmentBadge.title = `v${version} | Última atualização: ${dateStr}`;
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    environmentBadge.title = `v${version} | Última atualização: ${dateStr}`;
+                })
+                .catch(() => {
+                    environmentBadge.title = 'Ver changelog';
+                });
 
             // Visual feedback
             environmentBadge.style.transition = 'all 0.2s ease-in-out';

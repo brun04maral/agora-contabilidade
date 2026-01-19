@@ -175,11 +175,10 @@ def get_current_version():
     return "0.3.1"  # Fallback
 
 def environment_callback(request):
-    """Display environment badge in admin header with current version"""
-    version = get_current_version()
+    """Display environment badge in admin header (tooltip shows version)"""
     if DEBUG:
-        return [f"Development v{version}", "warning"]
-    return [f"Production v{version}", "success"]
+        return ["Development", "warning"]
+    return ["Production", "success"]
 
 # Unfold Configuration
 UNFOLD = {
