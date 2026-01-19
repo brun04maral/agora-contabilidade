@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2026-01-19
+
+### Fixed - Badge Environment com Tooltip Dinâmico
+
+#### Cache Busting do JavaScript
+- **Problema:** JavaScript do admin não atualizava em produção devido a cache do browser
+- **Causa:** Script tag hardcoded com versão fixa `?v=7.0.0-production` no skeleton.html
+- **Solução:**
+  - Removido script tag hardcoded do template
+  - Corrigida função `get_custom_js()` para retornar caminho direto sem usar `static()`
+  - Unfold agora injeta automaticamente via configuração `SCRIPTS` com timestamp dinâmico
+  - Cada request gera URL único: `/static/js/admin_custom.js?v=0.2.43-{timestamp}`
+
+#### Badge Environment Restaurado
+- **Badge text:** Mostra apenas "Development" (laranja) ou "Production" (verde)
+- **Tooltip dinâmico:** "v{versão} | Última atualização: {data}"
+  - Versão extraída do CHANGELOG.md via fetch assíncrono
+  - Formato PT: "v0.3.2 | Última atualização: 19/01/2026"
+- **Funcionalidade:** Clicável, redireciona para `/admin/core/documentacao/changelog/`
+- **Visual feedback:** Hover effects (opacity + scale)
+- **Correção:** JavaScript agora usa `.includes()` em vez de `===` para encontrar badge
+
+#### Documentação Integrada
+- Centro de documentação movido para `/admin/core/documentacao/`
+- README-DEV.md adicionado ao Dockerfile e configuração
+- Redirects para compatibilidade: `/docs/` → `/admin/core/documentacao/`
+
+### Technical Details
+- `settings.py`: `get_custom_js()` e `get_custom_css()` retornam caminhos diretos
+- `admin_custom.js`: Badge search usa `.includes('Development')` para suportar variações
+- `skeleton.html`: Removido script hardcoded, confia em UNFOLD.SCRIPTS
+- Dockerfile: `collectstatic` habilitado (202 ficheiros copiados)
+
 ## [0.3.1] - 2026-01-18
 
 ### Added - Dashboard Fiscal Integrado no Admin
