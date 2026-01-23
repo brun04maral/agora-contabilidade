@@ -145,6 +145,10 @@ window.addEventListener('beforeinstallprompt', (e) => {
 window.addEventListener('appinstalled', () => {
   console.log('PWA installed successfully');
 });
+
+// Version info for badge tooltip
+window.AGORA_VERSION = '{{ version }}';
+window.AGORA_VERSION_DATE = '{{ version_date }}';
 </script>
 
 {% endblock %}

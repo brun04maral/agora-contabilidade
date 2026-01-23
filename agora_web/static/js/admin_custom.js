@@ -183,46 +183,20 @@
             }
         }
 
-        if (environmentBadge && !environmentBadge.classList.contains('clickable-badge')) {
-            environmentBadge.style.cursor = 'pointer';
+        if (environmentBadge && !environmentBadge.classList.contains('has-tooltip')) {
+            // Usar versão e data das variáveis globais
+            const version = window.AGORA_VERSION || '0.3.2';
+            const versionDate = window.AGORA_VERSION_DATE || '2026-01-19';
 
-            // Buscar versão do CHANGELOG via fetch
-            fetch('/admin/core/documentacao/changelog/')
-                .then(response => response.text())
-                .then(html => {
-                    const versionMatch = html.match(/##\s*\[(\d+\.\d+\.\d+)\]/);
-                    const version = versionMatch ? versionMatch[1] : '0.3.1';
+            // Converter data de YYYY-MM-DD para DD/MM/YYYY
+            const [year, month, day] = versionDate.split('-');
+            const dateStr = `${day}/${month}/${year}`;
 
-                    const now = new Date();
-                    const dateStr = now.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    environmentBadge.title = `v${version} | Última atualização: ${dateStr}`;
-                })
-                .catch(() => {
-                    environmentBadge.title = 'Ver changelog';
-                });
+            // Definir tooltip com versão e data do CHANGELOG
+            environmentBadge.title = `v${version} | Última atualização: ${dateStr}`;
 
-            // Visual feedback
-            environmentBadge.style.transition = 'all 0.2s ease-in-out';
-
-            environmentBadge.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Badge clicado! Redirecionando para changelog...');
-                window.location.href = '/admin/core/documentacao/changelog/';
-            });
-
-            environmentBadge.addEventListener('mouseenter', function() {
-                this.style.opacity = '0.85';
-                this.style.transform = 'scale(1.05)';
-            });
-
-            environmentBadge.addEventListener('mouseleave', function() {
-                this.style.opacity = '1';
-                this.style.transform = 'scale(1)';
-            });
-
-            environmentBadge.classList.add('clickable-badge');
-            console.log('Badge configurado como clicável com sucesso!');
+            environmentBadge.classList.add('has-tooltip');
+            console.log('Badge tooltip configurado:', environmentBadge.title);
         } else {
             console.log('Badge não encontrado. Tentando novamente em 2s...');
             setTimeout(makeEnvironmentBadgeClickable, 2000);

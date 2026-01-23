@@ -69,6 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.version_info',
             ],
         },
     },
@@ -162,8 +163,13 @@ def get_custom_js(request):
 def get_current_version():
     """Extract current version from CHANGELOG.md"""
     import re
+    from pathlib import Path
     try:
-        changelog_path = BASE_DIR.parent / 'CHANGELOG.md'
+        # Try /app/CHANGELOG.md first (Docker), then parent directory
+        changelog_path = Path('/app/CHANGELOG.md')
+        if not changelog_path.exists():
+            changelog_path = BASE_DIR.parent / 'CHANGELOG.md'
+
         with open(changelog_path, 'r', encoding='utf-8') as f:
             content = f.read()
         # Find first version in format ## [X.Y.Z]
@@ -172,7 +178,27 @@ def get_current_version():
             return match.group(1)
     except Exception:
         pass
-    return "0.3.1"  # Fallback
+    return "0.3.2"  # Fallback
+
+def get_version_date():
+    """Extract version date from CHANGELOG.md"""
+    import re
+    from pathlib import Path
+    try:
+        # Try /app/CHANGELOG.md first (Docker), then parent directory
+        changelog_path = Path('/app/CHANGELOG.md')
+        if not changelog_path.exists():
+            changelog_path = BASE_DIR.parent / 'CHANGELOG.md'
+
+        with open(changelog_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # Find first version line with date: ## [X.Y.Z] - YYYY-MM-DD
+        match = re.search(r'##\s*\[\d+\.\d+\.\d+\]\s*-\s*(\d{4}-\d{2}-\d{2})', content)
+        if match:
+            return match.group(1)
+    except Exception:
+        pass
+    return "2026-01-19"  # Fallback
 
 def environment_callback(request):
     """Display environment badge in admin header (tooltip shows version)"""
