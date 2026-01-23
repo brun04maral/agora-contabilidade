@@ -84,11 +84,12 @@ class FiscalCalculator:
         inicio, fim = self.get_periodo_trimestre(ano, trimestre)
 
         # ======= IVA LIQUIDADO (Receitas/Projetos PAGOS) =======
-        # Assumindo que projetos com estado=PAGO representam receitas recebidas
+        # Projetos com data_recibo (pagamento confirmado) são considerados PAGOS
         # IVA = valor_sem_iva * 0.23 (taxa normal)
 
         projetos_pagos = Projeto.objects.filter(
-            estado='PAGO',
+            data_recibo__isnull=False,  # Nova lógica: PAGO = tem data de pagamento
+            cancelado=False,  # Não incluir projetos cancelados
             data_faturacao__gte=inicio,
             data_faturacao__lte=fim
         ).values('id', 'numero', 'descricao', 'valor_sem_iva', 'data_faturacao')
@@ -370,9 +371,10 @@ class FiscalCalculator:
         inicio = date(ano, 1, 1)
         fim = date(ano, 12, 31)
 
-        # Receitas = Projetos PAGOS no ano
+        # Receitas = Projetos PAGOS no ano (data_recibo confirma pagamento)
         receitas_agg = Projeto.objects.filter(
-            estado='PAGO',
+            data_recibo__isnull=False,  # Nova lógica: PAGO = tem data de pagamento
+            cancelado=False,  # Não incluir projetos cancelados
             data_faturacao__gte=inicio,
             data_faturacao__lte=fim
         ).aggregate(total=Sum('valor_sem_iva'))

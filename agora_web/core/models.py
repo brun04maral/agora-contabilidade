@@ -214,14 +214,6 @@ class TipoProjeto(models.TextChoices):
     PESSOAL = 'PESSOAL', _('Pessoal')  # Projeto freelance do sócio (owner) faturado pela empresa
 
 
-class EstadoProjeto(models.TextChoices):
-    """Enum para estado do projeto"""
-    ATIVO = 'ATIVO', _('Ativo')  # Projeto em curso
-    FINALIZADO = 'FINALIZADO', _('Finalizado')  # Trabalho concluído, aguarda pagamento
-    PAGO = 'PAGO', _('Pago')  # Cliente pagou
-    ANULADO = 'ANULADO', _('Anulado')  # Projeto cancelado
-
-
 class Projeto(UserTrackingMixin, models.Model):
     """
     Modelo para armazenar projetos da Agora Media
@@ -289,14 +281,13 @@ class Projeto(UserTrackingMixin, models.Model):
         _('Data Vencimento'),
         blank=True,
         null=True,
-        help_text='Prazo acordado para pagamento (deadline)'
+        help_text='Prazo acordado para pagamento (Deadline)'
     )
-    estado = models.CharField(
-        _('Estado'),
-        max_length=20,
-        choices=EstadoProjeto.choices,
-        default=EstadoProjeto.ATIVO,
-        db_index=True
+    cancelado = models.BooleanField(
+        _('Cancelado'),
+        default=False,
+        db_index=True,
+        help_text='Marcar como True se o projeto foi cancelado/anulado'
     )
 
     # Prémios (cachets + comissões) - para projetos da EMPRESA
@@ -308,7 +299,7 @@ class Projeto(UserTrackingMixin, models.Model):
         _('Data Pagamento'),
         blank=True,
         null=True,
-        help_text='Data em que o cliente efetivamente pagou o projeto'
+        help_text='Data em que o cliente efetivamente pagou (Cash Basis)'
     )
     orcamento_url = models.URLField(
         _('Link Orçamento'),

@@ -4,7 +4,7 @@ Formulários personalizados para Agora Contabilidade
 """
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import EstadoProjeto, TipoProjeto, Socio
+from .models import TipoProjeto, Socio
 
 
 class RelatorioProjetosForm(forms.Form):
@@ -28,7 +28,7 @@ class RelatorioProjetosForm(forms.Form):
         ('socio', 'Por Sócio'),
         ('cliente', 'Por Cliente'),
         ('mes', 'Por Mês'),
-        ('estado', 'Por Estado'),
+        ('cancelado', 'Por Estado (Ativo/Cancelado)'),
     ]
 
     # Tipo de relatório
@@ -65,9 +65,13 @@ class RelatorioProjetosForm(forms.Form):
         help_text='Filtrar por tipo de projeto'
     )
 
-    estado = forms.ChoiceField(
+    cancelado = forms.ChoiceField(
         label='Estado',
-        choices=[('', 'Todos')] + list(EstadoProjeto.choices),
+        choices=[
+            ('', 'Todos'),
+            ('ativo', 'Ativos'),
+            ('cancelado', 'Cancelados')
+        ],
         required=False,
         help_text='Filtrar por estado do projeto'
     )

@@ -21,7 +21,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from core.models import (
     Socio, Cliente, Fornecedor, Projeto, Despesa, Boletim,
-    TagDespesa, TipoProjeto, EstadoProjeto, EstadoBoletim,
+    TagDespesa, TipoProjeto, EstadoBoletim,
     EstatutoFornecedor
 )
 
@@ -270,18 +270,14 @@ class Command(BaseCommand):
                 cliente = self.lookup_cliente(cliente_nome) if cliente_nome else None
                 socio = self.lookup_socio(owner_nome) if owner_nome else None
 
-                # Determinar tipo e estado
-                tipo, estado = self.parse_projeto_tipo_estado(
-                    estado_sheet,
-                    data_recibo,
-                    data_fim
-                )
+                # Determinar tipo e cancelado
+                tipo, cancelado = self.parse_projeto_tipo_cancelado(estado_sheet)
 
                 Projeto.objects.update_or_create(
                     numero=numero,
                     defaults={
                         'tipo': tipo,
-                        'estado': estado,
+                        'cancelado': cancelado,
                         'cliente': cliente,
                         'socio': socio,
                         'owner': socio.codigo if socio else 'BA',  # Deprecated
@@ -609,28 +605,20 @@ class Command(BaseCommand):
 
         return tags
 
-    def parse_projeto_tipo_estado(self, estado_sheet, data_recibo, data_fim):
-        """Determina tipo e estado do projeto"""
+    def parse_projeto_tipo_cancelado(self, estado_sheet):
+        """Determina tipo e flag de cancelado do projeto"""
         # Tipo
         if estado_sheet == 'Pessoal':
             tipo = TipoProjeto.PESSOAL
         else:
             tipo = TipoProjeto.EMPRESA
 
-        # Estado
-        if data_recibo:
-            estado = EstadoProjeto.PAGO
-        elif estado_sheet == 'Pessoal':
-            if data_fim and self.parse_date(data_fim) < date.today():
-                estado = EstadoProjeto.FINALIZADO
-            else:
-                estado = EstadoProjeto.ATIVO
-        elif estado_sheet == 'Finalizado':
-            estado = EstadoProjeto.FINALIZADO
-        else:
-            estado = EstadoProjeto.ATIVO
+        # Cancelado (apenas se explicitamente anulado no Excel)
+        cancelado = False
+        if estado_sheet in ['Anulado', 'Cancelado', 'ANULADO', 'CANCELADO']:
+            cancelado = True
 
-        return tipo, estado
+        return tipo, cancelado
 
     def lookup_cliente(self, nome):
         """Lookup cliente por nome"""

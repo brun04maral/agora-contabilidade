@@ -8,6 +8,7 @@ from django.contrib.admin.actions import delete_selected
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import path, reverse
 from django.utils.html import format_html
+from django.utils import timezone
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display, action
 from simple_history.admin import SimpleHistoryAdmin
@@ -534,8 +535,8 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
 @admin.register(Projeto)
 class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
-    list_display = ['numero', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'estado', 'data_projeto_formatted']
-    list_filter = ['tipo', SocioListFilter, 'estado', 'data_faturacao']
+    list_display = ['numero', 'data_projeto_formatted', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'get_estado_geral']
+    list_filter = ['tipo', SocioListFilter, 'cancelado', 'data_faturacao']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "P0001")
         'descricao',            # Contains na descrição
@@ -543,7 +544,6 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
         'cliente__nome_formal', # Contains no nome formal do cliente
         'tipo',                 # Contains no tipo (PESSOAL/EMPRESA)
         'socio__nome_completo', # Contains no nome do sócio
-        'estado',               # Contains no estado
         'nota',                 # Contains nas notas
     ]
     ordering = ['-created_at']
@@ -563,19 +563,22 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
         }),
         ('Datas', {
             'fields': (('data_inicio', 'data_fim'), 'data_faturacao', 'data_vencimento', 'data_recibo'),
-            'description': 'Período do projeto e datas de faturação/pagamento'
-        }),
-        ('Estado', {
-            'fields': ('estado',)
+            'description': 'Período do projeto, faturação e pagamento (Vencimento = Prazo | Pagamento = Cash Basis)'
         }),
         ('Informações Adicionais', {
             'fields': ('nota',)
+        }),
+        ('Estado', {
+            'fields': ('get_estado_geral', 'cancelado'),
+            'description': 'Estado dinâmico calculado automaticamente + flag de cancelamento manual'
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
             'classes': ['collapse']
         }),
     )
+
+    readonly_fields = ['get_estado_geral', 'created_at', 'updated_at', 'created_by', 'updated_by']
 
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
@@ -620,6 +623,69 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     def data_recibo_formatted(self, obj):
         """Mostra data de pagamento no formato DD/MM/AAAA"""
         return obj.data_recibo.strftime('%d/%m/%Y') if obj.data_recibo else '-'
+
+    @display(description='Estado', ordering='cancelado')
+    def get_estado_geral(self, obj):
+        """
+        Single Badge com lógica de prioridade:
+
+        Prioridade (maior → menor):
+        1. cancelado=True → ANULADO (gray)
+        2. data_recibo exists → PAGO (green) ✅ Cliente pagou
+        3. data_vencimento < hoje → VENCIDO (red) ⚠️ Prazo passou
+        4. data_vencimento == hoje → VENCE HOJE (orange) ⚠️ Vence hoje
+        5. data_faturacao exists → FATURADO (yellow) 📄 Faturado, aguarda pagamento
+        6. data_fim < hoje → A COBRAR (purple) 💼 Trabalho feito, ainda não faturado
+        7. default → EM CURSO (blue) 🔄 Em execução
+        """
+        hoje = timezone.now().date()
+
+        # Lógica de prioridade
+        if obj.cancelado:
+            color = 'gray'
+            label = 'ANULADO'
+        elif obj.data_recibo:
+            color = 'green'
+            label = 'PAGO'
+        elif obj.data_vencimento:
+            if obj.data_vencimento < hoje:
+                color = 'red'
+                label = 'VENCIDO'
+            elif obj.data_vencimento == hoje:
+                color = 'orange'
+                label = 'VENCE HOJE'
+            else:
+                # Prazo futuro: verificar se já faturado ou ainda a cobrar
+                if obj.data_faturacao:
+                    color = 'yellow'
+                    label = 'FATURADO'
+                elif obj.data_fim and obj.data_fim < hoje:
+                    color = 'purple'
+                    label = 'A COBRAR'
+                else:
+                    color = 'blue'
+                    label = 'EM CURSO'
+        elif obj.data_faturacao:
+            # Faturado mas sem prazo definido
+            color = 'yellow'
+            label = 'FATURADO'
+        elif obj.data_fim and obj.data_fim < hoje:
+            # Trabalho terminado mas não faturado
+            color = 'purple'
+            label = 'A COBRAR'
+        else:
+            color = 'blue'
+            label = 'EM CURSO'
+
+        # Badge único (Unfold/Tailwind pastel)
+        return format_html(
+            '<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium '
+            'text-{}-700 dark:text-{}-400 bg-{}-50 dark:bg-{}-500/10 ring-1 ring-inset '
+            'ring-{}-600/20 dark:ring-{}-500/20">'
+            '{}'
+            '</span>',
+            color, color, color, color, color, color, label
+        )
 
     @display(description='Criado em', ordering='created_at')
     def created_at_formatted(self, obj):

@@ -40,7 +40,7 @@ from datetime import date, timedelta
 from django.db.models import Sum, Q
 
 from core.models import (
-    Projeto, TipoProjeto, EstadoProjeto,
+    Projeto, TipoProjeto,
     Despesa, Boletim, Socio, EstadoBoletim
 )
 
