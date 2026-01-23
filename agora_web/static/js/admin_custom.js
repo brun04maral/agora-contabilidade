@@ -205,16 +205,61 @@
 
     // ========== AUTO-SUGESTÃO DE TAGS FISCAIS ==========
 
-    // Mapeamento simplificado (keywords mais comuns) - o backend tem mapeamento completo
-    const FISCAL_QUICK_MAP = {
-        'ordenado': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: null },
-        'gerente': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: 'TSU_GERENTE' },
-        'subsídio': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_ISENTO', tsu: 'TSU_ISENTO' },
-        'freelancer': { irc: 'IRC_DEDUTIVEL_100', iva: 'IVA_DEDUTIVEL_100', irs: 'IRS_RETENCAO_25', tsu: 'TSU_INDEPENDENTE' },
-        'equipamento': { irc: 'IRC_INVESTIMENTO', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
-        'renting': { irc: 'IRC_DEDUTIVEL_100', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
-        'gasolina': { irc: 'IRC_NAO_DEDUTIVEL', iva: 'IVA_NAO_DEDUTIVEL', irs: null, tsu: null },
-        'gasóleo': { irc: 'IRC_DEDUTIVEL_PARCIAL', iva: 'IVA_MISTO', irs: null, tsu: null },
+    function getSelectedOperationalTags(tagsField) {
+        /**
+         * Extrai códigos das tags operacionais selecionadas
+         * Suporta ambos os lados do widget FilteredSelectMultiple (from/to)
+         */
+        if (!tagsField) return [];
+
+        const selectedTags = [];
+
+        // Tentar ambos os campos do FilteredSelectMultiple
+        const fromField = document.querySelector('#id_tags_from');
+        const toField = document.querySelector('#id_tags_to');
+
+        // O campo "to" (direita) contém as tags selecionadas
+        const activeField = toField || tagsField;
+
+        if (activeField && activeField.options) {
+            for (let option of activeField.options) {
+                if (option.value) {
+                    selectedTags.push(option.value);
+                }
+            }
+        }
+
+        return selectedTags;
+    }
+
+    // Mapeamento de Tags Operacionais → Tags Fiscais
+    // Baseado nos códigos das TagDespesa
+    const FISCAL_TAG_MAP = {
+        // Equipamento e Serviços
+        'EQUIPAMENTO': { irc: 'IRC_INVESTIMENTO', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
+        'SERVICO': { irc: 'IRC_DEDUTIVEL_100', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
+        'ADMINISTRATIVO': { irc: 'IRC_DEDUTIVEL_100', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
+        'PRODUCAO': { irc: 'IRC_DEDUTIVEL_100', iva: 'IVA_DEDUTIVEL_100', irs: null, tsu: null },
+
+        // Pessoal
+        'PESSOAL': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: 'TSU_TRABALHADOR' },
+        'ORDENADO': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: 'TSU_TRABALHADOR' },
+        'SUB_ALIMENTACAO': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_ISENTO', tsu: 'TSU_ISENTO' },
+        'PESSOAL_BA': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: 'TSU_GERENTE' },
+        'PESSOAL_RR': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: 'TSU_GERENTE' },
+
+        // Comissões e Prémios
+        'PREMIO': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: 'TSU_TRABALHADOR' },
+        'COMISSAO_VENDA': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_RETENCAO_25', tsu: 'TSU_INDEPENDENTE' },
+
+        // Alimentação e Deslocações
+        'ALIMENTACAO': { irc: 'IRC_DEDUTIVEL_PARCIAL', iva: 'IVA_NAO_DEDUTIVEL', irs: null, tsu: null },
+        'DESLOCACAO': { irc: 'IRC_DEDUTIVEL_PARCIAL', iva: 'IVA_MISTO', irs: null, tsu: null },
+        'PER_DIEM_PT': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_ISENTO', tsu: null },
+        'PER_DIEM_FORA': { irc: 'IRC_DEDUTIVEL_100', iva: null, irs: 'IRS_ISENTO', tsu: null },
+
+        // IRS
+        'IRS_RETENCAO': { irc: 'IRC_NAO_DEDUTIVEL', iva: null, irs: 'IRS_RETENCAO_TRABALHO', tsu: null },
     };
 
     function suggestFiscalTags() {
@@ -258,44 +303,60 @@
 
         suggestButton.addEventListener('click', function(e) {
             e.preventDefault();
-            const description = descField.value.toLowerCase();
 
-            // Procurar match
-            let bestMatch = null;
-            let bestKeyword = '';
+            // Obter tags operacionais selecionadas
+            const selectedTags = getSelectedOperationalTags(tagsField);
 
-            for (const [keyword, mapping] of Object.entries(FISCAL_QUICK_MAP)) {
-                if (description.includes(keyword)) {
-                    // Preferir matches mais específicos (keywords mais longas)
-                    if (!bestMatch || keyword.length > bestKeyword.length) {
-                        bestMatch = mapping;
-                        bestKeyword = keyword;
-                    }
+            if (!selectedTags || selectedTags.length === 0) {
+                showNotification('⚠️ Selecione primeiro uma tag operacional (ex: Equipamento, Pessoal)', 'warning');
+                return;
+            }
+
+            // Procurar match baseado nas tags operacionais
+            let appliedSuggestions = [];
+
+            for (const tagCode of selectedTags) {
+                const mapping = FISCAL_TAG_MAP[tagCode];
+
+                if (mapping) {
+                    // Aplicar sugestões
+                    if (ircField && mapping.irc) setSelectValue(ircField, mapping.irc);
+                    if (ivaField && mapping.iva) setSelectValue(ivaField, mapping.iva);
+                    if (irsField && mapping.irs) setSelectValue(irsField, mapping.irs);
+                    if (tsuField && mapping.tsu) setSelectValue(tsuField, mapping.tsu);
+
+                    const tagCount = [mapping.irc, mapping.iva, mapping.irs, mapping.tsu].filter(x => x).length;
+                    appliedSuggestions.push(`${tagCode} (${tagCount} tags)`);
                 }
             }
 
-            if (bestMatch) {
-                // Aplicar sugestões
-                if (ircField && bestMatch.irc) setSelectValue(ircField, bestMatch.irc);
-                if (ivaField && bestMatch.iva) setSelectValue(ivaField, bestMatch.iva);
-                if (irsField && bestMatch.irs) setSelectValue(irsField, bestMatch.irs);
-                if (tsuField && bestMatch.tsu) setSelectValue(tsuField, bestMatch.tsu);
-
-                // Feedback visual
-                const tagCount = [bestMatch.irc, bestMatch.iva, bestMatch.irs, bestMatch.tsu].filter(x => x).length;
-                showNotification('Tags fiscais sugeridas: "' + bestKeyword + '" (' + tagCount + ' tags)', 'success');
+            if (appliedSuggestions.length > 0) {
+                showNotification('✅ Tags fiscais sugeridas: ' + appliedSuggestions.join(', '), 'success');
             } else {
-                showNotification('Nenhuma sugestão automática. Por favor categorizar manualmente.', 'warning');
+                showNotification('⚠️ Nenhuma sugestão disponível para as tags selecionadas', 'warning');
             }
         });
 
-        // Inserir botão após campo de descrição
-        const descRow = descField.closest('.form-row, .field-descricao, div');
-        if (descRow) {
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.cssText = 'margin-top: 8px;';
-            buttonContainer.appendChild(suggestButton);
-            descRow.appendChild(buttonContainer);
+        // Inserir botão junto aos campos fiscais
+        // Procurar pelo primeiro campo fiscal visível (IRC, IVA, IRS ou TSU)
+        const firstFiscalField = ircField || ivaField || irsField || tsuField;
+
+        if (firstFiscalField) {
+            const fiscalRow = firstFiscalField.closest('.form-row, .field, div[class*="field-tag_"]');
+            if (fiscalRow) {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.cssText = 'margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #667eea;';
+
+                const label = document.createElement('div');
+                label.textContent = '💡 Auto-sugestão:';
+                label.style.cssText = 'font-size: 12px; color: #666; margin-bottom: 6px; font-weight: 500;';
+
+                buttonContainer.appendChild(label);
+                buttonContainer.appendChild(suggestButton);
+
+                // Inserir ANTES do primeiro campo fiscal
+                fiscalRow.parentNode.insertBefore(buttonContainer, fiscalRow);
+            }
         }
     }
 
