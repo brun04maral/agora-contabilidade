@@ -743,8 +743,12 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
                 if cleaned_data.get('tipo'):
                     queryset = queryset.filter(tipo=cleaned_data['tipo'])
 
-                if cleaned_data.get('estado'):
-                    queryset = queryset.filter(estado=cleaned_data['estado'])
+                if cleaned_data.get('cancelado'):
+                    # Mapear choices do form para filtro booleano
+                    if cleaned_data['cancelado'] == 'cancelado':
+                        queryset = queryset.filter(cancelado=True)
+                    elif cleaned_data['cancelado'] == 'ativo':
+                        queryset = queryset.filter(cancelado=False)
 
                 if cleaned_data.get('cliente'):
                     queryset = queryset.filter(cliente__nome__icontains=cleaned_data['cliente'])
@@ -759,7 +763,7 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
                 filtros = {
                     'tipo_relatorio': dict(form.TIPO_RELATORIO_CHOICES).get(cleaned_data['tipo_relatorio']),
                     'socio': str(cleaned_data['socio']) if cleaned_data.get('socio') else None,
-                    'estado': cleaned_data.get('estado'),
+                    'cancelado': cleaned_data.get('cancelado'),
                     'data_inicio': cleaned_data.get('data_inicio'),
                     'data_fim': cleaned_data.get('data_fim'),
                 }
