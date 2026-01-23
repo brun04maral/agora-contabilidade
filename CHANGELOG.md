@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2026-01-23
+
+### Improved - Sistema de Auto-Sugestão de Tags Fiscais
+
+#### Mudanças na UX/UI
+- **Posição do botão alterada:** Movido de junto à descrição para junto aos campos fiscais
+- **Visual melhorado:**
+  - Box destacado com fundo cinza (#f8f9fa)
+  - Borda esquerda roxa (#667eea) para destaque
+  - Label "💡 Auto-sugestão:" acima do botão
+  - Botão com gradiente roxo e ícone `auto_awesome`
+  - Hover effects: scale(1.05) + box-shadow
+- **Posicionamento:** Aparece ANTES do primeiro campo fiscal (IRC/IVA/IRS/TSU)
+
+#### Lógica de Sugestão Melhorada
+- **Baseada em Tags Operacionais:** Sugestões agora usam as tags operacionais selecionadas (não mais a descrição)
+- **Mapeamento completo de 16 tags operacionais:**
+
+  **Equipamento e Serviços:**
+  - `EQUIPAMENTO` → IRC_INVESTIMENTO + IVA_DEDUTIVEL_100
+  - `SERVICO` → IRC_DEDUTIVEL_100 + IVA_DEDUTIVEL_100
+  - `ADMINISTRATIVO` → IRC_DEDUTIVEL_100 + IVA_DEDUTIVEL_100
+  - `PRODUCAO` → IRC_DEDUTIVEL_100 + IVA_DEDUTIVEL_100
+
+  **Pessoal:**
+  - `PESSOAL` / `ORDENADO` → IRC_DEDUTIVEL_100 + IRS_RETENCAO_TRABALHO + TSU_TRABALHADOR
+  - `PESSOAL_BA` / `PESSOAL_RR` → IRS_RETENCAO_TRABALHO + TSU_GERENTE
+  - `SUB_ALIMENTACAO` → IRC_DEDUTIVEL_100 + IRS_ISENTO + TSU_ISENTO
+
+  **Comissões e Prémios:**
+  - `PREMIO` → IRC_DEDUTIVEL_100 + IRS_RETENCAO_TRABALHO + TSU_TRABALHADOR
+  - `COMISSAO_VENDA` → IRC_DEDUTIVEL_100 + IRS_RETENCAO_25 + TSU_INDEPENDENTE
+
+  **Alimentação e Deslocações:**
+  - `ALIMENTACAO` → IRC_DEDUTIVEL_PARCIAL + IVA_NAO_DEDUTIVEL
+  - `DESLOCACAO` → IRC_DEDUTIVEL_PARCIAL + IVA_MISTO
+  - `PER_DIEM_PT` / `PER_DIEM_FORA` → IRC_DEDUTIVEL_100 + IRS_ISENTO
+
+  **Outros:**
+  - `IRS_RETENCAO` → IRC_NAO_DEDUTIVEL + IRS_RETENCAO_TRABALHO
+
+#### Feedback ao Utilizador
+- **Sem tags selecionadas:** "⚠️ Selecione primeiro uma tag operacional (ex: Equipamento, Pessoal)"
+- **Sugestões aplicadas:** "✅ Tags fiscais sugeridas: EQUIPAMENTO (2 tags), PESSOAL (3 tags)"
+- **Sem mapeamento:** "⚠️ Nenhuma sugestão disponível para as tags selecionadas"
+
+#### Implementação Técnica
+- Nova função `getSelectedOperationalTags()` para extrair tags do widget FilteredSelectMultiple
+- Mapeamento `FISCAL_TAG_MAP` com códigos de TagDespesa
+- Suporte para múltiplas tags operacionais selecionadas
+- Mensagens de feedback com emojis e contagem de tags aplicadas
+
 ## [0.3.2] - 2026-01-19
 
 ### Fixed - Badge Environment com Tooltip Dinâmico
