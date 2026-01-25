@@ -532,11 +532,46 @@ class FornecedorAdmin(UnfoldHistoryAdmin):
         return gerar_relatorio_fornecedores_excel(queryset, filtros=filtros)
 
 
+class EmAtrasoListFilter(admin.SimpleListFilter):
+    """Filtro customizado para projetos em atraso (vencidos e não pagos)"""
+    title = 'estado de pagamento'
+    parameter_name = 'em_atraso'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('sim', 'Em atraso (vencidos e não pagos)'),
+            ('nao', 'Sem atrasos'),
+        )
+
+    def queryset(self, request, queryset):
+        from django.utils import timezone
+        hoje = timezone.now().date()
+
+        if self.value() == 'sim':
+            # Projetos em atraso: não cancelados, sem recibo, vencimento passado
+            return queryset.filter(
+                cancelado=False,
+                data_recibo__isnull=True,
+                data_vencimento__lt=hoje
+            )
+        elif self.value() == 'nao':
+            # Projetos sem atraso: cancelados OU pagos OU vencimento futuro/inexistente
+            from django.db.models import Q
+            return queryset.filter(
+                Q(cancelado=True) |
+                Q(data_recibo__isnull=False) |
+                Q(data_vencimento__gte=hoje) |
+                Q(data_vencimento__isnull=True)
+            )
+        return queryset
+
+
 @admin.register(Projeto)
 class ProjetoAdmin(UnfoldHistoryAdmin):
     """Admin para Projeto com Unfold customization"""
+    change_list_template = 'admin/core/projeto/changelist.html'
     list_display = ['numero', 'data_projeto_formatted', 'tipo', 'socio', 'descricao_short', 'cliente', 'valor_sem_iva', 'get_estado_geral']
-    list_filter = ['tipo', SocioListFilter, 'cancelado', 'data_faturacao']
+    list_filter = ['tipo', SocioListFilter, 'cancelado', EmAtrasoListFilter, 'data_faturacao']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "P0001")
         'descricao',            # Contains na descrição
@@ -579,6 +614,47 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
     )
 
     readonly_fields = ['get_estado_geral', 'created_at', 'updated_at', 'created_by', 'updated_by']
+
+    def changelist_view(self, request, extra_context=None):
+        """
+        Override changelist_view para adicionar Widget de Alerta de Tesouraria.
+
+        Calcula:
+        - Total em atraso (Sum de valor_sem_iva)
+        - Número de projetos em atraso (Count)
+
+        Condições:
+        - cancelado = False
+        - data_recibo is NULL (não pago)
+        - data_vencimento < HOJE (vencido)
+        """
+        from django.db.models import Sum
+        from django.utils import timezone
+
+        hoje = timezone.now().date()
+
+        # Calcular totais em atraso
+        # Atrasado = Não cancelado E sem recibo E vencimento < hoje
+        qs_atraso = Projeto.objects.filter(
+            cancelado=False,
+            data_recibo__isnull=True,
+            data_vencimento__lt=hoje
+        )
+
+        count_atraso = qs_atraso.count()
+        total_atraso = qs_atraso.aggregate(total=Sum('valor_sem_iva'))['total'] or 0
+
+        extra_context = extra_context or {}
+        extra_context.update({
+            'count_atraso': count_atraso,
+            'total_atraso': total_atraso,
+            'hoje': hoje,
+        })
+
+        # Forçar o uso do nosso template (que agora só tem o widget)
+        self.change_list_template = 'admin/core/projeto/changelist.html'
+
+        return super().changelist_view(request, extra_context=extra_context)
 
     @display(description='Descrição', ordering='descricao')
     def descricao_short(self, obj):
@@ -789,12 +865,13 @@ class ProjetoAdmin(UnfoldHistoryAdmin):
 @admin.register(DespesaTemplate)
 class DespesaTemplateAdmin(UnfoldHistoryAdmin):
     """Admin para Despesas Fixas Mensais com Unfold customization"""
-    list_display = ['ativa_icon', 'numero', 'descricao_short', 'credor', 'tags_display', 'valor_sem_iva', 'dia_mes', 'estado_default']
-    list_filter = ['ativa', 'estado_default', 'dia_mes', 'tags']
+    list_display = ['ativa_icon', 'numero', 'descricao_short', 'credor', 'tags_display', 'valor_sem_iva', 'frequencia', 'dia_mes', 'prazo_pagamento_dias', 'estado_default']
+    list_filter = ['ativa', 'frequencia', 'estado_default', 'dia_mes', 'tags']
     search_fields = ['numero', 'descricao', 'credor__nome']
     ordering = ['dia_mes', '-created_at']
     autocomplete_fields = ['credor', 'projeto', 'tag_irc', 'tag_iva', 'tag_irs', 'tag_tsu']
     filter_horizontal = ['tags']  # Melhor UX para ManyToMany
+    actions = ['gerar_despesa_agora']
 
     fieldsets = (
         ('Identificação', {
@@ -817,9 +894,13 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
         ('Valores', {
             'fields': ('valor_sem_iva', 'valor_com_iva', 'irs_retido', 'taxa_retencao_irs')
         }),
-        ('Recorrência', {
-            'fields': ('dia_mes', 'ativa', 'estado_default'),
-            'description': 'Configuração da criação automática mensal'
+        ('Configuração de Recorrência', {
+            'fields': ('frequencia', 'dia_mes', 'prazo_pagamento_dias', 'ativa'),
+            'description': 'Periodicidade e condições de geração automática de despesas'
+        }),
+        ('Estado e Pagamento', {
+            'fields': ('estado_default',),
+            'description': 'Estado inicial das despesas criadas automaticamente'
         }),
         ('Informações Adicionais', {
             'fields': ('nota',)
@@ -829,6 +910,49 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
             'classes': ['collapse']
         }),
     )
+
+    @admin.action(description='🔨 Gerar Despesa Agora (Manual)')
+    def gerar_despesa_agora(self, request, queryset):
+        """
+        Gera despesas manualmente a partir dos templates selecionados.
+
+        Caso de uso: Templates com frequencia='MANUAL' (Blueprints) ou geração
+        pontual fora do agendamento automático.
+
+        A lógica de criação está centralizada no método DespesaTemplate.gerar_despesa().
+        """
+        from django.contrib import messages
+
+        despesas_criadas = []
+        erros = []
+
+        for template in queryset:
+            try:
+                nova_despesa = template.gerar_despesa(user=request.user)
+                despesas_criadas.append(nova_despesa)
+            except Exception as e:
+                erros.append((template.numero, str(e)))
+
+        # Mensagem de sucesso
+        if despesas_criadas:
+            count = len(despesas_criadas)
+            if count == 1:
+                msg = f"✅ 1 Despesa gerada: {despesas_criadas[0].numero}"
+            else:
+                numeros = ', '.join([d.numero for d in despesas_criadas[:3]])
+                if count > 3:
+                    numeros += f' (+{count - 3} mais)'
+                msg = f"✅ {count} Despesas geradas: {numeros}"
+            self.message_user(request, msg, messages.SUCCESS)
+
+        # Mensagens de erro
+        if erros:
+            for template_num, erro in erros:
+                self.message_user(
+                    request,
+                    f"❌ Erro ao gerar despesa de {template_num}: {erro}",
+                    messages.ERROR
+                )
 
     @display(description='', ordering='ativa', boolean=True)
     def ativa_icon(self, obj):
@@ -859,7 +983,7 @@ class DespesaTemplateAdmin(UnfoldHistoryAdmin):
 class DespesaAdmin(UnfoldHistoryAdmin):
     """Admin para Despesa com Unfold customization"""
     list_display = ['numero', 'tags_display', 'data_formatted', 'descricao_short', 'credor', 'valor_sem_iva', 'valor_com_iva', 'irs_retido', 'estado']
-    list_filter = [TagListFilter, 'estado', 'data', 'data_pagamento']
+    list_filter = [TagListFilter, 'estado', 'data', 'data_vencimento', 'data_pagamento']
     search_fields = [
         '^numero',              # Prioridade: match exato no início (ex: "D0001")
         'descricao',            # Contains na descrição
@@ -880,7 +1004,7 @@ class DespesaAdmin(UnfoldHistoryAdmin):
 
     fieldsets = (
         ('Identificação', {
-            'fields': ('numero', 'data')
+            'fields': ('numero', 'data', 'data_vencimento')
         }),
         ('Categorização', {
             'fields': ('tags', 'tipo_original')
@@ -1776,6 +1900,30 @@ class DocumentacaoAdmin(ModelAdmin):
             'icon': 'question_answer',
             'file': 'docs/RESPOSTAS_CONTABILISTA.md',
             'description': 'Respostas do contabilista sobre categorização fiscal'
+        },
+        'refactor-estado': {
+            'title': 'Refatoração Estado → Cancelado',
+            'icon': 'sync_alt',
+            'file': 'docs/REFACTOR_ESTADO_CANCELADO.md',
+            'description': 'Substituição do campo estado por sistema dinâmico baseado em datas'
+        },
+        'fiscal-categorization': {
+            'title': 'Categorização Fiscal (Spec)',
+            'icon': 'category',
+            'file': 'docs/FISCAL_CATEGORIZATION.md',
+            'description': 'Sistema de categorização fiscal - IRC/IVA/IRS/TSU'
+        },
+        'questoes-contabilista': {
+            'title': 'Q&A Contabilista',
+            'icon': 'help_outline',
+            'file': 'docs/QUESTOES_CONTABILISTA.md',
+            'description': 'Questionário para contabilista sobre categorização fiscal'
+        },
+        'despesas-automacao': {
+            'title': 'Motor de Despesas',
+            'icon': 'receipt_long',
+            'file': 'docs/DESPESAS_AUTOMATION.md',
+            'description': 'Automação inteligente de despesas: frequências, blueprints e vencimentos'
         },
     }
 

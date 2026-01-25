@@ -1,7 +1,7 @@
 # Agora Contabilidade - Documentation
 
 **Project:** Sistema de Contabilidade Django para Agora Media Production
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-25
 
 ---
 
@@ -25,6 +25,7 @@
 | [**PWA_BRANDING.md**](./PWA_BRANDING.md) | Progressive Web App & Branding | ✅ Complete |
 | [**DATABASE_MANUAL_CHANGES.md**](./DATABASE_MANUAL_CHANGES.md) | Manual SQL changes history | ✅ Complete |
 | [**audit-trail-implementation.md**](./audit-trail-implementation.md) | Sistema de auditoria de alterações | ✅ Complete |
+| [**DESPESAS_AUTOMATION.md**](./DESPESAS_AUTOMATION.md) | Motor de Despesas - automação inteligente de despesas recorrentes | ✅ Complete |
 
 ### 🧪 Análises & Validações
 
@@ -55,6 +56,8 @@
 - **PWA installation:** [PWA_BRANDING.md](./PWA_BRANDING.md#como-instalar-pwa)
 - **Branding configuration:** [PWA_BRANDING.md](./PWA_BRANDING.md#branding)
 - **Selection total floating box:** [CHANGELOG.md](../CHANGELOG.md#242---2026-01-16) - Total sem IVA de seleções (v2.4.2)
+- **Widget de Alerta de Tesouraria:** [CHANGELOG.md](../CHANGELOG.md#034---2026-01-24) - Alerta visual de projetos em atraso (v0.3.4)
+- **Motor de Despesas Automáticas:** [DESPESAS_AUTOMATION.md](./DESPESAS_AUTOMATION.md) - Sistema inteligente de despesas recorrentes (v0.3.6)
 
 ### Fiscal & Tax
 - **Dashboard Fiscal integrado:** [FISCAL_DASHBOARD.md](./FISCAL_DASHBOARD.md) - IVA/IRS/IRC páginas dedicadas no admin

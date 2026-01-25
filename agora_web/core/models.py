@@ -619,6 +619,15 @@ class TagTSU(models.Model):
         return f"{self.nome} (Emp: {self.taxa_empresa}% / Trab: {self.taxa_trabalhador}%)"
 
 
+class FrequenciaTemplate(models.TextChoices):
+    """Enum para frequência de templates de despesa"""
+    MENSAL = 'MENSAL', _('Mensal')
+    TRIMESTRAL = 'TRIMESTRAL', _('Trimestral')
+    SEMESTRAL = 'SEMESTRAL', _('Semestral')
+    ANUAL = 'ANUAL', _('Anual')
+    MANUAL = 'MANUAL', _('Manual (Blueprint)')
+
+
 class DespesaTemplate(UserTrackingMixin, models.Model):
     """
     Template de despesa recorrente mensal
@@ -633,6 +642,8 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
     - estado_default: Estado que as despesas criadas terão (PENDENTE, PAGO, etc)
     - tags: Categorização da despesa (novo sistema, substitui 'tipo')
     - dia_mes: Dia do mês para criação (limitado a 1-28)
+    - frequencia: Periodicidade da geração automática (MENSAL, TRIMESTRAL, SEMESTRAL, ANUAL, MANUAL)
+    - prazo_pagamento_dias: Prazo em dias para vencimento (0 = pronto pagamento)
     """
     numero = models.CharField(_('ID'), max_length=20, unique=True, db_index=True)  # Ex: #TD000001
 
@@ -725,6 +736,14 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
     )
 
     # Recorrência
+    frequencia = models.CharField(
+        _('Frequência'),
+        max_length=20,
+        choices=FrequenciaTemplate.choices,
+        default=FrequenciaTemplate.MENSAL,
+        db_index=True,
+        help_text=_('Periodicidade da geração automática de despesas')
+    )
     dia_mes = models.IntegerField(
         _('Dia do Mês'),
         validators=[
@@ -733,11 +752,19 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
         ],
         help_text=_('Dia do mês para criação automática (1-28)')
     )
+    prazo_pagamento_dias = models.IntegerField(
+        _('Prazo Pagamento (dias)'),
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text=_('Dias para vencimento após emissão (0 = Vence no dia)')
+    )
     ativa = models.BooleanField(
         _('Ativa'),
         default=True,
         help_text=_('Se desativada, não cria despesas automaticamente')
     )
+
+    # TODO: Refatorar futuramente para boolean 'pago_automatico'
     estado_default = models.CharField(
         _('Estado Default'),
         max_length=20,
@@ -766,6 +793,135 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
 
     def __repr__(self):
         return f"<DespesaTemplate(id={self.id}, numero='{self.numero}', descricao='{self.descricao[:30]}', dia={self.dia_mes}, ativa={self.ativa})>"
+
+    def gerar_despesa(self, user=None):
+        """
+        Gera uma nova despesa a partir deste template.
+
+        Esta é a lógica centralizada de criação de despesas, usada tanto pela
+        action manual do admin quanto pelo comando de gestão automático.
+
+        Args:
+            user: Usuário que está criando a despesa (para audit trail).
+                  Pode ser None para execuções automáticas.
+
+        Returns:
+            Despesa: A nova despesa criada
+
+        Raises:
+            Exception: Se houver erro na criação (número duplicado, etc)
+        """
+        from datetime import date, timedelta
+        from django.db import transaction
+
+        with transaction.atomic():
+            # 1. Gerar próximo número de despesa
+            # Import local para evitar circular import
+            ultima_despesa = Despesa.objects.order_by('-numero').first()
+            if ultima_despesa:
+                # Extrair número e incrementar (#D000335 -> 336)
+                ultimo_num = int(ultima_despesa.numero.replace('#D', ''))
+                novo_num = f"#D{str(ultimo_num + 1).zfill(6)}"
+            else:
+                novo_num = "#D000001"
+
+            # 2. Calcular datas
+            data_emissao = date.today()
+            data_vencimento = data_emissao + timedelta(days=self.prazo_pagamento_dias)
+
+            # 3. Criar nova despesa
+            nova_despesa = Despesa.objects.create(
+                numero=novo_num,
+                data=data_emissao,
+                data_vencimento=data_vencimento,
+                credor=self.credor,
+                projeto=self.projeto,
+                descricao=self.descricao,
+                valor_sem_iva=self.valor_sem_iva,
+                valor_com_iva=self.valor_com_iva,
+                irs_retido=self.irs_retido,
+                taxa_retencao_irs=self.taxa_retencao_irs,
+                tag_irc=self.tag_irc,
+                tag_iva=self.tag_iva,
+                tag_irs=self.tag_irs,
+                tag_tsu=self.tag_tsu,
+                estado=self.estado_default,
+                despesa_template=self,
+                created_by=user,
+                nota=f"Gerada automaticamente a partir do template {self.numero}"
+            )
+
+            # 4. Copiar tags (ManyToMany - precisa ser depois do save)
+            nova_despesa.tags.set(self.tags.all())
+
+            return nova_despesa
+
+    def deve_gerar_hoje(self) -> bool:
+        """
+        Verifica se uma despesa deve ser gerada hoje baseado na frequência do template.
+
+        Regras:
+        1. Templates inativos ou manuais nunca geram automaticamente
+        2. Se nunca gerou: Gera se hoje.day >= dia_mes (tolerância para falhas)
+        3. Se já gerou: Calcula próxima data baseado na frequência
+
+        Frequências suportadas:
+        - MENSAL: Gera todo mês no dia_mes
+        - TRIMESTRAL: Gera a cada 3 meses
+        - SEMESTRAL: Gera a cada 6 meses
+        - ANUAL: Gera a cada 12 meses
+        - MANUAL: Nunca gera automaticamente (retorna False)
+
+        Returns:
+            bool: True se deve gerar hoje, False caso contrário
+        """
+        from datetime import date
+        from dateutil.relativedelta import relativedelta
+
+        hoje = date.today()
+
+        # 1. Templates inativos ou manuais não geram automaticamente
+        if not self.ativa or self.frequencia == 'MANUAL':
+            return False
+
+        # 2. Busca última despesa gerada deste template
+        ultima_despesa = self.despesas_geradas.order_by('-data').first()
+
+        # 3. Se nunca gerou despesa, verifica se já passou o dia do mês
+        if not ultima_despesa:
+            # Tolerância: Gera mesmo se passou o dia (ex: script falhou dia 27, roda dia 28)
+            return hoje.day >= self.dia_mes
+
+        # 4. Calcula próxima data de geração baseada na frequência
+        data_ultima_geracao = ultima_despesa.data
+
+        # Mapa de frequências para meses
+        frequencia_meses = {
+            'MENSAL': 1,
+            'TRIMESTRAL': 3,
+            'SEMESTRAL': 6,
+            'ANUAL': 12,
+        }
+
+        if self.frequencia not in frequencia_meses:
+            # Frequência desconhecida (nunca deve acontecer por causa do enum)
+            return False
+
+        meses_intervalo = frequencia_meses[self.frequencia]
+
+        # Calcula próxima data alvo (preserva o dia_mes original)
+        proxima_data_alvo = data_ultima_geracao + relativedelta(months=meses_intervalo)
+
+        # Ajusta para o dia_mes do template (pode ter mudado após criar a despesa)
+        try:
+            proxima_data_alvo = proxima_data_alvo.replace(day=self.dia_mes)
+        except ValueError:
+            # Dia não existe no mês (ex: 31 em fevereiro)
+            # Usa último dia do mês
+            proxima_data_alvo = proxima_data_alvo + relativedelta(day=31)
+
+        # 5. Retorna True se hoje >= próxima data alvo (com tolerância)
+        return hoje >= proxima_data_alvo
 
 
 class Despesa(UserTrackingMixin, models.Model):
@@ -810,6 +966,13 @@ class Despesa(UserTrackingMixin, models.Model):
 
     # Data
     data = models.DateField(_('Data'), db_index=True)
+    data_vencimento = models.DateField(
+        _('Data Vencimento'),
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text=_('Prazo limite para pagamento da despesa')
+    )
 
     # Credor/Fornecedor
     credor = models.ForeignKey(
@@ -964,6 +1127,48 @@ class Despesa(UserTrackingMixin, models.Model):
             'tsu_empresa': self.tag_tsu.taxa_empresa if self.tag_tsu else 0,
             'tsu_trabalhador': self.tag_tsu.taxa_trabalhador if self.tag_tsu else 0,
         }
+
+    @property
+    def get_estado_despesa(self):
+        """
+        Calcula o estado real da despesa baseado em datas (substitui campo manual 'estado')
+
+        Lógica:
+        - Se data_pagamento existe: "PAGO" (Verde)
+        - Se data_vencimento < hoje: "VENCIDO" (Vermelho)
+        - Se data_vencimento dentro de 3 dias: "A VENCER" (Laranja)
+        - Caso contrário: "EM ABERTO" (Azul)
+
+        Returns:
+            tuple: (estado_codigo, estado_label, cor_css)
+        """
+        from datetime import date, timedelta
+
+        hoje = date.today()
+
+        # 1. Se já foi pago
+        if self.data_pagamento:
+            return ('PAGO', 'Pago', 'success')  # Verde
+
+        # 2. Se não tem data de vencimento, considera vencimento imediato
+        if not self.data_vencimento:
+            # Sem vencimento definido = considera vencido se emissão foi há mais de 30 dias
+            if self.data < (hoje - timedelta(days=30)):
+                return ('VENCIDO', 'Vencido', 'danger')  # Vermelho
+            else:
+                return ('EM_ABERTO', 'Em Aberto', 'info')  # Azul
+
+        # 3. Se já passou a data de vencimento
+        if self.data_vencimento < hoje:
+            return ('VENCIDO', 'Vencido', 'danger')  # Vermelho
+
+        # 4. Se está próximo do vencimento (<= 3 dias)
+        dias_ate_vencimento = (self.data_vencimento - hoje).days
+        if dias_ate_vencimento <= 3:
+            return ('A_VENCER', f'A Vencer ({dias_ate_vencimento}d)', 'warning')  # Laranja
+
+        # 5. Caso padrão: Em aberto
+        return ('EM_ABERTO', 'Em Aberto', 'info')  # Azul
 
 
 class CodigoSocio(models.TextChoices):

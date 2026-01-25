@@ -2,6 +2,276 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-01-25
+
+### Added - Motor de Despesas Inteligente
+
+#### Gestão de Vencimentos e Tesouraria
+**Novo campo `data_vencimento` no modelo `Despesa`:**
+- Permite rastrear prazos de pagamento independentes da data de emissão
+- Índice de base de dados para queries rápidas de aging
+- Data migration automática: despesas antigas assumem vencimento = emissão (comportamento legacy)
+- Suporte a `prazo_pagamento_dias` nos templates para cálculo automático
+
+**Propriedade `get_estado_despesa` (Estado Calculado):**
+- Substitui gestão manual do campo `estado` por lógica dinâmica baseada em datas
+- Estados automáticos:
+  - **PAGO** (Verde) - Se `data_pagamento` existe
+  - **VENCIDO** (Vermelho) - Se passou `data_vencimento`
+  - **A VENCER** (Laranja) - Se vence em ≤ 3 dias (com contador)
+  - **EM ABERTO** (Azul) - Caso padrão
+- Fallback inteligente para despesas sem vencimento definido (>30 dias = vencido)
+
+#### Frequências de Despesas Recorrentes
+**Novo enum `FrequenciaTemplate` ([models.py:622-628](agora_web/core/models.py#L622-L628)):**
+- **MENSAL** - Gera todo mês no `dia_mes` configurado
+- **TRIMESTRAL** - Gera a cada 3 meses (ex: seguros profissionais)
+- **SEMESTRAL** - Gera a cada 6 meses (ex: revisões anuais divididas)
+- **ANUAL** - Gera a cada 12 meses (ex: taxas anuais, certificações)
+- **MANUAL** - Blueprints para despesas esporádicas (ex: software sob demanda)
+
+**Campo `prazo_pagamento_dias` em `DespesaTemplate`:**
+- Define prazo padrão para vencimento (ex: 30 dias, 60 dias)
+- Default: 0 (pronto pagamento)
+- Usado no cálculo automático: `data_vencimento = data_emissão + prazo_dias`
+
+#### Lógica de Negócio Centralizada (DRY)
+**Método `DespesaTemplate.gerar_despesa(user=None)` ([models.py:770-830](agora_web/core/models.py#L770-L830)):**
+- Lógica única de criação de despesas (não duplicada entre admin e comando)
+- Geração automática de números sequenciais (`#D000001`, `#D000002`, ...)
+- Cálculo de datas (emissão = hoje, vencimento = hoje + prazo)
+- Cópia completa de campos, tags fiscais e tags normais
+- Transaction atómica (rollback em caso de erro)
+- Audit trail via `created_by`
+
+**Método `DespesaTemplate.deve_gerar_hoje()` ([models.py:832-897](agora_web/core/models.py#L832-L897)):**
+- Inteligência de agendamento baseada em frequência
+- Tolerância a falhas: gera mesmo se script atrasou (ex: falhou dia 27, roda dia 28)
+- Cálculo preciso de próxima data usando `python-dateutil`
+- Tratamento de dias inválidos (ex: 31 de fevereiro → último dia do mês)
+- Proteção contra dupla geração no mesmo dia
+
+#### Admin Action - Geração Manual
+**Action "🔨 Gerar Despesa Agora" ([admin.py:914-955](agora_web/core/admin.py#L914-L955)):**
+- Permite criar despesas manualmente a partir de templates (Blueprints)
+- Casos de uso:
+  - Despesas esporádicas (vMix, software pontual)
+  - Adiantamentos fora do agendamento normal
+  - Testes de templates antes de ativar
+- Tratamento de erros individual por template
+- Mensagens de sucesso/erro detalhadas
+
+### Changed - Refatorações Estruturais
+
+#### Comando `criar_despesas_fixas` Reescrito
+**De 171 linhas → 118 linhas ([criar_despesas_fixas.py](agora_web/core/management/commands/criar_despesas_fixas.py)):**
+- **Antes:** Filtrava por `dia_mes=hoje.day` (só funcionava para MENSAL)
+- **Depois:** Avalia TODOS os templates ativos, usa `deve_gerar_hoje()`
+- **Antes:** Verificava se existe despesa "neste mês" (falha para TRIMESTRAL/ANUAL)
+- **Depois:** Verifica se já gerou "hoje" (proteção contra execuções múltiplas)
+- **Antes:** Lógica de criação inline (duplicada do admin)
+- **Depois:** Chama `template.gerar_despesa()` (DRY!)
+- Suporte completo a todas as frequências (MENSAL, TRIMESTRAL, SEMESTRAL, ANUAL)
+- Logging melhorado: mostra frequência de cada template processado
+
+#### Admin `DespesaTemplateAdmin`
+**Refatoração da action `gerar_despesa_agora`:**
+- De 72 linhas → 42 linhas (42% redução)
+- Agora apenas wrapper para `template.gerar_despesa(user=request.user)`
+- Tratamento de erros adicionado (antes não existia)
+
+**Novos campos no list_display:**
+- `frequencia` - Mostra tipo de recorrência
+- `prazo_pagamento_dias` - Mostra prazo de vencimento
+
+**Novo filtro:**
+- `frequencia` - Permite filtrar por tipo de recorrência
+
+**Fieldset reorganizado:**
+- `'Recorrência'` → `'Configuração de Recorrência'`
+- Agrupamento lógico: `frequencia`, `dia_mes`, `prazo_pagamento_dias`, `ativa`
+- Novo grupo "Estado e Pagamento" para `estado_default`
+
+#### Admin `DespesaAdmin`
+**Fieldset "Identificação" atualizado:**
+- Adicionado `data_vencimento` junto com `data`
+
+**Novo filtro:**
+- `data_vencimento` - Permite filtrar por prazo de pagamento
+
+### Fixed - Segurança e Migração de Dados
+
+**Data Migration Segura:**
+- 260 despesas existentes migradas com `data_vencimento = data`
+- Comportamento legacy preservado (vencimento imediato)
+- Índice criado: `despesas_data_vencimento_idx`
+- Tabela histórica (`core_historicaldespesa`) atualizada automaticamente
+
+**Dependências Adicionadas:**
+- `python-dateutil==2.8.2` - Cálculos precisos de datas (meses, anos)
+
+### Technical Details
+
+**Ficheiros Alterados:**
+- [agora_web/core/models.py](agora_web/core/models.py#L622-L897) - Novos métodos e campos
+- [agora_web/core/admin.py](agora_web/core/admin.py#L914-L955) - Action refatorada
+- [agora_web/core/management/commands/criar_despesas_fixas.py](agora_web/core/management/commands/criar_despesas_fixas.py) - Comando reescrito
+- [agora_web/requirements.txt](agora_web/requirements.txt) - Adicionado `python-dateutil`
+- [agora_web/core/migrations/0016_*.py](agora_web/core/migrations/) - Novos campos
+
+**Migrations:**
+- `0016_documentacao_fiscal_importacaodados_saldo_and_more.py`
+  - `AddField: despesa.data_vencimento`
+  - `AddField: despesatemplate.frequencia`
+  - `AddField: despesatemplate.prazo_pagamento_dias`
+  - Tabelas históricas atualizadas automaticamente
+
+**Como Verificar:**
+1. Criar template MENSAL: `/admin/core/despesatemplate/add/`
+2. Testar action manual: Selecionar template → Action "🔨 Gerar Despesa Agora"
+3. Verificar despesa criada: `/admin/core/despesa/` (com `data_vencimento` preenchida)
+4. Testar comando: `docker compose exec web python manage.py criar_despesas_fixas --dry-run`
+
+**Documentação Técnica:**
+- Ver [DESPESAS_AUTOMATION.md](docs/DESPESAS_AUTOMATION.md) para guia completo
+
+---
+
+## [0.3.5] - 2026-01-24
+
+### Changed - Organização da Documentação
+
+#### Meta-Manutenção: Sistema de Gestão de Documentação
+**Objetivo:** Eliminar documentos "órfãos" e estabelecer regras para prevenir documentação desorganizada.
+
+**Problema Identificado:**
+- 8 ficheiros `.md` na pasta `docs/` não estavam registados no Centro de Documentação do Admin (`DOCS_STRUCTURE`)
+- Documentos invisíveis para utilizadores (apenas acessíveis via sistema de ficheiros)
+- Mistura de documentos "living" (ativos) com análises históricas pontuais
+
+**Solução Implementada:**
+
+1. **Criada estrutura de arquivo ([docs/archive/](docs/archive/)):**
+   - Movidos 4 documentos históricos/análises pontuais:
+     - `CAIXA_ANALYSIS.md` - Análise técnica pontual (lógica já documentada)
+     - `PROJETO_DATAS_REFACTOR.md` - Proposta não implementada
+     - `SALDOS_CROSSCHECK.md` - Validação histórica concluída
+     - `SALDOS_VALIDATION_RESULTS.md` - Validação histórica concluída
+   - Criado [archive/README.md](docs/archive/README.md) documentando motivo de cada arquivo
+
+2. **Registados 3 documentos vivos no Admin ([admin.py:1856-1873](agora_web/core/admin.py#L1856-L1873)):**
+   - `REFACTOR_ESTADO_CANCELADO.md` (icon: sync_alt)
+   - `FISCAL_CATEGORIZATION.md` (icon: category)
+   - `QUESTOES_CONTABILISTA.md` (icon: help_outline)
+
+3. **Novas regras em [.claude/claude.md](/.claude/claude.md#L107-L243):**
+   - **REGRA 1:** Integração Obrigatória - zero tolerância para docs órfãos
+   - **REGRA 2:** Consolidação vs. Criação - antes de criar doc novo, perguntar onde encaixa
+   - **REGRA 3:** Protocolo "Documenta isto" - checklist de 4 passos (CHANGELOG → Doc Técnico → .claude/claude.md → docs/README.md)
+
+**Resultado Final:**
+- ✅ **16 documentos vivos** em `docs/` (todos registados no admin)
+- ✅ **5 documentos arquivados** em `docs/archive/`
+- ✅ **Zero ficheiros órfãos**
+- ✅ Centro de Documentação do Admin 100% completo e navegável
+
+**Ficheiros Alterados:**
+- [.claude/claude.md](/.claude/claude.md#L107-L243) - Adicionada secção "Gestão de Documentação"
+- [agora_web/core/admin.py](agora_web/core/admin.py#L1856-L1873) - 3 novas entradas em `DOCS_STRUCTURE`
+- [docs/archive/README.md](docs/archive/README.md) - Criado (documentação do arquivo)
+- [docs/README.md](docs/README.md) - Atualizada data (2026-01-24)
+
+**Como Verificar:**
+1. Aceder ao Centro de Documentação: `/admin/core/documentacao/`
+2. Verificar que todos os 16 documentos aparecem com ícones e descrições
+3. Confirmar que `docs/archive/` contém documentos históricos com README explicativo
+
+---
+
+## [0.3.4] - 2026-01-24
+
+### Added - Widget de Alerta de Tesouraria
+
+#### Nova Feature: Alerta Visual de Projetos em Atraso
+**Localização:** Topo da lista de Projetos (`/admin/core/projeto/`)
+
+**Funcionalidade:**
+- **Widget de alerta vermelho** aparece automaticamente quando há projetos em atraso (vencidos e não pagos)
+- Mostra:
+  - Número de projetos em atraso
+  - Valor total em atraso (€) formatado com separadores de milhares
+  - Botão "Ver projetos em atraso" que aplica filtro automático
+
+**Critérios de "Em Atraso":**
+- ✅ `cancelado = False` (projeto ativo)
+- ✅ `data_recibo IS NULL` (ainda não pago)
+- ✅ `data_vencimento < HOJE` (prazo vencido)
+
+**Implementação Técnica:**
+
+1. **Backend ([admin.py:584-621](agora_web/core/admin.py#L584-L621)):**
+   ```python
+   def changelist_view(self, request, extra_context=None):
+       # Calcula total_atraso e count_atraso usando aggregation (Sum, Count)
+       # Performance: query única na base de dados (não loops Python)
+   ```
+
+2. **Novo Filtro Customizado ([admin.py:535-566](agora_web/core/admin.py#L535-L566)):**
+   ```python
+   class EmAtrasoListFilter(admin.SimpleListFilter):
+       title = 'estado de pagamento'
+       parameter_name = 'em_atraso'
+       # Opções: "Em atraso" | "Sem atrasos"
+   ```
+
+3. **Template ([changelist.html:1-39](agora_web/core/templates/admin/core/projeto/changelist.html#L1-L39)):**
+   - Extends: `admin/change_list.html` (template base do Django Admin)
+   - Block: `{% block content %}` (override completo do conteúdo)
+   - Widget só aparece se `count_atraso > 0`
+   - Design: card vermelho com ícone SVG Tailwind/Heroicons
+   - Tailwind CSS com suporte dark mode
+   - Botão com link para `?em_atraso=sim` (ativa filtro)
+   - `{{ block.super }}` preserva conteúdo original da changelist
+   - **Template reescrito completamente** - removido código legado
+
+4. **Dependência Adicionada ([settings.py:35](agora_web/config/settings.py#L35)):**
+   ```python
+   INSTALLED_APPS = [
+       # ...
+       'django.contrib.humanize',  # Para formatação de números (intcomma, floatformat)
+   ]
+   ```
+
+**Design UX/UI:**
+- 🎨 Cores pastéis vermelhas consistentes com tema Unfold
+- 🌓 Suporte dark mode (`dark:bg-red-900/20`, `dark:text-red-400`)
+- ⚡ Transições suaves em hover/focus
+- 📱 Responsivo (flexbox layout)
+
+**Performance:**
+- Database aggregation com `Sum()` e `Count()` (não loops Python)
+- Query única otimizada com filtros compostos
+- Template rendering condicional (só mostra se necessário)
+
+**Estado Atual em Produção:**
+- 1 projeto em atraso identificado: #P0081 "Benfica - Sporting (realização)" - €250.00
+- Vencimento: 2026-01-02 (22 dias em atraso)
+- Widget visível e funcional em produção
+
+#### Ficheiros Modificados
+- `agora_web/core/admin.py` - Adicionado `EmAtrasoListFilter` e override `changelist_view`
+- `agora_web/core/templates/admin/core/projeto/changelist.html` - **Reescrito completamente** (removido código legado)
+- `agora_web/config/settings.py` - Adicionado `django.contrib.humanize`
+
+#### Histórico de Iterações
+1. **v1 (tentativa inicial):** Template com `{% block content %}` e ícones Heroicons custom - erro `humanize` não registado
+2. **v2 (correção):** Adicionado `django.contrib.humanize` ao settings.py - erro no link do botão (query string manual)
+3. **v3 (filtro custom):** Criado `EmAtrasoListFilter` - link do botão funcional mas botão "Criar Relatório" fantasma apareceu
+4. **v4 (reescrita):** Template reescrito com `{% block before_results %}` + `{% extends "unfold/change_list.html" %}` - **ERRO:** `TemplateDoesNotExist` (template Unfold não existe)
+5. **v5 (FINAL):** Corrigido extends para `{% extends "admin/change_list.html" %}` + `{% block content %}` - **FUNCIONAL** ✅
+
+**Lição Aprendida:** Unfold usa o sistema de templates padrão do Django (`admin/change_list.html`), não tem templates próprios como `unfold/change_list.html`.
+
 ## [0.3.3] - 2026-01-23
 
 ### Improved - Sistema de Auto-Sugestão de Tags Fiscais
