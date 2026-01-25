@@ -782,8 +782,8 @@ class DespesaTemplate(UserTrackingMixin, models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _('Despesa Fixa Mensal')
-        verbose_name_plural = _('Despesas Fixas Mensais')
+        verbose_name = _('Template de Despesa')
+        verbose_name_plural = _('Templates de Despesa')
         ordering = ['dia_mes', '-created_at']
         db_table = 'despesa_templates'
 
